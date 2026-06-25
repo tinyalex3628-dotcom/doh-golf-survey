@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOH GOLF — 스윙 분석 설문</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f7f7f5;--card:#ffffff;--border:#e8e8e4;
+  --t1:#1a1a18;--t2:#6b6b68;--t3:#a0a09c;
+  --green:#1a9e5f;--green-light:#e8f5ef;
+  --blue:#2563eb;--red:#dc2626;
+}
+body{font-family:-apple-system,'Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+  background:var(--bg);color:var(--t1);min-height:100vh;padding:0 0 60px;}
+
+/* HEADER */
+.hd{background:#0f0f12;color:#fff;padding:20px 20px 16px;text-align:center;}
+.hd-sub{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#4a4a60;margin-bottom:6px;}
+.hd-title{font-size:22px;font-weight:700;letter-spacing:-.02em;}
+.hd-title span{color:#1db870;}
+.hd-desc{font-size:13px;color:#6060808;margin-top:6px;color:#60608a;}
+
+/* PROGRESS */
+.progress-wrap{background:#e8e8e4;height:3px;}
+.progress-bar{height:3px;background:var(--green);transition:width .4s ease;}
+
+/* CONTAINER */
+.container{max-width:560px;margin:0 auto;padding:0 16px;}
+
+/* STEP */
+.step{display:none;}
+.step.active{display:block;}
+
+/* SECTION */
+.section{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:20px;margin-top:16px;}
+.section-title{font-size:13px;font-weight:700;color:var(--t2);margin-bottom:14px;
+  text-transform:uppercase;letter-spacing:.06em;}
+
+/* FORM FIELDS */
+.field{margin-bottom:14px;}
+.field:last-child{margin-bottom:0;}
+.label{font-size:13px;font-weight:600;color:var(--t1);margin-bottom:6px;display:block;}
+.label span{font-size:11px;font-weight:400;color:var(--t3);margin-left:4px;}
+input[type=text]{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:15px;font-family:inherit;color:var(--t1);background:#fff;outline:none;transition:border-color .15s;}
+input[type=text]:focus{border-color:var(--green);}
+
+/* GENDER RADIO */
+.radio-group{display:flex;gap:8px;}
+.radio-btn{flex:1;padding:10px;border:1.5px solid var(--border);border-radius:8px;
+  text-align:center;cursor:pointer;font-size:14px;font-weight:600;color:var(--t2);
+  transition:all .15s;user-select:none;}
+.radio-btn.selected{border-color:var(--green);background:var(--green-light);color:var(--green);}
+
+/* QUESTION CARDS */
+.q-card{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:16px;margin-bottom:10px;}
+.q-num{font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.06em;margin-bottom:4px;}
+.q-text{font-size:14px;font-weight:600;color:var(--t1);margin-bottom:12px;line-height:1.5;}
+.q-sub{font-size:12px;color:var(--t2);margin-bottom:10px;line-height:1.5;}
+.options{display:flex;flex-direction:column;gap:6px;}
+.opt{padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:13px;color:var(--t2);cursor:pointer;transition:all .12s;
+  display:flex;align-items:center;gap:10px;}
+.opt:hover{border-color:var(--green);color:var(--t1);}
+.opt.selected{border-color:var(--green);background:var(--green-light);color:var(--green);font-weight:600;}
+.opt-dot{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;}
+.opt.selected .opt-dot::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--green);}
+
+/* NAV BUTTONS */
+.nav{display:flex;gap:10px;margin-top:20px;padding:0;}
+.btn-prev{flex:1;padding:14px;border:1.5px solid var(--border);border-radius:10px;
+  font-size:15px;font-weight:600;color:var(--t2);background:#fff;cursor:pointer;font-family:inherit;}
+.btn-next{flex:2;padding:14px;border:none;border-radius:10px;
+  font-size:15px;font-weight:700;color:#fff;background:var(--green);cursor:pointer;font-family:inherit;}
+.btn-next:disabled{background:#ccc;cursor:not-allowed;}
+.btn-submit{width:100%;padding:16px;border:none;border-radius:10px;margin-top:16px;
+  font-size:16px;font-weight:700;color:#fff;background:var(--green);cursor:pointer;font-family:inherit;}
+
+/* STEP INDICATOR */
+.step-indicator{display:flex;justify-content:center;gap:6px;padding:14px 0 0;}
+.si-dot{width:6px;height:6px;border-radius:50%;background:var(--border);transition:background .2s;}
+.si-dot.active{background:var(--green);}
+
+/* RESULT PAGE */
+.result-header{background:#0f0f12;color:#fff;padding:24px 20px;text-align:center;margin-bottom:0;}
+.result-name{font-size:13px;color:#60608a;margin-bottom:4px;}
+.result-cluster{font-size:24px;font-weight:700;color:#1db870;margin-bottom:4px;}
+.result-ko{font-size:16px;color:#a0a0c0;}
+
+.result-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-top:14px;}
+.rc-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;}
+.track-a{border-left:3px solid #dc2626;padding-left:12px;margin-bottom:12px;}
+.track-b{border-left:3px solid var(--green);padding-left:12px;}
+.track-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;}
+.track-a .track-label{color:#dc2626;}
+.track-b .track-label{color:var(--green);}
+.track-text{font-size:13px;color:var(--t1);line-height:1.7;}
+
+.priority-list{display:flex;flex-direction:column;gap:6px;}
+.priority-item{display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:#f7f7f5;border-radius:8px;}
+.pi-rank{font-size:18px;font-weight:700;color:var(--green);min-width:20px;}
+.pi-name{font-size:13px;font-weight:600;color:var(--t1);}
+.pi-ko{font-size:11px;color:var(--t3);}
+
+.path-flow{display:flex;flex-direction:column;gap:4px;}
+.pf-node{font-size:13px;color:var(--t1);padding:6px 10px;background:#f7f7f5;border-radius:6px;}
+.pf-arrow{font-size:12px;color:var(--t3);padding-left:16px;}
+.pf-node.result-node{background:#fff0f0;color:#dc2626;font-weight:700;}
+
+.normal-card{background:var(--green-light);border:1px solid #a8e6c8;border-radius:12px;padding:20px;
+  margin-top:14px;text-align:center;}
+.normal-icon{font-size:32px;margin-bottom:8px;}
+.normal-title{font-size:18px;font-weight:700;color:var(--green);margin-bottom:6px;}
+.normal-desc{font-size:13px;color:#2d7a50;line-height:1.6;}
+
+.share-section{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:16px;margin-top:14px;text-align:center;}
+.share-desc{font-size:12px;color:var(--t2);margin-bottom:10px;}
+.share-btn{display:inline-block;padding:10px 24px;background:#0f0f12;color:#fff;
+  border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;}
+
+/* LOADING */
+.loading{display:none;text-align:center;padding:40px 20px;}
+.loading.active{display:block;}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--green);
+  border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:14px;color:var(--t2);}
+
+/* ERROR */
+.err-msg{font-size:12px;color:var(--red);margin-top:6px;display:none;}
+.err-msg.show{display:block;}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <div class="hd-sub">DOH Golf System</div>
+  <div class="hd-title">스윙 <span>분석</span> 설문</div>
+  <div class="hd-desc">약 5분 · 결과 즉시 확인</div>
+</div>
+<div class="progress-wrap"><div class="progress-bar" id="prog" style="width:0%"></div></div>
+
+<div class="container">
+
+  <!-- STEP 0: 기본 정보 -->
+  <div class="step active" id="step-0">
+    <div class="step-indicator">
+      <div class="si-dot active"></div><div class="si-dot"></div><div class="si-dot"></div><div class="si-dot"></div><div class="si-dot"></div>
+    </div>
+    <div class="section" style="margin-top:16px;">
+      <div class="section-title">기본 정보</div>
+      <div class="field">
+        <label class="label">이름 <span>실명 또는 닉네임</span></label>
+        <input type="text" id="f-name" placeholder="홍길동" maxlength="20">
+        <div class="err-msg" id="err-name">이름을 입력해주세요</div>
+      </div>
+      <div class="field">
+        <label class="label">성별</label>
+        <div class="radio-group">
+          <div class="radio-btn" onclick="selectGender('남성')">남성</div>
+          <div class="radio-btn" onclick="selectGender('여성')">여성</div>
+        </div>
+        <div class="err-msg" id="err-gender">성별을 선택해주세요</div>
+      </div>
+      <div class="field">
+        <label class="label">구력 <span>골프 경력</span></label>
+        <div class="radio-group" style="flex-wrap:wrap;">
+          <div class="radio-btn" onclick="selectCareer('1년 미만')" style="flex:none;min-width:80px;">1년 미만</div>
+          <div class="radio-btn" onclick="selectCareer('1~3년')" style="flex:none;min-width:80px;">1~3년</div>
+          <div class="radio-btn" onclick="selectCareer('3~5년')" style="flex:none;min-width:80px;">3~5년</div>
+          <div class="radio-btn" onclick="selectCareer('5년 이상')" style="flex:none;min-width:90px;">5년 이상</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav" style="margin-top:16px;">
+      <button class="btn-next" onclick="nextStep(0)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- STEP 1: 압력/체중 이동 -->
+  <div class="step" id="step-1">
+    <div class="step-indicator">
+      <div class="si-dot"></div><div class="si-dot active"></div><div class="si-dot"></div><div class="si-dot"></div><div class="si-dot"></div>
+    </div>
+    <div id="q-block-1"></div>
+    <div class="nav" style="margin-top:16px;">
+      <button class="btn-prev" onclick="prevStep(1)">← 이전</button>
+      <button class="btn-next" onclick="nextStep(1)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: 자세/회전 -->
+  <div class="step" id="step-2">
+    <div class="step-indicator">
+      <div class="si-dot"></div><div class="si-dot"></div><div class="si-dot active"></div><div class="si-dot"></div><div class="si-dot"></div>
+    </div>
+    <div id="q-block-2"></div>
+    <div class="nav" style="margin-top:16px;">
+      <button class="btn-prev" onclick="prevStep(2)">← 이전</button>
+      <button class="btn-next" onclick="nextStep(2)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: 릴리즈/임팩트 -->
+  <div class="step" id="step-3">
+    <div class="step-indicator">
+      <div class="si-dot"></div><div class="si-dot"></div><div class="si-dot"></div><div class="si-dot active"></div><div class="si-dot"></div>
+    </div>
+    <div id="q-block-3"></div>
+    <div class="nav" style="margin-top:16px;">
+      <button class="btn-prev" onclick="prevStep(3)">← 이전</button>
+      <button class="btn-next" onclick="nextStep(3)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: 확인 + 제출 -->
+  <div class="step" id="step-4">
+    <div class="step-indicator">
+      <div class="si-dot"></div><div class="si-dot"></div><div class="si-dot"></div><div class="si-dot"></div><div class="si-dot active"></div>
+    </div>
+    <div class="section" style="margin-top:16px;">
+      <div class="section-title">응답 확인</div>
+      <div id="review-box" style="font-size:12px;color:#6b6b68;line-height:2;"></div>
+    </div>
+    <button class="btn-submit" onclick="submitSurvey()">분석 결과 보기</button>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">스윙 패턴 분석 중...</div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="step" id="step-result"></div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════
+// !! 여기만 수정하면 됨 !!
+// Google Apps Script 배포 URL
+// ══════════════════════════════════════
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVwlOCGAP6Td_gxPgESnY21sveAzEh3ah5Fovgo9NVo7VpTJagplAJ2aA5XxeY5do/exec";
+// ══════════════════════════════════════
+
+// 설문 데이터
+const userData = {name:"",gender:"",career:""};
+const answers = {};
+
+// ══════════════════════════════════════
+// 설문 문항 정의
+// ══════════════════════════════════════
+const QUESTIONS = {
+  1: {
+    title:"압력 이동 · 체중 분배",
+    items:[
+      {id:"pressure_shift_quality", text:"다운스윙에서 왼발(리드발)로의 체중 이동이 얼마나 잘 되나요?",
+       sub:"임팩트 시 왼발에 무게가 실리는 느낌",
+       opts:[["0","거의 안 됨 — 오른발에 체중이 남는 느낌"],["1","약간 됨 — 불완전"],["2","대체로 됨"],["3","잘 됨 — 임팩트에 왼발이 단단히 버팀"]]},
+      {id:"weight_transfer_completion", text:"팔로우스루까지 체중이동이 완성되나요?",
+       sub:"피니시 시 왼발에 체중이 90% 이상",
+       opts:[["0","피니시에도 오른발에 체중이 남음"],["1","절반 정도"],["2","대부분 이동"],["3","완전히 이동됨"]]},
+      {id:"trail_heel_load", text:"백스윙 탑에서 오른 뒤꿈치에 압력이 느껴지나요?",
+       opts:[["0","느껴지지 않음"],["1","약간"],["2","뚜렷하게 느껴짐"]]},
+      {id:"ground_force_usage", text:"다운스윙에서 지면을 밀어내는 느낌(지면반력)이 있나요?",
+       opts:[["0","없음"],["1","약간"],["2","있음"],["3","뚜렷하게 있음"]]},
+      {id:"sway_severity", text:"백스윙 시 몸이 오른쪽으로 과도하게 이동(스웨이)되나요?",
+       opts:[["0","없음"],["1","약간"],["2","심함"],["3","매우 심함"]]},
+      {id:"reverse_pivot_severity", text:"백스윙 시 체중이 오히려 왼발로 쏠리는 느낌이 있나요?",
+       sub:"리버스 피벗 — 몸이 앞으로 기우는 느낌",
+       opts:[["0","없음"],["1","약간"],["2","심함"],["3","매우 심함"]]},
+    ]
+  },
+  2: {
+    title:"자세 · 회전 · 리드 사이드",
+    items:[
+      {id:"early_extension", text:"임팩트 직전에 몸이 볼 쪽으로 일어서는 느낌이 있나요?",
+       sub:"척추 자세각이 무너지는 느낌 (Early Extension)",
+       opts:[["0","없음"],["1","약간"],["2","자주"],["3","항상"]]},
+      {id:"standing_up", text:"다운스윙 중 키가 커지는 느낌이 있나요?",
+       opts:[["0","없음"],["1","약간"],["2","자주"],["3","항상"]]},
+      {id:"loss_of_posture", text:"스윙 중 어드레스 자세가 무너지나요?",
+       opts:[["0","없음"],["1","약간"],["2","자주"],["3","항상"]]},
+      {id:"rotation_completion", text:"팔로우스루에서 가슴이 타겟 방향으로 완전히 돌아가나요?",
+       opts:[["0","거의 안 돌아감"],["1","절반"],["2","대부분"],["3","완전히 돌아감"]]},
+      {id:"early_turn", text:"다운스윙 시작과 동시에 어깨가 먼저 열리나요?",
+       sub:"하체 선행 없이 상체가 먼저 회전",
+       opts:[["0","없음"],["1","약간"],["2","자주"],["3","항상"]]},
+      {id:"thorax_rotation", text:"백스윙 탑에서 가슴(흉곽)이 충분히 돌아가나요?",
+       opts:[["0","거의 안 돌아감"],["1","약간"],["2","대부분"],["3","완전히"]]},
+      {id:"x_factor", text:"백스윙 탑에서 어깨와 골반의 꼬임이 느껴지나요?",
+       sub:"X-Factor — 상하체 꼬임량",
+       opts:[["0","없음"],["1","약간"],["2","있음"],["3","뚜렷하게 있음"]]},
+      {id:"lead_leg_stability", text:"다운스윙에서 왼 무릎이 안정적으로 버티나요?",
+       opts:[["0","흔들림/무너짐"],["1","약간 불안정"],["2","대체로 안정"],["3","매우 안정"]]},
+      {id:"lead_side_acceptance", text:"임팩트에서 왼쪽(리드)이 벽처럼 막아주는 느낌이 있나요?",
+       opts:[["0","없음"],["1","약간"],["2","있음"],["3","뚜렷이 있음"]]},
+      {id:"slide_tendency", text:"다운스윙에서 골반이 회전보다 타겟 방향으로 미끄러지나요?",
+       sub:"슬라이드 — 횡이동",
+       opts:[["0","없음"],["1","약간"],["2","자주"],["3","항상"]]},
+    ]
+  },
+  3: {
+    title:"릴리즈 · 임팩트 · 팔",
+    items:[
+      {id:"release_timing", text:"임팩트 전에 손목이 일찍 풀리나요?",
+       sub:"조기 릴리즈 — 캐스팅 느낌",
+       opts:[["0","항상 일찍 풀림"],["1","자주"],["2","가끔"],["3","풀리지 않음"]]},
+      {id:"release_pattern", text:"임팩트 시 손목이 뒤집히는(Flip) 느낌이 있나요?",
+       opts:[["0","없음"],["1","약간"],["2","자주"],["3","항상"]]},
+      {id:"shaft_lean", text:"임팩트 시 핸드 퍼스트(샤프트가 앞으로 기울어진) 느낌이 있나요?",
+       opts:[["0","없음 — 수직이거나 뒤로"],["1","약간"],["2","뚜렷이"]]},
+      {id:"ott_severity", text:"다운스윙 클럽이 아웃사이드에서 들어오는 느낌이 있나요?",
+       sub:"OTT — Over The Top. 슬라이스가 자주 나는 경우",
+       opts:[["0","없음"],["1","약간"],["2","자주"],["3","항상"]]},
+      {id:"arm_lift_compensation", text:"백스윙 시 팔을 들어올려서 높이를 만드나요?",
+       sub:"몸 회전 없이 팔만 올라가는 느낌",
+       opts:[["0","없음"],["1","약간"],["2","뚜렷이"]]},
+      {id:"kinematic_sequence", text:"다운스윙 순서가 어떻게 느껴지나요?",
+       opts:[["0","팔이 먼저 — 하체가 안 열림"],["1","동시에"],["2","하체가 약간 선행"],["3","하체→엉덩이→어깨→팔 순서로"]]},
+      {id:"impact_stability", text:"임팩트 순간 몸이 안정적인가요?",
+       opts:[["0","매우 불안정"],["1","약간 불안정"],["2","대체로 안정"],["3","매우 안정"]]},
+      {id:"pelvis_rotation", text:"다운스윙에서 골반이 충분히 회전하나요?",
+       opts:[["0","거의 안 돌아감"],["1","약간"],["2","대부분"],["3","완전히"]]},
+    ]
+  }
+};
+
+// ══════════════════════════════════════
+// UI 렌더링
+// ══════════════════════════════════════
+function renderQuestions(){
+  [1,2,3].forEach(step=>{
+    const qs=QUESTIONS[step];
+    let html=`<div class="section" style="margin-top:16px;padding:0;overflow:hidden;">
+      <div style="padding:14px 18px;border-bottom:1px solid var(--border)">
+        <div class="section-title" style="margin:0">${qs.title}</div>
+      </div>
+      <div style="padding:14px;">`;
+    qs.items.forEach((q,qi)=>{
+      html+=`<div class="q-card">
+        <div class="q-num">Q${qi+1}</div>
+        <div class="q-text">${q.text}</div>
+        ${q.sub?`<div class="q-sub">${q.sub}</div>`:''}
+        <div class="options" id="opts-${q.id}">
+          ${q.opts.map(([val,label])=>`
+            <div class="opt" onclick="selectOpt('${q.id}','${val}',this)">
+              <div class="opt-dot"></div>
+              <span>${label}</span>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    });
+    html+='</div></div>';
+    document.getElementById(`q-block-${step}`).innerHTML=html;
+  });
+}
+
+function selectGender(v){
+  userData.gender=v;
+  document.querySelectorAll('.radio-group')[0].querySelectorAll('.radio-btn')
+    .forEach(b=>b.classList.toggle('selected',b.textContent===v));
+  document.getElementById('err-gender').classList.remove('show');
+}
+function selectCareer(v){
+  userData.career=v;
+  document.querySelectorAll('.radio-group')[1].querySelectorAll('.radio-btn')
+    .forEach(b=>b.classList.toggle('selected',b.textContent===v));
+}
+function selectOpt(qid,val,el){
+  answers[qid]=parseInt(val);
+  el.closest('.options').querySelectorAll('.opt')
+    .forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ══════════════════════════════════════
+// STEP 네비게이션
+// ══════════════════════════════════════
+let curStep=0;
+const totalSteps=5;
+
+function showStep(n){
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById(`step-${n}`)||document.getElementById('step-result');
+  if(el) el.classList.add('active');
+  const pct=Math.round((n/4)*100);
+  document.getElementById('prog').style.width=pct+'%';
+  window.scrollTo(0,0);
+}
+
+function nextStep(from){
+  if(from===0){
+    const name=document.getElementById('f-name').value.trim();
+    if(!name){document.getElementById('err-name').classList.add('show');return;}
+    if(!userData.gender){document.getElementById('err-gender').classList.add('show');return;}
+    userData.name=name;
+    document.getElementById('err-name').classList.remove('show');
+  }
+  if(from>=1&&from<=3){
+    const qs=QUESTIONS[from].items;
+    const missing=qs.filter(q=>answers[q.id]===undefined);
+    if(missing.length>0){
+      alert(`${missing.length}개 문항에 답해주세요.`);return;
+    }
+  }
+  curStep=from+1;
+  if(curStep===4) renderReview();
+  showStep(curStep);
+}
+function prevStep(from){
+  curStep=from-1;
+  showStep(curStep);
+}
+
+function renderReview(){
+  let html='<div style="column-count:1;">';
+  html+=`<div style="margin-bottom:8px"><b>${userData.name}</b> · ${userData.gender} · 구력 ${userData.career||'미입력'}</div>`;
+  html+='<div style="border-top:1px solid var(--border);padding-top:8px;">';
+  Object.entries(answers).forEach(([k,v])=>{
+    html+=`<div><span style="color:var(--t3)">${k}</span> = <b>${v}</b></div>`;
+  });
+  html+='</div></div>';
+  document.getElementById('review-box').innerHTML=html;
+}
+
+// ══════════════════════════════════════
+// 엔진 (v3 embedded)
+// ══════════════════════════════════════
+const NODES={
+  N01:{id:"N01",name:"Pressure Shift Failure",ko:"압력 이동 실패",layer:"root_cause",pw:3,
+    feats:[{f:"pressure_shift_quality",op:"<=",v:1,w:3},{f:"weight_transfer_completion",op:"<=",v:1,w:2},{f:"ground_force_usage",op:"<=",v:1,w:2},{f:"trail_heel_load",op:">=",v:2,w:1}],
+    ms:3,rmc:2,rp:["pressure_shift_quality","weight_transfer_completion"]},
+  N02:{id:"N02",name:"Lead Side Collapse",ko:"리드 사이드 붕괴",layer:"root_cause",pw:3,
+    feats:[{f:"lead_leg_stability",op:"<=",v:1,w:3},{f:"lead_side_acceptance",op:"<=",v:1,w:2},{f:"slide_tendency",op:">=",v:2,w:2}],
+    ms:3,rmc:2,rp:["lead_leg_stability"]},
+  N03:{id:"N03",name:"Reverse Pivot",ko:"리버스 피벗",layer:"root_cause",pw:3,
+    feats:[{f:"reverse_pivot_severity",op:">=",v:2,w:3},{f:"weight_transfer_completion",op:"<=",v:1,w:2},{f:"sway_severity",op:">=",v:1,w:1}],
+    ms:3,rmc:2,rp:["reverse_pivot_severity"]},
+  N04:{id:"N04",name:"Rotation Stall",ko:"회전 정체",layer:"root_cause",pw:2,
+    feats:[{f:"rotation_completion",op:"<=",v:1,w:3},{f:"early_turn",op:">=",v:2,w:2},{f:"kinematic_sequence",op:"<=",v:1,w:2},{f:"thorax_rotation",op:"<=",v:1,w:1}],
+    ms:3,rmc:2,rp:["rotation_completion","early_turn"]},
+  N05:{id:"N05",name:"Thorax Rotation Deficit",ko:"흉곽 회전 부족",layer:"root_cause",pw:3,
+    feats:[{f:"thorax_rotation",op:"<=",v:1,w:3},{f:"x_factor",op:"<=",v:1,w:2}],
+    ms:3,rmc:2,rp:["thorax_rotation"]},
+  N06:{id:"N06",name:"Slide",ko:"슬라이드",layer:"compensation",pw:2,
+    feats:[{f:"slide_tendency",op:">=",v:2,w:3},{f:"lead_leg_stability",op:"<=",v:1,w:2}],
+    ms:3,rmc:2,rp:["slide_tendency"]},
+  N07:{id:"N07",name:"Pelvis Stall",ko:"골반 정체",layer:"compensation",pw:2,bottleneck:true,
+    feats:[{f:"pelvis_rotation",op:"<=",v:1,w:3},{f:"kinematic_sequence",op:"<=",v:1,w:2},{f:"rotation_completion",op:"<=",v:1,w:1}],
+    ms:3,rmc:2,rp:["pelvis_rotation"]},
+  N08:{id:"N08",name:"Arm Dominant Sequence",ko:"팔 주도 시퀀스",layer:"compensation",pw:1,
+    feats:[{f:"rotation_source",op:"==",v:0,w:3},{f:"arm_lift_compensation",op:">=",v:1,w:2},{f:"kinematic_sequence",op:"<=",v:1,w:2}],
+    ms:3,rmc:2,rp:["rotation_source","arm_lift_compensation"]},
+  N09:{id:"N09",name:"Hip Thrust",ko:"힙 쓰러스트",layer:"compensation",pw:1,
+    feats:[{f:"early_extension",op:">=",v:2,w:3},{f:"standing_up",op:">=",v:1,w:2},{f:"loss_of_posture",op:">=",v:1,w:1}],
+    ms:3,rmc:2,rp:["early_extension"]},
+  N10:{id:"N10",name:"Arm Lift Compensation",ko:"팔 리프트 보상",layer:"compensation",pw:1,
+    feats:[{f:"arm_lift_compensation",op:">=",v:1,w:3},{f:"hand_path",op:"<=",v:1,w:2}],
+    ms:3,rmc:2,rp:["arm_lift_compensation"]},
+  N11:{id:"N11",name:"Early Extension",ko:"조기 신전",layer:"cluster_result",cluster:"C01",pw:0,
+    feats:[{f:"early_extension",op:">=",v:2,w:3},{f:"standing_up",op:">=",v:1,w:2}],
+    ms:4,rmc:2,rp:["early_extension","standing_up"]},
+  N12:{id:"N12",name:"Over The Top",ko:"OTT — 아웃사이드 공격",layer:"cluster_result",cluster:"C02",pw:0,
+    feats:[{f:"ott_severity",op:">=",v:2,w:3},{f:"hand_path",op:"<=",v:1,w:2}],
+    ms:4,rmc:2,rp:["ott_severity"]},
+  N13:{id:"N13",name:"Early Release",ko:"조기 릴리즈",layer:"cluster_result",cluster:"C06",pw:0,
+    feats:[{f:"release_timing",op:"<=",v:1,w:3},{f:"release_pattern",op:">=",v:1,w:2},{f:"shaft_lean",op:"<=",v:0,w:2}],
+    ms:4,rmc:3,rp:["release_timing","release_pattern"]},
+};
+
+const EDGES=[
+  {from:"N01",to:"N07"},{from:"N01",to:"N09"},{from:"N01",to:"N13"},
+  {from:"N02",to:"N06"},{from:"N02",to:"N09"},
+  {from:"N03",to:"N01"},{from:"N03",to:"N07"},
+  {from:"N04",to:"N07"},{from:"N04",to:"N08"},{from:"N04",to:"N09"},{from:"N04",to:"N11"},
+  {from:"N05",to:"N04"},{from:"N05",to:"N10"},
+  {from:"N06",to:"N07"},
+  {from:"N07",to:"N09"},{from:"N07",to:"N08"},
+  {from:"N08",to:"N09"},{from:"N08",to:"N12"},{from:"N08",to:"N13"},
+  {from:"N09",to:"N11"},
+  {from:"N10",to:"N12"},{from:"N10",to:"N08"},
+];
+
+const CLUSTER_DESC={
+  C01:{name:"Early Extension",ko:"조기 신전",
+    trackA:"임팩트 직전 척추 자세각이 무너지면서 몸이 볼 방향으로 일어서는 패턴입니다. 클럽 통과 공간이 좁아져 정확한 임팩트가 어렵습니다.",
+    trackB_desc:"자세각을 유지하는 것보다 원인을 먼저 해결해야 합니다."},
+  C02:{name:"Over The Top",ko:"OTT — 아웃사이드 공격",
+    trackA:"다운스윙에서 클럽이 아웃사이드 경로로 들어와 Out-In 궤도가 만들어집니다. 슬라이스, Pull이 주요 구질입니다.",
+    trackB_desc:"클럽 경로 자체보다 상체 개방 원인을 먼저 해결해야 합니다."},
+  C06:{name:"Early Release",ko:"조기 릴리즈",
+    trackA:"임팩트 전에 손목이 일찍 풀리면서 헤드가 손을 추월합니다. 뒤땅, 거리 손실이 발생합니다.",
+    trackB_desc:"손목 고정 훈련보다 체중 이동과 시퀀스를 먼저 개선해야 합니다."},
+};
+
+function chkOp(val,op,v){
+  if(op===">=") return val>=v;
+  if(op==="<=") return val<=v;
+  if(op==="==") return val===v;
+  return false;
+}
+
+function runEngine(survey){
+  const base={};
+  Object.values(NODES).forEach(n=>n.feats.forEach(f=>{base[f.f]=0;}));
+  const vec={...base,...survey};
+
+  const nodeMap={};
+  Object.entries(NODES).forEach(([nid,n])=>{
+    const rpFail=n.rp.some(f=>(vec[f]||0)===0);
+    if(rpFail){nodeMap[nid]={active:false,score:0};return;}
+    let score=0,cond=0;
+    n.feats.forEach(fc=>{if(chkOp(vec[fc.f]||0,fc.op,fc.v)){score+=fc.w;cond++;}});
+    nodeMap[nid]={active:score>=n.ms&&cond>=n.rmc,score};
+  });
+
+  const actIds=Object.keys(nodeMap).filter(id=>nodeMap[id].active);
+  const resIds=actIds.filter(id=>NODES[id]?.layer==="cluster_result");
+
+  const paths=[];
+  resIds.forEach(rid=>{
+    function dfs(cur,path,vis){
+      const ups=EDGES.filter(e=>e.to===cur&&actIds.includes(e.from)&&!vis.has(e.from));
+      if(!ups.length){paths.push([...path].reverse());return;}
+      ups.forEach(e=>{vis.add(e.from);path.push(e.from);dfs(e.from,path,vis);path.pop();vis.delete(e.from);});
+    }
+    dfs(rid,[rid],new Set([rid]));
+  });
+  paths.sort((a,b)=>b.length-a.length);
+
+  const sc={};
+  actIds.forEach(id=>{
+    const n=NODES[id];
+    if(!n||n.layer==="cluster_result") return;
+    sc[id]={base:n.pw,up:0,bt:n.bottleneck?1:0};
+  });
+  resIds.forEach(rid=>{
+    const vis={};
+    const q=[{id:rid,dist:0}];
+    while(q.length){
+      const {id,dist}=q.shift();
+      EDGES.forEach(e=>{
+        if(e.to===id&&actIds.includes(e.from)&&!vis[e.from]){
+          vis[e.from]=dist+1;q.push({id:e.from,dist:dist+1});
+        }
+      });
+    }
+    Object.entries(vis).forEach(([nid,d])=>{if(sc[nid]) sc[nid].up=Math.max(sc[nid].up,d);});
+  });
+  const trackB=Object.entries(sc)
+    .map(([id,s])=>({id,n:NODES[id],total:s.base+Math.min(s.up,2)+s.bt}))
+    .sort((a,b)=>b.total-a.total);
+
+  return{nodeMap,actIds,resIds,paths,trackB,vec};
+}
+
+// ══════════════════════════════════════
+// 결과 렌더링
+// ══════════════════════════════════════
+function renderResult(result){
+  const{resIds,paths,trackB}=result;
+  const el=document.getElementById('step-result');
+
+  if(resIds.length===0){
+    el.innerHTML=`
+      <div class="normal-card" style="margin-top:16px;">
+        <div class="normal-icon">✓</div>
+        <div class="normal-title">${userData.name}님, 양호한 패턴입니다</div>
+        <div class="normal-desc">현재 설문 결과에서 주요 스윙 오류 패턴이 감지되지 않았습니다.<br>지속적인 유지와 세부 개선을 권장합니다.</div>
+      </div>`;
+    return;
+  }
+
+  const mainId=resIds[0];
+  const mainNode=NODES[mainId];
+  const clDesc=CLUSTER_DESC[mainNode.cluster]||{name:mainNode.name,ko:mainNode.ko,trackA:"",trackB_desc:""};
+  const primaryPath=paths[0]||[mainId];
+
+  let pathHtml='<div class="path-flow">';
+  primaryPath.forEach((nid,i)=>{
+    const n=NODES[nid];
+    const isRes=n?.layer==="cluster_result";
+    if(i>0) pathHtml+=`<div class="pf-arrow">↓</div>`;
+    pathHtml+=`<div class="pf-node${isRes?" result-node":""}">${n?.name||nid}<span style="font-size:11px;color:#999;margin-left:6px">${n?.ko||""}</span></div>`;
+  });
+  pathHtml+='</div>';
+
+  let tbHtml='<div class="priority-list">';
+  trackB.slice(0,4).forEach((t,i)=>{
+    tbHtml+=`<div class="priority-item">
+      <span class="pi-rank">${i+1}</span>
+      <div><div class="pi-name">${t.n.name}</div><div class="pi-ko">${t.n.ko}</div></div>
+    </div>`;
+  });
+  tbHtml+='</div>';
+
+  el.innerHTML=`
+    <div class="result-header">
+      <div class="result-name">${userData.name}님의 스윙 분석 결과</div>
+      <div class="result-cluster">${clDesc.name}</div>
+      <div class="result-ko">${clDesc.ko}</div>
+    </div>
+    <div class="container" style="padding-bottom:40px;">
+      <div class="result-card" style="margin-top:14px;">
+        <div class="rc-title">현재 패턴 (Track A)</div>
+        <div class="track-a">
+          <div class="track-label">Track A — 현재 스윙</div>
+          <div class="track-text">${clDesc.trackA}</div>
+        </div>
+      </div>
+      <div class="result-card">
+        <div class="rc-title">원인 경로</div>
+        ${pathHtml}
+      </div>
+      <div class="result-card">
+        <div class="rc-title">교정 우선순위 (Track B)</div>
+        <div class="track-b" style="margin-bottom:12px;">
+          <div class="track-label">Track B — 교정 방향</div>
+          <div class="track-text">${clDesc.trackB_desc}</div>
+        </div>
+        ${tbHtml}
+      </div>
+      ${resIds.length>1?`<div class="result-card">
+        <div class="rc-title">추가 감지 패턴</div>
+        ${resIds.slice(1).map(id=>`<div style="padding:6px 0;font-size:13px;color:#6b6b68">${NODES[id]?.cluster} — ${NODES[id]?.name}</div>`).join('')}
+      </div>`:""}
+      <div class="share-section">
+        <div class="share-desc">이 결과는 DOH Golf System의 v3 엔진으로 분석되었습니다</div>
+        <button class="share-btn" onclick="window.print()">결과 저장 / 인쇄</button>
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════
+// 제출
+// ══════════════════════════════════════
+async function submitSurvey(){
+  document.getElementById('step-4').classList.remove('active');
+  document.getElementById('loading').classList.add('active');
+
+  const result=runEngine(answers);
+  const caseId=`CASE_${Date.now()}`;
+  const resIds=result.resIds;
+  const clusters=resIds.map(id=>NODES[id]?.cluster||id);
+  const trackBTop=result.trackB[0]?.n?.name||"정상";
+  const primaryPath=(result.paths[0]||[]).join("→");
+
+  const payload={
+    case_id:caseId,
+    name:userData.name,
+    gender:userData.gender,
+    career:userData.career,
+    submitted_at:new Date().toISOString(),
+    survey:answers,
+    engine_version:"v3",
+    clusters:clusters.join(","),
+    primary_path:primaryPath,
+    track_b_top:trackBTop,
+    active_nodes:result.actIds.join(","),
+  };
+
+  if(SCRIPT_URL){
+    try{
+      await fetch(SCRIPT_URL,{
+        method:"POST",
+        mode:"no-cors",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+    }catch(e){console.warn("Sheets 저장 실패 (로컬 테스트 시 정상):",e);}
+  }
+
+  setTimeout(()=>{
+    document.getElementById('loading').classList.remove('active');
+    renderResult(result);
+    document.getElementById('step-result').classList.add('active');
+    document.getElementById('prog').style.width='100%';
+    window.scrollTo(0,0);
+  },1200);
+}
+
+renderQuestions();
+</script>
+</body>
+</html>
