@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DOH — Feature Dictionary v5.1 · Full Engine</title>
+<title>DOH — Feature Dictionary v6 · Full Engine</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, 'Malgun Gothic', sans-serif; background: #0f0f0f; color: #e0e0e0; padding: 20px; max-width: 1000px; margin: 0 auto; }
@@ -141,7 +141,7 @@ h1 { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
 </style>
 </head>
 <body>
-<h1>DOH GOLF SYSTEM — Feature Dictionary <span style="color:#5BB8FF">v5.1</span> · Full Engine</h1>
+<h1>DOH GOLF SYSTEM — Feature Dictionary <span style="color:#5BB8FF">v6</span> · Full Engine</h1>
 <p class="meta" id="meta-info">로딩 중...</p>
 <div class="tab-bar">
   <div class="tab active" onclick="switchTab('questions',this)">질문 + Feature 매핑</div>
@@ -364,7 +364,7 @@ const NUMS = ['①','②','③','④'];
 function init() {
   const m = MASTER.metadata;
   document.getElementById('meta-info').textContent =
-    'v5.1 · ' + m.total_questions + '개 주질문 · Feature ' + (Object.keys(MASTER.features).length) + '개 · Pattern ' + Object.keys(MASTER.pattern_hints).length + '개 · Node ' + Object.keys(NODES).length + '개 · Cluster ' + Object.keys(CLUSTERS).length + '개 · Chain ' + Object.keys(CHAINS).length + '개';
+    'v6 · ' + m.total_questions + '개 주질문 · Feature ' + (Object.keys(MASTER.features).length) + '개 · Pattern ' + Object.keys(MASTER.pattern_hints).length + '개 · Node ' + Object.keys(NODES).length + '개 · Cluster ' + Object.keys(CLUSTERS).length + '개 · Chain ' + Object.keys(CHAINS).length + '개';
   renderQuestions();
   renderFeatures();
   renderPatterns();
@@ -586,11 +586,10 @@ const NODES = {
     desc:"골반이 회전 없이 타깃 방향으로 밀림. EE의 직접 전조.",
     feats:[
       {f:"early_extension",op:">=",v:2,w:3},
-      {f:"early_extension",op:">=",v:3,w:2},
       {f:"trail_inside_edge_pressure",op:">=",v:2,w:1},
       {f:"trail_leg_stiffness",op:"==",v:0,w:1},
     ],
-    ms:3,rmc:2,rp:["early_extension"]},
+    ms:3,rmc:1,rp:["early_extension"]},
   N10:{id:"N10",name:"Arm Lift Compensation",ko:"팔 리프트 보상",layer:"compensation",pw:1,
     desc:"흉곽 회전 부족을 팔을 들어올려 보상 → 백스윙 플레인 이탈.",
     feats:[{f:"arm_lift_compensation",op:">=",v:1,w:3},{f:"hand_path",op:"<=",v:1,w:2}],
