@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOH — Test Runner v3 · Debug</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#060608;--s1:#0c0c10;--s2:#111116;--s3:#16161e;
+  --b1:#1c1c26;--b2:#242432;--b3:#30304a;
+  --t1:#eeeef6;--t2:#8080a0;--t3:#383850;
+  --green:#1db870;--green-dim:#0d7a48;
+  --red:#e04444;--blue:#4a80e8;--gold:#c09030;
+  --orange:#d06830;--sky:#40b8d8;--purple:#8060c8;
+  --pass:#1db870;--fail:#555568;
+}
+body{font-family:'SF Mono','Consolas','Malgun Gothic',monospace;background:var(--bg);color:var(--t1);font-size:12px;overflow:hidden;height:100vh;}
+
+/* ── HEADER ── */
+.hd{height:42px;padding:0 20px;background:var(--s1);border-bottom:1px solid var(--b1);
+  display:flex;align-items:center;gap:12px;}
+.hd-logo{font-size:10px;font-weight:700;letter-spacing:.2em;color:var(--t3);text-transform:uppercase;}
+.hd-title{font-size:14px;font-weight:700;color:#fff;letter-spacing:-.01em;}
+.hd-title em{color:var(--green);font-style:normal;}
+.hd-ver{font-size:9px;padding:2px 7px;border-radius:3px;background:var(--green)18;border:1px solid var(--green)30;color:var(--green);margin-left:4px;}
+.hd-badges{display:flex;gap:5px;margin-left:auto;}
+.hb{font-size:9px;padding:2px 8px;border-radius:3px;font-weight:700;}
+
+/* ── LAYOUT ── */
+.layout{display:flex;height:calc(100vh - 42px);}
+
+/* ── LEFT INPUT ── */
+.left{width:300px;flex-shrink:0;border-right:1px solid var(--b1);display:flex;flex-direction:column;background:var(--s1);}
+.ph{padding:10px 14px;border-bottom:1px solid var(--b1);font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;gap:6px;}
+.pb{flex:1;overflow-y:auto;padding:12px 14px;}
+
+textarea#ji{width:100%;height:200px;background:var(--s2);border:1px solid var(--b1);color:var(--t1);
+  border-radius:4px;padding:10px;font-size:11px;font-family:inherit;resize:none;outline:none;line-height:1.6;}
+textarea#ji:focus{border-color:var(--blue)80;}
+
+.run{width:100%;margin:8px 0;padding:9px;background:var(--green);border:none;color:#000;
+  font-size:12px;font-weight:700;cursor:pointer;border-radius:4px;font-family:inherit;
+  letter-spacing:.02em;transition:opacity .1s;}
+.run:hover{opacity:.85;}
+
+.sl{font-size:9px;color:var(--t3);margin:10px 0 5px;text-transform:uppercase;letter-spacing:.08em;}
+.sg{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;}
+.sm{font-size:10px;padding:3px 8px;border-radius:3px;border:1px solid var(--b2);background:transparent;
+  color:var(--t3);cursor:pointer;font-family:inherit;transition:all .1s;}
+.sm:hover{border-color:var(--b3);color:var(--t2);}
+
+/* Case log */
+.cl-head{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin:10px 0 5px;display:flex;align-items:center;gap:6px;}
+.cl-body{max-height:160px;overflow-y:auto;}
+.cl-row{padding:5px 8px;border-radius:3px;margin-bottom:2px;cursor:pointer;border:1px solid var(--b1);font-size:10px;transition:border-color .1s;}
+.cl-row:hover{border-color:var(--b2);}
+.cl-row.sel{border-color:var(--blue)60;background:var(--blue)08;}
+.cl-id{color:var(--t3);margin-right:5px;}
+.cl-name{color:var(--t2);}
+.cl-tag{font-size:9px;color:var(--red);margin-left:auto;}
+.cl-v{font-size:9px;color:var(--gold);}
+
+/* ── RIGHT OUTPUT ── */
+.right{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+/* Tab bar */
+.tabs{display:flex;border-bottom:1px solid var(--b1);background:var(--s1);}
+.tab{padding:10px 16px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;transition:all .1s;}
+.tab:hover{color:var(--t2);}
+.tab.active{color:var(--green);border-bottom-color:var(--green);}
+.tab-badge{font-size:9px;padding:1px 5px;border-radius:2px;margin-left:4px;background:var(--b1);}
+
+/* Tab contents */
+.tab-content{display:none;flex:1;overflow:hidden;}
+.tab-content.active{display:flex;}
+
+/* Panel shared */
+.panel{flex:1;overflow-y:auto;padding:14px 16px;}
+.panel-2col{display:grid;grid-template-columns:1fr 1fr;gap:1px;flex:1;overflow:hidden;background:var(--b1);}
+.panel-col{overflow-y:auto;padding:14px 16px;background:var(--bg);}
+
+/* Section */
+.sec{margin-bottom:14px;}
+.sec-title{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--t3);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--b1);}
+
+/* ── REASONING TRACE ── */
+.trace-block{background:var(--s2);border:1px solid var(--b1);border-radius:4px;padding:10px 12px;margin-bottom:8px;}
+.trace-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer;}
+.trace-node-id{font-size:10px;font-weight:700;color:var(--t3);}
+.trace-node-name{font-size:12px;font-weight:700;}
+.trace-status{font-size:10px;padding:2px 8px;border-radius:3px;margin-left:auto;font-weight:700;}
+.trace-status.active{background:var(--green)18;color:var(--green);border:1px solid var(--green)30;}
+.trace-status.inactive{background:#1a1a22;color:var(--t3);border:1px solid var(--b1);}
+.trace-status.misread{background:var(--gold)18;color:var(--gold);border:1px solid var(--gold)30;}
+
+.trace-score-bar{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.tsb-label{font-size:10px;color:var(--t2);}
+.tsb-total{font-size:18px;font-weight:700;line-height:1;}
+.tsb-slash{font-size:12px;color:var(--t3);}
+.tsb-min{font-size:12px;color:var(--t2);}
+.tsb-cond{font-size:10px;color:var(--t3);margin-left:4px;}
+
+.trace-feats{display:flex;flex-direction:column;gap:3px;}
+.tf-row{display:grid;grid-template-columns:180px 60px 60px 36px;gap:6px;align-items:center;padding:4px 6px;border-radius:3px;}
+.tf-row.pass{background:var(--green)08;}
+.tf-row.fail{background:transparent;}
+.tf-icon{font-size:11px;}
+.tf-feat{font-size:10px;color:var(--t2);}
+.tf-feat.pass{color:var(--t1);}
+.tf-op{font-size:10px;font-family:monospace;color:var(--gold);}
+.tf-val{font-size:11px;font-weight:700;text-align:right;}
+.tf-val.pass{color:var(--green);}
+.tf-val.fail{color:var(--t3);}
+.tf-w{font-size:10px;text-align:right;color:var(--blue);}
+.tf-w.fail{color:var(--t3);}
+
+.trace-reason{font-size:10px;color:var(--t3);margin-top:6px;padding-top:6px;border-top:1px solid var(--b1);font-style:italic;}
+.trace-reason.active{color:var(--green-dim);}
+.trace-reason.miss{color:var(--orange);}
+
+/* Layer dividers in trace */
+.layer-sep{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--t3);padding:8px 0 4px;display:flex;align-items:center;gap:8px;}
+.layer-sep::after{content:'';flex:1;height:1px;background:var(--b1);}
+
+/* ── EDGE EXPLAIN ── */
+.edge-block{background:var(--s2);border:1px solid var(--b1);border-radius:4px;padding:8px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;}
+.edge-from{font-size:11px;font-weight:700;}
+.edge-arrow{font-size:14px;color:var(--t3);}
+.edge-to{font-size:11px;font-weight:700;}
+.edge-str{font-size:9px;padding:2px 7px;border-radius:3px;font-weight:700;margin-left:auto;}
+.edge-str.strong{background:var(--green)18;color:var(--green);border:1px solid var(--green)30;}
+.edge-str.moderate{background:var(--gold)18;color:var(--gold);border:1px solid var(--gold)30;}
+.edge-str.weak{background:var(--blue)18;color:var(--blue);border:1px solid var(--blue)30;}
+.edge-str.inactive{background:var(--b1);color:var(--t3);border:1px solid var(--b1);}
+.edge-adopt{font-size:10px;color:var(--t3);margin-left:6px;}
+.edge-adopt.yes{color:var(--green);}
+
+/* ── FULL TRACE ── */
+.trace-full{font-family:inherit;font-size:11px;line-height:1.8;color:var(--t2);white-space:pre-wrap;background:var(--s2);border:1px solid var(--b1);border-radius:4px;padding:14px;overflow-x:auto;}
+.trace-full .hl-node{color:var(--green);font-weight:700;}
+.trace-full .hl-score{color:var(--blue);}
+.trace-full .hl-cluster{color:var(--red);font-weight:700;}
+.trace-full .hl-path{color:var(--gold);}
+.trace-full .hl-label{color:var(--t3);}
+
+/* ── RESULT / TRACK B ── */
+.result-summary{background:var(--s2);border:1px solid var(--red)30;border-radius:4px;padding:12px;margin-bottom:10px;}
+.rs-cluster{font-size:16px;font-weight:700;color:var(--red);margin-bottom:4px;}
+.rs-sub{font-size:10px;color:var(--t3);}
+
+.tb-list{display:flex;flex-direction:column;gap:4px;}
+.tb-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--s2);border-radius:4px;border:1px solid var(--b1);}
+.tb-rank{font-size:16px;font-weight:700;color:var(--green);min-width:20px;}
+.tb-body{flex:1;}
+.tb-name{font-size:12px;font-weight:700;color:var(--t1);}
+.tb-ko{font-size:10px;color:var(--t3);}
+.tb-calc{font-size:10px;font-family:monospace;color:var(--blue);}
+.tb-total{font-size:16px;font-weight:700;color:var(--green);}
+
+.verdict-box{margin-top:12px;background:var(--s2);border:1px solid var(--b1);border-radius:4px;padding:10px;}
+.vb-label{font-size:9px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+textarea.vb-input{width:100%;height:70px;background:transparent;border:none;color:var(--t1);font-family:inherit;font-size:11px;resize:none;outline:none;line-height:1.6;}
+.vb-save{font-size:10px;padding:4px 12px;border-radius:3px;border:1px solid var(--green)40;background:transparent;color:var(--green);cursor:pointer;font-family:inherit;}
+.vb-save:hover{background:var(--green)15;}
+.vb-saved{font-size:10px;color:var(--gold);margin-top:6px;font-style:italic;}
+
+/* empty / error */
+.empty{color:var(--t3);text-align:center;padding:40px 20px;line-height:2;}
+.err{color:var(--red);background:var(--red)08;border:1px solid var(--red)22;border-radius:4px;padding:10px;margin-top:8px;font-size:10px;line-height:1.6;}
+
+/* ── COVERAGE PANEL ── */
+.cov-summary{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.cov-stat{background:var(--s2);border:1px solid var(--b1);border-radius:4px;padding:8px 12px;flex:1;min-width:80px;}
+.cov-stat-num{font-size:22px;font-weight:700;line-height:1.1;}
+.cov-stat-label{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-top:2px;}
+.cov-row{display:grid;grid-template-columns:180px 1fr auto;gap:8px;align-items:center;padding:5px 8px;border-radius:3px;margin-bottom:3px;font-size:10px;}
+.cov-row:hover{background:var(--s2);}
+.cov-feat{font-family:monospace;color:var(--t2);}
+.cov-types{display:flex;gap:3px;flex-wrap:wrap;}
+.cov-type-tag{font-size:8px;padding:1px 5px;border-radius:2px;font-weight:700;}
+.ct-t1{background:#5BB8FF15;color:#5BB8FF;border:1px solid #5BB8FF30;}
+.ct-t2{background:#2ecc8a15;color:#2ecc8a;border:1px solid #2ecc8a30;}
+.ct-t3{background:#c4973a15;color:#c4973a;border:1px solid #c4973a30;}
+.ct-t4{background:#e0444415;color:#e04444;border:1px solid #e0444430;}
+.cov-status{font-size:9px;font-weight:700;white-space:nowrap;}
+.cov-ok{color:var(--green);}
+.cov-miss{color:var(--red);}
+.cov-warn{color:var(--gold);}
+.cov-only-t3{color:var(--gold);}
+.cov-section-hd{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin:12px 0 5px;padding-bottom:4px;border-bottom:1px solid var(--b1);}
+.diversity-bar{display:flex;gap:2px;align-items:center;}
+.db-seg{width:10px;height:10px;border-radius:2px;}
+.db-seg.filled{opacity:1;}
+.db-seg.empty{opacity:.18;}
+
+/* scrollbar */
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <div>
+    <span class="hd-logo">DOH</span>
+    <span class="hd-title">Test Runner <em>v4</em></span>
+    <span class="hd-ver">DEBUG MODE</span>
+  </div>
+  <div class="hd-badges">
+    <span class="hb" style="background:#e0784018;border:1px solid #e0784033;color:#e07840">Node Explain</span>
+    <span class="hb" style="background:#5b8def18;border:1px solid #5b8def33;color:#5b8def">Edge Explain</span>
+    <span class="hb" style="background:#2ecc8a18;border:1px solid #2ecc8a33;color:#2ecc8a">Full Trace</span>
+    <span id="case-badge" class="hb" style="background:#c4973a18;border:1px solid #c4973a33;color:#c4973a">Case 0</span>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- LEFT -->
+  <div class="left">
+    <div class="ph">설문 JSON</div>
+    <div class="pb">
+      <textarea id="ji" placeholder='{"case_id":"CASE_001","golfer":"홍길동","date":"2026-06-25","survey":{"pressure_shift_quality":0,"weight_transfer_completion":0,"early_extension":2,"standing_up":2}}'></textarea>
+      <button class="run" onclick="run()">▶ Run Pipeline</button>
+      <div id="err"></div>
+
+      <div class="sl">샘플</div>
+      <div class="sg">
+        <button class="sm" onclick="ls(0)">EE-압력</button>
+        <button class="sm" onclick="ls(1)">EE-리드</button>
+        <button class="sm" onclick="ls(2)">EE-회전</button>
+        <button class="sm" onclick="ls(3)">복합A+C</button>
+        <button class="sm" onclick="ls(4)">OTT</button>
+        <button class="sm" onclick="ls(5)">리버스피벗</button>
+        <button class="sm" onclick="ls(6)">이상적</button>
+      </div>
+
+      <div class="cl-head">
+        케이스 로그
+        <span id="cl-cnt" style="color:var(--t3)">0개</span>
+        <button onclick="exportLog()" style="margin-left:auto;font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--b2);background:transparent;color:var(--t3);cursor:pointer;font-family:inherit;">Export</button>
+        <button onclick="clearLog()" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid #e0444422;background:transparent;color:var(--red)55;cursor:pointer;font-family:inherit;">Clear</button>
+      </div>
+      <div class="cl-body" id="cl-body"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(0)">① Node Explain<span class="tab-badge" id="tb0">—</span></div>
+      <div class="tab" onclick="switchTab(1)">② Edge Explain<span class="tab-badge" id="tb1">—</span></div>
+      <div class="tab" onclick="switchTab(2)">③ Full Trace</div>
+      <div class="tab" onclick="switchTab(3)">④ Result / Track B</div>
+      <div class="tab" onclick="switchTab(4)">⑤ Coverage<span class="tab-badge" id="tb4">—</span></div>
+    </div>
+
+    <!-- Tab 0: Node Explain -->
+    <div class="tab-content active" id="tc0">
+      <div class="panel-2col">
+        <div class="panel-col" id="ne-active"><div class="empty">실행 대기</div></div>
+        <div class="panel-col" id="ne-inactive"><div class="empty">실행 대기</div></div>
+      </div>
+    </div>
+
+    <!-- Tab 1: Edge Explain -->
+    <div class="tab-content" id="tc1">
+      <div class="panel" id="ee-panel"><div class="empty">실행 대기</div></div>
+    </div>
+
+    <!-- Tab 2: Full Trace -->
+    <div class="tab-content" id="tc2">
+      <div class="panel" id="ft-panel"><div class="empty">실행 대기</div></div>
+    </div>
+
+    <!-- Tab 3: Result / Track B -->
+    <div class="tab-content" id="tc3">
+      <div class="panel-2col">
+        <div class="panel-col" id="tb-panel"><div class="empty">실행 대기</div></div>
+        <div class="panel-col" id="vd-panel"><div class="empty">실행 대기</div></div>
+      </div>
+    </div>
+
+    <!-- Tab 4: Coverage & Evidence Diversity -->
+    <div class="tab-content" id="tc4">
+      <div class="panel" id="cov-panel"><div class="empty">실행 대기 — Run Pipeline 후 표시됩니다</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// ENGINE DATA v3
+// ══════════════════════════════════════
+const SCHEMA={
+  ROTATION:{color:"#5b8def",features:{x_factor:{range:[0,3],dir:"+good"},thorax_rotation:{range:[0,3],dir:"+good"},pelvis_rotation:{range:[0,3],dir:"+good"},rotation_source:{range:[0,3],dir:"type"},rotation_completion:{range:[0,3],dir:"+good"},early_turn:{range:[0,3],dir:"-bad"}}},
+  POSTURE:{color:"#e07840",features:{loss_of_posture:{range:[0,3],dir:"-bad"},early_extension:{range:[0,3],dir:"-bad"},standing_up:{range:[0,3],dir:"-bad"},ee_timing:{range:[0,2],dir:"type"}}},
+  PRESSURE:{color:"#5bc4ee",features:{pressure_shift_quality:{range:[0,3],dir:"+good"},trail_heel_load:{range:[0,2],dir:"type"},ground_force_usage:{range:[0,3],dir:"+good"},sway_severity:{range:[0,3],dir:"-bad"},reverse_pivot_severity:{range:[0,3],dir:"-bad"},weight_transfer_completion:{range:[0,3],dir:"+good"}}},
+  LEAD_SIDE:{color:"#2ecc8a",features:{lead_leg_stability:{range:[0,3],dir:"+good"},lead_side_acceptance:{range:[0,3],dir:"+good"},slide_tendency:{range:[0,3],dir:"-bad"}}},
+  TRAIL_SIDE:{color:"#8b6fdd",features:{trail_push:{range:[0,2],dir:"+good"},trail_foot_control:{range:[0,2],dir:"+good"}}},
+  SEQUENCE:{color:"#dd6fa0",features:{kinematic_sequence:{range:[0,3],dir:"type"}}},
+  RELEASE:{color:"#c4973a",features:{release_timing:{range:[0,3],dir:"type"},release_pattern:{range:[0,3],dir:"type"},shaft_lean:{range:[0,2],dir:"+good"},low_point_position:{range:[0,2],dir:"type"}}},
+  ARM_PLANE:{color:"#9b59b6",features:{arm_lift_compensation:{range:[0,2],dir:"-bad"},hand_path:{range:[0,3],dir:"type"},ott_severity:{range:[0,3],dir:"-bad"}}},
+  IMPACT:{color:"#e05a5a",features:{impact_stability:{range:[0,3],dir:"+good"},club_path_tendency:{range:[0,2],dir:"type"}}},
+};
+
+const NODES={
+  N01:{id:"N01",name:"Pressure Shift Failure",ko:"압력 이동 실패",layer:"root_cause",pw:3,
+    desc:"Trail→Lead 압력 이동 미발생. 지면반력 기반 붕괴의 시작점.",
+    feats:[{f:"pressure_shift_quality",op:"<=",v:1,w:3},{f:"weight_transfer_completion",op:"<=",v:1,w:2},{f:"ground_force_usage",op:"<=",v:1,w:2},{f:"trail_heel_load",op:">=",v:2,w:1}],
+    ms:3,rmc:2,rp:["pressure_shift_quality","weight_transfer_completion"]},
+  N02:{id:"N02",name:"Lead Side Collapse",ko:"리드 사이드 붕괴",layer:"root_cause",pw:3,
+    desc:"Lead 무릎·고관절이 다운스윙 시 버텨주지 못하고 목표 방향으로 무너짐.",
+    feats:[{f:"lead_leg_stability",op:"<=",v:1,w:3},{f:"lead_side_acceptance",op:"<=",v:1,w:2},{f:"slide_tendency",op:">=",v:2,w:2}],
+    ms:3,rmc:2,rp:["lead_leg_stability"]},
+  N03:{id:"N03",name:"Reverse Pivot",ko:"리버스 피벗",layer:"root_cause",pw:3,
+    desc:"백스윙 시 체중이 Lead발로 역이동 → 다운스윙 정상 전이 불가능.",
+    feats:[{f:"reverse_pivot_severity",op:">=",v:2,w:3},{f:"weight_transfer_completion",op:"<=",v:1,w:2},{f:"sway_severity",op:">=",v:1,w:1}],
+    ms:3,rmc:2,rp:["reverse_pivot_severity"]},
+  N04:{id:"N04",name:"Rotation Stall",ko:"회전 정체",layer:"root_cause",pw:2,
+    desc:"흉곽/골반 회전이 임팩트 직전 정체. 운동연쇄(Kinematic Sequence) 단절.",
+    feats:[{f:"rotation_completion",op:"<=",v:1,w:3},{f:"early_turn",op:">=",v:2,w:2},{f:"kinematic_sequence",op:"<=",v:1,w:2},{f:"thorax_rotation",op:"<=",v:1,w:1}],
+    ms:3,rmc:2,rp:["rotation_completion","early_turn"]},
+  N05:{id:"N05",name:"Thorax Rotation Deficit",ko:"흉곽 회전 부족",layer:"root_cause",pw:3,
+    desc:"가동성(Mobility) 제한으로 흉곽 회전이 물리적으로 불가능. 신체 평가 필요.",
+    feats:[{f:"thorax_rotation",op:"<=",v:1,w:3},{f:"x_factor",op:"<=",v:1,w:2}],
+    ms:3,rmc:2,rp:["thorax_rotation"],flag:"physical_assessment_required"},
+  N06:{id:"N06",name:"Slide",ko:"슬라이드",layer:"compensation",pw:2,
+    desc:"회전 대신 측면 이동으로 보상. Lead side 수평 이동으로 회전축 소실.",
+    feats:[{f:"slide_tendency",op:">=",v:2,w:3},{f:"lead_leg_stability",op:"<=",v:1,w:2},{f:"lead_side_acceptance",op:"<=",v:1,w:1}],
+    ms:3,rmc:2,rp:["slide_tendency"]},
+  N07:{id:"N07",name:"Pelvis Stall",ko:"골반 정체",layer:"compensation",pw:2,bottleneck:true,
+    desc:"골반 회전이 임팩트 존에서 멈춤. 병목(Bottleneck) — 다수 Result로 분기.",
+    feats:[{f:"pelvis_rotation",op:"<=",v:1,w:3},{f:"kinematic_sequence",op:"<=",v:1,w:2},{f:"rotation_completion",op:"<=",v:1,w:1}],
+    ms:3,rmc:2,rp:["pelvis_rotation"]},
+  N08:{id:"N08",name:"Arm Dominant Sequence",ko:"팔 주도 시퀀스",layer:"compensation",pw:1,
+    desc:"팔이 하체 선행 없이 스윙 주도. OTT/Early Release의 공통 원인.",
+    feats:[{f:"rotation_source",op:"==",v:0,w:3},{f:"arm_lift_compensation",op:">=",v:1,w:2},{f:"kinematic_sequence",op:"<=",v:1,w:2}],
+    ms:3,rmc:2,rp:["rotation_source","arm_lift_compensation"]},
+  N09:{id:"N09",name:"Hip Thrust",ko:"힙 쓰러스트",layer:"compensation",pw:1,
+    desc:"골반이 회전 없이 타깃 방향으로 밀림. Early Extension의 직접 전조.",
+    feats:[{f:"early_extension",op:">=",v:2,w:3},{f:"standing_up",op:">=",v:1,w:2},{f:"loss_of_posture",op:">=",v:1,w:1}],
+    ms:3,rmc:2,rp:["early_extension"]},
+  N10:{id:"N10",name:"Arm Lift Compensation",ko:"팔 리프트 보상",layer:"compensation",pw:1,
+    desc:"흉곽 회전 부족을 팔을 들어올려 보상 → 백스윙 플레인 이탈.",
+    feats:[{f:"arm_lift_compensation",op:">=",v:1,w:3},{f:"hand_path",op:"<=",v:1,w:2}],
+    ms:3,rmc:2,rp:["arm_lift_compensation"]},
+  N11:{id:"N11",name:"Early Extension",ko:"조기 신전",layer:"cluster_result",cluster:"C01",pw:0,
+    desc:"임팩트 직전 척추 자세각 손실. 클럽 통과 공간 소실의 최종 결과.",
+    feats:[{f:"early_extension",op:">=",v:2,w:3},{f:"standing_up",op:">=",v:1,w:2},{f:"ee_timing",op:">=",v:0,w:1}],
+    ms:4,rmc:2,rp:["early_extension","standing_up"]},
+  N12:{id:"N12",name:"Over The Top",ko:"OTT",layer:"cluster_result",cluster:"C02",pw:0,
+    desc:"다운스윙 Out-In 경로. 슬라이스/Pull의 직접 원인.",
+    feats:[{f:"ott_severity",op:">=",v:2,w:3},{f:"hand_path",op:"<=",v:1,w:2}],
+    ms:4,rmc:2,rp:["ott_severity"]},
+  N13:{id:"N13",name:"Early Release",ko:"조기 릴리즈",layer:"cluster_result",cluster:"C06",pw:0,
+    desc:"임팩트 전 손목 꺾임. Shaft lean 손실 → 뒤땅/얇게 맞음.",
+    feats:[{f:"release_timing",op:"<=",v:1,w:3},{f:"release_pattern",op:">=",v:1,w:2},{f:"shaft_lean",op:"<=",v:0,w:2}],
+    ms:4,rmc:3,rp:["release_timing","release_pattern"]},
+};
+
+const EDGES=[
+  {from:"N01",to:"N07",s:"strong",   note:"압력 실패 → 골반 이동 불가"},
+  {from:"N01",to:"N09",s:"moderate", note:"압력 없이 둔부 밀기 보상"},
+  {from:"N01",to:"N13",s:"strong",   note:"체중 뒤 → Flip release"},
+  {from:"N02",to:"N06",s:"strong",   note:"리드 붕괴 → Slide 직결"},
+  {from:"N02",to:"N09",s:"moderate", note:"리드 무너짐 → EE 보상"},
+  {from:"N03",to:"N01",s:"strong",   note:"리버스 피벗 → 압력 이동 실패"},
+  {from:"N03",to:"N07",s:"moderate", note:"백스윙 역이동 → 골반 정체"},
+  {from:"N04",to:"N07",s:"strong",   note:"회전 정체 → 골반 정체 동반"},
+  {from:"N04",to:"N08",s:"strong",   note:"회전 없음 → 팔 주도로 전환"},
+  {from:"N04",to:"N09",s:"moderate", note:"회전 정체 → 힙 쓰러스트"},
+  {from:"N04",to:"N11",s:"weak",     note:"심한 회전 정체 → EE 직행"},
+  {from:"N05",to:"N04",s:"strong",   note:"흉곽 가동성 부족 → 회전 정체"},
+  {from:"N05",to:"N10",s:"strong",   note:"흉곽 부족 → 팔 리프트 보상"},
+  {from:"N06",to:"N07",s:"strong",   note:"슬라이드 → 골반 회전 억제"},
+  {from:"N07",to:"N09",s:"strong",   note:"골반 정체 → 힙 쓰러스트 (병목)"},
+  {from:"N07",to:"N08",s:"moderate", note:"골반 정체 → 팔 주도로 전환"},
+  {from:"N08",to:"N09",s:"moderate", note:"팔 주도 → EE 동반"},
+  {from:"N08",to:"N12",s:"strong",   note:"팔 주도 → OTT 궤도"},
+  {from:"N08",to:"N13",s:"strong",   note:"팔 주도 → 조기 릴리즈"},
+  {from:"N09",to:"N11",s:"strong",   note:"힙 쓰러스트 → Early Extension"},
+  {from:"N10",to:"N12",s:"strong",   note:"팔 리프트 → OTT"},
+  {from:"N10",to:"N08",s:"moderate", note:"팔 리프트 → 팔 주도 시퀀스"},
+];
+
+const CLUSTERS={
+  C01:{name:"Early Extension",     ko:"조기 신전",        rules:[{f:"early_extension",op:">=",v:2},{f:"standing_up",op:">=",v:1}],         rp:["early_extension","standing_up"], ra:[]},
+  C02:{name:"Over The Top",        ko:"OTT / 가파른 궤도", rules:[{f:"ott_severity",op:">=",v:2},{f:"hand_path",op:"<=",v:1}],              rp:["ott_severity"],                   ra:[]},
+  C03:{name:"Reverse Pivot",       ko:"리버스 피벗",       rules:[{f:"reverse_pivot_severity",op:">=",v:2},{f:"weight_transfer_completion",op:"<=",v:1}], rp:["reverse_pivot_severity"], ra:[]},
+  C04:{name:"Sway",                ko:"스웨이",            rules:[{f:"sway_severity",op:">=",v:2},{f:"trail_heel_load",op:">=",v:1}],        rp:["sway_severity","trail_heel_load"],ra:[]},
+  C05:{name:"Slide",               ko:"슬라이드",           rules:[{f:"slide_tendency",op:">=",v:2},{f:"lead_leg_stability",op:"<=",v:1}],   rp:["slide_tendency"],                 ra:[]},
+  C06:{name:"Early Release",       ko:"조기 릴리즈",        rules:[{f:"release_timing",op:"<=",v:1},{f:"release_pattern",op:">=",v:1}],      rp:["release_pattern"],                ra:[]},
+  C07:{name:"Rotation Stall",      ko:"회전 정체",          rules:[{f:"rotation_completion",op:"<=",v:1},{f:"early_turn",op:">=",v:1}],      rp:["early_turn"],                     ra:[]},
+  C08:{name:"Lead Side Collapse",  ko:"리드 사이드 붕괴",   rules:[{f:"lead_leg_stability",op:"<=",v:1},{f:"lead_side_acceptance",op:"<=",v:1},{f:"slide_tendency",op:">=",v:1}],rp:["slide_tendency"],ra:[]},
+  C09:{name:"Pressure Shift Fail", ko:"압력 이동 실패",     rules:[{f:"pressure_shift_quality",op:"<=",v:1},{f:"weight_transfer_completion",op:"<=",v:1},{f:"ground_force_usage",op:"<=",v:1}],rp:[],ra:["sway_severity","reverse_pivot_severity","trail_heel_load","slide_tendency"]},
+  C10:{name:"Dynamic Posture Loss",ko:"동적 자세 손실",     rules:[{f:"loss_of_posture",op:">=",v:2}],                                        rp:["loss_of_posture"],                ra:[]},
+};
+
+const CHAINS={
+  "C01-A":{cluster:"C01",name:"Pressure Shift Failure → EE",ko:"압력이동 실패형",badge_color:"#5bc4ee",
+    ra:[{f:"pressure_shift_quality",op:"<=",v:1},{f:"trail_heel_load",op:">=",v:2},{f:"sway_severity",op:">=",v:1}],
+    steps:[
+      {label:"Pressure Shift Failure",type:"cause",desc:"백스윙 시 압력이 Trail 뒷꿈치에 쏠리거나 이동 미발생",feats:["pressure_shift_quality","trail_heel_load"]},
+      {label:"Pelvis Stall",type:"comp",desc:"압력 기반 없이 골반이 전방 이동 못하고 정체 (N07 Bottleneck 활성)",feats:["pelvis_rotation","kinematic_sequence"]},
+      {label:"Hip Thrust Compensation",type:"comp",desc:"골반 정체 보상 위해 둔부를 타깃 방향으로 밀어냄",feats:["early_extension","standing_up"]},
+      {label:"Early Extension",type:"result",desc:"척추 자세각 손실 · 임팩트 직전 몸이 일어남",feats:["early_extension","ee_timing","loss_of_posture"]},
+    ],
+    track_a:"압력이동 없이 팔 보상 → EE로 공간 확보",
+    track_b:"Trail foot ground contact 개선 → Pressure shift 선행 → 골반 이동 순서 복원",
+    drill:"Right heel pressure → Left foot stomp sequence",
+  },
+  "C01-B":{cluster:"C01",name:"Lead Side Collapse → EE",ko:"리드 사이드 붕괴형",badge_color:"#2ecc8a",
+    ra:[{f:"lead_leg_stability",op:"<=",v:1},{f:"slide_tendency",op:">=",v:2},{f:"lead_side_acceptance",op:"<=",v:1}],
+    steps:[
+      {label:"Lead Leg Instability",type:"cause",desc:"다운스윙 시 왼발이 지면을 받아내지 못하고 무릎이 꺾이거나 밀림",feats:["lead_leg_stability","lead_side_acceptance"]},
+      {label:"Lateral Slide",type:"comp",desc:"Lead side가 회전 대신 목표 방향으로 수평이동 → 회전축 소실",feats:["slide_tendency","weight_transfer_completion"]},
+      {label:"Space Loss",type:"comp",desc:"횡이동으로 클럽 통과 공간 소실 → 팔이 멀어지거나 몸이 일어섬",feats:["arm_lift_compensation","ott_severity"]},
+      {label:"Early Extension",type:"result",desc:"공간 확보 위해 척추 신전 → 키 커짐 + 타점 불안정",feats:["early_extension","standing_up"]},
+    ],
+    track_a:"Lead knee slide로 공간 확보 시도 → EE로 추가 보상",
+    track_b:"Lead leg wall 형성 → 회전 공간 확보 → EE 불필요해짐",
+    drill:"Left knee flex hold → Hip internal rotation drill",
+  },
+  "C01-C":{cluster:"C01",name:"Rotation Stall → EE",ko:"회전 정체형",badge_color:"#e07840",
+    ra:[{f:"early_turn",op:">=",v:2},{f:"rotation_completion",op:"<=",v:1},{f:"kinematic_sequence",op:"<=",v:1}],
+    steps:[
+      {label:"Early Shoulder Turn",type:"cause",desc:"다운스윙 시작 시 어깨/상체가 먼저 열림 → 하체 선행 없음",feats:["early_turn","kinematic_sequence","rotation_source"]},
+      {label:"Body Stall at Impact",type:"comp",desc:"상체가 먼저 열린 후 몸 전체가 임팩트 존에서 정체",feats:["rotation_completion","kinematic_sequence"]},
+      {label:"Hip Extension Substitute",type:"comp",desc:"회전이 막히자 둔부 신전으로 파워 대체 시도",feats:["early_extension","standing_up"]},
+      {label:"Early Extension",type:"result",desc:"회전 없이 몸이 일어서는 패턴 고착 → 임팩트 불안정",feats:["early_extension","ee_timing","impact_stability"]},
+    ],
+    track_a:"상체 조기개방 → 몸 정체 → EE로 파워 보완",
+    track_b:"Transition 순서 교정 (하체 선행) → 상체 따라옴 → 회전 지속 → EE 불필요",
+    drill:"Hip bump → Chest closed drill / Squat-to-rotate sequence",
+  },
+  "C02-A":{cluster:"C02",name:"Early Turn → OTT",ko:"조기개방형",badge_color:"#e07840",
+    ra:[{f:"early_turn",op:">=",v:2},{f:"kinematic_sequence",op:"<=",v:1}],
+    steps:[
+      {label:"Early Shoulder Open",type:"cause",desc:"다운스윙 시 어깨가 먼저 열려 클럽이 아웃사이드 경로로 진입",feats:["early_turn","kinematic_sequence"]},
+      {label:"Steep Downswing Path",type:"comp",desc:"아웃사이드 궤도로 클럽 헤드가 볼 위에서 내리꽂힘",feats:["hand_path","ott_severity"]},
+      {label:"OTT / Out-In Path",type:"result",desc:"Out-In Path → 슬라이스 또는 Pull Hook",feats:["ott_severity","club_path_tendency","hand_path"]},
+    ],
+    track_a:"상체 조기개방 → OTT 궤도 → 슬라이스/Pull",
+    track_b:"Transition에서 Trail elbow drop → Shallow path 복원",
+    drill:"Elbow drop drill / Trail arm tuck sequence",
+  },
+  "C02-B":{cluster:"C02",name:"Arm Lift → OTT",ko:"팔 리프트형",badge_color:"#9b59b6",
+    ra:[{f:"arm_lift_compensation",op:">=",v:1},{f:"thorax_rotation",op:"<=",v:1},{f:"x_factor",op:"<=",v:1}],
+    steps:[
+      {label:"Thorax Rotation Deficit",type:"cause",desc:"흉곽 회전 부족으로 백스윙 탑에서 코일 미형성 (N05 활성)",feats:["thorax_rotation","x_factor"]},
+      {label:"Arm Lift Compensation",type:"comp",desc:"회전 부족을 팔을 들어올려 보상 → 플레인 위로 이탈 (N10 활성)",feats:["arm_lift_compensation"]},
+      {label:"Outside Attack Path",type:"comp",desc:"높이 올라간 팔이 다운스윙에서 아웃사이드로 내려옴",feats:["hand_path","ott_severity"]},
+      {label:"OTT",type:"result",desc:"가파른 Out-In 경로 확정 (N12 발화)",feats:["ott_severity","club_path_tendency"]},
+    ],
+    track_a:"흉곽 회전 부족 → 팔 리프트 → OTT",
+    track_b:"흉곽 유연성 개선 → 회전 확보 → 팔이 자연스럽게 플레인 진입",
+    drill:"Thorax rotation stretch → Connected takeaway drill",
+  },
+  "C06-A":{cluster:"C06",name:"Trail Arm Dominant → Cast",ko:"오른팔 주도형",badge_color:"#c4973a",
+    ra:[{f:"rotation_source",op:"==",v:0},{f:"arm_lift_compensation",op:">=",v:1}],
+    steps:[
+      {label:"Arm Dominant Sequence",type:"cause",desc:"팔이 스윙을 주도 → 하체 지면력 미활용 (N08 활성)",feats:["rotation_source","kinematic_sequence"]},
+      {label:"Trail Arm Extension",type:"comp",desc:"오른팔이 다운스윙 초반에 펴지며 클럽을 앞으로 던짐",feats:["arm_lift_compensation"]},
+      {label:"Cast / Early Release",type:"result",desc:"손목 꺾임 조기 발생 → Shaft lean 손실 → 뒤땅 (N13 발화)",feats:["release_timing","release_pattern","shaft_lean","low_point_position"]},
+    ],
+    track_a:"팔 주도 → Trail arm cast → Low point 앞으로 이동",
+    track_b:"Lag 드릴 + 하체 선행 → Trail elbow 자연 접힘 유지",
+    drill:"Lag pressure drill / Impact bag with shaft lean",
+  },
+  "C06-B":{cluster:"C06",name:"Pressure Failure → Flip",ko:"압력 실패형",badge_color:"#5bc4ee",
+    ra:[{f:"weight_transfer_completion",op:"<=",v:1},{f:"ground_force_usage",op:"<=",v:1}],
+    steps:[
+      {label:"Weight Stays Trail",type:"cause",desc:"다운스윙에서 체중이 Trail발에 남음 → 저점이 뒤로 밀림 (N01 활성)",feats:["weight_transfer_completion","pressure_shift_quality"]},
+      {label:"Low Point Compensation",type:"comp",desc:"뒤로 밀린 저점을 맞추기 위해 손목을 앞으로 뒤집음",feats:["low_point_position","shaft_lean"]},
+      {label:"Flip Release",type:"result",desc:"헤드가 손을 추월 → 체중 뒤에 남은 상태로 임팩트 (N13 발화)",feats:["release_pattern","shaft_lean","low_point_position"]},
+    ],
+    track_a:"체중 뒤 → Low point 보상 → Flip",
+    track_b:"체중이동 선행 → Low point 자연 이동 → Shaft lean 유지",
+    drill:"Step drill / Forward press impact position",
+  },
+};
+
+const LC={root_cause:"#e07840",compensation:"#c4973a",cluster_result:"#e05a5a"};
+
+// ══════════════════════════════════════
+// ENGINE LOGIC
+// ══════════════════════════════════════
+function chkOp(val,op,v){
+  if(op===">=") return val>=v;
+  if(op==="<=") return val<=v;
+  if(op==="==") return val===v;
+  return false;
+}
+
+function fullVec(partial){
+  const base={};
+  Object.values(SCHEMA).forEach(fd=>Object.keys(fd.features).forEach(f=>{base[f]=0;}));
+  return {...base,...partial};
+}
+
+function activateNodes(vec){
+  const res={};
+  Object.entries(NODES).forEach(([nid,n])=>{
+    // TestRunner: rp 체크 생략 — vec의 0은 "미응답"이 아닌 유효한 진단값
+    // (Survey는 undefined/null 기준 rp 검사 수행)
+    let score=0, condMet=0;
+    const featsDetail=n.feats.map(fc=>{
+      const val=vec[fc.f]||0;
+      const pass=chkOp(val,fc.op,fc.v);
+      if(pass){score+=fc.w;condMet++;}
+      return{...fc,val,pass};
+    });
+    const active=score>=n.ms && condMet>=n.rmc;
+    let reason="";
+    if(!active){
+      if(score<n.ms) reason=`점수 부족 (${score}/${n.ms})`;
+      else reason=`조건 수 부족 (${condMet}/${n.rmc})`;
+    }
+    res[nid]={active,score,condMet,reason,rpFail:[],featsDetail};
+  });
+  return res;
+}
+
+function findPaths(nodeMap){
+  const actIds=Object.keys(nodeMap).filter(id=>nodeMap[id].active);
+  const resIds=actIds.filter(id=>NODES[id]?.layer==="cluster_result");
+  const all=[];
+  resIds.forEach(rid=>{
+    function dfs(cur,path,vis){
+      const ups=EDGES.filter(e=>e.to===cur&&actIds.includes(e.from)&&!vis.has(e.from));
+      if(ups.length===0){all.push([...path].reverse());return;}
+      ups.forEach(e=>{vis.add(e.from);path.push(e.from);dfs(e.from,path,vis);path.pop();vis.delete(e.from);});
+    }
+    dfs(rid,[rid],new Set([rid]));
+  });
+  return all.sort((a,b)=>b.length-a.length);
+}
+
+function calcTrackB(nodeMap,paths){
+  const actIds=Object.keys(nodeMap).filter(id=>nodeMap[id].active);
+  const sc={};
+  actIds.forEach(id=>{
+    const n=NODES[id];
+    if(!n||n.layer==="cluster_result") return;
+    sc[id]={base:n.pw,upstream:0,bottleneck:n.bottleneck?1:0};
+  });
+  const resIds=actIds.filter(id=>NODES[id]?.layer==="cluster_result");
+  resIds.forEach(rid=>{
+    const vis={};
+    const q=[{id:rid,dist:0}];
+    while(q.length){
+      const {id,dist}=q.shift();
+      EDGES.forEach(e=>{
+        if(e.to===id&&actIds.includes(e.from)&&!vis[e.from]){
+          vis[e.from]=dist+1;q.push({id:e.from,dist:dist+1});
+        }
+      });
+    }
+    Object.entries(vis).forEach(([nid,d])=>{if(sc[nid]) sc[nid].upstream=Math.max(sc[nid].upstream,d);});
+  });
+  return Object.entries(sc)
+    .map(([id,s])=>({id,n:NODES[id],base:s.base,up:Math.min(s.upstream,2),bt:s.bottleneck,total:s.base+Math.min(s.upstream,2)+s.bottleneck}))
+    .sort((a,b)=>b.total-a.total);
+}
+
+// ══════════════════════════════════════
+// RENDER: NODE EXPLAIN
+// ══════════════════════════════════════
+function renderNodeExplain(nodeMap){
+  const active=[],inactive=[];
+  const layerOrder={root_cause:0,compensation:1,cluster_result:2};
+  Object.entries(nodeMap).sort((a,b)=>(layerOrder[NODES[a[0]]?.layer]||0)-(layerOrder[NODES[b[0]]?.layer]||0))
+    .forEach(([nid,na])=>{
+      if(na.active) active.push([nid,na]);
+      else inactive.push([nid,na]);
+    });
+
+  document.getElementById('tb0').textContent=`${active.length}활성/${inactive.length}비활성`;
+
+  function renderBlock(nid,na){
+    const n=NODES[nid];
+    const lc=LC[n.layer]||"#888";
+    const statusClass=na.active?"active":"inactive";
+    const statusText=na.active?"✓ 활성":"✗ 비활성";
+
+    const scoreColor=na.active?"var(--green)":na.score>0?"var(--gold)":"var(--t3)";
+
+    let featsHtml=na.featsDetail.map(fd=>`
+      <div class="tf-row ${fd.pass?"pass":"fail"}">
+        <span class="tf-icon">${fd.pass?"✓":"✗"}</span>
+        <span class="tf-feat ${fd.pass?"pass":""}">${fd.f}</span>
+        <span class="tf-op">${fd.op}${fd.v} <span style="color:var(--t3)">= ${fd.val}</span></span>
+        <span class="tf-w ${fd.pass?"":"fail"}">${fd.pass?"+"+fd.w:"—"}</span>
+      </div>`).join('');
+
+    let reasonText="";
+    if(na.active) reasonText=`발화 성공: score ${na.score} ≥ ${n.ms}, 조건 ${na.condMet} ≥ ${n.rmc}`;
+    else reasonText=na.reason;
+
+    return `<div class="trace-block">
+      <div class="trace-header">
+        <span class="trace-node-id">${nid}</span>
+        <span class="trace-node-name" style="color:${lc}">${n.name}</span>
+        <span class="trace-status ${statusClass}">${statusText}</span>
+      </div>
+      <div class="trace-score-bar">
+        <span class="tsb-label">Score</span>
+        <span class="tsb-total" style="color:${scoreColor}">${na.score}</span>
+        <span class="tsb-slash">/</span>
+        <span class="tsb-min">${n.ms}</span>
+        <span class="tsb-cond">조건 ${na.condMet}/${n.rmc}개</span>
+      </div>
+      <div class="trace-feats">${featsHtml}</div>
+      ${n.desc?`<div style="font-size:9px;color:var(--t3);margin:4px 0 2px;line-height:1.5;padding:4px 6px;background:var(--s2);border-radius:3px">${n.desc}</div>`:''}
+      <div class="trace-reason ${na.active?"active":"miss"}">${reasonText}</div>
+    </div>`;
+  }
+
+  const layers={root_cause:"Root Cause",compensation:"Compensation",cluster_result:"Result"};
+  let aHtml='<div class="sec-title">활성 노드 ('+active.length+'개)</div>';
+  let prevLayer="";
+  active.forEach(([nid,na])=>{
+    const l=NODES[nid]?.layer;
+    if(l!==prevLayer){aHtml+=`<div class="layer-sep" style="color:${LC[l]||"#888"}">${layers[l]||l}</div>`;prevLayer=l;}
+    aHtml+=renderBlock(nid,na);
+  });
+
+  let iHtml='<div class="sec-title">비활성 노드 ('+inactive.length+'개)</div>';
+  prevLayer="";
+  inactive.forEach(([nid,na])=>{
+    const l=NODES[nid]?.layer;
+    if(l!==prevLayer){iHtml+=`<div class="layer-sep">${layers[l]||l}</div>`;prevLayer=l;}
+    iHtml+=renderBlock(nid,na);
+  });
+
+  document.getElementById('ne-active').innerHTML=aHtml;
+  document.getElementById('ne-inactive').innerHTML=iHtml;
+}
+
+// ══════════════════════════════════════
+// RENDER: EDGE EXPLAIN
+// ══════════════════════════════════════
+function renderEdgeExplain(nodeMap,paths){
+  const actIds=new Set(Object.keys(nodeMap).filter(id=>nodeMap[id].active));
+
+  function onPath(f,t){
+    return paths.some(p=>{for(let i=0;i<p.length-1;i++) if(p[i]===f&&p[i+1]===t) return true;return false;});
+  }
+
+  // Group: adopted → possible → inactive
+  const adopted=[],possible=[],inactive_e=[];
+  EDGES.forEach(e=>{
+    const fAct=actIds.has(e.from),tAct=actIds.has(e.to);
+    const onP=onPath(e.from,e.to);
+    if(onP) adopted.push({...e,onP,fAct,tAct});
+    else if(fAct&&tAct) possible.push({...e,onP,fAct,tAct});
+    else inactive_e.push({...e,onP,fAct,tAct});
+  });
+
+  document.getElementById('tb1').textContent=`채택 ${adopted.length}`;
+
+  function edgeBlock(e,label,labelColor){
+    const fn=NODES[e.from]; const tn=NODES[e.to];
+    const fc=LC[fn?.layer]||"#888"; const tc=LC[tn?.layer]||"#888";
+    const strClass=e.onP?e.s:"inactive";
+    const adoptText=e.onP?"경로 채택":e.fAct&&e.tAct?"양단 활성 (미채택)":"비활성";
+    const adoptClass=e.onP?"yes":"";
+    return `<div class="edge-block">
+      <span class="edge-from" style="color:${fc}">${e.from}<br><span style="font-size:9px;font-weight:400;color:var(--t3)">${fn?.name||""}</span></span>
+      <span class="edge-arrow">→</span>
+      <span class="edge-to" style="color:${tc}">${e.to}<br><span style="font-size:9px;font-weight:400;color:var(--t3)">${tn?.name||""}</span></span>
+      <span class="edge-str ${strClass}">${e.s}</span>
+      <span class="edge-adopt ${adoptClass}">${adoptText}</span>
+      ${e.note?`<span style="font-size:9px;color:var(--t3);margin-left:auto;text-align:right;max-width:140px">${e.note}</span>`:''}
+    </div>`;
+  }
+
+  let html='';
+  if(adopted.length){
+    html+=`<div class="sec-title" style="color:var(--green)">채택된 엣지 (Primary Path)</div>`;
+    adopted.forEach(e=>html+=edgeBlock(e));
+  }
+  if(possible.length){
+    html+=`<div class="sec-title" style="color:var(--gold);margin-top:10px">양단 활성 — 미채택 (대안 경로 후보)</div>`;
+    possible.forEach(e=>html+=edgeBlock(e));
+  }
+  if(inactive_e.length){
+    html+=`<div class="sec-title" style="margin-top:10px">비활성 엣지 (${inactive_e.length}개)</div>`;
+    inactive_e.forEach(e=>html+=edgeBlock(e));
+  }
+
+  document.getElementById('ee-panel').innerHTML=html||'<div class="empty">엣지 없음</div>';
+}
+
+// ══════════════════════════════════════
+// RENDER: FULL TRACE
+// ══════════════════════════════════════
+function renderFullTrace(caseId,golfer,date,vec,nodeMap,paths,trackB){
+  const actIds=Object.keys(nodeMap).filter(id=>nodeMap[id].active);
+  const resultIds=actIds.filter(id=>NODES[id]?.layer==="cluster_result");
+  const rootIds=trackB.map(t=>t.id).filter(id=>NODES[id]?.layer==="root_cause");
+
+  let lines=[];
+  lines.push(`═══════════════════════════════════════════`);
+  lines.push(`DOH REASONING TRACE`);
+  lines.push(`Case   : ${caseId}`);
+  lines.push(`Golfer : ${golfer}`);
+  lines.push(`Date   : ${date}`);
+  lines.push(`Engine : v3 (Causal DAG)`);
+  lines.push(`═══════════════════════════════════════════`);
+  lines.push(``);
+  lines.push(`── STEP 1: INPUT FEATURES (비정상값만) ──`);
+  Object.entries(vec).forEach(([f,v])=>{if(v>0) lines.push(`  ${f.padEnd(32)} = ${v}`);});
+  lines.push(``);
+  lines.push(`── STEP 2: NODE ACTIVATION ──`);
+  Object.entries(nodeMap).forEach(([nid,na])=>{
+    const n=NODES[nid];
+    const status=na.active?"✓ ACTIVE":"✗ INACTIVE";
+    lines.push(`  [${nid}] ${n.name.padEnd(28)} ${status}`);
+    if(na.active){
+      lines.push(`         score=${na.score}/${n.ms}, cond=${na.condMet}/${n.rmc}`);
+      na.featsDetail.filter(f=>f.pass).forEach(f=>{
+        lines.push(`         ✓ ${f.f} ${f.op}${f.v} (val=${f.val}) +${f.w}`);
+      });
+    } else {
+      lines.push(`         → ${na.reason||"비활성"}`);
+    }
+  });
+  lines.push(``);
+  lines.push(`── STEP 3: PATH TRACING ──`);
+  if(paths.length===0){
+    lines.push(`  결과 없음: 활성 Result 노드 없음`);
+  } else {
+    paths.slice(0,3).forEach((p,i)=>{
+      const isWeak=p.length===2&&EDGES.find(e=>e.from===p[0]&&e.to===p[1]&&e.s==="weak");
+      lines.push(`  Path ${i+1}${isWeak?" [WEAK — 임상검증 필요]":""}:`);
+      lines.push(`  ${p.join(" → ")}`);
+      lines.push(`  ${p.map(id=>NODES[id]?.name||id).join(" → ")}`);
+      lines.push(``);
+    });
+  }
+  lines.push(`── STEP 4: CLUSTER RESULT ──`);
+  if(resultIds.length===0) lines.push(`  정상 패턴 또는 데이터 부족`);
+  resultIds.forEach(id=>lines.push(`  ${NODES[id].cluster} — ${NODES[id].name} (${NODES[id].ko})`));
+  lines.push(``);
+  lines.push(`── STEP 5: TRACK B PRIORITY ──`);
+  trackB.forEach((t,i)=>{
+    lines.push(`  ${i+1}. [${t.id}] ${t.n.name.padEnd(28)} score=${t.total} (base=${t.base}+up=${t.up}+bt=${t.bt})`);
+  });
+  lines.push(``);
+  lines.push(`═══════════════════════════════════════════`);
+
+  const raw=lines.join("\n");
+  document.getElementById('ft-panel').innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div class="sec-title" style="margin-bottom:0">Reasoning Trace</div>
+      <button onclick="copyTrace()" style="font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid var(--b2);background:transparent;color:var(--t3);cursor:pointer;font-family:inherit;">Copy</button>
+    </div>
+    <pre class="trace-full" id="trace-raw">${raw}</pre>`;
+}
+
+window.copyTrace=function(){
+  const t=document.getElementById('trace-raw');
+  if(t) navigator.clipboard.writeText(t.textContent);
+};
+
+// ══════════════════════════════════════
+// CLUSTER / CHAIN ENGINE
+// ══════════════════════════════════════
+function checkRule(vec,r){
+  const v=vec[r.f]||0;
+  if(r.op===">=") return v>=r.v;
+  if(r.op==="<=") return v<=r.v;
+  if(r.op==="==") return v===r.v;
+  return false;
+}
+function classifyClusters(vec){
+  const matched=[];
+  Object.entries(CLUSTERS).forEach(([cid,cl])=>{
+    if(!cl.rules.every(r=>checkRule(vec,r))) return;
+    // TestRunner: rp 체크 생략 (Survey에서 담당)
+    if(cl.ra.length&&!cl.ra.some(f=>(vec[f]||0)>0)) return;
+    const score=cl.rp.reduce((s,f)=>s+(vec[f]||0),0)+cl.ra.reduce((s,f)=>s+(vec[f]||0),0);
+    matched.push({cid,cl,score});
+  });
+  return matched.sort((a,b)=>b.score-a.score);
+}
+function scoreChain(vec,chain){
+  return chain.ra.reduce((s,r)=>{
+    const v=vec[r.f]||0;
+    if(r.op===">=") return s+(v>=r.v?v:0);
+    if(r.op==="<=") return s+(v<=r.v?Math.max(0,3-v):0);
+    if(r.op==="==") return s+(v===r.v?1:0);
+    return s;
+  },0);
+}
+function selectChains(vec,clusterIds){
+  const result={};
+  clusterIds.forEach(cid=>{
+    const candidates=Object.entries(CHAINS)
+      .filter(([,ch])=>ch.cluster===cid)
+      .map(([chId,ch])=>({chId,ch,score:scoreChain(vec,ch),hasSignal:ch.ra.length===0||ch.ra.some(r=>checkRule(vec,r))}))
+      .filter(c=>c.hasSignal)
+      .sort((a,b)=>b.score-a.score);
+    if(candidates.length>0){
+      const primary=candidates[0];
+      const secondary=candidates.slice(1).filter(c=>c.score>=primary.score*0.6&&c.score>0);
+      result[cid]={primary,secondary};
+    }
+  });
+  return result;
+}
+
+// ══════════════════════════════════════
+// RENDER: RESULT / TRACK B
+// ══════════════════════════════════════
+function renderResult(nodeMap,paths,trackB,caseId){
+  const actIds=Object.keys(nodeMap).filter(id=>nodeMap[id].active);
+  const resultIds=actIds.filter(id=>NODES[id]?.layer==="cluster_result");
+
+  // 클러스터/체인 엔진 실행
+  const vec=cur?cur.vec:{};
+  const clusters=classifyClusters(vec);
+  const clusterIds=clusters.map(c=>c.cid);
+  const chains=selectChains(vec,clusterIds);
+
+  // Left: Track B + Chain
+  let tbHtml='';
+  if(resultIds.length===0&&clusters.length===0){
+    tbHtml='<div class="empty">감지된 클러스터 없음</div>';
+  } else {
+    // 클러스터 요약
+    clusters.forEach(({cid,cl,score})=>{
+      tbHtml+=`<div class="result-summary">
+        <div class="rs-cluster">${cid} — ${cl.name}</div>
+        <div class="rs-sub">${cl.ko} · score ${score}</div>
+      </div>`;
+    });
+    // 체인 진단
+    if(Object.keys(chains).length>0){
+      tbHtml+=`<div class="sec-title" style="margin-bottom:6px;margin-top:10px;color:var(--gold)">인과 체인 진단</div>`;
+      Object.entries(chains).forEach(([cid,{primary,secondary}])=>{
+        const pch=primary.ch;
+        tbHtml+=`<div style="border:1px solid ${pch.badge_color}30;border-radius:4px;padding:8px 10px;margin-bottom:6px;background:${pch.badge_color}08">
+          <div style="font-size:10px;font-weight:700;color:${pch.badge_color};margin-bottom:4px">▶ ${pch.name}</div>
+          <div style="font-size:9px;color:var(--t3);margin-bottom:6px">${pch.ko} · 체인점수 ${primary.score}</div>
+          <div style="font-size:9px;color:var(--t2);line-height:1.6">
+            ${pch.steps.map(s=>`<span style="color:${s.type==='cause'?'var(--orange)':s.type==='result'?'var(--red)':'var(--gold)'}">[${s.type}]</span> ${s.label}`).join(' → ')}
+          </div>
+          <div style="font-size:9px;color:#5BB8FF;margin-top:6px;padding:4px 6px;background:var(--s2);border-radius:3px">📌 ${pch.track_b}</div>
+          <div style="font-size:9px;color:var(--green);margin-top:4px">🏋️ ${pch.drill}</div>
+        </div>`;
+        secondary.forEach(({ch,score:sc})=>{
+          tbHtml+=`<div style="border:1px solid #2a2a2a;border-radius:3px;padding:5px 8px;margin-bottom:4px;font-size:9px;color:var(--t3)">
+            Sub: ${ch.name} (score ${sc})
+          </div>`;
+        });
+      });
+    }
+    tbHtml+=`<div class="sec-title" style="margin-bottom:8px;margin-top:10px">Track B — 교정 우선순위</div>
+    <div class="tb-list">`;
+    trackB.forEach((t,i)=>{
+      const lc=LC[t.n.layer]||"#888";
+      const descTxt=t.n.desc?`<div style="font-size:9px;color:var(--t3);margin-top:2px">${t.n.desc}</div>`:'';
+      tbHtml+=`<div class="tb-item">
+        <span class="tb-rank">${i+1}</span>
+        <div class="tb-body">
+          <div class="tb-name" style="color:${lc}">${t.n.name}</div>
+          <div class="tb-ko">${t.n.ko}</div>
+          ${descTxt}
+          <div class="tb-calc">base:${t.base} + upstream:${t.up} + bottleneck:${t.bt}</div>
+        </div>
+        <span class="tb-total">${t.total}</span>
+      </div>`;
+    });
+    tbHtml+='</div>';
+  }
+  document.getElementById('tb-panel').innerHTML=tbHtml;
+
+  // Right: Verdict
+  const saved=getVerdict(caseId);
+  document.getElementById('vd-panel').innerHTML=`
+    <div class="sec-title">프로 수기 판정</div>
+    <div style="font-size:10px;color:var(--t3);margin-bottom:8px;line-height:1.6">
+      엔진 결과와 실제 관찰 비교.<br>
+      오발화 또는 누락 노드 기록.
+    </div>
+    <div class="verdict-box">
+      <div class="vb-label">판정 메모 — ${caseId}</div>
+      <textarea class="vb-input" id="vi" placeholder="예) N04 발화 맞음. 그런데 실제로는 N09보다 N07이 더 명확했음. E_NEW(N04→N11) 이 케이스에서는 해당 안됨.">${saved}</textarea>
+      <button class="vb-save" onclick="saveVerdict('${caseId}')">저장</button>
+      ${saved?`<div class="vb-saved">저장됨: ${saved}</div>`:""}
+    </div>`;
+}
+
+// ══════════════════════════════════════
+// COVERAGE — Evidence Diversity Map
+// Survey 설계 원칙 §10 기준: Evidence Type 1~4 분류
+// ══════════════════════════════════════
+
+// 설문 질문당 수집하는 Feature와 Evidence Type 매핑
+// [feature_name]: [evidence_type, ...] — 현재 설문에서 각 Feature를 어떤 Type으로 수집하는가
+const EVIDENCE_MAP = {
+  // ROTATION
+  x_factor:              ["T2"],          // 구질 역추론 (Observable Result)
+  thorax_rotation:       ["T3"],          // 회전 느낌 (Subjective Feel)
+  pelvis_rotation:       ["T3"],          // 골반 회전 느낌
+  rotation_source:       ["T3"],          // 스윙 주도 느낌
+  rotation_completion:   ["T2","T3"],     // 팔로스루 구질 + 체감
+  early_turn:            ["T3"],          // 전환 타이밍 느낌
+  // POSTURE
+  loss_of_posture:       ["T3"],          // 자세 변화 느낌
+  early_extension:       ["T2","T3"],     // 임팩트 구질 + 느낌
+  standing_up:           ["T3"],          // 키 커지는 느낌
+  ee_timing:             ["T3"],          // 발생 타이밍 느낌
+  // PRESSURE
+  pressure_shift_quality:["T3"],          // 체중이동 느낌
+  trail_heel_load:       ["T3"],          // 뒷발 느낌
+  ground_force_usage:    ["T3"],          // 지면반력 느낌
+  sway_severity:         ["T2","T3"],     // 타점 불안정 + 느낌
+  reverse_pivot_severity:["T2","T3"],     // 구질 역추론 + 느낌
+  weight_transfer_completion:["T3"],      // 체중이동 완료 느낌
+  // LEAD_SIDE
+  lead_leg_stability:    ["T1","T3"],     // 무릎 위치 직접 + 느낌
+  lead_side_acceptance:  ["T3"],          // 리드 사이드 버팀 느낌
+  slide_tendency:        ["T2","T3"],     // 슬라이드 구질 + 느낌
+  // TRAIL_SIDE
+  trail_push:            [],              // 현재 미수집
+  trail_foot_control:    [],              // 현재 미수집
+  // SEQUENCE
+  kinematic_sequence:    ["T3"],          // 운동연쇄 느낌
+  // RELEASE
+  release_timing:        ["T2","T3"],     // 뒤땅/얇게 맞음 + 느낌
+  release_pattern:       ["T3","T4"],     // 손목 패턴 느낌 + 기술적
+  shaft_lean:            ["T1","T4"],     // 어드레스 포워드프레스 직접 + 숨겨진
+  low_point_position:    ["T2"],          // 뒤땅 위치 역추론
+  // ARM_PLANE
+  arm_lift_compensation: ["T3","T4"],     // 팔 들림 느낌 + 기술적
+  hand_path:             ["T2","T4"],     // 구질 역추론 + 기술적
+  ott_severity:          ["T2"],          // 슬라이스/Pull 역추론
+  // IMPACT
+  impact_stability:      ["T2"],          // 타점 일관성 역추론
+  club_path_tendency:    ["T2"],          // 구질 직접 수집
+};
+
+const ET_LABEL = {T1:"Type1 Direct",T2:"Type2 Result",T3:"Type3 Feel",T4:"Type4 Hidden"};
+const ET_COLOR = {T1:"ct-t1",T2:"ct-t2",T3:"ct-t3",T4:"ct-t4"};
+
+function renderCoverage(vec) {
+  // 전체 Feature 목록 (SCHEMA 기준)
+  const allFeats = {};
+  Object.entries(SCHEMA).forEach(([grp, gd]) => {
+    Object.keys(gd.features).forEach(f => { allFeats[f] = grp; });
+  });
+
+  // 각 Feature별 수집 여부 및 Evidence Diversity 계산
+  let covered = 0, missing = 0, onlyFeel = 0, hasType4 = 0;
+  const rows = [];
+
+  Object.entries(allFeats).forEach(([feat, grp]) => {
+    const types = EVIDENCE_MAP[feat] || [];
+    const isCovered = types.length > 0;
+    const isOnlyFeel = isCovered && types.every(t => t === "T3");
+    const hasT4 = types.includes("T4");
+    const hasT1 = types.includes("T1");
+    const hasT2 = types.includes("T2");
+    const hasT3 = types.includes("T3");
+    const inInput = vec[feat] !== undefined && vec[feat] !== 0;
+    const grpColor = SCHEMA[grp]?.color || "#888";
+
+    if (isCovered) covered++; else missing++;
+    if (isOnlyFeel) onlyFeel++;
+    if (hasT4) hasType4++;
+
+    // Diversity score: T1+T2 = 각 1점, T3 = 0.5점, T4 = -0.5점
+    const diversity = (hasT1?1:0) + (hasT2?1:0) + (hasT3?0.5:0) - (hasT4?0.5:0);
+
+    rows.push({feat, grp, grpColor, types, isCovered, isOnlyFeel, hasT4, inInput, diversity});
+  });
+
+  // 요약 통계
+  document.getElementById('tb4').textContent = `${covered}/${Object.keys(allFeats).length}`;
+
+  // 섹션 분류
+  const missingRows = rows.filter(r => !r.isCovered);
+  const onlyFeelRows = rows.filter(r => r.isOnlyFeel);
+  const t4Rows = rows.filter(r => r.hasT4);
+  const goodRows = rows.filter(r => r.isCovered && !r.isOnlyFeel && !r.hasT4);
+
+  function renderRow(r) {
+    const typeTags = r.types.map(t =>
+      `<span class="cov-type-tag ${ET_COLOR[t]}">${t}</span>`
+    ).join('');
+    // Diversity bar: 4칸 (T1 T2 T3 T4)
+    const bar = ['T1','T2','T3','T4'].map(t => {
+      const has = r.types.includes(t);
+      return `<div class="db-seg ${has?'filled':'empty'}" style="background:${has?{T1:'#5BB8FF',T2:'#2ecc8a',T3:'#c4973a',T4:'#e04444'}[t]:'#333'}"></div>`;
+    }).join('');
+
+    const statusText = !r.isCovered ? `<span class="cov-status cov-miss">✗ 미수집</span>`
+      : r.isOnlyFeel ? `<span class="cov-status cov-warn">△ Feel전용</span>`
+      : r.hasT4 ? `<span class="cov-status cov-warn">⚠ T4포함</span>`
+      : `<span class="cov-status cov-ok">✓</span>`;
+
+    const inputMark = r.inInput ? `<span style="font-size:8px;color:var(--green);margin-left:3px">●입력</span>` : '';
+
+    return `<div class="cov-row">
+      <span class="cov-feat" style="color:${r.grpColor}8f">${r.feat}${inputMark}</span>
+      <div class="cov-types">${typeTags || '<span style="font-size:9px;color:var(--t3)">—</span>'}
+        <div class="diversity-bar" style="margin-left:4px">${bar}</div>
+      </div>
+      ${statusText}
+    </div>`;
+  }
+
+  let html = `
+    <div class="cov-summary">
+      <div class="cov-stat">
+        <div class="cov-stat-num" style="color:var(--green)">${covered}</div>
+        <div class="cov-stat-label">수집됨</div>
+      </div>
+      <div class="cov-stat">
+        <div class="cov-stat-num" style="color:var(--red)">${missing}</div>
+        <div class="cov-stat-label">미수집</div>
+      </div>
+      <div class="cov-stat">
+        <div class="cov-stat-num" style="color:var(--gold)">${onlyFeel}</div>
+        <div class="cov-stat-label">Feel전용</div>
+      </div>
+      <div class="cov-stat">
+        <div class="cov-stat-num" style="color:var(--red)">${hasType4}</div>
+        <div class="cov-stat-label">T4포함</div>
+      </div>
+      <div class="cov-stat">
+        <div class="cov-stat-num" style="color:var(--t2)">${Object.keys(allFeats).length}</div>
+        <div class="cov-stat-label">전체 Feature</div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:var(--t3);margin-bottom:10px;line-height:1.7;padding:6px 8px;background:var(--s2);border-radius:3px;">
+      <span style="color:var(--t2)">Diversity Bar:</span>
+      <span style="color:#5BB8FF">■T1 Direct</span> &nbsp;
+      <span style="color:#2ecc8a">■T2 Result</span> &nbsp;
+      <span style="color:#c4973a">■T3 Feel</span> &nbsp;
+      <span style="color:#e04444">■T4 Hidden</span>
+      &nbsp;— 다양한 Type이 채워질수록 Evidence 다양성 ↑
+    </div>`;
+
+  if (missingRows.length) {
+    html += `<div class="cov-section-hd" style="color:var(--red)">✗ 미수집 Feature — 엔진 활성화 불가 (${missingRows.length}개)</div>`;
+    missingRows.forEach(r => html += renderRow(r));
+  }
+
+  if (onlyFeelRows.length) {
+    html += `<div class="cov-section-hd" style="color:var(--gold)">△ Feel 전용 수집 — 신뢰도 0.40~0.65 (${onlyFeelRows.length}개)</div>`;
+    onlyFeelRows.forEach(r => html += renderRow(r));
+  }
+
+  if (t4Rows.length) {
+    html += `<div class="cov-section-hd" style="color:var(--orange)">⚠ Type4 포함 — 응답 신뢰도 주의 (${t4Rows.length}개)</div>`;
+    t4Rows.forEach(r => html += renderRow(r));
+  }
+
+  html += `<div class="cov-section-hd" style="color:var(--green)">✓ 양호한 Coverage (${goodRows.length}개)</div>`;
+  goodRows.forEach(r => html += renderRow(r));
+
+  document.getElementById('cov-panel').innerHTML = html;
+}
+
+// ══════════════════════════════════════
+// MAIN
+// ══════════════════════════════════════
+let cur=null;
+
+function run(){
+  const raw=document.getElementById('ji').value.trim();
+  document.getElementById('err').innerHTML='';
+  let parsed;
+  try{parsed=JSON.parse(raw);}
+  catch(e){document.getElementById('err').innerHTML=`<div class="err">JSON 오류: ${e.message}</div>`;return;}
+
+  const survey=parsed.survey||parsed;
+  const caseId=parsed.case_id||`CASE_${Date.now()}`;
+  const golfer=parsed.golfer||"미상";
+  const date=parsed.date||new Date().toISOString().slice(0,10);
+
+  const vec=fullVec(survey);
+  const nodeMap=activateNodes(vec);
+  const paths=findPaths(nodeMap);
+  const trackB=calcTrackB(nodeMap,paths);
+
+  cur={caseId,golfer,date,vec,nodeMap,paths,trackB,raw:parsed};
+
+  renderNodeExplain(nodeMap);
+  renderEdgeExplain(nodeMap,paths);
+  renderFullTrace(caseId,golfer,date,vec,nodeMap,paths,trackB);
+  renderResult(nodeMap,paths,trackB,caseId);
+  renderCoverage(vec);
+
+  saveCase(cur);
+}
+
+// ══════════════════════════════════════
+// TABS
+// ══════════════════════════════════════
+function switchTab(idx){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  document.querySelectorAll('.tab-content').forEach((t,i)=>t.classList.toggle('active',i===idx));
+}
+
+// ══════════════════════════════════════
+// CASE LOG
+// ══════════════════════════════════════
+let caseLog=JSON.parse(localStorage.getItem('doh_v2_cases')||'[]');
+
+function saveCase(r){
+  const actIds=Object.keys(r.nodeMap).filter(id=>r.nodeMap[id].active);
+  const clusters=actIds.filter(id=>NODES[id]?.layer==="cluster_result").map(id=>NODES[id]?.cluster||id);
+  const entry={caseId:r.caseId,golfer:r.golfer,date:r.date,clusters,raw:r.raw,ts:Date.now()};
+  const idx=caseLog.findIndex(c=>c.caseId===r.caseId);
+  if(idx>=0) caseLog[idx]=entry; else caseLog.unshift(entry);
+  localStorage.setItem('doh_v2_cases',JSON.stringify(caseLog));
+  renderLog();
+}
+
+function getVerdict(caseId){
+  return (JSON.parse(localStorage.getItem('doh_v2_verdicts')||'{}'))[caseId]||'';
+}
+window.saveVerdict=function(caseId){
+  const v=document.getElementById('vi')?.value||'';
+  const vd=JSON.parse(localStorage.getItem('doh_v2_verdicts')||'{}');
+  vd[caseId]=v; localStorage.setItem('doh_v2_verdicts',JSON.stringify(vd));
+  const box=document.querySelector('.vb-saved');
+  if(box) box.textContent='저장됨: '+v;
+};
+
+function renderLog(){
+  const vd=JSON.parse(localStorage.getItem('doh_v2_verdicts')||'{}');
+  document.getElementById('cl-cnt').textContent=caseLog.length+'개';
+  document.getElementById('case-badge').textContent='Case '+caseLog.length;
+  let html='';
+  caseLog.forEach((c,i)=>{
+    const hasV=!!vd[c.caseId];
+    html+=`<div class="cl-row${cur?.caseId===c.caseId?' sel':''}" onclick="loadLog(${i})">
+      <span class="cl-id">#${caseLog.length-i}</span>
+      <span class="cl-name">${c.golfer}·${c.date}</span>
+      ${hasV?'<span class="cl-v">✎</span>':''}
+      <span class="cl-tag">${c.clusters.join(",")||"정상"}</span>
+    </div>`;
+  });
+  document.getElementById('cl-body').innerHTML=html||'';
+}
+
+function loadLog(idx){
+  const c=caseLog[idx];
+  if(!c) return;
+  document.getElementById('ji').value=JSON.stringify(c.raw,null,2);
+  run();
+}
+
+function clearLog(){
+  if(!confirm('로그 초기화?')) return;
+  caseLog=[];
+  localStorage.removeItem('doh_v2_cases');
+  localStorage.removeItem('doh_v2_verdicts');
+  renderLog();
+}
+
+function exportLog(){
+  const vd=JSON.parse(localStorage.getItem('doh_v2_verdicts')||'{}');
+  const blob=new Blob([JSON.stringify({cases:caseLog,verdicts:vd,engine_version:"v3",exported:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`DOH_Debug_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+// ══════════════════════════════════════
+// SAMPLES
+// ══════════════════════════════════════
+const SAMPLES=[
+  {case_id:"S001",golfer:"샘플A",date:"2026-06-25",survey:{pressure_shift_quality:0,weight_transfer_completion:0,trail_heel_load:2,early_extension:2,standing_up:2,pelvis_rotation:0,kinematic_sequence:1,rotation_completion:2}},
+  {case_id:"S002",golfer:"샘플B",date:"2026-06-25",survey:{lead_leg_stability:0,lead_side_acceptance:0,slide_tendency:3,early_extension:2,standing_up:2,pelvis_rotation:0,kinematic_sequence:1}},
+  {case_id:"S003",golfer:"샘플C",date:"2026-06-25",survey:{rotation_completion:0,early_turn:3,kinematic_sequence:0,early_extension:2,standing_up:2}},
+  {case_id:"S004",golfer:"샘플복합",date:"2026-06-25",survey:{pressure_shift_quality:0,weight_transfer_completion:0,trail_heel_load:2,rotation_completion:0,early_turn:3,kinematic_sequence:0,early_extension:2,standing_up:2,pelvis_rotation:0}},
+  {case_id:"S005",golfer:"샘플OTT",date:"2026-06-25",survey:{thorax_rotation:0,x_factor:0,arm_lift_compensation:2,hand_path:0,ott_severity:3}},
+  {case_id:"S006",golfer:"샘플리버스",date:"2026-06-25",survey:{reverse_pivot_severity:3,weight_transfer_completion:0,pressure_shift_quality:0,early_extension:2,standing_up:2,pelvis_rotation:0}},
+  {case_id:"S007",golfer:"이상적",date:"2026-06-25",survey:{ground_force_usage:3,lead_leg_stability:3,lead_side_acceptance:3,kinematic_sequence:3,impact_stability:3,weight_transfer_completion:3,pressure_shift_quality:3,thorax_rotation:2,rotation_completion:3}},
+];
+window.ls=function(i){document.getElementById('ji').value=JSON.stringify(SAMPLES[i],null,2);run();};
+
+renderLog();
+</script>
+</body>
+</html>
