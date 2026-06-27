@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.2",
+  "created": "2026-06-27",
+  "description": "DOH GOLF SYSTEM — Node Knowledge Library",
+  "nodes": {
+    "N04": {
+      "id": "N04",
+      "name": "Rotation Stall",
+      "name_ko": "회전 정체",
+      "layer": "root_cause",
+      "family": "kinematic",
+      "lifecycle": "field_tested",
+      "priority_weight": 3.0,
+      "bottleneck": false,
+      "feature_links": [
+        {
+          "feature_id": "rotation_completion",
+          "operator": "<=",
+          "value": 1,
+          "weight": 3.0,
+          "required": true
+        },
+        {
+          "feature_id": "kinematic_sequence",
+          "operator": "<=",
+          "value": 1,
+          "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "early_turn",
+          "operator": ">=",
+          "value": 2,
+          "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "thorax_rotation",
+          "operator": "<=",
+          "value": 1,
+          "weight": 1.0,
+          "required": false
+        },
+        {
+          "feature_id": "sway_probability",
+          "operator": ">=",
+          "value": 2,
+          "weight": 1.0,
+          "required": false
+        }
+      ],
+      "activation": {
+        "min_score": 3.0,
+        "min_conditions": 2,
+        "require_positive": ["rotation_completion"]
+      },
+      "possible_causes": [
+        {
+          "to": "N05",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "흉곽 가동성 제한 시 회전 정체 직결 — 임상 빈도 높음",
+          "last_reviewed": "2026-06-27",
+          "note": "흉곽 가동성 부족 → 회전 정체"
+        }
+      ],
+      "possible_results": [
+        {
+          "to": "N07",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "골반 회전이 상체 회전 정체와 함께 동반 정지하는 패턴",
+          "last_reviewed": "2026-06-27",
+          "note": "회전 정체 → 골반 정체 동반"
+        },
+        {
+          "to": "N08",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "하체/몸통 회전 없이 팔이 스윙 주도권을 가져가는 보상 패턴",
+          "last_reviewed": "2026-06-27",
+          "note": "회전 없음 → 팔 주도 전환"
+        },
+        {
+          "to": "N09",
+          "strength": "moderate",
+          "evidence_level": "observational",
+          "basis": "회전 정체 시 골반이 힙 쓰러스트로 파워를 보상하는 경로",
+          "last_reviewed": "2026-06-27",
+          "note": "회전 정체 → 힙 쓰러스트"
+        }
+      ],
+      "related_nodes": [
+        {
+          "node_id": "N07",
+          "relation_type": "co_occur",
+          "note": "동반 패턴 매우 빈번"
+        },
+        {
+          "node_id": "N06",
+          "relation_type": "co_occur",
+          "note": "Slide 심할 때 동반. 직접 인과 미확정"
+        }
+      ],
+      "ball_flight_bias": ["Pull", "Pull Slice", "Weak Fade"]
+    }
+  }
+}
