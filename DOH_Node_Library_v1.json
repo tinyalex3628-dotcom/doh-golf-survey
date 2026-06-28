@@ -1,7 +1,7 @@
 {
   "schema_version": "1.3",
   "created": "2026-06-27",
-  "updated": "2026-06-28T14:00:00",
+  "updated": "2026-06-28T15:00:00",
   "description": "DOH GOLF SYSTEM — Node Knowledge Library",
   "nodes": {
     "N01": {
@@ -1014,7 +1014,7 @@
     },
     "N09": {
       "id": "N09",
-      "name": "Early Extension",
+      "name": "Hip Thrust",
       "name_ko": "조기 기립 (Hip Thrust)",
       "layer": "compensation",
       "family": "kinematic",
@@ -1260,6 +1260,73 @@
           "ball_flight_bias confidence 0.22: 중간 Hub Node, 직접 볼 결과는 N12에 위임",
           "Wrist cock → Arm Lift 경로: Decision Log 기록, wrist_set_timing 미안정화로 Edge 미등록",
           "Shallowing은 Steep tendency 부분 상쇄 가능하나 Backswing 연결성은 완전 복원 불가 — DOH 설계 원칙으로 기록"
+        ]
+      }
+    },
+    "N11": {
+      "id": "N11",
+      "name": "Early Extension",
+      "name_ko": "조기 신전",
+      "layer": "cluster_result",
+      "family": "kinematic",
+      "lifecycle": "field_tested",
+      "priority_weight": 0,
+      "bottleneck": false,
+      "description": "임팩트 직전에 골퍼의 몸통과 골반이 공 방향으로 가까워지며 초기 자세각이 유지되지 않는 관찰 현상이다. 이 Node는 자세 손실 자체를 기술하며, 원인이나 보상 메커니즘은 포함하지 않는다.",
+      "experience_statement": "임팩트 직전에 몸이 일어나는 느낌이 반복된다.",
+      "coach_note": "임팩트 직전 척추 자세각 손실. 클럽 통과 공간 소실의 최종 관찰 현상. Hip Thrust(N09)와 구분: N09는 골반 전진 동작이고, N11은 그 결과로 나타나는 자세각 붕괴이다.",
+      "survey_anchor": "임팩트 구간에서 척추각이 유지되는지 확인한다.",
+      "feature_links": [
+        {
+          "feature_id": "early_extension",
+          "operator": ">=",
+          "value": 2,
+          "weight": 3.0,
+          "required": true
+        },
+        {
+          "feature_id": "ee_timing",
+          "operator": ">=",
+          "value": 0,
+          "weight": 1.0,
+          "required": false
+        }
+      ],
+      "activation": {
+        "min_score": 3,
+        "min_conditions": 1,
+        "require_positive": ["early_extension"],
+        "exclude_if": []
+      },
+      "possible_causes": [
+        {
+          "to": "N09",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "Hip Thrust(골반 전진) → 클럽 통과 공간 소실 → 척추각 붕괴 직결. 가장 빈번한 단일 경로."
+        }
+      ],
+      "possible_results": [],
+      "related_nodes": [],
+      "ball_flight_bias": {
+        "tendency": ["thin", "fat"],
+        "conditional": ["heel_contact", "shank"],
+        "confidence": 0.50,
+        "mechanism": "척추각 손실 → 클럽 통과 공간 소실 → Heel 방향 접촉 증가. 공간 부족 심화 방향에 따라 Thin/Fat 또는 Shank 분기. Push 편향은 N09(Hip Thrust) 계층 귀속."
+      },
+      "_decision_log": {
+        "date": "2026-06-28",
+        "reviewer": "프로 + Claude",
+        "decisions": [
+          "N09 Hip Thrust / N11 Early Extension 명칭 분리 LOCK — 골반 전진(보상)과 척추각 손실(결과) 생체역학적 구분 반영",
+          "standing_up 제외 — early_extension이 Composite 통합값으로 정보 중복. AI Feature 확장 후 재검토",
+          "N08→N11 possible_causes 미등록 — 실제 체인은 N08→N09→N11. N09 병목 유지. 직접 Edge는 DAG 무결성 훼손",
+          "N04→N11 Edge 삭제 유지 — N04 세션 Decision 계승. N04→N09→N11 체인으로 충분",
+          "possible_results 없음 — Cluster Result 종단 Node",
+          "ball_flight_bias: thin/fat (tendency) + heel_contact/shank (conditional). Push는 N09 귀속. N11 Identity = 공간 손실이며 구질 Node 아님",
+          "confidence 0.50 — Cluster Result Node이나 볼 결과는 N09보다 간접적"
         ]
       }
     }
