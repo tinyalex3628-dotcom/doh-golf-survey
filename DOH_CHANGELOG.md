@@ -3,6 +3,29 @@ _최신 항목이 최상단에 위치한다._
 
 ---
 
+## 2026-06-28 (N14 세션)
+
+### Added
+- N14 Excessive Depth — Node Library 정식 등록 (compensation / kinematic / field_tested)
+  - possible_causes: N08(strong/clinical), N10(moderate/clinical)
+  - possible_results: N20(moderate/theory)
+  - related_nodes: N12/N13(compensation)
+  - ball_flight_bias: hook/push/push_draw, confidence:0.50
+  - ai_observation: Transition~P6 hand center posterior measurement
+  - D026 등록
+
+### Changed
+- N14 name_ko: 과도한 인사이드 진입 → 과도한 깊이 (Depth ≠ Inside Path, P01)
+- N08 possible_results: N14 strong 추가
+- N10 possible_results: N14 moderate 추가
+- EDGES: N01→N14 제거, N10→N14 moderate 신규, N14→N12 제거 → related_nodes compensation
+
+### Pending
+- N14→N20 evidence_level: theory → clinical (필드 데이터 확보 후)
+- N15 Outside Takeaway JSON 미등록 (기존 Pending 유지)
+
+---
+
 ## 2026-06-28 (N20 세션)
 
 ### Added
