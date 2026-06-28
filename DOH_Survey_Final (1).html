@@ -472,7 +472,7 @@ const NODES={
   N12:{id:"N12",name:"Over The Top",ko:"OTT — 아웃사이드 공격",layer:"cluster_result",cluster:"C02",pw:0,
     feats:[{f:"ott_severity",op:">=",v:2,w:3},{f:"hand_path",op:"<=",v:1,w:2}],
     ms:4,rmc:2,rp:["ott_severity"]},
-  N13:{id:"N13",name:"Early Release",ko:"조기 릴리즈",layer:"cluster_result",cluster:"C06",pw:0,
+  N13:{id:"N13",name:"Flip Release",ko:"Flip Release / 조기 릴리즈",layer:"cluster_result",cluster:"C06",pw:0,
     feats:[{f:"release_timing",op:"<=",v:1,w:3},{f:"release_pattern",op:">=",v:1,w:2},{f:"shaft_lean",op:"<=",v:0,w:2}],
     ms:4,rmc:3,rp:["release_timing","release_pattern"]},
 };
@@ -497,7 +497,7 @@ const CLUSTER_DESC={
   C02:{name:"Over The Top",ko:"OTT — 아웃사이드 공격",
     trackA:"다운스윙에서 클럽이 아웃사이드 경로로 들어와 Out-In 궤도가 만들어집니다. 슬라이스, Pull이 주요 구질입니다.",
     trackB_desc:"클럽 경로 자체보다 상체 개방 원인을 먼저 해결해야 합니다."},
-  C06:{name:"Early Release",ko:"조기 릴리즈",
+  C06:{name:"Flip Release",ko:"Flip Release / 조기 릴리즈",
     trackA:"임팩트 전에 손목이 일찍 풀리면서 헤드가 손을 추월합니다. 뒤땅, 거리 손실이 발생합니다.",
     trackB_desc:"손목 고정 훈련보다 체중 이동과 시퀀스를 먼저 개선해야 합니다."},
 };

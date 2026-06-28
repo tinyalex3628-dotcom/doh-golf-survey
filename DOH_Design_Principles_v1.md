@@ -32,3 +32,15 @@ _설계 과정에서 도출된 시스템 공통 원칙. Node·Cluster·Chain 설
 - 적용 사례 (N12): N14(Excessive Depth)는 재루팅 조건부 분기 → possible_causes 제거, compensation 등록
 - 이 원칙은 N13 이후 모든 Node의 Edge 설계 기준으로 적용된다.
 - 출처: N12 설계 세션 (2026-06-28)
+
+---
+
+## Principle 04 — Convergence Observation 원칙
+**"여러 Node에서 공통적으로 관찰되는 최종 현상은 Result of Result가 아니라 Shared Downstream Observation이다."**
+
+- Layer는 변경하지 않는다. `cluster_result` 유지.
+- `_design_note`에 `observation_type: convergence`와 `identity_note`를 명시하여 역할을 구분한다.
+- Schema 수정 없이 메타 정보로만 표현한다. (D012 준수)
+- 적용 사례 (N15/N16): N11/N12/N13/N14 → 수렴형 Impact Loss Node는 인과 종단이 아니라 공통 관찰 수렴점이다.
+- 이 원칙은 수렴형 Node 설계 기준으로 적용된다.
+- 출처: N15 설계 세션 (2026-06-28)
