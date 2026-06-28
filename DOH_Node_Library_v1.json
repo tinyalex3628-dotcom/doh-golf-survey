@@ -1,7 +1,7 @@
 {
   "schema_version": "1.3",
   "created": "2026-06-27",
-  "updated": "2026-06-28T12:00:00",
+  "updated": "2026-06-28T13:00:00",
   "description": "DOH GOLF SYSTEM — Node Knowledge Library",
   "nodes": {
     "N01": {
@@ -681,11 +681,11 @@
         },
         {
           "to": "N09",
-          "strength": "moderate",
+          "strength": "weak",
           "evidence_level": "clinical",
           "basis": "field_observation",
           "last_reviewed": "2026-06-28",
-          "note": "Slide 이후 힙 쓰러스트 보상."
+          "note": "Slide(Lateral)와 EE(Anterior)는 이동 방향이 다름. 직접 인과 약함. N06→N07→N09 간접 경로가 일반적."
         }
       ],
       "related_nodes": [
@@ -1009,6 +1009,163 @@
           "desc에서 'Fan-out Compensation Node' 제거 — Observation 아닌 설계자 메모, coach_note로 이동",
           "pw: 1 → 2 — N12/N13/N11 세 개 cluster_result로 fan-out, N07과 구조적 역할 유사",
           "transition_initiator_feel 미추가 — 현재 feats 조합으로 충분, 필요성 검증 후 별도 추가"
+        ]
+      }
+    },
+    "N09": {
+      "id": "N09",
+      "name": "Early Extension",
+      "name_ko": "조기 기립 (Hip Thrust)",
+      "layer": "compensation",
+      "family": "kinematic",
+      "lifecycle": "field_tested",
+      "priority_weight": 2.0,
+      "bottleneck": false,
+      "description": "다운스윙 과정에서 골반이 볼 방향으로 전진하여 Hip Depth가 감소하는 반복적 움직임 패턴. 원인 미포함.",
+      "experience_statement": "공을 세게 치려고 하면 몸이 먼저 일어난다.",
+      "coach_note": "힙이 볼 방향으로 접근. 엉덩이와 힐라인 간 거리 감소. Spine Angle 유지 실패. 팔 공간 소실. EE는 회전 부족의 보상뿐 아니라, 공을 강하게 치려는 운동 의도로 인해 스스로 공간을 잃는 패턴으로도 자주 나타난다.",
+      "survey_anchor": "다음 중 반복적으로 경험하는 것을 확인한다: 공을 세게 치려고 하면 몸이 먼저 일어난다 / 피니쉬에서 균형 유지가 어렵다 / 팔이 낄 것 같은 느낌이 든다.",
+      "feature_links": [
+        {
+          "feature_id": "early_extension",
+          "operator": ">=",
+          "value": 2,
+          "weight": 3.0,
+          "required": true
+        },
+        {
+          "feature_id": "rotation_source",
+          "operator": "<=",
+          "value": 1,
+          "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "rotation_completion",
+          "operator": "<=",
+          "value": 1,
+          "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "kinematic_sequence",
+          "operator": "<=",
+          "value": 1,
+          "weight": 1.0,
+          "required": false
+        },
+        {
+          "feature_id": "arm_drop_depth",
+          "operator": "<=",
+          "value": 1,
+          "weight": 1.0,
+          "required": false
+        },
+        {
+          "feature_id": "shaft_plane_variability",
+          "operator": ">=",
+          "value": 2,
+          "weight": 1.0,
+          "required": false
+        }
+      ],
+      "activation": {
+        "min_score": 3,
+        "min_conditions": 2,
+        "require_positive": ["early_extension"],
+        "exclude_if": []
+      },
+      "possible_causes": [
+        {
+          "to": "N07",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "골반 회전 정체 → Hip Thrust 보상. 가장 빈번한 경로."
+        },
+        {
+          "to": "N04",
+          "strength": "moderate",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "회전 정체 → 공간 확보 실패 → EE."
+        },
+        {
+          "to": "N06",
+          "strength": "weak",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "Slide(Lateral)와 EE(Anterior)는 방향이 다름. 직접 인과 약함. N06→N07→N09 간접 경로가 일반적."
+        }
+      ],
+      "possible_results": [
+        {
+          "to": "N11",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "Hip Depth 감소 → 척추 공간 소실 → 조기 신전(N11) 직결."
+        },
+        {
+          "to": "N13",
+          "strength": "moderate",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "공간 부족 → Handle Lift → 조기 릴리즈."
+        }
+      ],
+      "related_nodes": [
+        {
+          "node_id": "N08",
+          "relation_type": "co_occur",
+          "note": "팔 주도 시퀀스와 EE는 동반 빈도 높음. 회전 실패 시 일부는 N08, 일부는 N09를 선택하는 대안 보상 패턴."
+        },
+        {
+          "node_id": "N12",
+          "relation_type": "co_occur",
+          "note": "EE와 OTT는 공동 출현 빈번. 직접 인과보다 공통 상위 원인(N04 등)이 동시에 생성하는 패턴."
+        }
+      ],
+      "ball_flight_bias": {
+        "primary": ["push", "push_slice"],
+        "secondary": ["hook"],
+        "conditional": ["shank", "fat", "thin", "no_divot"],
+        "mechanism": "Hip Depth 감소 → 팔 공간 소실. 보상 방향에 따라 결과 분기: Handle Lift → Push/Push Slice (primary). Shallow 보상 → Hook (secondary). Heel Strike 계열 → Shank/Fat (conditional)."
+      },
+      "_design_note": {
+        "node_type": "hub",
+        "expansion_policy": "open",
+        "expansion_domains": [
+          "structure",
+          "setup",
+          "pressure",
+          "kinematic",
+          "motor_control",
+          "intent"
+        ],
+        "rationale": "N09는 다양한 도메인의 원인과 다양한 보상 결과를 연결하는 Compensation Hub이다. Hip Depth 감소라는 Node Identity는 어떤 원인 Edge가 추가되어도 변하지 않는다. 현재 possible_causes/results는 현장 검증된 대표 경로만 포함하며, 새로운 evidence 확보 시 해당 도메인 내에서 Edge를 확장한다."
+      },
+      "_decision_log": {
+        "date": "2026-06-28",
+        "reviewer": "프로 + Claude + GPT",
+        "decisions": [
+          "Node Identity: Early Extension LOCK — Hip Thrust Compensation은 원인 서술 내포로 배제",
+          "EE 정의: 골반이 볼 방향으로 전진하여 Hip Depth가 감소하는 현상 — Spine Angle 변화는 결과이므로 정의에서 제외",
+          "EE 금기사항 4개 LOCK: EE≠원인 / EE≠Loss of Posture / EE≠Standing Up / 핵심은 Hip Depth 감소",
+          "발생 시점: Top~Half Down (P4→P5) — P6 이후 심화",
+          "N06→N09 weak 채택 — Lateral Translation과 Anterior Translation은 방향이 다름. N06→N07→N09 간접 경로가 일반적",
+          "possible_results: N11 strong / N13 moderate — N12는 직접 인과 아닌 co_occur로 처리",
+          "related_nodes: N08 co_occur / N12 co_occur — N11은 possible_results 인과 관계가 본질이므로 중복 제거",
+          "Experience Statement: '공을 세게 치려고 하면 몸이 먼저 일어난다.' — 생크는 Outcome이므로 제외",
+          "Ball Flight Bias: primary push/push_slice / secondary hook / conditional shank·fat·thin·no_divot",
+          "Hub Node 개념 채택 — _design_note로 처리, Schema 개정 불필요",
+          "expansion_domains 선언 — known_unlisted_causes 방식 대신 범주만 선언하여 미래 evidence 변화에 유연하게 대응",
+          "space_loss_feel Feature: 보류 — Survey 데이터 축적 후 재검토"
         ]
       }
     }
