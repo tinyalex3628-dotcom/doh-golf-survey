@@ -1,7 +1,7 @@
 {
   "schema_version": "1.3",
   "created": "2026-06-27",
-  "updated": "2026-06-28T15:00:00",
+  "updated": "2026-06-28T16:00:00",
   "description": "DOH GOLF SYSTEM — Node Knowledge Library",
   "nodes": {
     "N01": {
@@ -1327,6 +1327,103 @@
           "possible_results 없음 — Cluster Result 종단 Node",
           "ball_flight_bias: thin/fat (tendency) + heel_contact/shank (conditional). Push는 N09 귀속. N11 Identity = 공간 손실이며 구질 Node 아님",
           "confidence 0.50 — Cluster Result Node이나 볼 결과는 N09보다 간접적"
+        ]
+      }
+    },
+    "N12": {
+      "id": "N12",
+      "name": "Over The Top",
+      "name_ko": "OTT — 아웃사이드 공격",
+      "layer": "cluster_result",
+      "cluster": "C02",
+      "family": "kinematic",
+      "lifecycle": "field_tested",
+      "priority_weight": 0,
+      "bottleneck": false,
+      "description": "다운스윙에서 클럽이 목표선 바깥쪽에서 진입하며 Out-In 공격 경로가 반복적으로 형성되는 현상. Pull, Pull Slice, Slice의 대표적인 원인 패턴 중 하나이다.",
+      "experience_statement": "다운스윙에서 클럽이 몸 바깥쪽에서 내려온다.",
+      "coach_note": "다운스윙 초기 클럽이 목표선 바깥쪽에서 진입하며 Out-In 공격 경로가 형성되는 패턴. Shoulder Plane 위쪽에서 시작해 임팩트까지 Out-In 경로로 접근한다. 원인 해석(상체 조기 개방 / 팔 리프트 등)은 이 Node에서 판단하지 않는다.",
+      "survey_anchor": "다운스윙에서 클럽 또는 손이 어느 방향에서 내려오는지 확인한다.",
+      "feature_links": [
+        {
+          "feature_id": "hand_path",
+          "operator": "<=",
+          "value": 1,
+          "weight": 3.0,
+          "required": true
+        },
+        {
+          "feature_id": "early_turn",
+          "operator": ">=",
+          "value": 2,
+          "weight": 2.0,
+          "required": true
+        },
+        {
+          "feature_id": "ott_probability",
+          "operator": ">=",
+          "value": 2,
+          "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "arm_lift_compensation",
+          "operator": ">=",
+          "value": 1,
+          "weight": 1.0,
+          "required": false
+        }
+      ],
+      "activation": {
+        "min_score": 4.0,
+        "min_conditions": 2,
+        "require_positive": ["hand_path", "early_turn"],
+        "exclude_if": []
+      },
+      "possible_causes": [
+        {
+          "from": "N08",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "팔 주도 시퀀스에서 팔이 먼저 외측으로 이동 → Out-In 경로 형성."
+        },
+        {
+          "from": "N10",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "백스윙 Arm Lift로 플레인 이탈 → 다운스윙에서 아웃사이드 진입 경로 고착."
+        }
+      ],
+      "possible_results": [],
+      "related_nodes": [
+        {
+          "node_id": "N14",
+          "relation_type": "compensation",
+          "note": "Excessive Depth에서 재루팅이 발생할 경우에 한해 OTT와 동반 관찰 가능. 조건부 보상 분기이므로 possible_causes가 아닌 compensation으로 등록."
+        }
+      ],
+      "ball_flight_bias": {
+        "tendency": ["pull", "pull_slice", "slice"],
+        "confidence": 0.7,
+        "mechanism": "Out-In 경로 형성 → 클럽 페이스 오픈 시 슬라이스, 페이스 스퀘어 시 Pull. 실제 구질은 페이스 각도와의 조합으로 결정되며, N12는 경로(Path) 현상만을 표현한다. cluster_result이므로 Hub Node보다 높은 신뢰도 적용."
+      },
+      "_decision_log": {
+        "date": "2026-06-28",
+        "reviewer": "프로 + Claude",
+        "decisions": [
+          "name: Over The Top 유지 — 코치·골퍼 공통 용어, C02 클러스터 일치, N11과 명명 규칙 통일",
+          "layer: cluster_result 유지 — OTT는 원인이 아닌 관찰 결과 Node",
+          "experience_statement: '다운스윙에서 클럽이 몸 바깥쪽에서 내려온다.' — 현상 직접 서술, 메커니즘 해석 제거",
+          "description 수정: '슬라이스/Pull의 직접 관찰 결과' → '대표적인 원인 패턴 중 하나' — OTT는 Club Path 현상이며 실제 구질은 페이스 각도 조합으로 결정됨. 단정 표현 제거.",
+          "rp: hand_path + early_turn — Composite(ott_probability)를 rp에서 제외. 자기 순환 증명 방지",
+          "related_nodes: N08/N10 co_occur 제거 — possible_causes에 이미 등록된 Node를 co_occur에 중복 등록하지 않음. N14(compensation)만 유지.",
+          "possible_causes는 반복적으로 성립하는 인과만 등록한다. 조건부 보상 분기는 related_nodes(compensation)으로 분리한다. — N14→N12 처리에서 확립된 원칙, N13 이후 설계에 동일 적용.",
+          "possible_results: 비워둠 — cluster_result는 DAG 말단 Node",
+          "ball_flight_bias confidence: 0.7 — cluster_result는 Hub Node보다 높은 신뢰도 적용"
         ]
       }
     }

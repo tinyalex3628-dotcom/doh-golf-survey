@@ -19,3 +19,16 @@ _설계 과정에서 도출된 시스템 공통 원칙. Node·Cluster·Chain 설
 - strong Edge는 "결과 확정"이 아니라 "경향성 전달 강도"를 의미한다.
 - 이 원칙은 Transition 계열 전체 Node 설계에 적용된다.
 - 출처: N10 설계 세션 (2026-06-28)
+
+---
+
+## Principle 03 — Edge Type 분리 원칙
+**"possible_causes는 반복적으로 성립하는 인과만 등록한다. 조건부·보상 분기는 related_nodes(compensation)으로 분리한다."**
+
+- `possible_causes` = 해당 Node가 활성화될 때 대체로 성립하는 인과 관계
+- `related_nodes: compensation` = 특정 조건에서만 발생하는 보상 전략, 재루팅 분기
+- `related_nodes: co_occur` = 인과 없이 동반 관찰되는 패턴
+- possible_causes에 이미 등록된 Node를 co_occur에 중복 등록하지 않는다.
+- 적용 사례 (N12): N14(Excessive Depth)는 재루팅 조건부 분기 → possible_causes 제거, compensation 등록
+- 이 원칙은 N13 이후 모든 Node의 Edge 설계 기준으로 적용된다.
+- 출처: N12 설계 세션 (2026-06-28)
