@@ -580,6 +580,146 @@
           "flag:physical_assessment_required 제거 — Cluster 이후 판단 영역으로 이전"
         ]
       }
+    },
+    "N06": {
+      "id": "N06",
+      "name": "Hip Slide (Lateral Thrust)",
+      "name_ko": "다운스윙 골반 측면 이동",
+      "layer": "compensation",
+      "family": "kinematic",
+      "lifecycle": "field_tested",
+      "priority_weight": 2.0,
+      "bottleneck": false,
+      "description": "다운스윙에서 골반이 회전 대신 리드 방향으로 측면 이동한다. 지면반력을 회전력으로 전환하지 못한 상태에서 측면 이동으로 보상하며 회전축이 소실된다.",
+      "experience_statement": "몸이 회전하기보다 옆으로 밀려 나가는 느낌이다.",
+      "survey_anchor": "다운스윙에서 골반이 회전하지 않고 옆으로 밀리는지 확인한다.",
+      "feature_links": [
+        {
+          "feature_id": "pelvis_rotation",
+          "operator": "<=",
+          "value": 1,
+          "weight": 3.0,
+          "required": true
+        },
+        {
+          "feature_id": "lead_leg_stability",
+          "operator": "<=",
+          "value": 1,
+          "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "lead_side_acceptance",
+          "operator": "<=",
+          "value": 1,
+          "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "lead_pressure_early_shift_feel",
+          "operator": ">=",
+          "value": 2,
+          "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "lead_knee_extension_intent",
+          "operator": ">=",
+          "value": 2,
+          "weight": 1.0,
+          "required": false
+        }
+      ],
+      "activation": {
+        "min_score": 3,
+        "min_conditions": 2,
+        "require_positive": ["pelvis_rotation"],
+        "exclude_if": []
+      },
+      "possible_causes": [
+        {
+          "to": "N01",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "압력 이동 실패 → 지면반력 없이 골반 측면 이동 보상. N01 메인 경로."
+        },
+        {
+          "to": "N02",
+          "strength": "moderate",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "리드 붕괴 → 골반 측면 이동 동반."
+        },
+        {
+          "to": "N05",
+          "strength": "moderate",
+          "evidence_level": "theory",
+          "basis": "biomechanical_inference",
+          "last_reviewed": "2026-06-28",
+          "note": "흉곽 회전 부족 → 측면 이동으로 파워 보상. 현장 검증 전 추정 수준."
+        }
+      ],
+      "possible_results": [
+        {
+          "to": "N07",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "슬라이드 → 골반 회전 억제. 주요 하위 결과."
+        },
+        {
+          "to": "N08",
+          "strength": "moderate",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "Slide로 인한 회전 부재 → 팔 주도 전환."
+        },
+        {
+          "to": "N09",
+          "strength": "moderate",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "Slide 이후 힙 쓰러스트 보상."
+        }
+      ],
+      "related_nodes": [
+        {
+          "node_id": "N07",
+          "relation_type": "co_occur",
+          "note": "동반 패턴 빈번. possible_results 이중 등록 — 직접 인과(N06→N07) + 동반 패턴 모두 해당."
+        },
+        {
+          "node_id": "N04",
+          "relation_type": "co_occur",
+          "note": "Slide 심할 때 N04 동반 관찰. N04 possible_causes에도 등록 — 인과 방향(N06→N04) + 동반 패턴 모두 해당."
+        }
+      ],
+      "ball_flight_bias": {
+        "path_tendency": "variable",
+        "face_tendency": "variable",
+        "typical_miss": ["push", "fat", "thin"],
+        "confidence": 0.25
+      },
+      "_decision_log": {
+        "date": "2026-06-28",
+        "reviewer": "프로 + Claude",
+        "rule_ref": "DOH Edge Design Rule v1.0",
+        "decisions": [
+          "pelvis_rotation 필수 게이트 — 슬라이드 핵심 신호, 단독 활성 방지",
+          "N01→N06 신규 Edge 추가 (strong) — 압력 이동 실패가 슬라이드의 주요 원인",
+          "N02→N06 Edge strong→moderate 하향 — 리드 붕괴는 동반이지 직접 원인 아님",
+          "N05→N06 신규 Edge 추가 (moderate, theory) — 흉곽 회전 부족 → 측면 이동 보상 경로",
+          "N07 이중 등록 정당 (Rule §3: possible_results 직접 인과 + co_occur 동반, 다른 타입)",
+          "N04 co_occur 등록 — N04 possible_causes에도 N06 등록으로 양방향 관계 명시",
+          "ball_flight confidence 0.25 — compensation 노드, 최종 구질 예측력 낮음"
+        ]
+      }
     }
   }
 }
