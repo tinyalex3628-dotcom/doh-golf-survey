@@ -36,11 +36,37 @@ _설계 과정에서 도출된 시스템 공통 원칙. Node·Cluster·Chain 설
 ---
 
 ## Principle 04 — Convergence Observation 원칙
-**"여러 Node에서 공통적으로 관찰되는 최종 현상은 Result of Result가 아니라 Shared Downstream Observation이다."**
+**"복수의 독립적인 upstream Observation이 하나의 공유 downstream Observation으로 수렴할 수 있다."**
 
-- Layer는 변경하지 않는다. `cluster_result` 유지.
-- `_design_note`에 `observation_type: convergence`와 `identity_note`를 명시하여 역할을 구분한다.
-- Schema 수정 없이 메타 정보로만 표현한다. (D012 준수)
-- 적용 사례 (N15/N16): N11/N12/N13/N14 → 수렴형 Impact Loss Node는 인과 종단이 아니라 공통 관찰 수렴점이다.
-- 이 원칙은 수렴형 Node 설계 기준으로 적용된다.
-- 출처: N15 설계 세션 (2026-06-28)
+- N20(Impact Loss)은 N11·N12·N13·N14 등 서로 다른 경로에서 수렴하는 Convergence Node다
+- `possible_results: strong`은 결정론적 인과 선언이 아니라 관찰 기반 downstream 가능성을 표현한다
+- cluster_result → cluster_result Edge는 이 원칙 적용 시 허용된다 (단, `observation_type: convergence` 필드로 명시)
+- Convergence Node 판별 기준: 3개 이상의 독립 upstream이 수렴 / 방향성 비대칭 / DAG 중복 경로 없음
+- 출처: N20 Impact Loss 설계 세션 (2026-06-28)
+
+---
+
+## Principle 05 — Node ID Stability 원칙
+**"Node ID는 한 번 할당되면 재배치하거나 재사용하지 않는다."**
+
+### 적용 범위
+- 정식 등록 Node, Candidate Node 모두 동일하게 적용한다
+- 구현 여부, lifecycle 상태와 무관하다
+
+### 규칙
+1. 신규 Node는 항상 다음 사용 가능한 번호를 부여한다. 이미 할당된 번호는 건너뛴다
+2. 삭제된 Node는 번호를 반납하지 않는다. `deprecated` 상태로 보존되며 번호는 비활성 예약 상태가 된다
+3. Candidate 번호도 예약 식별자다. CANDIDATE 주석으로 번호가 등장한 시점부터 해당 번호는 점유된 것으로 간주한다
+4. 번호를 재배치하는 것은 금지한다. HTML·JSON·Git 히스토리 전체에서 연쇄 변경이 발생하므로 얻는 것보다 잃는 것이 크다
+
+### 현재 번호 할당 현황 (2026-06-28 기준)
+| 번호 | Node | 상태 |
+|------|------|------|
+| N01~N15 | 정식 등록 | field_tested |
+| N16 | Trail Loading Failure | CANDIDATE |
+| N17 | Restricted Thorax Delivery | CANDIDATE |
+| N18 | Transition Sequencing Failure | CANDIDATE |
+| N19 | Open Intolerance | CANDIDATE |
+| N20 | Impact Loss | draft |
+
+- 출처: N20 번호 배정 과정 (2026-06-28), D022·D023 참조

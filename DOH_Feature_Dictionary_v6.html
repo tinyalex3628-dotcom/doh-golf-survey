@@ -774,7 +774,9 @@ const NODES = {
       possible_causes:[
         {to:"N09",strength:"strong",note:"Hip Thrust(골반 전진) → 클럽 통과 공간 소실 → 척추각 붕괴 직결."},
       ],
-      possible_results:[],
+      possible_results:[
+        {to:"N20",strength:"strong",note:"조기 신전으로 공간 소실 → 접촉 일관성 저하 (P04 Convergence Observation)"},
+      ],
       related_nodes:[],
       ms:3,rmc:1,rp:["early_extension"],mechanisms:[]},
   N12:{id:"N12",name:"클럽이 바깥에서 내려온다",ko:"OTT — 아웃사이드 공격 [C02]",layer:"cluster_result",cluster:"C02",
@@ -786,6 +788,10 @@ const NODES = {
         {f:"ott_probability",    op:">=",v:2,w:2},
         {f:"arm_lift_compensation",op:">=",v:1,w:1},
       ],
+      possible_results:[
+        {to:"N20",strength:"strong",note:"OTT 궤도 → 임팩트 접촉 불안정 수렴 (P04 Convergence Observation)"},
+      ],
+      related_nodes:[],
       ms:4,rmc:2,rp:["hand_path","early_turn"],mechanisms:[]},
   N13:{id:"N13",name:"임팩트 전에 손목이 먼저 풀린다",ko:"Flip Release [C06]",layer:"cluster_result",cluster:"C06",
       family:"release",pw:0,
@@ -806,7 +812,9 @@ const NODES = {
         {to:"N07",strength:"moderate", note:"골반 정체 → 손으로 임팩트 만들기 → Flip"},
         {to:"N09",strength:"moderate", note:"공간 부족 → Handle Lift → 조기 릴리즈"},
       ],
-      possible_results:[],
+      possible_results:[
+        {to:"N20",strength:"strong",note:"Flip Release → Shaft Lean 직접 소실 → Impact Loss 최빈 경로 (P04 Convergence Observation)"},
+      ],
       related_nodes:[],
       ms:4,rmc:2,rp:["release_timing"],mechanisms:[]},
   N14:{id:"N14",name:"다운스윙에서 클럽이 너무 안쪽으로 들어온다",ko:"과도한 인사이드 진입",layer:"compensation",pw:2,
@@ -836,6 +844,31 @@ const NODES = {
     ],
     ms:3,rmc:2,rp:["hand_body_distance","arm_lift_compensation"],mechanisms:[],
     flag:"backswing_phase · Future:N16_Body_Lead"},
+  // ── N20: Impact Loss (Convergence Node — draft) ───────────────────────────
+  // Layer: cluster_result / family: impact / observation_type: convergence
+  // P04 Convergence Observation: N11·N12·N13·N14 복수 upstream 수렴
+  // lifecycle: draft — field validation 진행 중
+  N20:{id:"N20",name:"임팩트에서 공이 눌리는 느낌이 없다",ko:"임팩트 압축 손실",layer:"cluster_result",
+      family:"impact",observation_type:"convergence",pw:0,
+      desc:"임팩트 구간에서 Shaft Lean 손실 + 접촉 일관성 저하. N11·N12·N13·N14 수렴 Convergence Node (P04).",
+      experience_statement:"임팩트에서 공이 제대로 눌리는 느낌이 없다.",
+      coach_note:"Shaft Lean 부재 / Low Point가 볼 뒤 / 디봇 없음 또는 얕음 / Heel or Toe 접촉 불일치. N13(Flip Release)·N11(Early Extension)·N12(OTT)·N14(Excessive Depth) 등 복수 upstream이 수렴하는 Convergence Node (P04).",
+      survey_anchor:"임팩트에서 공이 눌리는 느낌과 핸드퍼스트 여부를 확인한다.",
+      feats:[
+        {f:"shaft_lean",         op:"<=",v:0,w:3,req:true},
+        {f:"low_point_position", op:"<=",v:0,w:2},
+        {f:"impact_stability",   op:"<=",v:1,w:2},
+        {f:"flip_release",       op:">=",v:1,w:1},
+      ],
+      possible_causes:[
+        {to:"N13",strength:"strong",   note:"Flip Release → Shaft Lean 직접 소실 → Impact Loss 최빈 경로"},
+        {to:"N11",strength:"strong",   note:"조기 신전으로 공간 소실 → 접촉 일관성 저하 (P04)"},
+        {to:"N12",strength:"strong",   note:"OTT 궤도 → 임팩트 접촉 불안정 수렴 (P04)"},
+        {to:"N14",strength:"moderate", note:"Excessive Depth → 접촉 일관성 저하 (theory, N14 설계 완료 후 갱신)"},
+      ],
+      possible_results:[],
+      related_nodes:[],
+      ms:4,rmc:2,rp:["shaft_lean","low_point_position"],mechanisms:[]},
   // ══ CANDIDATE NODES (실전 검증 대기 중) ════════════════════════════════════
   // ──────────────────────────────────────────────────────────────────────────
   // N16 [CANDIDATE] Trail Loading Failure ★ 유망
@@ -937,6 +970,11 @@ const EDGES = [
   {from:"N15",to:"N10",s:"moderate", note:"Outside Takeaway → Arm Lift 증가. Probabilistic 관계."},
   {from:"N15",to:"N08",s:"weak",     note:"Outside Takeaway → Body Lead → 팔 주도 전환 (Trail Arm 재연결 시 상쇄 가능)"},
   {from:"N15",to:"N12",s:"weak",     note:"Outside Takeaway + Early Turn → OTT (Exception Branch; early_turn>=2 조건 필요)"},
+  // ── N20 Impact Loss 수렴 엣지 (Convergence Node P04) ────────────────────────
+  {from:"N13",to:"N20",s:"strong",   note:"Flip Release → Impact Loss 최빈 경로"},
+  {from:"N11",to:"N20",s:"strong",   note:"조기 신전 → 접촉 일관성 저하 (P04 Convergence)"},
+  {from:"N12",to:"N20",s:"strong",   note:"OTT → 임팩트 불안정 수렴 (P04 Convergence)"},
+  {from:"N14",to:"N20",s:"moderate", note:"Excessive Depth → 접촉 저하 (theory)"},
   // ── N16 Trail Loading Failure 예상 엣지 (CANDIDATE — 정식 편입 후 활성화) ─
   // {from:"N16",to:"N03",s:"strong",   note:"Trail Loading 실패 → Reverse Pivot 직결 (심리/물리 원인)"},
   // {from:"N16",to:"N01",s:"strong",   note:"Trail Loading 실패 → Pressure Shift Failure"},
