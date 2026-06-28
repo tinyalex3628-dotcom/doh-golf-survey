@@ -135,5 +135,103 @@
         ]
       }
     }
+    },
+    "N05": {
+      "id": "N05",
+      "name": "Thorax Rotation Deficit",
+      "name_ko": "흉곽 회전 부족",
+      "layer": "root_cause",
+      "family": "kinematic",
+      "lifecycle": "field_tested",
+      "priority_weight": 3.0,
+      "bottleneck": false,
+      "description": "백스윙에서 흉곽의 회전 범위가 반복적으로 제한된 수준에 머문다. 상체 회전이 충분히 형성되지 않은 탑 포지션이 반복적으로 관찰된다.",
+      "experience_statement": "몸을 더 돌리고 싶은데 잘 안 돌아가는 느낌이다.",
+      "coach_note": "백스윙 탑에서 리드 어깨가 턱 아래까지 들어오지 않으면 N05 의심. 어깨 회전이 75° 미만으로 반복 관찰될 때 활성 후보. 골반 고정 상태에서 상체만 회전 시 제한이 더 명확. 왜 안 돌아가는지는 이 단계에서 판단하지 않는다 — Cluster 이후 영역.",
+      "survey_anchor": "백스윙 탑에서 흉곽이 충분히 돌아가는지 확인한다.",
+      "feature_links": [
+        {
+          "feature_id": "thorax_rotation",
+          "operator": "<=",
+          "value": 1,
+          "weight": 3.0,
+          "required": true
+        },
+        {
+          "feature_id": "x_factor",
+          "operator": "<=",
+          "value": 1,
+          "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "arm_lift_compensation",
+          "operator": ">=",
+          "value": 1,
+          "weight": 1.0,
+          "required": false
+        }
+      ],
+      "activation": {
+        "min_score": 3.0,
+        "min_conditions": 2,
+        "require_positive": ["thorax_rotation"],
+        "exclude_if": []
+      },
+      "possible_causes": [],
+      "possible_results": [
+        {
+          "to": "N04",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "흉곽 백스윙 회전 미완성 → 다운스윙 회전 재개 불가 → 회전 정체 직결. 임상 빈도 높음."
+        },
+        {
+          "to": "N10",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "흉곽 회전 부족 → 팔 리프트로 백스윙 높이 보상. N04 경유 없는 독립 경로."
+        }
+      ],
+      "related_nodes": [
+        {
+          "node_id": "N04",
+          "relation_type": "co_occur",
+          "note": "N05 활성 시 N04 동반 빈도 높음. possible_results에도 등록 — 직접 인과 + 동반 패턴 이중 등록."
+        },
+        {
+          "node_id": "N03",
+          "relation_type": "co_occur",
+          "note": "동반 케이스 존재. 인과 방향 미확정 — 레슨 데이터 후 재검토."
+        },
+        {
+          "node_id": "N10",
+          "relation_type": "compensation",
+          "note": "흉곽 회전 부족 → 팔 리프트 직접 보상 경로. possible_results 이중 등록."
+        }
+      ],
+      "cluster_candidates": ["C02", "C05"],
+      "ball_flight_bias": {
+        "tendency": ["pull", "weak_fade", "pull_slice"],
+        "mechanism": "흉곽 회전 부족 → 코일 미형성 → 팔 리프트/OTT 보상 → Out-In Path → Pull/Slice 편향."
+      },
+      "_decision_log": {
+        "date": "2026-06-28",
+        "reviewer": "프로 + Claude + GPT",
+        "rule_ref": "DOH Edge Design Rule v1.0",
+        "decisions": [
+          "experience_statement 단수화: '몸을 더 돌리고 싶은데 잘 안 돌아가는 느낌이다.' — 원인 연상 없는 순수 체감 언어, N04와 명확히 구분",
+          "N08 related_nodes 제거 — N05→N10→N08 경로로 충분, N05→N08 직접 Edge는 DAG 불필요 복잡화",
+          "N05 두 축 구조 확정: 회전 부족 계열(N05→N04→N07) / 팔 보상 계열(N05→N10→N08)",
+          "ball_flight thin 제거 — N04/N08 이후 경로에서 발생 빈도가 더 높음",
+          "min_conditions 2 — thorax_rotation 단독 응답 오답 가능성 차단, N04와 일관된 설계",
+          "flag:physical_assessment_required 제거 — Cluster 이후 판단 영역으로 이전"
+        ]
+      }
+    }
   }
 }
