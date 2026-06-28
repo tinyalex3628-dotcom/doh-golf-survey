@@ -1,7 +1,7 @@
 {
   "schema_version": "1.3",
   "created": "2026-06-27",
-  "updated": "2026-06-28",
+  "updated": "2026-06-28T11:00:00",
   "description": "DOH GOLF SYSTEM — Node Knowledge Library",
   "nodes": {
     "N01": {
@@ -718,6 +718,135 @@
           "N07 이중 등록 정당 (Rule §3: possible_results 직접 인과 + co_occur 동반, 다른 타입)",
           "N04 co_occur 등록 — N04 possible_causes에도 N06 등록으로 양방향 관계 명시",
           "ball_flight confidence 0.25 — compensation 노드, 최종 구질 예측력 낮음"
+        ]
+      }
+    },
+    "N07": {
+      "id": "N07",
+      "name": "Pelvis Stall",
+      "name_ko": "골반 정체",
+      "layer": "compensation",
+      "family": "kinematic",
+      "lifecycle": "field_tested",
+      "priority_weight": 2.0,
+      "bottleneck": true,
+      "description": "다운스윙에서 골반 회전이 충분히 지속되지 않고 중간에 감소하거나 정체되는 반복적 스윙 현상. 원인 미포함.",
+      "experience_statement": "골반이 끝까지 회전하지 않는 느낌이다.",
+      "coach_note": "골반 오픈 감소 / 회전 속도 감소 / 임팩트 전후 골반 정지를 반복적으로 관찰한다.",
+      "survey_anchor": "다운스윙에서 골반이 충분히 돌아간다는 느낌이 드나요?",
+      "feature_links": [
+        {
+          "feature_id": "pelvis_rotation",
+          "operator": "<=",
+          "value": 1,
+          "weight": 3.0,
+          "required": true
+        },
+        {
+          "feature_id": "kinematic_sequence",
+          "operator": "<=",
+          "value": 1,
+          "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "rotation_completion",
+          "operator": "<=",
+          "value": 1,
+          "weight": 1.0,
+          "required": false
+        }
+      ],
+      "activation": {
+        "min_score": 3,
+        "min_conditions": 2,
+        "require_positive": ["pelvis_rotation"],
+        "exclude_if": []
+      },
+      "possible_causes": [
+        {
+          "to": "N04",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "회전 정체 시스템 → 골반 회전 지속 실패 직결."
+        },
+        {
+          "to": "N06",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "슬라이드 → 골반 회전 억제."
+        },
+        {
+          "to": "N05",
+          "strength": "moderate",
+          "evidence_level": "theory",
+          "basis": "biomechanical_inference",
+          "last_reviewed": "2026-06-28",
+          "note": "흉곽 회전 부족 → N04 경유 간접 경로. 현장 검증 전 추정 수준."
+        }
+      ],
+      "possible_results": [
+        {
+          "to": "N08",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "골반 정체 → 팔 주도 전환."
+        },
+        {
+          "to": "N09",
+          "strength": "moderate_to_strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "골반 정체 → 힙 쓰러스트."
+        },
+        {
+          "to": "N13",
+          "strength": "moderate",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "골반 정체 → Flip Release."
+        }
+      ],
+      "related_nodes": [
+        {
+          "node_id": "N04",
+          "relation_type": "co_occur",
+          "note": "N04 활성 시 N07 동반 빈도 높음. N04 possible_results에도 등록 — 직접 인과 + 동반 패턴."
+        },
+        {
+          "node_id": "N06",
+          "relation_type": "co_occur",
+          "note": "Slide → Pelvis Stall 동반 패턴. N06 possible_results에도 등록."
+        },
+        {
+          "node_id": "N09",
+          "relation_type": "alternative",
+          "note": "골반 비회전의 분기 — 정체(N07) or 전방 돌출(N09). 상호 배타적이지 않으나 분기 우세."
+        }
+      ],
+      "ball_flight_bias": {
+        "tendency": ["pull", "pull_slice", "weak_fade", "distance_loss"],
+        "mechanism": "골반 정체 → 팔 주도/OTT 보상 → Out-In Path → Pull/Slice 편향. 거리 손실 동반."
+      },
+      "_decision_log": {
+        "date": "2026-06-28",
+        "reviewer": "프로 + Claude",
+        "rule_ref": "DOH Edge Design Rule v1.0",
+        "decisions": [
+          "name 변경: 체감 언어로 전환 — '골반이 끝까지 회전하지 않는 느낌이다.'",
+          "early_turn / pelvis_open_tolerance 삭제 — 관찰 불가 또는 N04와 중복 신호",
+          "kinematic_sequence 추가 (w:2) — 골반-흉곽 시퀀스 붕괴 직접 신호",
+          "bottleneck:true 유지 — 다수 Result 분기 노드 (N08/N09/N13)",
+          "N05 possible_causes moderate(theory) — N04 경유 간접 경로, 직접 인과 미확정",
+          "N09 related_nodes alternative — 정체 vs 전방 돌출 분기 패턴, 직접 인과 아님"
         ]
       }
     }
