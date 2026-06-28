@@ -1,9 +1,358 @@
 {
-  "schema_version": "1.2",
+  "schema_version": "1.3",
   "created": "2026-06-27",
   "updated": "2026-06-28",
   "description": "DOH GOLF SYSTEM — Node Knowledge Library",
   "nodes": {
+    "N01": {
+      "id": "N01",
+      "name": "Pressure Shift Failure",
+      "name_ko": "압력 이동 실패",
+      "layer": "root_cause",
+      "family": "pressure",
+      "lifecycle": "field_tested",
+      "priority_weight": 3.0,
+      "bottleneck": false,
+      "description": "Trail→Lead 압력 이동이 발생하지 않는 현상. 다운스윙 시작 시점에 지면반력이 Lead측으로 전환되지 않아 운동연쇄 전체가 무너지는 시작점.",
+      "experience_statement": [
+        "체중이 왼발로 잘 안 넘어가는 느낌이다.",
+        "임팩트에서 오른발에 체중이 남아있는 느낌이 든다.",
+        "다운스윙 시작할 때 왼쪽으로 밀어내는 느낌이 없다."
+      ],
+      "survey_anchor": "다운스윙 시작 시 왼발로 압력이 이동하는지 확인한다.",
+      "feature_links": [
+        {
+          "feature_id": "pressure_shift_timing",
+          "operator": "<=",
+          "value": 1,
+          "weight": 3.0,
+          "required": true
+        },
+        {
+          "feature_id": "trail_foot_pressure_location",
+          "operator": ">=",
+          "value": 2,
+          "weight": 2.0,
+          "required": true
+        },
+        {
+          "feature_id": "trail_side_loading_confidence",
+          "operator": "<=",
+          "value": 1,
+          "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "sway_probability",
+          "operator": ">=",
+          "value": 2,
+          "weight": 1.0,
+          "required": false
+        },
+        {
+          "feature_id": "trail_leg_stiffness",
+          "operator": "==",
+          "value": 0,
+          "weight": 1.0,
+          "required": false
+        }
+      ],
+      "activation": {
+        "min_score": 3.0,
+        "min_conditions": 2,
+        "require_positive": ["pressure_shift_timing", "trail_foot_pressure_location"]
+      },
+      "possible_causes": [],
+      "possible_results": [
+        {
+          "to": "N07",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "압력 이동 실패 → 골반 이동·회전 불가 → Pelvis Stall 직결"
+        },
+        {
+          "to": "N09",
+          "strength": "moderate",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "지면반력 없이 둔부 밀기로 파워 보상 — Hip Thrust 경로"
+        },
+        {
+          "to": "N13",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "체중이 뒤에 남을 때 Flip Release로 보상하는 패턴"
+        }
+      ],
+      "related_nodes": [
+        {
+          "node_id": "N03",
+          "relation_type": "upstream",
+          "note": "N03(Reverse Pivot) → N01 인과 경로. N03 활성 시 N01 동반 빈도 높음"
+        },
+        {
+          "node_id": "N07",
+          "relation_type": "co_occur",
+          "note": "압력 실패와 골반 정체 동반 패턴 빈번. possible_results 이중 등록"
+        }
+      ],
+      "ball_flight_bias": ["Thin", "Fat", "Push", "Flip Draw"],
+      "_decision_log": {
+        "date": "2026-06-28",
+        "reviewer": "프로 + Claude",
+        "rule_ref": "DOH Edge Design Rule v1.0",
+        "decisions": [
+          "ground_force_usage 제거 — pressure_shift_timing + trail_foot_pressure_location으로 충분",
+          "sway_probability w:1 보조 신호로 유지 — N03 경유 인과 흐름 보존 목적",
+          "trail_leg_stiffness w:1 유지 — 압력 이동 실패 물리적 원인 보조 신호",
+          "N09 possible_results 유지 — N01→N09 보상 경로는 N04 경유 없는 독립 경로로 판단"
+        ]
+      }
+    },
+    "N02": {
+      "id": "N02",
+      "name": "Lead Side Collapse",
+      "name_ko": "리드 사이드 붕괴",
+      "layer": "root_cause",
+      "family": "pressure",
+      "lifecycle": "field_tested",
+      "priority_weight": 3.0,
+      "bottleneck": false,
+      "description": "Lead 무릎·고관절이 다운스윙 시 버텨주지 못하고 목표 방향으로 무너지는 현상. 지면반력을 받아내는 기둥 역할이 실패하여 전체 운동연쇄가 목표 방향으로 쏠린다.",
+      "experience_statement": [
+        "임팩트에서 왼쪽 무릎이 버텨주지 못하는 느낌이다.",
+        "왼쪽 고관절이 목표 방향으로 빠지는 느낌이 든다.",
+        "임팩트 순간 왼쪽이 무너지는 느낌이 난다."
+      ],
+      "coach_note": "임팩트 구간에서 Lead 무릎이 목표 방향으로 과도하게 이동하는지 확인한다. Lead hip이 외측으로 이탈하거나 골반 회전이 억제되는 패턴과 함께 관찰된다.",
+      "survey_anchor": "임팩트에서 왼쪽 무릎과 고관절이 버텨주는지 확인한다.",
+      "feature_links": [
+        {
+          "feature_id": "lead_leg_stability",
+          "operator": "<=",
+          "value": 1,
+          "weight": 3.0,
+          "required": true
+        },
+        {
+          "feature_id": "lead_side_acceptance",
+          "operator": "<=",
+          "value": 1,
+          "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "lead_knee_extension_intent",
+          "operator": ">=",
+          "value": 3,
+          "weight": 2.0,
+          "required": true
+        },
+        {
+          "feature_id": "lead_pressure_early_shift_feel",
+          "operator": "<=",
+          "value": 1,
+          "weight": 1.0,
+          "required": false
+        }
+      ],
+      "activation": {
+        "min_score": 3.0,
+        "min_conditions": 2,
+        "require_positive": ["lead_leg_stability", "lead_knee_extension_intent"]
+      },
+      "possible_causes": [
+        {
+          "to": "N03",
+          "strength": "moderate",
+          "evidence_level": "theory",
+          "basis": "biomechanical_theory",
+          "last_reviewed": "2026-06-28",
+          "note": "백스윙 역이동 → 다운스윙에서 몸이 왼쪽으로 던져지는 보상 패턴 → Lead Side Collapse 유발 경로. 현장 검증 필요"
+        }
+      ],
+      "possible_results": [
+        {
+          "to": "N06",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "리드 붕괴 → Slide 직결. Lead측이 무너지면서 골반이 측면 이동"
+        },
+        {
+          "to": "N09",
+          "strength": "moderate",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "리드 무너짐 → EE 보상 패턴"
+        }
+      ],
+      "related_nodes": [
+        {
+          "node_id": "N03",
+          "relation_type": "co_occur",
+          "note": "N03 활성 시 N02 동반 패턴 확인 필요. possible_causes 이중 등록"
+        },
+        {
+          "node_id": "N06",
+          "relation_type": "co_occur",
+          "note": "Slide와 동반 빈도 높음. possible_results 이중 등록"
+        }
+      ],
+      "ball_flight_bias": ["Pull", "Slice", "Thin"],
+      "_decision_log": {
+        "date": "2026-06-28",
+        "reviewer": "프로 + Claude",
+        "rule_ref": "DOH Edge Design Rule v1.0",
+        "decisions": [
+          "lead_knee_extension_intent >= 3 필수 게이트 — 의도적 무릎 펴기가 붕괴의 핵심 신호",
+          "lead_pressure_early_shift_feel w:1 보조 — 너무 이른 체중 이동도 붕괴 선행 신호",
+          "N03 possible_causes theory 등록 — 임상 빈도 확인 후 clinical 승격 검토"
+        ]
+      }
+    },
+    "N03": {
+      "id": "N03",
+      "name": "Reverse Pivot",
+      "name_ko": "리버스 피벗",
+      "layer": "root_cause",
+      "family": "pressure",
+      "lifecycle": "field_tested",
+      "priority_weight": 3.5,
+      "bottleneck": false,
+      "description": "백스윙 구간에서 체중과 압력이 Trail측으로 충분히 이동하지 않고 Lead측에 남거나 다시 이동하는 현상. 다운스윙 시작 이전부터 Lead측에 체중이 남아있는 상태를 포함한다.",
+      "experience_statement": [
+        "백스윙을 하면 오른쪽으로 체중이 잘 안 실리는 느낌이다.",
+        "백스윙을 해도 왼발에 체중이 남아있는 느낌이다.",
+        "탑에서 이미 왼쪽에 체중이 있는 느낌이 든다."
+      ],
+      "coach_note": "백스윙 Top에서 Lead hip 위에 상체가 남아있는지 확인한다. Trail hip으로 압력이 충분히 이동하지 않는지 확인한다. 정면 영상에서 머리와 골반이 Lead측에 계속 남아있는지 관찰한다. 압력판에서는 Top 구간 Trail측 압력 증가 부족으로 확인 가능하다.",
+      "survey_anchor": "백스윙에서 오른쪽으로 체중을 실을 수 있는가",
+      "activation_note": "Evidence Score 구조: Required(lead_top_pressure_location >= 2) 충족 필수. Supporting Score = rp_ev_trail_load_feel(역산) + rp_ev_lead_bracing_bias. 단일 Evidence 판단 금지 — 3개 동시 충족 시 신뢰도 급등.",
+      "feature_links": [
+        {
+          "feature_id": "lead_top_pressure_location",
+          "operator": ">=",
+          "value": 2,
+          "weight": 3.0,
+          "required": true,
+          "note": "필수 게이트 — 탑에서 왼발 압력 잔류 확인"
+        },
+        {
+          "feature_id": "rp_ev_trail_load_feel",
+          "operator": "<=",
+          "value": 1,
+          "weight": 3.0,
+          "required": true,
+          "note": "역산 피처 — 오른쪽 실리는 느낌 없음이 RP 핵심 신호"
+        },
+        {
+          "feature_id": "rp_ev_lead_bracing_bias",
+          "operator": ">=",
+          "value": 2,
+          "weight": 2.0,
+          "required": false,
+          "note": "왼발 버팀 느낌 — RP 보조 확인"
+        },
+        {
+          "feature_id": "sway_probability",
+          "operator": ">=",
+          "value": 2,
+          "weight": 2.0,
+          "required": false,
+          "note": "Reverse Pivot 상위 위험인자 — 보조 신호"
+        },
+        {
+          "feature_id": "trail_side_loading_confidence",
+          "operator": "<=",
+          "value": 1,
+          "weight": 1.0,
+          "required": false
+        },
+        {
+          "feature_id": "trail_inside_edge_pressure",
+          "operator": "==",
+          "value": 0,
+          "weight": 1.0,
+          "required": false,
+          "note": "오른발 안쪽 엣지 압력 없음 — Trail 로딩 실패 보조 신호"
+        }
+      ],
+      "activation": {
+        "min_score": 5.0,
+        "min_conditions": 2,
+        "require_positive": ["lead_top_pressure_location", "rp_ev_trail_load_feel"]
+      },
+      "possible_causes": [],
+      "possible_results": [
+        {
+          "to": "N01",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "리버스 피벗 → 다운스윙 압력 이동 불가 — N01 직결 경로"
+        },
+        {
+          "to": "N07",
+          "strength": "moderate",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "백스윙 역이동 → 골반 정체 동반"
+        },
+        {
+          "to": "N04",
+          "strength": "moderate",
+          "evidence_level": "theory",
+          "basis": "biomechanical_theory",
+          "last_reviewed": "2026-06-28",
+          "note": "리버스 피벗 시 백스윙 회전 질 저하 → 다운스윙 회전 정체. 현장 검증 필요"
+        },
+        {
+          "to": "N02",
+          "strength": "moderate",
+          "evidence_level": "theory",
+          "basis": "biomechanical_theory",
+          "last_reviewed": "2026-06-28",
+          "note": "백스윙 역이동 → 다운스윙에서 몸이 왼쪽으로 던져지는 보상 패턴 → Lead Side Collapse 유발 경로"
+        }
+      ],
+      "related_nodes": [
+        {
+          "node_id": "N01",
+          "relation_type": "downstream",
+          "note": "N03 활성 시 N01 동반 빈도 높음. possible_results 이중 등록"
+        },
+        {
+          "node_id": "N02",
+          "relation_type": "co_occur",
+          "note": "N03 활성 시 N02 동반 패턴 확인 필요"
+        }
+      ],
+      "ball_flight_bias": ["Thin", "Pull", "Pull Slice", "Flip Draw"],
+      "_decision_log": {
+        "date": "2026-06-28",
+        "reviewer": "프로 + Claude",
+        "rule_ref": "DOH Edge Design Rule v1.0",
+        "decisions": [
+          "pw 3.5로 상향 — Reverse Pivot은 N01/N07/N04 등 다중 하류 노드 유발 상위 원인",
+          "Evidence Score 구조 채택 — lead_top_pressure_location 필수 게이트 + Supporting Score 합산",
+          "rp_ev_top_lead_pressure → lead_top_pressure_location 통합 (v6 결정)",
+          "sway_probability w:2 보조 신호 — moderate 위험인자로 유지",
+          "N04 possible_results theory 등록 — 현장 검증 전 추정 수준 명시",
+          "N02 possible_results theory 등록 — 보상 패턴 경로, 빈도 확인 필요",
+          "family: pressure — N01과 동일 패밀리 분류"
+        ]
+      }
+    },
     "N04": {
       "id": "N04",
       "name": "Rotation Stall",
@@ -134,7 +483,6 @@
           "N03/N06 causes evidence_level = theory — 현장 검증 전 추정 수준 명시"
         ]
       }
-    }
     },
     "N05": {
       "id": "N05",
