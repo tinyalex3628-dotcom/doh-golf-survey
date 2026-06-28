@@ -1,6 +1,7 @@
 {
   "schema_version": "1.2",
   "created": "2026-06-27",
+  "updated": "2026-06-28",
   "description": "DOH GOLF SYSTEM — Node Knowledge Library",
   "nodes": {
     "N04": {
@@ -12,6 +13,14 @@
       "lifecycle": "field_tested",
       "priority_weight": 3.0,
       "bottleneck": false,
+      "description": "다운스윙과 임팩트 구간에서 몸통 회전이 충분히 지속되지 않는 현상이다. 회전 속도 감소 또는 회전 완료 부족이 반복적으로 관찰된다.",
+      "experience_statement": [
+        "몸이 끝까지 안 돌아가는 느낌이다.",
+        "팔만 휘두르는 느낌이 난다.",
+        "피니시까지 자연스럽게 못 돌아간다.",
+        "회전이 중간에서 끊기는 느낌이다."
+      ],
+      "survey_anchor": "회전이 끝까지 이어지는 느낌을 확인한다.",
       "feature_links": [
         {
           "feature_id": "rotation_completion",
@@ -40,13 +49,6 @@
           "value": 1,
           "weight": 1.0,
           "required": false
-        },
-        {
-          "feature_id": "sway_probability",
-          "operator": ">=",
-          "value": 2,
-          "weight": 1.0,
-          "required": false
         }
       ],
       "activation": {
@@ -59,9 +61,25 @@
           "to": "N05",
           "strength": "strong",
           "evidence_level": "clinical",
-          "basis": "흉곽 가동성 제한 시 회전 정체 직결 — 임상 빈도 높음",
-          "last_reviewed": "2026-06-27",
-          "note": "흉곽 가동성 부족 → 회전 정체"
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "흉곽 가동성 부족 → 회전 정체 직결. 임상 빈도 높음"
+        },
+        {
+          "to": "N03",
+          "strength": "moderate",
+          "evidence_level": "theory",
+          "basis": "biomechanical_theory",
+          "last_reviewed": "2026-06-28",
+          "note": "리버스 피벗 시 백스윙 회전 질 저하 → 다운스윙 회전 정체로 이어질 수 있음. 현장 검증 필요"
+        },
+        {
+          "to": "N06",
+          "strength": "weak",
+          "evidence_level": "theory",
+          "basis": "biomechanical_theory",
+          "last_reviewed": "2026-06-28",
+          "note": "Slide가 심할 경우 골반 측면 이동이 회전을 대체하며 회전 정체 유발 가능. 직접 인과 미확정"
         }
       ],
       "possible_results": [
@@ -69,40 +87,53 @@
           "to": "N07",
           "strength": "strong",
           "evidence_level": "clinical",
-          "basis": "골반 회전이 상체 회전 정체와 함께 동반 정지하는 패턴",
-          "last_reviewed": "2026-06-27",
-          "note": "회전 정체 → 골반 정체 동반"
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "골반 회전이 상체 회전 정체와 함께 동반 정지하는 패턴"
         },
         {
           "to": "N08",
           "strength": "strong",
           "evidence_level": "clinical",
-          "basis": "하체/몸통 회전 없이 팔이 스윙 주도권을 가져가는 보상 패턴",
-          "last_reviewed": "2026-06-27",
-          "note": "회전 없음 → 팔 주도 전환"
-        },
-        {
-          "to": "N09",
-          "strength": "moderate",
-          "evidence_level": "observational",
-          "basis": "회전 정체 시 골반이 힙 쓰러스트로 파워를 보상하는 경로",
-          "last_reviewed": "2026-06-27",
-          "note": "회전 정체 → 힙 쓰러스트"
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "하체·몸통 회전 부재 시 팔이 스윙 주도권을 가져가는 보상 패턴"
         }
       ],
       "related_nodes": [
         {
           "node_id": "N07",
           "relation_type": "co_occur",
-          "note": "동반 패턴 매우 빈번"
+          "note": "동반 패턴 매우 빈번. N07은 possible_results에도 등록 — 직접 인과(N04→N07) + 동반 패턴 모두 해당"
         },
         {
           "node_id": "N06",
           "relation_type": "co_occur",
-          "note": "Slide 심할 때 동반. 직접 인과 미확정"
+          "note": "Slide 심할 때 동반 관찰. possible_causes에도 등록 — 인과 방향(N06→N04) + 동반 패턴 모두 해당"
+        },
+        {
+          "node_id": "N09",
+          "relation_type": "compensation",
+          "note": "회전 정체 시 골반이 힙 쓰러스트로 파워를 보상하는 경로. 직접 결과가 아닌 보상 전략 (Edge Design Rule §4)"
         }
       ],
-      "ball_flight_bias": ["Pull", "Pull Slice", "Weak Fade"]
+      "ball_flight_bias": ["Pull", "Pull Slice", "Weak Fade"],
+      "_decision_log": {
+        "date": "2026-06-28",
+        "reviewer": "프로 + Claude",
+        "rule_ref": "DOH Edge Design Rule v1.0",
+        "decisions": [
+          "rotation_source 제거 — 관찰 불가 추상 feature",
+          "backswing_initiator 제거 — N08 feats에서 담당하는 신호, N04 직접 게이트로 부적합",
+          "sway_probability 제거 — N06 경유 DAG 경로 유지. 직접 신호 중복 방지",
+          "early_turn 유지 — rotation_completion과 상호 보완. 회전 조기 종료 vs 회전량 부족 구분",
+          "N09 possible_results → related_nodes compensation 이동 (Rule §4: 직접 인과 아닌 보상 전략)",
+          "N04→N11 Edge 삭제 (Rule §6: N04→N09→N11 체인 존재, 직접 Edge 정보 중복)",
+          "N04→N09 Edge 삭제 (Rule §4: compensation 관계, direct edge 부적합)",
+          "N06 이중 등록 정당 (Rule §3: possible_causes 인과 + co_occur 동반, 다른 타입)",
+          "N03/N06 causes evidence_level = theory — 현장 검증 전 추정 수준 명시"
+        ]
+      }
     }
   }
 }
