@@ -1,7 +1,7 @@
 {
   "schema_version": "1.3",
   "created": "2026-06-27",
-  "updated": "2026-06-28T11:00:00",
+  "updated": "2026-06-28T12:00:00",
   "description": "DOH GOLF SYSTEM — Node Knowledge Library",
   "nodes": {
     "N01": {
@@ -847,6 +847,168 @@
           "bottleneck:true 유지 — 다수 Result 분기 노드 (N08/N09/N13)",
           "N05 possible_causes moderate(theory) — N04 경유 간접 경로, 직접 인과 미확정",
           "N09 related_nodes alternative — 정체 vs 전방 돌출 분기 패턴, 직접 인과 아님"
+        ]
+      }
+    },
+    "N08": {
+      "id": "N08",
+      "name": "Arm-Dominant Sequence",
+      "name_ko": "팔 주도 시퀀스",
+      "layer": "compensation",
+      "family": "kinematic",
+      "lifecycle": "field_tested",
+      "priority_weight": 2.0,
+      "bottleneck": false,
+      "description": "다운스윙에서 팔이 골반과 흉곽 회전보다 먼저 주도권을 가져가는 반복적인 시퀀스 패턴이다. 원인 미포함.",
+      "experience_statement": "몸보다 팔로 스윙하는 느낌이 강하다.",
+      "coach_note": "다운스윙 시작부터 팔이 먼저 내려온다. 몸통 회전보다 손·팔의 가속이 먼저 나타난다. 몸이 공을 전달하는 것이 아니라 팔이 클럽을 끌고 간다. (설계 메모: N04/N07에서 수렴 → N12/N13/N11으로 fan-out하는 Compensation Fan-out Node 구조)",
+      "survey_anchor": "다운스윙에서 몸과 팔 중 무엇이 먼저 움직이는 느낌인가요?",
+      "feature_links": [
+        {
+          "feature_id": "kinematic_sequence",
+          "operator": "<=",
+          "value": 1,
+          "weight": 3.0,
+          "required": true
+        },
+        {
+          "feature_id": "rotation_source",
+          "operator": "==",
+          "value": 0,
+          "weight": 2.0,
+          "required": true
+        },
+        {
+          "feature_id": "backswing_initiator",
+          "operator": "<=",
+          "value": 1,
+          "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "arm_lift_compensation",
+          "operator": ">=",
+          "value": 1,
+          "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "lag_feel",
+          "operator": "<=",
+          "value": 1,
+          "weight": 1.0,
+          "required": false
+        },
+        {
+          "feature_id": "early_turn",
+          "operator": ">=",
+          "value": 2,
+          "weight": 1.0,
+          "required": false
+        },
+        {
+          "feature_id": "release_timing",
+          "operator": "<=",
+          "value": 0,
+          "weight": 1.0,
+          "required": false
+        }
+      ],
+      "activation": {
+        "min_score": 3,
+        "min_conditions": 2,
+        "require_positive": ["kinematic_sequence", "rotation_source"],
+        "exclude_if": []
+      },
+      "possible_causes": [
+        {
+          "to": "N04",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "회전 정체 → 팔 주도 전환."
+        },
+        {
+          "to": "N07",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "골반 정체 → 팔 주도 전환."
+        },
+        {
+          "to": "N01",
+          "strength": "moderate",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "압력 이동 실패 → 팔 주도 보상."
+        }
+      ],
+      "possible_results": [
+        {
+          "to": "N12",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "팔 주도 → 아웃사이드 다운스윙 (OTT)."
+        },
+        {
+          "to": "N13",
+          "strength": "strong",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "팔 주도 → 조기 릴리즈."
+        },
+        {
+          "to": "N11",
+          "strength": "moderate",
+          "evidence_level": "clinical",
+          "basis": "field_observation",
+          "last_reviewed": "2026-06-28",
+          "note": "팔 주도 → 공간 부족 → 조기 신전."
+        }
+      ],
+      "related_nodes": [
+        {
+          "node_id": "N12",
+          "relation_type": "co_occur",
+          "note": "OTT와 동반 빈도 높음. possible_results 이중 등록 — 직접 인과 + 동반 패턴."
+        },
+        {
+          "node_id": "N13",
+          "relation_type": "co_occur",
+          "note": "Flip Release와 동반 빈도 높음. possible_results 이중 등록 — 직접 인과 + 동반 패턴."
+        },
+        {
+          "node_id": "N04",
+          "relation_type": "compensation",
+          "note": "N04 회전 정체 실패의 보상 결과. possible_causes에도 등록 — 인과 방향 + 보상 관계."
+        },
+        {
+          "node_id": "N07",
+          "relation_type": "compensation",
+          "note": "N07 골반 정체 실패의 보상 결과. possible_causes에도 등록 — 인과 방향 + 보상 관계."
+        }
+      ],
+      "ball_flight_bias": {
+        "tendency": ["pull", "pull_slice", "weak_fade"],
+        "conditional": ["slice"],
+        "mechanism": "팔 주도 → OTT/Flip 보상 → Out-In Path → Pull/Slice 편향. 심화 시 Slice."
+      },
+      "_decision_log": {
+        "date": "2026-06-28",
+        "reviewer": "프로 + Claude",
+        "rule_ref": "DOH Edge Design Rule v1.0",
+        "decisions": [
+          "kinematic_sequence Node Identity 복원 (req gate) — N08 정의 자체가 Sequence 역전, Identity feature 없으면 논리적 불일치",
+          "N05→N08 direct edge 제거 — N05→N04→N08 / N05→N07→N08 경로로 충분, 중복 edge 불필요",
+          "desc에서 'Fan-out Compensation Node' 제거 — Observation 아닌 설계자 메모, coach_note로 이동",
+          "pw: 1 → 2 — N12/N13/N11 세 개 cluster_result로 fan-out, N07과 구조적 역할 유사",
+          "transition_initiator_feel 미추가 — 현재 feats 조합으로 충분, 필요성 검증 후 별도 추가"
         ]
       }
     }
