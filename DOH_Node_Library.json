@@ -518,6 +518,13 @@
           "value": 1,
           "weight": 1.0,
           "required": false
+        },
+        {
+          "feature_id": "wrist_cock_timing",
+          "operator": "<=",
+          "value": 1,
+          "weight": 1.0,
+          "required": false
         }
       ],
       "activation": {
@@ -1202,6 +1209,13 @@
           "operator": "<=",
           "value": 1,
           "weight": 2.0,
+          "required": false
+        },
+        {
+          "feature_id": "wrist_cock_timing",
+          "operator": "<=",
+          "value": 1,
+          "weight": 1.0,
           "required": false
         }
       ],

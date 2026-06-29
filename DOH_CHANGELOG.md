@@ -3,6 +3,18 @@ _최신 항목이 최상단에 위치한다._
 
 ---
 
+## 2026-06-28 (Feature·Chain 세션)
+
+### Added
+- wrist_cock_timing Feature 신규 등록
+  - range 0~3 (없음/늦음/정상/조기), 기준: 손 가슴 높이 60도
+  - 설문 질문: "백스윙 중간에 손목이 자연스럽게 꺾이는 느낌이 있나요?"
+  - N05/N10 feature_links 연결 (op: <=, v:1, w:1)
+- D027: Chain 독립 계층 격상 (Feature→Node→Chain→Cluster→Archetype)
+- D028: Chain 철학 4개 LOCK 확정
+
+---
+
 ## 2026-06-28 (N14 세션)
 
 ### Added
