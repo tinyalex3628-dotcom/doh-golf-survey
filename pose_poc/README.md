@@ -1,7 +1,21 @@
-# DOH Vision PoC — MediaPipe Pose → CSV
+# DOH Vision PoC — MediaPipe Pose → 분석
 
-**Project C · 로드맵 5순위 · Tier-A 브라우저 클라이언트**
-영상 → 33 관절 → DOH 표준관절 → CSV. 서버 없이 브라우저에서 온디바이스 실행.
+**Project C · Tier-A 브라우저 클라이언트 · 설문 엔진과 독립 구동**
+서버 없이 브라우저에서 온디바이스 실행.
+
+## 파일 3개 (단계별)
+| 파일 | 하는 일 | 근거 문서 |
+|---|---|---|
+| `index.html` | 영상 → 33관절 → DOH 표준관절 → **CSV** (좌표추출만) | Technical Arch [1][2] |
+| `analyzer.html` | + 지표 시계열 + **P1/P3/P4/P5/P7/P10 자동검출** + 구간별 Δ° | Feature Spec |
+| `analyzer2.html` | **+ 샤프트 추적(OpenCV Hough) → P2/P6/P8까지 = P1~P10 전구간** + 구간별 샤프트각 | Event & Shaft Detection Method v1.0 |
+
+> **analyzer2.html 가 최신·최강.** 스윙 올리면 P1~P10 자동검출 + 샤프트각 + 구간별 부위 변화.
+> 샤프트각은 **DTL(측면) 영상에서만** 신뢰(P2/P6/P8 = 샤프트 지면평행 정의).
+
+---
+
+## (index.html) 영상 → 33 관절 → DOH 표준관절 → CSV
 
 ## 무엇을 하나
 - `@mediapipe/tasks-vision`(WASM)로 업로드 영상의 프레임별 **33 keypoint** 추출
