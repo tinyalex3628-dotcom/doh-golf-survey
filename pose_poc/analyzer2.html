@@ -3,35 +3,40 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DOH Vision Analyzer v2.1 — P1~P10 + 샤프트(모션마스크) + 3D각도</title>
+<title>DOH Vision Analyzer — 정면/측면 전용 분석</title>
 <!--
-  DOH Vision Analyzer v2.1 (Project C) — 설문 엔진과 독립 구동
-  근거: DOH_Vision_Event_Shaft_Detection_Method_v1.0 · Coordinate_System_Spec_v1.0
-  v2 → v2.1 개선:
-   [3] 좌표계 정렬: MediaPipe worldLandmarks(3D)로 BODY/GROUND 정렬 →
-       어깨회전/힙회전/X-Factor/척추각을 '진짜 3D 각도'로 계산(2D 화면각 view왜곡 제거)
-   [1] 샤프트 안정화: 프레임차분 모션마스크로 '움직이는 클럽 엣지'만 Hough → 배경 잡선 제거
-       + 샤프트각 시간 스무딩
-  파이프라인:
-   MediaPipe 포즈(2D+3D) → 3D 지표 + 샤프트(OpenCV 모션마스크+Hough)
-   → P1/P3/P4/P5/P7/P9/P10(포즈) + P2/P6/P8(샤프트평행) = P1~P10
-   → 구간별 샤프트각 + 구간별 부위 회전Δ° + 시계열 그래프
-  ⚠️ 샤프트각은 DTL(측면)만 신뢰. 3D각도는 단일카메라 근사(depth_estimated).
+  DOH Vision Analyzer v2.2 (Project C) — 설문 엔진과 독립
+  근거: Camera_View_Capability_v1.0 · Coordinate_System_Spec · Event_Shaft_Detection_Method
+  변경(v2.1→v2.2):
+   - 업로드를 '정면 전용/측면 전용' 카드 2개로 분리 (한 화면, 각 카드에 그 앵글 측정항목만 표기)
+   - 결과에서 그 앵글이 측정 못 하는 항목은 아예 숨김(✕ 표시조차 없음)
+   - FO: 샤프트 이벤트(P2/P6/P8)·샤프트각 섹션 미표시 / DTL: 전체 표시
 -->
 <style>
   :root{--bg:#0f1216;--panel:#1a1f27;--ink:#e8edf2;--sub:#8b97a5;--accent:#4ea1ff;--ok:#3ecf8e;--warn:#ffb648;--pink:#ff7eb6;--shaft:#ffd166;}
   *{box-sizing:border-box;} body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;}
   header{padding:14px 20px;border-bottom:1px solid #262d38;} header h1{margin:0;font-size:16px;} header p{margin:4px 0 0;color:var(--sub);font-size:12px;}
-  .wrap{display:grid;grid-template-columns:minmax(320px,440px) 1fr;gap:16px;padding:16px 20px;} @media(max-width:1000px){.wrap{grid-template-columns:1fr;}}
+  .wrap{display:grid;grid-template-columns:minmax(340px,460px) 1fr;gap:16px;padding:16px 20px;} @media(max-width:1000px){.wrap{grid-template-columns:1fr;}}
   .panel{background:var(--panel);border:1px solid #262d38;border-radius:10px;padding:14px;}
-  .stage{position:relative;background:#000;border-radius:8px;overflow:hidden;aspect-ratio:9/16;max-height:64vh;margin:auto;}
+  /* 앵글 카드 */
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .card{border:1px solid #33404f;border-radius:10px;padding:12px;background:#161b22;transition:.15s;}
+  .card.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:#12202e;}
+  .card h3{margin:0 0 8px;font-size:14px;} .card .ic{font-size:16px;}
+  .card ul{margin:0 0 10px;padding-left:16px;color:var(--ink);font-size:12px;line-height:1.7;}
+  .card ul li::marker{color:var(--ok);}
+  .card .aux{color:var(--sub);font-size:11px;margin:-4px 0 10px;}
+  .card .filebtn{display:block;text-align:center;background:#222c39;color:var(--ink);border:1px solid #33404f;border-radius:8px;padding:9px;cursor:pointer;font-size:13px;}
+  .card.active .filebtn{background:var(--accent);color:#04121f;border-color:var(--accent);font-weight:600;}
+  .card .filebtn:hover{border-color:var(--accent);} input[type=file]{display:none;}
+  .card .picked{color:var(--ok);font-size:11px;margin-top:6px;min-height:14px;text-align:center;}
+  .stage{position:relative;background:#000;border-radius:8px;overflow:hidden;aspect-ratio:9/16;max-height:60vh;margin:auto;}
   .stage video,.stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;}
-  .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
-  button,.filebtn{background:#222c39;color:var(--ink);border:1px solid #33404f;border-radius:8px;padding:9px 14px;cursor:pointer;font-size:13px;}
-  button:hover,.filebtn:hover{border-color:var(--accent);} button:disabled{opacity:.4;cursor:not-allowed;}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center;}
+  button{background:#222c39;color:var(--ink);border:1px solid #33404f;border-radius:8px;padding:9px 14px;cursor:pointer;font-size:13px;}
+  button:hover{border-color:var(--accent);} button:disabled{opacity:.4;cursor:not-allowed;}
   button.primary{background:var(--accent);color:#04121f;border-color:var(--accent);font-weight:600;}
-  input[type=file]{display:none;} select{background:#222c39;color:var(--ink);border:1px solid #33404f;border-radius:6px;padding:6px;}
-  label.opt{display:flex;align-items:center;gap:8px;color:var(--sub);font-size:12px;margin-top:8px;flex-wrap:wrap;}
+  select{background:#222c39;color:var(--ink);border:1px solid #33404f;border-radius:6px;padding:8px;}
   .status{font-size:12px;color:var(--warn);min-height:16px;margin-top:8px;} .live{font-size:12px;color:var(--sub);} .live b{color:var(--ok);font-variant-numeric:tabular-nums;}
   h2{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin:14px 0 8px;}
   table{width:100%;border-collapse:collapse;font-size:12px;} th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #2a323d;}
@@ -41,49 +46,70 @@
   #graph{width:100%;height:240px;background:#12161c;border-radius:8px;border:1px solid #262d38;}
   .segsel{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap;}
   .note{color:var(--sub);font-size:11px;margin-top:10px;line-height:1.55;}
+  .badge{font-size:10px;padding:1px 6px;border-radius:5px;background:#222c39;border:1px solid #33404f;color:var(--sub);}
 </style>
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer v2.1 — P1~P10 · 샤프트(모션마스크) · 3D각도</h1>
-  <p>worldLandmarks 3D 정렬 + 모션마스크 샤프트추적 → P1~P10 · 구간별 샤프트각 · 구간별 회전Δ° · 설문과 독립</p>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석</h1>
+  <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.</p>
 </header>
 
 <div class="wrap">
   <div class="panel">
+    <!-- 앵글 전용 업로드 카드 -->
+    <div class="cards">
+      <div class="card" id="cardFO">
+        <h3><span class="ic">📷</span> 정면 (Face-On)</h3>
+        <ul>
+          <li>스웨이 / 슬라이드 (좌우)</li>
+          <li>체중 이동 (좌우)</li>
+          <li>리버스 피벗 / 행잉백</li>
+          <li>척추 좌우 기울기</li>
+          <li>머리 좌우·상하 움직임</li>
+        </ul>
+        <div class="aux">공통: 무릎각 · P구간 · 템포 · 회전(근사)</div>
+        <label class="filebtn">정면 영상 선택<input id="fileFO" type="file" accept="video/*"/></label>
+        <div class="picked" id="pickFO"></div>
+      </div>
+      <div class="card" id="cardDTL">
+        <h3><span class="ic">📹</span> 측면 (Down-the-Line)</h3>
+        <ul>
+          <li>샤프트각 / 스윙플레인</li>
+          <li>클럽 패스 / 페이스*</li>
+          <li>척추 전후 자세각</li>
+          <li>얼리 익스텐션 / 오버더톱</li>
+          <li>핸드 뎁스 / 샤프트 린</li>
+        </ul>
+        <div class="aux">공통: 무릎각 · P구간 · 템포 · 회전(근사) · *클럽검출 시</div>
+        <label class="filebtn">측면 영상 선택<input id="fileDTL" type="file" accept="video/*"/></label>
+        <div class="picked" id="pickDTL"></div>
+      </div>
+    </div>
+
     <div class="stage"><video id="video" playsinline muted></video><canvas id="overlay"></canvas></div>
     <canvas id="work" style="display:none"></canvas>
     <div class="controls">
-      <label class="filebtn">영상 선택<input id="file" type="file" accept="video/*"/></label>
+      <select id="hand"><option value="right">오른손잡이</option><option value="left">왼손잡이</option></select>
+      <label style="display:flex;gap:5px;align-items:center;color:var(--sub);font-size:12px"><input type="checkbox" id="useMotion" checked/> 모션마스크</label>
       <button id="run" class="primary" disabled>분석 시작</button>
       <button id="csv" disabled>CSV</button>
     </div>
-    <label class="opt">
-      <select id="hand"><option value="right">오른손잡이</option><option value="left">왼손잡이</option></select>
-      <select id="view"><option value="DTL">DTL(측면·샤프트각 가능)</option><option value="FO">FO(정면)</option></select>
-      <label style="display:flex;gap:5px;align-items:center"><input type="checkbox" id="useShaft" checked/> 샤프트추적</label>
-      <label style="display:flex;gap:5px;align-items:center"><input type="checkbox" id="useMotion" checked/> 모션마스크</label>
-    </label>
     <div class="status" id="status">모델 로딩 대기…</div>
     <div class="live" id="live"></div>
-    <div class="note">
-      3D각도 = worldLandmarks 기반(view왜곡 완화, 단일카메라 근사).<br>
-      샤프트: 노란선. 모션마스크 ON이면 배경 잡선↓(움직이는 클럽만). DTL 권장.<br>
-      P2/P6/P8 = 샤프트 지면평행 → 샤프트 추적 필수.
-    </div>
   </div>
 
   <div class="panel">
-    <h2>⓪ 이 카메라로 측정 가능한 것</h2>
-    <div id="viewSummary" class="note" style="margin-top:0">— 카메라(FO/DTL) 선택에 따라 표시 —</div>
-
-    <h2>① 자동 검출 이벤트 (P1~P10)</h2>
+    <div id="activeInfo" class="note" style="margin-top:0">— 앵글을 선택하고 영상을 올리세요 —</div>
+    <h2>① 자동 검출 이벤트</h2>
     <div id="events">— 분석 후 표시 —</div>
 
-    <h2>② 구간별 샤프트 각도 (vs 수직, 0°=수직 90°=수평)</h2>
-    <table id="shaftTable"><thead><tr><th>P</th><th>명칭</th><th>프레임</th><th>샤프트각</th></tr></thead><tbody></tbody></table>
+    <div id="shaftSection">
+      <h2>② 구간별 샤프트 각도 (측면 전용, vs 수직)</h2>
+      <table id="shaftTable"><thead><tr><th>P</th><th>명칭</th><th>프레임</th><th>샤프트각</th></tr></thead><tbody></tbody></table>
+    </div>
 
-    <h2>③ 구간별 부위 움직임 (3D, Δ°)</h2>
+    <h2>③ 구간별 부위 움직임 (Δ)</h2>
     <div class="segsel"><span>구간</span><select id="segFrom"></select><span>→</span><select id="segTo"></select></div>
     <table id="segTable"><thead><tr><th>부위/지표</th><th>시작</th><th>끝</th><th>Δ</th></tr></thead><tbody></tbody></table>
 
@@ -111,23 +137,21 @@ function jmap(h){const rh=h==="right",L=rh?"L":"R",T=rh?"R":"L",g=s=>MP[s];
 const $=id=>document.getElementById(id);
 const video=$("video"),overlay=$("overlay"),ctx=overlay.getContext("2d");
 const work=$("work"),wctx=work.getContext("2d",{willReadFrequently:true});
-let landmarker=null,running=false,series=[],events={},J=null,prevShaft=null;
+let landmarker=null,running=false,series=[],events={},J=null,prevShaft=null,curView=null;
 const cvState={prevGray:null};
 
-// ── 3D 벡터 유틸 (worldLandmarks) ──
+// 3D 유틸
 const deg=r=>r*180/Math.PI;
-const V=(a,b)=>({x:b.x-a.x,y:b.y-a.y,z:b.z-a.z});
+const Vv=(a,b)=>({x:b.x-a.x,y:b.y-a.y,z:b.z-a.z});
 const dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z;
 const cross=(a,b)=>({x:a.y*b.z-a.z*b.y,y:a.z*b.x-a.x*b.z,z:a.x*b.y-a.y*b.x});
 const nrm=a=>Math.hypot(a.x,a.y,a.z);
 const unit=a=>{const n=nrm(a)||1e-9;return{x:a.x/n,y:a.y/n,z:a.z/n};};
 const mid3=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2,z:(a.z+b.z)/2});
 const angBetween=(u,w)=>deg(Math.acos(Math.max(-1,Math.min(1,dot(u,w)/((nrm(u)*nrm(w))||1e-9)))));
-const project=(v,n)=>{const d=dot(v,n);return{x:v.x-d*n.x,y:v.y-d*n.y,z:v.z-d*n.z};}; // n:unit
+const project=(v,n)=>{const d=dot(v,n);return{x:v.x-d*n.x,y:v.y-d*n.y,z:v.z-d*n.z};};
 const signedAngle=(u,w,axis)=>{const c=cross(u,w);return deg(Math.atan2(dot(c,axis),dot(u,w)));};
-function angle3d(a,b,c){return angBetween(V(b,a),V(b,c));}
-
-// ── 2D(이미지) 유틸 ──
+const angle3d=(a,b,c)=>angBetween(Vv(b,a),Vv(b,c));
 const mid2=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2}), sub2=(a,b)=>({x:a.x-b.x,y:a.y-b.y}), len2=v=>Math.hypot(v.x,v.y);
 
 async function init(){
@@ -136,17 +160,27 @@ async function init(){
   landmarker=await PoseLandmarker.createFromOptions(fs,{
     baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",delegate:"GPU"},
     runningMode:"VIDEO",numPoses:1});
-  $("status").textContent="준비 완료. 영상을 선택하세요.";
+  $("status").textContent="준비 완료. 앵글 카드를 골라 영상을 올리세요.";
 }
 init().catch(e=>$("status").textContent="모델 로딩 실패: "+e.message);
-$("view").addEventListener("change",()=>{ renderViewSummary(); if(series.length){renderEvents();renderShaftTable();renderSeg();} });
-setTimeout(()=>renderViewSummary(),0); // const 초기화(TDZ) 이후 실행
 
-$("file").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;
+function loadVideo(e,view){
+  const f=e.target.files[0]; if(!f)return;
+  curView=view;
+  $("cardFO").classList.toggle("active",view==="FO");
+  $("cardDTL").classList.toggle("active",view==="DTL");
+  $("pickFO").textContent=view==="FO"?("✓ "+f.name):"";
+  $("pickDTL").textContent=view==="DTL"?("✓ "+f.name):"";
   video.src=URL.createObjectURL(f);
-  video.onloadedmetadata=()=>{overlay.width=video.videoWidth;overlay.height=video.videoHeight;work.width=video.videoWidth;work.height=video.videoHeight;$("run").disabled=false;$("status").textContent="분석 준비 완료.";};});
+  video.onloadedmetadata=()=>{overlay.width=video.videoWidth;overlay.height=video.videoHeight;work.width=video.videoWidth;work.height=video.videoHeight;
+    $("run").disabled=false;$("status").textContent=`${view==="FO"?"정면":"측면"} 영상 준비 완료. '분석 시작'.`;
+    $("activeInfo").innerHTML=`<b>${view==="FO"?"📷 정면(FO)":"📹 측면(DTL)"} 분석</b> — 이 앵글로 측정 가능한 항목만 표시됩니다.`;};
+}
+$("fileFO").addEventListener("change",e=>loadVideo(e,"FO"));
+$("fileDTL").addEventListener("change",e=>loadVideo(e,"DTL"));
 
 $("run").addEventListener("click",()=>{
+  if(!curView){$("status").textContent="먼저 앵글 카드에서 영상을 선택하세요.";return;}
   series=[];events={};prevShaft=null; if(cvState.prevGray){cvState.prevGray.delete();cvState.prevGray=null;}
   running=true;$("run").disabled=true;$("csv").disabled=true;$("status").textContent="분석 중…";
   J=jmap($("hand").value);video.currentTime=0;video.play();
@@ -156,13 +190,12 @@ function onF(n,m){if(!running)return;proc(m.mediaTime??video.currentTime);video.
 function raf(){if(!running)return;proc(video.currentTime);requestAnimationFrame(raf);}
 video.addEventListener("ended",finish);
 
-// ── 샤프트 검출 (모션마스크 + Hough) ──
 function detectShaft(gripPx,shoWpx){
-  if(!cvReady||!$("useShaft").checked||$("view").value!=="DTL") return null;
+  if(!cvReady||curView!=="DTL") return null;
   const useMot=$("useMotion").checked;
   const half=Math.max(60,Math.round(shoWpx*1.6));
-  const x0=Math.max(0,Math.round(gripPx.x-half)), y0=Math.max(0,Math.round(gripPx.y-half));
-  const x1=Math.min(work.width,Math.round(gripPx.x+half)), y1=Math.min(work.height,Math.round(gripPx.y+half));
+  const x0=Math.max(0,Math.round(gripPx.x-half)),y0=Math.max(0,Math.round(gripPx.y-half));
+  const x1=Math.min(work.width,Math.round(gripPx.x+half)),y1=Math.min(work.height,Math.round(gripPx.y+half));
   const w=x1-x0,h=y1-y0; if(w<20||h<20)return null;
   let full=null,gray=null,motion=null,grayRoi=null,edges=null,motRoi=null,masked=null,lines=null,kern=null;
   try{
@@ -170,37 +203,29 @@ function detectShaft(gripPx,shoWpx){
     gray=new cv.Mat(); cv.cvtColor(full,gray,cv.COLOR_RGBA2GRAY); full.delete(); full=null;
     cv.GaussianBlur(gray,gray,new cv.Size(3,3),0);
     const rect=new cv.Rect(x0,y0,w,h);
-    grayRoi=gray.roi(rect);
-    edges=new cv.Mat(); cv.Canny(grayRoi,edges,50,150);
+    grayRoi=gray.roi(rect); edges=new cv.Mat(); cv.Canny(grayRoi,edges,50,150);
     let houghSrc=edges;
     if(useMot && cvState.prevGray){
       motion=new cv.Mat(); cv.absdiff(gray,cvState.prevGray,motion);
       cv.threshold(motion,motion,16,255,cv.THRESH_BINARY);
       kern=cv.Mat.ones(3,3,cv.CV_8U); cv.dilate(motion,motion,kern);
-      motRoi=motion.roi(rect);
-      masked=new cv.Mat(); cv.bitwise_and(edges,motRoi,masked);
-      houghSrc=masked;
+      motRoi=motion.roi(rect); masked=new cv.Mat(); cv.bitwise_and(edges,motRoi,masked); houghSrc=masked;
     }
-    lines=new cv.Mat();
-    const minLen=Math.round(Math.min(w,h)*0.32);
+    lines=new cv.Mat(); const minLen=Math.round(Math.min(w,h)*0.32);
     cv.HoughLinesP(houghSrc,lines,1,Math.PI/180,24,minLen,16);
-    const gx=gripPx.x-x0, gy=gripPx.y-y0, nearR=Math.max(25,shoWpx*0.75);
+    const gx=gripPx.x-x0,gy=gripPx.y-y0,nearR=Math.max(25,shoWpx*0.75);
     let best=null,bestScore=-1e9;
     for(let i=0;i<lines.rows;i++){
       const d=lines.data32S,a={x:d[i*4],y:d[i*4+1]},b={x:d[i*4+2],y:d[i*4+3]};
-      const da=Math.hypot(a.x-gx,a.y-gy), db=Math.hypot(b.x-gx,b.y-gy);
-      const near=Math.min(da,db), far=Math.max(da,db);
-      if(near>nearR) continue;
-      const fp=da>db?a:b, dx=fp.x-gx, dy=fp.y-gy;
-      const angFromV=deg(Math.atan2(Math.abs(dx),Math.abs(dy)));
-      let score=far; if(prevShaft!=null) score-=Math.abs(angFromV-prevShaft)*1.3;
+      const da=Math.hypot(a.x-gx,a.y-gy),db=Math.hypot(b.x-gx,b.y-gy),near=Math.min(da,db),far=Math.max(da,db);
+      if(near>nearR)continue;
+      const fp=da>db?a:b,dx=fp.x-gx,dy=fp.y-gy,angFromV=deg(Math.atan2(Math.abs(dx),Math.abs(dy)));
+      let score=far; if(prevShaft!=null)score-=Math.abs(angFromV-prevShaft)*1.3;
       if(score>bestScore){bestScore=score;best={angle:angFromV,fx:fp.x+x0,fy:fp.y+y0};}
     }
-    // prevGray 갱신 (gray를 넘기고 finally에서 삭제 안 함)
-    if(cvState.prevGray) cvState.prevGray.delete();
-    cvState.prevGray=gray; gray=null;
+    if(cvState.prevGray)cvState.prevGray.delete(); cvState.prevGray=gray; gray=null;
     return best;
-  }catch(e){ return null; }
+  }catch(e){return null;}
   finally{ grayRoi&&grayRoi.delete();edges&&edges.delete();motRoi&&motRoi.delete();masked&&masked.delete();
            motion&&motion.delete();lines&&lines.delete();kern&&kern.delete();full&&full.delete();gray&&gray.delete(); }
 }
@@ -210,17 +235,15 @@ function proc(t){
   const res=landmarker.detectForVideo(video,performance.now());
   ctx.clearRect(0,0,overlay.width,overlay.height);
   if(!res.landmarks||!res.landmarks[0])return;
-  const lm=res.landmarks[0], wl=(res.worldLandmarks&&res.worldLandmarks[0])||null, P=k=>lm[J[k]], W=k=>wl[J[k]];
-  // 오버레이
+  const lm=res.landmarks[0],wl=(res.worldLandmarks&&res.worldLandmarks[0])||null,P=k=>lm[J[k]],W=k=>wl[J[k]];
   ctx.lineWidth=3;ctx.strokeStyle="#4ea1ff";
   for(const[a,b]of BONES){ctx.beginPath();ctx.moveTo(lm[a].x*overlay.width,lm[a].y*overlay.height);ctx.lineTo(lm[b].x*overlay.width,lm[b].y*overlay.height);ctx.stroke();}
   ctx.fillStyle="#3ecf8e";for(const p of lm){ctx.beginPath();ctx.arc(p.x*overlay.width,p.y*overlay.height,3,0,7);ctx.fill();}
-  // 샤프트
   const gripN=mid2(P("LEAD_WRIST"),P("TRAIL_WRIST"));
   const gripPx={x:gripN.x*work.width,y:gripN.y*work.height};
   const shoWpx=len2(sub2(P("LEAD_SHOULDER"),P("TRAIL_SHOULDER")))*work.width||60;
   let shaftAngle=null;
-  if(cvReady&&$("useShaft").checked&&$("view").value==="DTL"){
+  if(cvReady&&curView==="DTL"){
     wctx.drawImage(video,0,0,work.width,work.height);
     const sh=detectShaft(gripPx,shoWpx);
     if(sh){shaftAngle=sh.angle;prevShaft=sh.angle;
@@ -228,31 +251,24 @@ function proc(t){
       ctx.moveTo(gripPx.x/work.width*overlay.width,gripPx.y/work.height*overlay.height);
       ctx.lineTo(sh.fx/work.width*overlay.width,sh.fy/work.height*overlay.height);ctx.stroke();}
   }
-  // ── 3D 지표 (worldLandmarks) ──
-  let rec={t:+t.toFixed(4),handY:gripN.y,shaft:shaftAngle,
-    xfactor:null,spineTilt:null,leadKnee:null,trailKnee:null,leadArm:null,headSway:null,turnRel:null,sh:null,hp:null,up:null};
+  let rec={t:+t.toFixed(4),handY:gripN.y,shaft:shaftAngle,xfactor:null,spineTilt:null,leadKnee:null,trailKnee:null,leadArm:null,headSway:null,turnRel:null,sh:null,hp:null,up:null};
   if(wl){
-    const midHip=mid3(W("LEAD_HIP"),W("TRAIL_HIP")), midSho=mid3(W("LEAD_SHOULDER"),W("TRAIL_SHOULDER"));
-    const midAnk=mid3(W("LEAD_ANKLE"),W("TRAIL_ANKLE"));
-    const up=unit(V(midAnk,midHip));                        // 지면수직(중력) 근사
-    const shoulderLine=V(W("TRAIL_SHOULDER"),W("LEAD_SHOULDER"));
-    const hipLine=V(W("TRAIL_HIP"),W("LEAD_HIP"));
-    const spine=V(midHip,midSho);
-    const shP=unit(project(shoulderLine,up)), hpP=unit(project(hipLine,up)); // 지면 투영(회전 성분)
-    const armVec=V(W("LEAD_SHOULDER"),W("LEAD_WRIST"));
-    rec.sh=shP; rec.hp=hpP; rec.up=up;
-    rec.xfactor=Math.abs(signedAngle(hpP,shP,up));           // 어깨-골반 상대회전(3D)
-    rec.spineTilt=angBetween(spine,up);                      // 척추 기울기(전후+좌우)
+    const midHip=mid3(W("LEAD_HIP"),W("TRAIL_HIP")),midSho=mid3(W("LEAD_SHOULDER"),W("TRAIL_SHOULDER")),midAnk=mid3(W("LEAD_ANKLE"),W("TRAIL_ANKLE"));
+    const up=unit(Vv(midAnk,midHip));
+    const shoulderLine=Vv(W("TRAIL_SHOULDER"),W("LEAD_SHOULDER")),hipLine=Vv(W("TRAIL_HIP"),W("LEAD_HIP")),spine=Vv(midHip,midSho);
+    const shP=unit(project(shoulderLine,up)),hpP=unit(project(hipLine,up)),armVec=Vv(W("LEAD_SHOULDER"),W("LEAD_WRIST"));
+    rec.sh=shP;rec.hp=hpP;rec.up=up;
+    rec.xfactor=Math.abs(signedAngle(hpP,shP,up));
+    rec.spineTilt=angBetween(spine,up);
     rec.leadKnee=angle3d(W("LEAD_HIP"),W("LEAD_KNEE"),W("LEAD_ANKLE"));
     rec.trailKnee=angle3d(W("TRAIL_HIP"),W("TRAIL_KNEE"),W("TRAIL_ANKLE"));
-    rec.leadArm=angBetween(armVec,up)-90;                    // 리드팔 vs 수평(0≈평행)
-    rec.headSway=dot(V(midHip,W("HEAD")),unit(hipLine))/(nrm(shoulderLine)||1e-9);
-  }else{ // world 없으면 2D 폴백(리드팔/헤드만 근사)
-    const sho=sub2(P("LEAD_SHOULDER"),P("TRAIL_SHOULDER"));
-    rec.leadArm=deg(Math.atan2(sub2(P("LEAD_WRIST"),P("LEAD_SHOULDER")).y,sub2(P("LEAD_WRIST"),P("LEAD_SHOULDER")).x));
+    rec.leadArm=angBetween(armVec,up)-90;
+    rec.headSway=dot(Vv(midHip,W("HEAD")),unit(hipLine))/(nrm(shoulderLine)||1e-9);
+  }else{
+    const d=sub2(P("LEAD_WRIST"),P("LEAD_SHOULDER")); rec.leadArm=deg(Math.atan2(d.y,d.x));
   }
   series.push(rec);
-  $("live").innerHTML=`프레임 <b>${series.length}</b> · 샤프트 <b>${shaftAngle!=null?shaftAngle.toFixed(0)+"°":"—"}</b> · X-Factor(3D) <b>${rec.xfactor!=null?rec.xfactor.toFixed(0)+"°":"—"}</b> · 리드무릎 <b>${rec.leadKnee!=null?rec.leadKnee.toFixed(0)+"°":"—"}</b>`;
+  $("live").innerHTML=`프레임 <b>${series.length}</b>`+(curView==="DTL"?` · 샤프트 <b>${shaftAngle!=null?shaftAngle.toFixed(0)+"°":"—"}</b>`:"")+` · X-Factor <b>${rec.xfactor!=null?rec.xfactor.toFixed(0)+"°":"—"}</b> · 리드무릎 <b>${rec.leadKnee!=null?rec.leadKnee.toFixed(0)+"°":"—"}</b>`;
 }
 
 function smooth(a,k=2){return a.map((_,i)=>{let s=0,c=0;for(let j=-k;j<=k;j++){const m=a[i+j];if(m!=null){s+=m;c++;}}return c?s/c:null;});}
@@ -262,15 +278,15 @@ function interp(a){const r=a.slice();let last=null;for(let i=0;i<r.length;i++){i
 function finish(){
   if(!running)return;running=false;video.pause();$("run").disabled=false;
   if(series.length<10){$("status").textContent="프레임이 너무 적습니다.";return;}
-  // 샤프트각 시간 스무딩(보간 후)
-  const sm=smooth(interp(series.map(s=>s.shaft)),2); series.forEach((s,i)=>s.shaftSmooth=sm[i]);
-  // 그래프용 누적 어깨회전(프레임0 기준)
-  const base=series.find(s=>s.sh); if(base){series.forEach(s=>{ s.turnRel=(s.sh?signedAngle(base.sh,s.sh,s.up):null); });}
-  renderViewSummary();detectEvents();renderEvents();renderShaftTable();fillSeg();renderSeg();drawGraph();
+  const sm=smooth(interp(series.map(s=>s.shaft)),2);series.forEach((s,i)=>s.shaftSmooth=sm[i]);
+  const base=series.find(s=>s.sh);if(base)series.forEach(s=>{s.turnRel=(s.sh?signedAngle(base.sh,s.sh,s.up):null);});
+  applyViewVisibility();detectEvents();renderEvents();renderShaftTable();fillSeg();renderSeg();drawGraph();
   $("csv").disabled=false;
-  const sn=series.filter(s=>s.shaft!=null).length;
-  $("status").textContent=`완료: ${series.length}프레임 · 샤프트검출 ${sn} · 3D각도 ${series.filter(s=>s.xfactor!=null).length} · P1~P10.`;
+  $("status").textContent=`완료: ${series.length}프레임 · ${curView==="FO"?"정면":"측면"} 분석.`;
 }
+
+// FO면 샤프트 관련 UI 숨김
+function applyViewVisibility(){ $("shaftSection").style.display = curView==="DTL" ? "block" : "none"; }
 
 function detectEvents(){
   const n=series.length,hY=smooth(series.map(s=>s.handY),2);
@@ -281,58 +297,42 @@ function detectEvents(){
   const fin=Math.min(n-1,ftop+Math.floor((n-1-ftop)*0.6));
   const armPar=(lo,hi)=>{for(let i=lo;i<hi;i++){const a=series[i].leadArm;if(a!=null&&Math.abs(a)<12)return i;}return null;};
   const p3=armPar(adr,top),p5=armPar(top,imp),p9=armPar(imp,fin);
-  const enough=series.filter(s=>s.shaft!=null).length>n*0.2;
-  const shaftPar=(lo,hi)=>{if(!enough)return null;for(let i=lo;i<hi;i++){const v=series[i].shaftSmooth;if(v!=null&&v>=78)return i;}return null;};
-  const p2=shaftPar(adr,top),p6=shaftPar(top,imp),p8=shaftPar(imp,fin);
-  events={P1:adr,P2:p2,P3:p3,P4:top,P5:p5,P6:p6,P7:imp,P8:p8,P9:p9,P10:fin};
+  events={P1:adr,P3:p3,P4:top,P5:p5,P7:imp,P9:p9,P10:fin};
+  if(curView==="DTL"){ // 샤프트 이벤트는 측면에서만
+    const enough=series.filter(s=>s.shaft!=null).length>n*0.2;
+    const shaftPar=(lo,hi)=>{if(!enough)return null;for(let i=lo;i<hi;i++){const v=series[i].shaftSmooth;if(v!=null&&v>=78)return i;}return null;};
+    events.P2=shaftPar(adr,top);events.P6=shaftPar(top,imp);events.P8=shaftPar(imp,fin);
+  }
 }
 
 const LBL={P1:"Address",P2:"Toe-up(샤프트평행)",P3:"리드팔평행(BS)",P4:"Top",P5:"리드팔평행(DS)",P6:"샤프트평행(DS)",P7:"Impact",P8:"샤프트평행(FT)",P9:"리드팔평행(FT)",P10:"Finish"};
 const SHAFT_EV=new Set(["P2","P6","P8"]);
-const ORD=["P1","P2","P3","P4","P5","P6","P7","P8","P9","P10"];
+function evOrder(){ return curView==="DTL"?["P1","P2","P3","P4","P5","P6","P7","P8","P9","P10"]:["P1","P3","P4","P5","P7","P9","P10"]; }
 function renderEvents(){
-  const fo=$("view").value==="FO";
-  $("events").innerHTML=ORD.map(p=>{const f=events[p],cls=SHAFT_EV.has(p)?"shaft":"";
-    if(f==null){
-      const why=(SHAFT_EV.has(p)&&fo)?"FO라 측정불가(정상)":"미검출";
-      return `<span class="ev miss ${cls}"><b>${p}</b> ${LBL[p]} · ${why}</span>`;
-    }
-    return `<span class="ev ${cls}"><b>${p}</b> ${LBL[p]} · #${f} (${series[f].t.toFixed(2)}s)</span>`;}).join("");
+  $("events").innerHTML=evOrder().map(p=>{const f=events[p],cls=SHAFT_EV.has(p)?"shaft":"";
+    return f==null?`<span class="ev miss ${cls}"><b>${p}</b> ${LBL[p]} · 미검출</span>`
+      :`<span class="ev ${cls}"><b>${p}</b> ${LBL[p]} · #${f} (${series[f].t.toFixed(2)}s)</span>`;}).join("");
 }
 function renderShaftTable(){
+  if(curView!=="DTL")return;
   const any=series.some(s=>s.shaft!=null),tb=$("shaftTable").querySelector("tbody");
-  if(!any){tb.innerHTML=`<tr><td colspan="4" style="color:#8b97a5">샤프트 미검출 (FO뷰/OpenCV 미로드/모션블러). DTL 측면영상 권장.</td></tr>`;return;}
-  tb.innerHTML=ORD.map(p=>{const f=events[p];if(f==null)return "";const v=series[f].shaftSmooth;
+  if(!any){tb.innerHTML=`<tr><td colspan="4" style="color:#8b97a5">샤프트 미검출 (OpenCV 미로드/모션블러/배경). 삼각대 고정·단순배경 권장.</td></tr>`;return;}
+  tb.innerHTML=evOrder().map(p=>{const f=events[p];if(f==null)return "";const v=series[f].shaftSmooth;
     return `<tr><td>${p}</td><td>${LBL[p]}</td><td class="num">${f}</td><td class="num">${v!=null?v.toFixed(0)+"°":"—"}</td></tr>`;}).join("");
 }
-// ── 카메라 뷰별 측정 등급 (Camera View Capability v1.0 = 정직성 계약) ──
-// ok=정확 · approx=근사(참고용, 단일카메라 깊이추정 한계) · no=측정불가(null, 지어내지 않음)
-const VIEWREL={
-  turn:      {FO:"approx", DTL:"approx"}, // 회전 절대각은 단일카메라로 근사가 최선(2cam/3D 필요)
-  xfactor:   {FO:"approx", DTL:"approx"},
-  spineTilt: {FO:"approx", DTL:"approx"}, // 혼합각(좌우+전후) → 어느 뷰든 한 성분만 유효
-  leadKnee:  {FO:"ok",     DTL:"ok"},     // 관절 사이각은 견고
-  trailKnee: {FO:"ok",     DTL:"ok"},
-  headSway:  {FO:"ok",     DTL:"approx"}, // 좌우 스웨이=FO 정확, DTL은 좌우깊이 소실
-  shaftSmooth:{FO:"no",    DTL:"ok"}      // 샤프트각=DTL 전용, FO는 물리적으로 불가
-};
-const RELBADGE={ok:'<span style="color:#3ecf8e">✅정확</span>',approx:'<span style="color:#ffb648">≈근사(참고)</span>',no:'<span style="color:#ff7eb6">✕측정불가</span>'};
-function rel(key){const v=$("view").value;return (VIEWREL[key]&&VIEWREL[key][v])||"ok";}
-// 구간 회전(벡터 기반) + 스칼라 지표
-const SCAL=[["X-Factor(3D)","xfactor",0],["척추 기울기","spineTilt",0],["리드 무릎각","leadKnee",0],["트레일 무릎각","trailKnee",0],["헤드 스웨이","headSway",3],["샤프트각","shaftSmooth",0]];
-function renderViewSummary(){
-  const v=$("view").value;
-  const okList=[],apxList=[],noList=[];
-  const names={turn:"어깨/골반 회전",xfactor:"X-Factor",spineTilt:"척추 기울기",leadKnee:"무릎각",headSway:"헤드 스웨이",shaftSmooth:"샤프트각/플레인"};
-  for(const k in names){const r=(VIEWREL[k]&&VIEWREL[k][v])||"ok";(r==="ok"?okList:r==="approx"?apxList:noList).push(names[k]);}
-  const depth=v==="FO"?"앞뒤(전후)":"목표선(좌우)";
-  $("viewSummary").innerHTML=`<b>${v==="FO"?"정면(FO)":"측면(DTL)"} 카메라</b> — 렌즈 향한 <b>${depth}</b> 축은 측정 불가/부정확<br>`
-    +`<span style="color:#3ecf8e">✅정확: ${okList.join(", ")||"—"}</span> · `
-    +`<span style="color:#ffb648">≈근사: ${apxList.join(", ")||"—"}</span> · `
-    +`<span style="color:#ff7eb6">✕불가: ${noList.join(", ")||"—"}</span>`;
+
+// 이 앵글에서 '보여줄' 스칼라 지표만 (측정 불가 항목은 목록에서 제외)
+// approx=근사(참고) 태그, ok=표시. no(측정불가)는 아예 포함 안 함.
+function segMetrics(){
+  const common=[["리드 무릎각","leadKnee",0,"ok"],["트레일 무릎각","trailKnee",0,"ok"],
+                ["X-Factor(회전)","xfactor",0,"approx"],["척추 기울기","spineTilt",0,"approx"]];
+  if(curView==="FO") return [["헤드 스웨이(좌우)","headSway",3,"ok"],...common];
+  // DTL
+  return [["샤프트각","shaftSmooth",0,"ok"],...common];
 }
+const TAG={ok:'',approx:' <span class="badge" style="color:#ffb648">≈근사</span>'};
 function fillSeg(){
-  const present=ORD.filter(p=>events[p]!=null),opt=p=>`<option value="${p}">${p} ${LBL[p]}</option>`;
+  const present=evOrder().filter(p=>events[p]!=null),opt=p=>`<option value="${p}">${p} ${LBL[p]}</option>`;
   $("segFrom").innerHTML=present.map(opt).join("");$("segTo").innerHTML=present.map(opt).join("");
   $("segFrom").value="P1";$("segTo").value=present.includes("P4")?"P4":present[present.length-1];
   $("segFrom").onchange=renderSeg;$("segTo").onchange=renderSeg;
@@ -341,28 +341,26 @@ function renderSeg(){
   const a=events[$("segFrom").value],b=events[$("segTo").value],tb=$("segTable").querySelector("tbody");
   if(a==null||b==null){tb.innerHTML="";return;}
   let rows="";
-  // 회전(벡터): 어깨회전/힙회전
   if(series[a].sh&&series[b].sh){
-    const st=signedAngle(series[a].sh,series[b].sh,series[b].up), ht=signedAngle(series[a].hp,series[b].hp,series[b].up);
-    rows+=`<tr><td>어깨 회전(3D) ${RELBADGE[rel("turn")]}</td><td class="num">—</td><td class="num">—</td><td class="num" style="color:#3ecf8e">${st>0?"+":""}${st.toFixed(0)}°</td></tr>`;
-    rows+=`<tr><td>골반 회전(3D) ${RELBADGE[rel("turn")]}</td><td class="num">—</td><td class="num">—</td><td class="num" style="color:#3ecf8e">${ht>0?"+":""}${ht.toFixed(0)}°</td></tr>`;
+    const st=signedAngle(series[a].sh,series[b].sh,series[b].up),ht=signedAngle(series[a].hp,series[b].hp,series[b].up);
+    rows+=`<tr><td>어깨 회전 ${TAG.approx}</td><td class="num">—</td><td class="num">—</td><td class="num" style="color:#3ecf8e">${st>0?"+":""}${st.toFixed(0)}°</td></tr>`;
+    rows+=`<tr><td>골반 회전 ${TAG.approx}</td><td class="num">—</td><td class="num">—</td><td class="num" style="color:#3ecf8e">${ht>0?"+":""}${ht.toFixed(0)}°</td></tr>`;
   }
-  rows+=SCAL.map(([name,key,f])=>{
-    const r=rel(key), badge=RELBADGE[r];
-    if(r==="no") // 불가: 값 지어내지 않음
-      return `<tr style="opacity:.5"><td>${name} ${badge}</td><td class="num">—</td><td class="num">—</td><td class="num" style="color:#ff7eb6">측정불가</td></tr>`;
+  rows+=segMetrics().map(([name,key,f,g])=>{
     const s=series[a][key],e=series[b][key];
-    if(s==null||e==null)return `<tr><td>${name} ${badge}</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>`;
+    if(s==null||e==null)return `<tr><td>${name}${TAG[g]}</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>`;
     const d=e-s,col=d>0?"#3ecf8e":"#ff7eb6";
-    return `<tr><td>${name} ${badge}</td><td class="num">${s.toFixed(f)}</td><td class="num">${e.toFixed(f)}</td><td class="num" style="color:${col}">${d>0?"+":""}${d.toFixed(f)}</td></tr>`;
+    return `<tr><td>${name}${TAG[g]}</td><td class="num">${s.toFixed(f)}</td><td class="num">${e.toFixed(f)}</td><td class="num" style="color:${col}">${d>0?"+":""}${d.toFixed(f)}</td></tr>`;
   }).join("");
   tb.innerHTML=rows;
 }
 function drawGraph(){
   const c=$("graph");c.width=c.clientWidth;c.height=240;const g=c.getContext("2d");
   g.fillStyle="#12161c";g.fillRect(0,0,c.width,c.height);
-  const plot=[["xfactor","#4ea1ff",series.map(s=>s.xfactor)],["turnRel","#7ee081",series.map(s=>s.turnRel)],
-    ["spineTilt","#ffb648",series.map(s=>s.spineTilt)],["shaftSmooth","#ffd166",series.map(s=>s.shaftSmooth)]];
+  const plot=[["xfactor","#4ea1ff",series.map(s=>s.xfactor),"X-Factor"],["turnRel","#7ee081",series.map(s=>s.turnRel),"어깨누적회전"],
+    ["spineTilt","#ffb648",series.map(s=>s.spineTilt),"척추기울기"]];
+  if(curView==="DTL")plot.push(["shaftSmooth","#ffd166",series.map(s=>s.shaftSmooth),"샤프트각"]);
+  else plot.push(["headSway","#ff7eb6",series.map(s=>s.headSway),"헤드스웨이"]);
   const n=series.length,pad=26,xat=i=>pad+(c.width-2*pad)*i/(n-1);
   for(const[,color,vals]of plot){const vv=vals.filter(v=>v!=null);if(!vv.length)continue;
     const mn=Math.min(...vv),mx=Math.max(...vv),rng=(mx-mn)||1;g.strokeStyle=color;g.lineWidth=1.5;g.beginPath();let st=false;
@@ -371,14 +369,14 @@ function drawGraph(){
   for(const p in events){const f=events[p];if(f==null)continue;const x=xat(f);
     g.strokeStyle=SHAFT_EV.has(p)?"#ffd166":"#ff7eb6";g.setLineDash([3,3]);g.beginPath();g.moveTo(x,8);g.lineTo(x,c.height-8);g.stroke();g.setLineDash([]);
     g.fillStyle=SHAFT_EV.has(p)?"#ffd166":"#ff7eb6";g.fillText(p,x-6,16);}
-  $("legend").innerHTML=`<span style="color:#4ea1ff">■</span>X-Factor(3D) · <span style="color:#7ee081">■</span>어깨누적회전 · <span style="color:#ffb648">■</span>척추기울기 · <span style="color:#ffd166">■</span>샤프트각 · <span style="color:#ff7eb6">┊</span>포즈이벤트 · <span style="color:#ffd166">┊</span>샤프트이벤트`;
+  $("legend").innerHTML=plot.map(([,color,,nm])=>`<span style="color:${color}">■</span>${nm}`).join(" · ")+` · <span style="color:#ff7eb6">┊</span>이벤트`;
 }
 $("csv").addEventListener("click",()=>{
   const evF={};for(const p in events)if(events[p]!=null)evF[events[p]]=p;
-  let out="frame,t,xfactor3d,spineTilt3d,leadKnee,trailKnee,headSway,leadArm,shaft_raw,shaft_smooth,turnRel,handY,event\n";
+  let out="view,frame,t,xfactor3d,spineTilt3d,leadKnee,trailKnee,headSway,shaft_smooth,turnRel,handY,event\n";
   series.forEach((s,i)=>{const f=(v,d)=>v!=null?v.toFixed(d):"";
-    out+=`${i},${s.t},${f(s.xfactor,2)},${f(s.spineTilt,2)},${f(s.leadKnee,1)},${f(s.trailKnee,1)},${f(s.headSway,3)},${f(s.leadArm,1)},${f(s.shaft,1)},${f(s.shaftSmooth,1)},${f(s.turnRel,1)},${s.handY.toFixed(4)},${evF[i]||""}\n`;});
-  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([out],{type:"text/csv"}));a.download="doh_swing_v2_1.csv";a.click();
+    out+=`${curView},${i},${s.t},${f(s.xfactor,2)},${f(s.spineTilt,2)},${f(s.leadKnee,1)},${f(s.trailKnee,1)},${f(s.headSway,3)},${f(s.shaftSmooth,1)},${f(s.turnRel,1)},${s.handY.toFixed(4)},${evF[i]||""}\n`;});
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([out],{type:"text/csv"}));a.download=`doh_swing_${curView}.csv`;a.click();
 });
 </script>
 </body>
