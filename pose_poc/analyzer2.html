@@ -305,30 +305,31 @@ function renderShaftTable(){
   tb.innerHTML=ORD.map(p=>{const f=events[p];if(f==null)return "";const v=series[f].shaftSmooth;
     return `<tr><td>${p}</td><td>${LBL[p]}</td><td class="num">${f}</td><td class="num">${v!=null?v.toFixed(0)+"°":"—"}</td></tr>`;}).join("");
 }
-// ── 카메라 뷰별 측정 신뢰도 (Coordinate System Spec §7) ──
-// ok=신뢰 · weak=약함(깊이축 손실) · no=측정 불가
+// ── 카메라 뷰별 측정 등급 (Camera View Capability v1.0 = 정직성 계약) ──
+// ok=정확 · approx=근사(참고용, 단일카메라 깊이추정 한계) · no=측정불가(null, 지어내지 않음)
 const VIEWREL={
-  turn:      {FO:"ok",  DTL:"ok"},    // 회전(수직축 기준) 양뷰 견고
-  xfactor:   {FO:"ok",  DTL:"ok"},
-  spineTilt: {FO:"ok",  DTL:"weak"},  // 좌우틸트=FO / 전후굴곡=DTL (혼합지표라 뷰마다 일부만)
-  leadKnee:  {FO:"ok",  DTL:"ok"},
-  trailKnee: {FO:"ok",  DTL:"ok"},
-  headSway:  {FO:"ok",  DTL:"weak"},  // 좌우 스웨이=FO 우세, DTL은 좌우깊이 약함
-  shaftSmooth:{FO:"no", DTL:"ok"}     // 샤프트각=DTL 전용
+  turn:      {FO:"approx", DTL:"approx"}, // 회전 절대각은 단일카메라로 근사가 최선(2cam/3D 필요)
+  xfactor:   {FO:"approx", DTL:"approx"},
+  spineTilt: {FO:"approx", DTL:"approx"}, // 혼합각(좌우+전후) → 어느 뷰든 한 성분만 유효
+  leadKnee:  {FO:"ok",     DTL:"ok"},     // 관절 사이각은 견고
+  trailKnee: {FO:"ok",     DTL:"ok"},
+  headSway:  {FO:"ok",     DTL:"approx"}, // 좌우 스웨이=FO 정확, DTL은 좌우깊이 소실
+  shaftSmooth:{FO:"no",    DTL:"ok"}      // 샤프트각=DTL 전용, FO는 물리적으로 불가
 };
-const RELBADGE={ok:'<span style="color:#3ecf8e">✅신뢰</span>',weak:'<span style="color:#ffb648">△약함</span>',no:'<span style="color:#ff7eb6">✕불가</span>'};
+const RELBADGE={ok:'<span style="color:#3ecf8e">✅정확</span>',approx:'<span style="color:#ffb648">≈근사(참고)</span>',no:'<span style="color:#ff7eb6">✕측정불가</span>'};
 function rel(key){const v=$("view").value;return (VIEWREL[key]&&VIEWREL[key][v])||"ok";}
 // 구간 회전(벡터 기반) + 스칼라 지표
 const SCAL=[["X-Factor(3D)","xfactor",0],["척추 기울기","spineTilt",0],["리드 무릎각","leadKnee",0],["트레일 무릎각","trailKnee",0],["헤드 스웨이","headSway",3],["샤프트각","shaftSmooth",0]];
 function renderViewSummary(){
   const v=$("view").value;
-  const okList=[],weakList=[],noList=[];
+  const okList=[],apxList=[],noList=[];
   const names={turn:"어깨/골반 회전",xfactor:"X-Factor",spineTilt:"척추 기울기",leadKnee:"무릎각",headSway:"헤드 스웨이",shaftSmooth:"샤프트각/플레인"};
-  for(const k in names){const r=(VIEWREL[k]&&VIEWREL[k][v])||"ok";(r==="ok"?okList:r==="weak"?weakList:noList).push(names[k]);}
-  $("viewSummary").innerHTML=`<b>${v==="FO"?"정면(FO)":"측면(DTL)"} 카메라</b> · `
-    +`<span style="color:#3ecf8e">신뢰: ${okList.join(", ")||"—"}</span> · `
-    +`<span style="color:#ffb648">약함: ${weakList.join(", ")||"—"}</span> · `
-    +`<span style="color:#ff7eb6">불가: ${noList.join(", ")||"—"}</span>`;
+  for(const k in names){const r=(VIEWREL[k]&&VIEWREL[k][v])||"ok";(r==="ok"?okList:r==="approx"?apxList:noList).push(names[k]);}
+  const depth=v==="FO"?"앞뒤(전후)":"목표선(좌우)";
+  $("viewSummary").innerHTML=`<b>${v==="FO"?"정면(FO)":"측면(DTL)"} 카메라</b> — 렌즈 향한 <b>${depth}</b> 축은 측정 불가/부정확<br>`
+    +`<span style="color:#3ecf8e">✅정확: ${okList.join(", ")||"—"}</span> · `
+    +`<span style="color:#ffb648">≈근사: ${apxList.join(", ")||"—"}</span> · `
+    +`<span style="color:#ff7eb6">✕불가: ${noList.join(", ")||"—"}</span>`;
 }
 function fillSeg(){
   const present=ORD.filter(p=>events[p]!=null),opt=p=>`<option value="${p}">${p} ${LBL[p]}</option>`;
@@ -348,10 +349,12 @@ function renderSeg(){
   }
   rows+=SCAL.map(([name,key,f])=>{
     const r=rel(key), badge=RELBADGE[r];
+    if(r==="no") // 불가: 값 지어내지 않음
+      return `<tr style="opacity:.5"><td>${name} ${badge}</td><td class="num">—</td><td class="num">—</td><td class="num" style="color:#ff7eb6">측정불가</td></tr>`;
     const s=series[a][key],e=series[b][key];
-    if(s==null||e==null)return `<tr style="${r==="no"?"opacity:.45":""}"><td>${name} ${badge}</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>`;
+    if(s==null||e==null)return `<tr><td>${name} ${badge}</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>`;
     const d=e-s,col=d>0?"#3ecf8e":"#ff7eb6";
-    return `<tr style="${r==="no"?"opacity:.45":""}"><td>${name} ${badge}</td><td class="num">${s.toFixed(f)}</td><td class="num">${e.toFixed(f)}</td><td class="num" style="color:${col}">${d>0?"+":""}${d.toFixed(f)}</td></tr>`;
+    return `<tr><td>${name} ${badge}</td><td class="num">${s.toFixed(f)}</td><td class="num">${e.toFixed(f)}</td><td class="num" style="color:${col}">${d>0?"+":""}${d.toFixed(f)}</td></tr>`;
   }).join("");
   tb.innerHTML=rows;
 }
