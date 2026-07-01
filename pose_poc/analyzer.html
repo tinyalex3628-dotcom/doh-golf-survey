@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DOH Vision Analyzer — 구간 자동검출 + 구간별 각도변화</title>
+<!--
+  DOH Vision Analyzer PoC (Project C)
+  = pose_poc/index.html(좌표추출) + 실제 분석 계산기
+  하는 일:
+   1) MediaPipe로 프레임별 33 관절 추출
+   2) 프레임별 각도/위치 지표 시계열 계산 (X-Factor proxy, 척추틸트, 리드무릎, 헤드스웨이, 손높이)
+   3) 손 높이·속도 규칙으로 스윙 이벤트 자동검출 (P1 Address / P3 / P4 Top / P5 / P7 Impact / P10 Finish)
+   4) 구간(P?→P?) 선택 시 "어느 부위가 몇 도 움직였나" 자동 산출
+   5) 시계열 그래프 + 이벤트 마커 렌더
+  ⚠️ 지표는 2D 근사(proxy). 정밀 view-invariant 값은 Coordinate System Spec(BODY/GROUND 정렬) 단계.
+     여기서는 "구간검출 + 구간별 변화 계산"이 실제로 동작함을 보이는 것이 목적.
+-->
+<style>
+  :root{--bg:#0f1216;--panel:#1a1f27;--ink:#e8edf2;--sub:#8b97a5;--accent:#4ea1ff;--ok:#3ecf8e;--warn:#ffb648;--pink:#ff7eb6;}
+  *{box-sizing:border-box;} body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;}
+  header{padding:14px 20px;border-bottom:1px solid #262d38;} header h1{margin:0;font-size:16px;} header p{margin:4px 0 0;color:var(--sub);font-size:12px;}
+  .wrap{display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:16px;padding:16px 20px;} @media(max-width:1000px){.wrap{grid-template-columns:1fr;}}
+  .panel{background:var(--panel);border:1px solid #262d38;border-radius:10px;padding:14px;}
+  .stage{position:relative;background:#000;border-radius:8px;overflow:hidden;aspect-ratio:9/16;max-height:64vh;margin:auto;}
+  .stage video,.stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+  button,.filebtn{background:#222c39;color:var(--ink);border:1px solid #33404f;border-radius:8px;padding:9px 14px;cursor:pointer;font-size:13px;}
+  button:hover,.filebtn:hover{border-color:var(--accent);} button:disabled{opacity:.4;cursor:not-allowed;}
+  button.primary{background:var(--accent);color:#04121f;border-color:var(--accent);font-weight:600;}
+  input[type=file]{display:none;} select{background:#222c39;color:var(--ink);border:1px solid #33404f;border-radius:6px;padding:6px;}
+  label.opt{display:flex;align-items:center;gap:8px;color:var(--sub);font-size:12px;margin-top:8px;flex-wrap:wrap;}
+  .status{font-size:12px;color:var(--warn);min-height:16px;margin-top:8px;}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin:14px 0 8px;}
+  table{width:100%;border-collapse:collapse;font-size:12px;} th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #2a323d;}
+  th{color:var(--sub);font-weight:500;} td.num{text-align:right;font-variant-numeric:tabular-nums;color:var(--accent);}
+  .ev{display:inline-block;padding:2px 8px;border-radius:6px;background:#222c39;border:1px solid #33404f;font-size:12px;margin:3px 4px 0 0;}
+  .ev b{color:var(--pink);} .ev.miss{opacity:.45;}
+  #graph{width:100%;height:220px;background:#12161c;border-radius:8px;border:1px solid #262d38;}
+  .segsel{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap;}
+  .note{color:var(--sub);font-size:11px;margin-top:10px;line-height:1.55;}
+  .live{font-size:12px;color:var(--sub);} .live b{color:var(--ok);font-variant-numeric:tabular-nums;}
+</style>
+</head>
+<body>
+<header>
+  <h1>DOH Vision Analyzer — 구간 자동검출 + 구간별 각도변화</h1>
+  <p>스윙 올림 → 프레임별 관절 → 지표 시계열 → 이벤트 자동검출(P1/P3/P4/P5/P7/P10) → "P?→P? 사이 어느 부위 몇 도" 자동 산출</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="stage"><video id="video" playsinline muted></video><canvas id="overlay"></canvas></div>
+    <div class="controls">
+      <label class="filebtn">영상 선택<input id="file" type="file" accept="video/*"/></label>
+      <button id="run" class="primary" disabled>분석 시작</button>
+      <button id="csv" disabled>지표 CSV</button>
+    </div>
+    <label class="opt">
+      <select id="hand"><option value="right">오른손잡이</option><option value="left">왼손잡이</option></select>
+      <select id="view"><option value="FO">FO(정면)</option><option value="DTL">DTL(후면)</option></select>
+    </label>
+    <div class="status" id="status">모델 로딩 대기…</div>
+    <div class="live" id="live"></div>
+    <div class="note">
+      ⚠️ 값은 <b>2D 근사(proxy)</b>입니다. 정밀 view-invariant 값(BODY/GROUND 정렬)은 Coordinate System Spec 단계.<br>
+      이 PoC의 목적은 <b>구간 자동검출 + 구간별 변화 계산이 실제로 동작</b>함을 보이는 것.<br>
+      P2/P6/P8(샤프트 평행)은 클럽 검출이 필요해 여기선 생략됩니다.
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>① 자동 검출된 스윙 이벤트</h2>
+    <div id="events">— 분석 후 표시 —</div>
+
+    <h2>② 구간별 움직임 (어느 부위가 몇 도)</h2>
+    <div class="segsel">
+      <span class="sub">구간</span>
+      <select id="segFrom"></select> <span>→</span> <select id="segTo"></select>
+    </div>
+    <table id="segTable"><thead><tr><th>부위 / 지표</th><th>시작</th><th>끝</th><th>변화(Δ)</th></tr></thead><tbody></tbody></table>
+
+    <h2>③ 지표 시계열 그래프</h2>
+    <canvas id="graph"></canvas>
+    <div class="note" id="legend"></div>
+  </div>
+</div>
+
+<script type="module">
+import { FilesetResolver, PoseLandmarker }
+  from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+const MP={NOSE:0,L_SHO:11,R_SHO:12,L_ELB:13,R_ELB:14,L_WRI:15,R_WRI:16,L_HIP:23,R_HIP:24,L_KNE:25,R_KNE:26,L_ANK:27,R_ANK:28};
+const BONES=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[0,11],[0,12]];
+function jmap(h){const rh=h==="right",L=rh?"L":"R",T=rh?"R":"L";const g=s=>MP[s];
+  return{HEAD:MP.NOSE,LEAD_SHOULDER:g(L+"_SHO"),TRAIL_SHOULDER:g(T+"_SHO"),LEAD_ELBOW:g(L+"_ELB"),TRAIL_ELBOW:g(T+"_ELB"),
+  LEAD_WRIST:g(L+"_WRI"),TRAIL_WRIST:g(T+"_WRI"),LEAD_HIP:g(L+"_HIP"),TRAIL_HIP:g(T+"_HIP"),
+  LEAD_KNEE:g(L+"_KNE"),TRAIL_KNEE:g(T+"_KNE"),LEAD_ANKLE:g(L+"_ANK"),TRAIL_ANKLE:g(T+"_ANK")};}
+
+const $=id=>document.getElementById(id);
+const video=$("video"),overlay=$("overlay"),ctx=overlay.getContext("2d");
+let landmarker=null,running=false,series=[],events={},J=null;
+
+// ── 기하 헬퍼 ──
+const deg=r=>r*180/Math.PI;
+const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y});
+const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+const len=v=>Math.hypot(v.x,v.y);
+function angVsHoriz(a,b){const v=sub(a,b);return deg(Math.atan2(v.y,v.x));} // 화면 수평 기준(도)
+function angVsVert(a,b){const v=sub(a,b);return deg(Math.atan2(v.x,-v.y));} // 화면 수직 기준(도)
+function angle3(a,b,c){const u=sub(a,b),w=sub(c,b);const d=(u.x*w.x+u.y*w.y)/((len(u)*len(w))||1e-6);return deg(Math.acos(Math.max(-1,Math.min(1,d))));}
+
+async function init(){
+  $("status").textContent="MediaPipe WASM 로딩 중…";
+  const fs=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  landmarker=await PoseLandmarker.createFromOptions(fs,{
+    baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",delegate:"GPU"},
+    runningMode:"VIDEO",numPoses:1});
+  $("status").textContent="준비 완료. 영상을 선택하세요.";
+}
+init().catch(e=>$("status").textContent="모델 로딩 실패: "+e.message);
+
+$("file").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;
+  video.src=URL.createObjectURL(f);
+  video.onloadedmetadata=()=>{overlay.width=video.videoWidth;overlay.height=video.videoHeight;$("run").disabled=false;$("status").textContent="분석 준비 완료.";};});
+
+$("run").addEventListener("click",()=>{
+  series=[];events={};running=true;$("run").disabled=true;$("csv").disabled=true;$("status").textContent="분석 중…";
+  J=jmap($("hand").value); video.currentTime=0; video.play();
+  if("requestVideoFrameCallback"in HTMLVideoElement.prototype)video.requestVideoFrameCallback(onF);else raf();
+});
+function onF(now,meta){if(!running)return;proc(meta.mediaTime??video.currentTime);video.requestVideoFrameCallback(onF);}
+function raf(){if(!running)return;proc(video.currentTime);requestAnimationFrame(raf);}
+video.addEventListener("ended",finish);
+
+function proc(t){
+  if(video.readyState<2)return;
+  const res=landmarker.detectForVideo(video,performance.now());
+  ctx.clearRect(0,0,overlay.width,overlay.height);
+  if(!res.landmarks||!res.landmarks[0])return;
+  const lm=res.landmarks[0];
+  // 오버레이
+  ctx.lineWidth=3;ctx.strokeStyle="#4ea1ff";
+  for(const[a,b]of BONES){ctx.beginPath();ctx.moveTo(lm[a].x*overlay.width,lm[a].y*overlay.height);ctx.lineTo(lm[b].x*overlay.width,lm[b].y*overlay.height);ctx.stroke();}
+  ctx.fillStyle="#3ecf8e";for(const p of lm){ctx.beginPath();ctx.arc(p.x*overlay.width,p.y*overlay.height,3,0,7);ctx.fill();}
+  // 표준 관절
+  const P=k=>lm[J[k]];
+  const shoW=len(sub(P("LEAD_SHOULDER"),P("TRAIL_SHOULDER")))||1e-6;
+  const pelvis=mid(P("LEAD_HIP"),P("TRAIL_HIP")), thorax=mid(P("LEAD_SHOULDER"),P("TRAIL_SHOULDER"));
+  const handMid=mid(P("LEAD_WRIST"),P("TRAIL_WRIST"));
+  // 프레임 지표 (2D proxy)
+  const shoulderTilt=angVsHoriz(P("LEAD_SHOULDER"),P("TRAIL_SHOULDER"));
+  const hipTilt=angVsHoriz(P("LEAD_HIP"),P("TRAIL_HIP"));
+  const rec={
+    t:+t.toFixed(4),
+    handY:handMid.y,
+    xfactor:shoulderTilt-hipTilt,                                   // 어깨-골반 상대각(proxy)
+    shoulderTilt, hipTilt,
+    spineTilt:angVsVert(thorax,pelvis),                             // 척추 좌우기울기
+    leadKnee:angle3(P("LEAD_HIP"),P("LEAD_KNEE"),P("LEAD_ANKLE")),  // 리드 무릎각
+    trailKnee:angle3(P("TRAIL_HIP"),P("TRAIL_KNEE"),P("TRAIL_ANKLE")),
+    leadArm:angVsHoriz(P("LEAD_WRIST"),P("LEAD_SHOULDER")),         // 리드팔 수평기준각(P3/P5 검출용)
+    headSway:(P("HEAD").x-pelvis.x)/shoW,                           // 헤드 스웨이(어깨폭 정규화)
+    vis:lm.reduce((s,p)=>s+(p.visibility??0),0)/lm.length
+  };
+  series.push(rec);
+  $("live").innerHTML=`프레임 <b>${series.length}</b> · X-Factor(proxy) <b>${rec.xfactor.toFixed(1)}°</b> · 척추틸트 <b>${rec.spineTilt.toFixed(1)}°</b> · 리드무릎 <b>${rec.leadKnee.toFixed(0)}°</b>`;
+}
+
+function smooth(arr,k=2){return arr.map((_,i)=>{let s=0,c=0;for(let j=-k;j<=k;j++){const m=arr[i+j];if(m!==undefined){s+=m;c++;}}return s/c;});}
+
+function finish(){
+  if(!running)return; running=false; video.pause(); $("run").disabled=false;
+  if(series.length<10){$("status").textContent="프레임이 너무 적습니다.";return;}
+  detectEvents(); renderEvents(); fillSegSelectors(); renderSeg(); drawGraph();
+  $("csv").disabled=false;
+  $("status").textContent=`완료: ${series.length} 프레임 · 이벤트 자동검출 완료.`;
+}
+
+// ── 이벤트 자동검출 (손 높이·속도 규칙, 2D 휴리스틱) ──
+function detectEvents(){
+  const n=series.length;
+  const hY=smooth(series.map(s=>s.handY),2);      // 손 높이(0=위,1=아래)
+  // P4 Top = 손이 가장 높은(=hY 최소) 지점 (중간부)
+  let top=1; for(let i=Math.floor(n*0.1);i<Math.floor(n*0.85);i++) if(hY[i]<hY[top])top=i;
+  // P1 Address = Top 이전에서 손이 가장 낮은(=hY 최대) 지점 (셋업)
+  let adr=0; for(let i=0;i<top;i++) if(hY[i]>hY[adr])adr=i;
+  // P7 Impact = Top 이후 손이 어드레스 높이로 되돌아오는 첫 지점 (다운스윙 복귀)
+  let imp=top; const target=hY[adr];
+  for(let i=top;i<n;i++){ if(hY[i]>=target){imp=i;break;} imp=i; }
+  // P10 Finish = Impact 이후 손이 다시 높이 올라간 뒤(팔로우) 끝부분
+  let fin=n-1; let ftop=imp; for(let i=imp;i<n;i++) if(hY[i]<hY[ftop])ftop=i;
+  fin=Math.min(n-1, ftop + Math.floor((n-1-ftop)*0.6));
+  // P3 = 백스윙 중 리드팔 수평(각≈0) 통과 (adr~top)
+  let p3=null; for(let i=adr;i<top;i++){ if(Math.abs(series[i].leadArm)<12){p3=i;break;} }
+  // P5 = 다운스윙 중 리드팔 수평 통과 (top~imp)
+  let p5=null; for(let i=top;i<imp;i++){ if(Math.abs(series[i].leadArm)<12){p5=i;break;} }
+  events={P1:adr, P3:p3, P4:top, P5:p5, P7:imp, P10:fin};
+}
+
+const EVLABEL={P1:"Address",P3:"리드팔 평행(BS)",P4:"Top",P5:"리드팔 평행(DS)",P7:"Impact",P10:"Finish"};
+function renderEvents(){
+  let h="";
+  for(const p of["P1","P3","P4","P5","P7","P10"]){
+    const f=events[p];
+    if(f==null){h+=`<span class="ev miss"><b>${p}</b> ${EVLABEL[p]} · 미검출</span>`;}
+    else{h+=`<span class="ev"><b>${p}</b> ${EVLABEL[p]} · #${f} (${series[f].t.toFixed(2)}s)</span>`;}
+  }
+  $("events").innerHTML=h;
+}
+
+const METRICS=[
+  ["X-Factor(proxy)","xfactor","°"],["어깨 틸트","shoulderTilt","°"],["골반 틸트","hipTilt","°"],
+  ["척추 좌우틸트","spineTilt","°"],["리드 무릎각","leadKnee","°"],["트레일 무릎각","trailKnee","°"],
+  ["헤드 스웨이","headSway","(폭비)"]
+];
+function fillSegSelectors(){
+  const present=["P1","P3","P4","P5","P7","P10"].filter(p=>events[p]!=null);
+  const opt=p=>`<option value="${p}">${p} ${EVLABEL[p]}</option>`;
+  $("segFrom").innerHTML=present.map(opt).join("");
+  $("segTo").innerHTML=present.map(opt).join("");
+  $("segFrom").value=present.includes("P1")?"P1":present[0];
+  $("segTo").value=present.includes("P4")?"P4":present[present.length-1];
+  $("segFrom").onchange=renderSeg; $("segTo").onchange=renderSeg;
+}
+function renderSeg(){
+  const a=events[$("segFrom").value], b=events[$("segTo").value];
+  const tb=$("segTable").querySelector("tbody");
+  if(a==null||b==null){tb.innerHTML="";return;}
+  tb.innerHTML=METRICS.map(([name,key,u])=>{
+    const s=series[a][key], e=series[b][key], d=e-s;
+    const dv=(key==="headSway")?d.toFixed(3):d.toFixed(1);
+    const sv=(key==="headSway")?s.toFixed(3):s.toFixed(1);
+    const ev=(key==="headSway")?e.toFixed(3):e.toFixed(1);
+    const col=d>0?"#3ecf8e":"#ff7eb6";
+    return `<tr><td>${name}</td><td class="num">${sv}${u==="°"?"°":""}</td><td class="num">${ev}${u==="°"?"°":""}</td>
+      <td class="num" style="color:${col}">${d>0?"+":""}${dv}${u==="°"?"°":""}</td></tr>`;
+  }).join("");
+}
+
+// ── 시계열 그래프 ──
+function drawGraph(){
+  const c=$("graph"); c.width=c.clientWidth; c.height=220; const g=c.getContext("2d");
+  g.fillStyle="#12161c";g.fillRect(0,0,c.width,c.height);
+  const plot=[["xfactor","#4ea1ff"],["spineTilt","#ffb648"],["leadKnee","#3ecf8e"]];
+  const n=series.length, pad=28;
+  const xat=i=>pad+(c.width-2*pad)*i/(n-1);
+  for(const[key,color]of plot){
+    const vals=series.map(s=>s[key]); const mn=Math.min(...vals),mx=Math.max(...vals),rng=(mx-mn)||1;
+    g.strokeStyle=color;g.lineWidth=1.5;g.beginPath();
+    vals.forEach((v,i)=>{const y=c.height-pad-(c.height-2*pad)*(v-mn)/rng;i?g.lineTo(xat(i),y):g.moveTo(xat(i),y);});
+    g.stroke();
+  }
+  // 이벤트 세로선
+  g.font="10px sans-serif";
+  for(const p of["P1","P3","P4","P5","P7","P10"]){const f=events[p];if(f==null)continue;
+    const x=xat(f);g.strokeStyle="#ff7eb6";g.setLineDash([3,3]);g.beginPath();g.moveTo(x,8);g.lineTo(x,c.height-8);g.stroke();g.setLineDash([]);
+    g.fillStyle="#ff7eb6";g.fillText(p,x-6,16);}
+  $("legend").innerHTML=`그래프: <span style="color:#4ea1ff">■</span>X-Factor(proxy) · <span style="color:#ffb648">■</span>척추틸트 · <span style="color:#3ecf8e">■</span>리드무릎각 · <span style="color:#ff7eb6">┊</span>이벤트`;
+}
+
+$("csv").addEventListener("click",()=>{
+  let out="frame,t,"+METRICS.map(m=>m[1]).join(",")+",handY,event\n";
+  const evByFrame={}; for(const p in events) if(events[p]!=null) evByFrame[events[p]]=p;
+  series.forEach((s,i)=>{out+=`${i},${s.t},`+METRICS.map(m=>s[m[1]]).join(",")+`,${s.handY.toFixed(4)},${evByFrame[i]||""}\n`;});
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([out],{type:"text/csv"}));a.download="doh_swing_metrics.csv";a.click();
+});
+</script>
+</body>
+</html>
