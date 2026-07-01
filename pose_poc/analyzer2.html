@@ -396,10 +396,15 @@ function renderSeg(){
   $("thStart").textContent=fp; $("thEnd").textContent=tp; $("thDelta").textContent="변화";
   if(a==null||b==null){tb.innerHTML="";return;}
   let rows="";
-  if(series[a].sh&&series[b].sh){
-    const st=signedAngle(series[a].sh,series[b].sh,series[b].up),ht=signedAngle(series[a].hp,series[b].hp,series[b].up);
-    rows+=`<tr><td>어깨 회전 ${TAG.approx}</td><td class="num">—</td><td class="num">—</td><td class="num" style="color:#3ecf8e">${st>0?"+":""}${st.toFixed(0)}°</td></tr>`;
-    rows+=`<tr><td>골반 회전 ${TAG.approx}</td><td class="num">—</td><td class="num">—</td><td class="num" style="color:#3ecf8e">${ht>0?"+":""}${ht.toFixed(0)}°</td></tr>`;
+  // 회전: 어드레스(P1) 대비 회전량으로 각 지점 표기 (한 순간 절대값이 없어 기준 필요)
+  const ref=(events.P1!=null)?series[events.P1]:null;
+  const turnFrom=(rec,key)=>(ref&&rec&&ref[key]&&rec[key])?signedAngle(ref[key],rec[key],rec.up):null;
+  const fmtA=v=>v==null?"—":(v>0?"+":"")+v.toFixed(0)+"°";
+  const fmtD=(x,y)=>(x==null||y==null)?"—":((y-x>0?"+":"")+(y-x).toFixed(0)+"°");
+  if(series[a].sh&&series[b].sh&&ref){
+    const sA=turnFrom(series[a],"sh"),sB=turnFrom(series[b],"sh"),hA=turnFrom(series[a],"hp"),hB=turnFrom(series[b],"hp");
+    rows+=`<tr><td>어깨 회전 ${TAG.approx}<br><span style="color:#8b97a5;font-size:10px">어드레스 대비</span></td><td class="num">${fmtA(sA)}</td><td class="num">${fmtA(sB)}</td><td class="num" style="color:#3ecf8e">${fmtD(sA,sB)}</td></tr>`;
+    rows+=`<tr><td>골반 회전 ${TAG.approx}<br><span style="color:#8b97a5;font-size:10px">어드레스 대비</span></td><td class="num">${fmtA(hA)}</td><td class="num">${fmtA(hB)}</td><td class="num" style="color:#3ecf8e">${fmtD(hA,hB)}</td></tr>`;
   }
   rows+=segMetrics().map(([name,key,f,g])=>{
     const s=series[a][key],e=series[b][key];
