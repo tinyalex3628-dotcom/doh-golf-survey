@@ -105,13 +105,14 @@
     <div id="events">— 분석 후 표시 —</div>
 
     <div id="shaftSection">
-      <h2>② 구간별 샤프트 각도 (측면 전용, vs 수직)</h2>
-      <table id="shaftTable"><thead><tr><th>P</th><th>명칭</th><th>프레임</th><th>샤프트각</th></tr></thead><tbody></tbody></table>
+      <h2>② 샤프트 각도 (P1 · P3 · P5)</h2>
+      <table id="shaftTable"><thead><tr><th>지점</th><th>자동</th><th>직접지정</th><th></th></tr></thead><tbody></tbody></table>
+      <div class="note">0°=수직, 90°=수평. 자동이 부정확하면 <b>[직접 그리기]</b> → 화면에서 <b>그립(손)</b>을 클릭하고 <b>클럽헤드</b>를 클릭하세요.</div>
     </div>
 
-    <h2>③ 구간별 부위 움직임 (Δ)</h2>
-    <div class="segsel"><span>구간</span><select id="segFrom"></select><span>→</span><select id="segTo"></select></div>
-    <table id="segTable"><thead><tr><th>부위/지표</th><th>시작</th><th>끝</th><th>Δ</th></tr></thead><tbody></tbody></table>
+    <h2>③ 두 지점 사이 변화</h2>
+    <div class="segsel"><select id="segFrom"></select><span>→</span><select id="segTo"></select><span style="color:#8b97a5">각 지점의 각도를 비교합니다</span></div>
+    <table id="segTable"><thead><tr><th>항목</th><th id="thStart">시작</th><th id="thEnd">끝</th><th id="thDelta">변화</th></tr></thead><tbody></tbody></table>
 
     <h2>④ 시계열 그래프</h2>
     <canvas id="graph"></canvas>
@@ -138,6 +139,7 @@ const $=id=>document.getElementById(id);
 const video=$("video"),overlay=$("overlay"),ctx=overlay.getContext("2d");
 const work=$("work"),wctx=work.getContext("2d",{willReadFrequently:true});
 let landmarker=null,running=false,series=[],events={},J=null,prevShaft=null,curView=null;
+let manualShaft={},drawTarget=null,drawPts=[];
 const cvState={prevGray:null};
 
 // 3D 유틸
@@ -181,7 +183,7 @@ $("fileDTL").addEventListener("change",e=>loadVideo(e,"DTL"));
 
 $("run").addEventListener("click",()=>{
   if(!curView){$("status").textContent="먼저 앵글 카드에서 영상을 선택하세요.";return;}
-  series=[];events={};prevShaft=null; if(cvState.prevGray){cvState.prevGray.delete();cvState.prevGray=null;}
+  series=[];events={};prevShaft=null;manualShaft={};drawTarget=null;drawPts=[]; if(cvState.prevGray){cvState.prevGray.delete();cvState.prevGray=null;}
   running=true;$("run").disabled=true;$("csv").disabled=true;$("status").textContent="분석 중…";
   J=jmap($("hand").value);video.currentTime=0;video.play();
   if("requestVideoFrameCallback"in HTMLVideoElement.prototype)video.requestVideoFrameCallback(onF);else raf();
@@ -280,7 +282,7 @@ function finish(){
   if(series.length<10){$("status").textContent="프레임이 너무 적습니다.";return;}
   const sm=smooth(interp(series.map(s=>s.shaft)),2);series.forEach((s,i)=>s.shaftSmooth=sm[i]);
   const base=series.find(s=>s.sh);if(base)series.forEach(s=>{s.turnRel=(s.sh?signedAngle(base.sh,s.sh,s.up):null);});
-  applyViewVisibility();detectEvents();renderEvents();renderShaftTable();fillSeg();renderSeg();drawGraph();
+  applyViewVisibility();detectEvents();renderEvents();renderShaftTriple();fillSeg();renderSeg();drawGraph();
   $("csv").disabled=false;
   $("status").textContent=`완료: ${series.length}프레임 · ${curView==="FO"?"정면":"측면"} 분석.`;
 }
@@ -313,13 +315,47 @@ function renderEvents(){
     return f==null?`<span class="ev miss ${cls}"><b>${p}</b> ${LBL[p]} · 미검출</span>`
       :`<span class="ev ${cls}"><b>${p}</b> ${LBL[p]} · #${f} (${series[f].t.toFixed(2)}s)</span>`;}).join("");
 }
-function renderShaftTable(){
+// ② 샤프트 각도: P1·P3·P5 만. 자동값 + 직접지정(그립→클럽헤드 클릭)
+function renderShaftTriple(){
   if(curView!=="DTL")return;
-  const any=series.some(s=>s.shaft!=null),tb=$("shaftTable").querySelector("tbody");
-  if(!any){tb.innerHTML=`<tr><td colspan="4" style="color:#8b97a5">샤프트 미검출 (OpenCV 미로드/모션블러/배경). 삼각대 고정·단순배경 권장.</td></tr>`;return;}
-  tb.innerHTML=evOrder().map(p=>{const f=events[p];if(f==null)return "";const v=series[f].shaftSmooth;
-    return `<tr><td>${p}</td><td>${LBL[p]}</td><td class="num">${f}</td><td class="num">${v!=null?v.toFixed(0)+"°":"—"}</td></tr>`;}).join("");
+  const tb=$("shaftTable").querySelector("tbody");
+  tb.innerHTML=["P1","P3","P5"].map(p=>{
+    const f=events[p];
+    if(f==null)return `<tr><td>${p} ${LBL[p]}</td><td class="num">—</td><td class="num">—</td><td>—</td></tr>`;
+    const auto=series[f].shaftSmooth, man=manualShaft[p];
+    return `<tr>
+      <td>${p} ${LBL[p]}</td>
+      <td class="num">${auto!=null?auto.toFixed(0)+"°":"검출실패"}</td>
+      <td class="num" style="color:#ffd166">${man!=null?man.toFixed(0)+"°":"—"}</td>
+      <td><button data-p="${p}" class="drawBtn" style="padding:4px 8px;font-size:11px">직접 그리기</button></td>
+    </tr>`;
+  }).join("");
+  tb.querySelectorAll(".drawBtn").forEach(b=>b.onclick=()=>startManual(b.dataset.p));
 }
+// 직접 그리기: 해당 프레임으로 이동 후 그립→클럽헤드 두 점 클릭 → 각도
+function startManual(p){
+  const f=events[p]; if(f==null)return;
+  drawTarget=p; drawPts=[]; video.pause(); video.currentTime=series[f].t;
+  ctx.clearRect(0,0,overlay.width,overlay.height);
+  $("status").textContent=`${p} 프레임 — 화면에서 ①그립(손) ②클럽헤드 순서로 클릭하세요.`;
+}
+function canvasPt(ev){
+  const r=overlay.getBoundingClientRect(),cw=overlay.width,ch=overlay.height;
+  const scale=Math.min(r.width/cw,r.height/ch),dw=cw*scale,dh=ch*scale,ox=(r.width-dw)/2,oy=(r.height-dh)/2;
+  return {x:(ev.clientX-r.left-ox)/scale,y:(ev.clientY-r.top-oy)/scale};
+}
+overlay.addEventListener("click",ev=>{
+  if(!drawTarget)return;
+  const p=canvasPt(ev); drawPts.push(p);
+  ctx.fillStyle="#ffd166";ctx.beginPath();ctx.arc(p.x,p.y,6,0,7);ctx.fill();
+  if(drawPts.length===2){
+    const g=drawPts[0],hd=drawPts[1],dx=hd.x-g.x,dy=hd.y-g.y;
+    const ang=deg(Math.atan2(Math.abs(dx),Math.abs(dy)));
+    ctx.strokeStyle="#ffd166";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(g.x,g.y);ctx.lineTo(hd.x,hd.y);ctx.stroke();
+    manualShaft[drawTarget]=ang; $("status").textContent=`${drawTarget} 샤프트각 ${ang.toFixed(0)}° 지정 완료.`;
+    drawTarget=null; renderShaftTriple();
+  }
+});
 
 // 이 앵글에서 '보여줄' 스칼라 지표만 (측정 불가 항목은 목록에서 제외)
 // approx=근사(참고) 태그, ok=표시. no(측정불가)는 아예 포함 안 함.
@@ -338,7 +374,9 @@ function fillSeg(){
   $("segFrom").onchange=renderSeg;$("segTo").onchange=renderSeg;
 }
 function renderSeg(){
-  const a=events[$("segFrom").value],b=events[$("segTo").value],tb=$("segTable").querySelector("tbody");
+  const fp=$("segFrom").value,tp=$("segTo").value;
+  const a=events[fp],b=events[tp],tb=$("segTable").querySelector("tbody");
+  $("thStart").textContent=fp; $("thEnd").textContent=tp; $("thDelta").textContent="변화";
   if(a==null||b==null){tb.innerHTML="";return;}
   let rows="";
   if(series[a].sh&&series[b].sh){
@@ -359,8 +397,7 @@ function drawGraph(){
   g.fillStyle="#12161c";g.fillRect(0,0,c.width,c.height);
   const plot=[["xfactor","#4ea1ff",series.map(s=>s.xfactor),"X-Factor"],["turnRel","#7ee081",series.map(s=>s.turnRel),"어깨누적회전"],
     ["spineTilt","#ffb648",series.map(s=>s.spineTilt),"척추기울기"]];
-  if(curView==="DTL")plot.push(["shaftSmooth","#ffd166",series.map(s=>s.shaftSmooth),"샤프트각"]);
-  else plot.push(["headSway","#ff7eb6",series.map(s=>s.headSway),"헤드스웨이"]);
+  if(curView==="FO")plot.push(["headSway","#ff7eb6",series.map(s=>s.headSway),"헤드스웨이"]); // 샤프트는 그래프에서 제외
   const n=series.length,pad=26,xat=i=>pad+(c.width-2*pad)*i/(n-1);
   for(const[,color,vals]of plot){const vv=vals.filter(v=>v!=null);if(!vv.length)continue;
     const mn=Math.min(...vv),mx=Math.max(...vv),rng=(mx-mn)||1;g.strokeStyle=color;g.lineWidth=1.5;g.beginPath();let st=false;
