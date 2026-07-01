@@ -104,6 +104,12 @@
     <div id="activeInfo" class="note" style="margin-top:0">— 앵글을 선택하고 영상을 올리세요 —</div>
     <h2>① 자동 검출 이벤트</h2>
     <div id="events">— 분석 후 표시 —</div>
+    <div id="evEditWrap" style="display:none">
+      <div class="note" style="margin:8px 0 4px">자동이 틀리면: 슬라이더로 프레임을 찾아(영상에 표시됨) → 그 프레임을 해당 P 버튼으로 지정.</div>
+      <input id="scrub" type="range" min="0" max="0" value="0" style="width:100%;accent-color:#4ea1ff"/>
+      <div id="scrubInfo" class="note" style="margin:2px 0"></div>
+      <div id="evBtns" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px"></div>
+    </div>
 
     <div id="shaftSection">
       <h2>② 샤프트 각도 (P1 · P3 · P5)</h2>
@@ -270,7 +276,7 @@ function proc(t){
       ctx.moveTo(gripPx.x/work.width*overlay.width,gripPx.y/work.height*overlay.height);
       ctx.lineTo(sh.fx/work.width*overlay.width,sh.fy/work.height*overlay.height);ctx.stroke();}
   }
-  let rec={t:+t.toFixed(4),handY:gripN.y,shaft:shaftAngle,xfactor:null,spineTilt:null,leadKnee:null,trailKnee:null,leadArm:null,headSway:null,turnRel:null,sh:null,hp:null,up:null};
+  let rec={t:+t.toFixed(4),handX:gripN.x,handY:gripN.y,shaft:shaftAngle,xfactor:null,spineTilt:null,leadKnee:null,trailKnee:null,leadArm:null,headSway:null,turnRel:null,sh:null,hp:null,up:null};
   if(wl){
     const midHip=mid3(W("LEAD_HIP"),W("TRAIL_HIP")),midSho=mid3(W("LEAD_SHOULDER"),W("TRAIL_SHOULDER")),midAnk=mid3(W("LEAD_ANKLE"),W("TRAIL_ANKLE"));
     const up=unit(Vv(midAnk,midHip));
@@ -299,7 +305,7 @@ function finish(){
   if(series.length<10){$("status").textContent="프레임이 너무 적습니다.";return;}
   const sm=smooth(interp(series.map(s=>s.shaft)),2);series.forEach((s,i)=>s.shaftSmooth=sm[i]);
   const base=series.find(s=>s.sh);if(base)series.forEach(s=>{s.turnRel=(s.sh?signedAngle(base.sh,s.sh,s.up):null);});
-  applyViewVisibility();detectEvents();renderEvents();renderShaftTriple();fillSeg();renderSeg();drawGraph();
+  applyViewVisibility();detectEvents();renderEvents();renderShaftTriple();fillSeg();renderSeg();drawGraph();setupEvEdit();
   $("csv").disabled=false;
   $("status").textContent=`완료: ${series.length}프레임 · ${curView==="FO"?"정면":"측면"} 분석.`;
 }
@@ -308,13 +314,20 @@ function finish(){
 function applyViewVisibility(){ $("shaftSection").style.display = curView==="DTL" ? "block" : "none"; }
 
 function detectEvents(){
-  const n=series.length,hY=smooth(series.map(s=>s.handY),2);
-  let top=Math.floor(n*0.1);for(let i=Math.floor(n*0.1);i<Math.floor(n*0.85);i++)if(hY[i]<hY[top])top=i;
-  let adr=0;for(let i=0;i<top;i++)if(hY[i]>hY[adr])adr=i;
-  let imp=top;const tg=hY[adr];for(let i=top;i<n;i++){imp=i;if(hY[i]>=tg)break;}
-  let ftop=imp;for(let i=imp;i<n;i++)if(hY[i]<hY[ftop])ftop=i;
-  const fin=Math.min(n-1,ftop+Math.floor((n-1-ftop)*0.6));
-  const armPar=(lo,hi)=>{for(let i=lo;i<hi;i++){const a=series[i].leadArm;if(a!=null&&Math.abs(a)<12)return i;}return null;};
+  const n=series.length;
+  const hx=smooth(series.map(s=>s.handX),2), hY=smooth(series.map(s=>s.handY),2);
+  // 손 속도(그립 이동량) — 임팩트/탑/어드레스/피니시 검출의 핵심 신호
+  const spdRaw=series.map((_,i)=> i>0?Math.hypot((hx[i]??hx[i-1])-(hx[i-1]??0),(hY[i]??hY[i-1])-(hY[i-1]??0)):0);
+  const sp=smooth(spdRaw,2), spMax=Math.max(...sp,1e-6), thr=spMax*0.18;
+  // P4 Top = 손이 가장 높은 지점(중간부)
+  let top=Math.floor(n*0.15);for(let i=Math.floor(n*0.12);i<Math.floor(n*0.82);i++)if(hY[i]<hY[top])top=i;
+  // P1 Address = 백스윙 시작 직전(정지 상태의 끝). 시작부에서 속도가 처음 임계 넘기 직전
+  let adr=0;for(let i=0;i<top;i++){ if(sp[i]>thr){ adr=Math.max(0,i-1); break; } adr=i; }
+  // P7 Impact = 탑 이후 손 속도 최대(다운스윙 피크) = 검증된 방식
+  let imp=top+1;for(let i=top+1;i<n;i++)if(sp[i]>sp[imp])imp=i;
+  // P10 Finish = 임팩트 이후 움직임이 잦아드는 지점(마지막으로 속도가 임계 넘는 프레임 근처)
+  let fin=n-1;for(let i=n-1;i>imp;i--){ if(sp[i]>thr){ fin=Math.min(n-1,i+2); break; } fin=i; }
+  const armPar=(lo,hi)=>{let best=null,bv=1e9;for(let i=lo;i<hi;i++){const a=series[i].leadArm;if(a!=null&&Math.abs(a)<bv&&Math.abs(a)<15){bv=Math.abs(a);best=i;}}return best;};
   const p3=armPar(adr,top),p5=armPar(top,imp),p9=armPar(imp,fin);
   events={P1:adr,P3:p3,P4:top,P5:p5,P7:imp,P9:p9,P10:fin};
   if(curView==="DTL"){ // 샤프트 이벤트는 측면에서만
@@ -333,6 +346,18 @@ function renderEvents(){
       :`<span class="ev ${cls}"><b>${p}</b> ${LBL[p]} · #${f} (${series[f].t.toFixed(2)}s)</span>`;}).join("");
 }
 // ② 샤프트 각도: P1·P3·P5 만. 자동값 + 직접지정(그립→클럽헤드 클릭)
+// ── 이벤트 수동 보정 (슬라이더로 프레임 찾아 P 지정) ──
+let scrubIdx=0;
+function refreshAll(){ renderEvents();renderShaftTriple();fillSeg();renderSeg();drawGraph(); }
+function setupEvEdit(){
+  $("evEditWrap").style.display="block";
+  const sc=$("scrub"); sc.max=series.length-1; scrubIdx=Math.min(scrubIdx,series.length-1); sc.value=scrubIdx;
+  sc.oninput=()=>{ scrubIdx=+sc.value; video.pause(); video.currentTime=series[scrubIdx].t;
+    ctx.clearRect(0,0,overlay.width,overlay.height);
+    $("scrubInfo").innerHTML=`선택 프레임 <b>${scrubIdx}</b> · ${series[scrubIdx].t.toFixed(2)}s — 아래에서 이 프레임을 어느 P로 지정할지 누르세요`; };
+  $("evBtns").innerHTML=evOrder().map(p=>`<button data-p="${p}" class="evb" style="padding:5px 9px;font-size:11px;background:#222c39;color:#e8edf2;border:1px solid #33404f;border-radius:6px;cursor:pointer">${p} 지정</button>`).join("");
+  $("evBtns").querySelectorAll(".evb").forEach(b=>b.onclick=()=>{ events[b.dataset.p]=scrubIdx; refreshAll(); $("status").textContent=`${b.dataset.p} → 프레임 ${scrubIdx} (${series[scrubIdx].t.toFixed(2)}s) 로 지정됨.`; });
+}
 function renderShaftTriple(){
   if(curView!=="DTL")return;
   const tb=$("shaftTable").querySelector("tbody");
@@ -386,8 +411,10 @@ function segMetrics(){
 const TAG={ok:'',approx:' <span class="badge" style="color:#ffb648">≈근사</span>'};
 function fillSeg(){
   const present=evOrder().filter(p=>events[p]!=null),opt=p=>`<option value="${p}">${p} ${LBL[p]}</option>`;
+  const pf=$("segFrom").value, pt=$("segTo").value; // 기존 선택 보존
   $("segFrom").innerHTML=present.map(opt).join("");$("segTo").innerHTML=present.map(opt).join("");
-  $("segFrom").value="P1";$("segTo").value=present.includes("P4")?"P4":present[present.length-1];
+  $("segFrom").value=present.includes(pf)?pf:"P1";
+  $("segTo").value=present.includes(pt)?pt:(present.includes("P4")?"P4":present[present.length-1]);
   $("segFrom").onchange=renderSeg;$("segTo").onchange=renderSeg;
 }
 function renderSeg(){
