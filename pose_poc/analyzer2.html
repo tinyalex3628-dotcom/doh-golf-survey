@@ -91,6 +91,7 @@
     <canvas id="work" style="display:none"></canvas>
     <div class="controls">
       <select id="hand"><option value="right">오른손잡이</option><option value="left">왼손잡이</option></select>
+      <select id="sfps" title="샘플링 정밀도"><option value="30">30fps(빠름)</option><option value="60" selected>60fps(권장)</option><option value="120">120fps(정밀)</option></select>
       <label style="display:flex;gap:5px;align-items:center;color:var(--sub);font-size:12px"><input type="checkbox" id="useMotion" checked/> 모션마스크</label>
       <button id="run" class="primary" disabled>분석 시작</button>
       <button id="csv" disabled>CSV</button>
@@ -181,16 +182,32 @@ function loadVideo(e,view){
 $("fileFO").addEventListener("change",e=>loadVideo(e,"FO"));
 $("fileDTL").addEventListener("change",e=>loadVideo(e,"DTL"));
 
+// ── 프레임별 seek 방식 (재생X → 프레임 안 건너뜀, 매번 동일) ──
+let stepping=false, tCur=0, stepDt=1/60, mpTs=0;
 $("run").addEventListener("click",()=>{
   if(!curView){$("status").textContent="먼저 앵글 카드에서 영상을 선택하세요.";return;}
+  if(!video.duration||!isFinite(video.duration)){$("status").textContent="영상 로딩 중… 잠시 후 다시 눌러주세요.";return;}
   series=[];events={};prevShaft=null;manualShaft={};drawTarget=null;drawPts=[]; if(cvState.prevGray){cvState.prevGray.delete();cvState.prevGray=null;}
-  running=true;$("run").disabled=true;$("csv").disabled=true;$("status").textContent="분석 중…";
-  J=jmap($("hand").value);video.currentTime=0;video.play();
-  if("requestVideoFrameCallback"in HTMLVideoElement.prototype)video.requestVideoFrameCallback(onF);else raf();
+  running=true;stepping=true;$("run").disabled=true;$("csv").disabled=true;$("status").textContent="분석 중… 0%";
+  J=jmap($("hand").value);
+  const fps=parseInt($("sfps").value)||60; stepDt=1/fps;
+  if(video.duration/stepDt>800) stepDt=video.duration/800; // 과도한 프레임 방지
+  tCur=0; video.pause(); video.onseeked=onSeeked; seekNext();
 });
-function onF(n,m){if(!running)return;proc(m.mediaTime??video.currentTime);video.requestVideoFrameCallback(onF);}
-function raf(){if(!running)return;proc(video.currentTime);requestAnimationFrame(raf);}
-video.addEventListener("ended",finish);
+function seekNext(){
+  if(!running)return;
+  if(tCur>video.duration+1e-3){ endAnalysis(); return; }
+  let tt=Math.min(tCur,video.duration);
+  if(Math.abs(tt-video.currentTime)<1e-4) tt+=0.0005; // 강제 변화로 'seeked' 보장
+  video.currentTime=tt;
+}
+function onSeeked(){
+  if(!running||!stepping)return;
+  proc(tCur);
+  $("status").textContent=`분석 중… ${(tCur/video.duration*100)|0}% (${series.length}프레임)`;
+  tCur+=stepDt; seekNext();
+}
+function endAnalysis(){ stepping=false; video.onseeked=null; finish(); }
 
 function detectShaft(gripPx,shoWpx){
   if(!cvReady||curView!=="DTL") return null;
@@ -234,7 +251,7 @@ function detectShaft(gripPx,shoWpx){
 
 function proc(t){
   if(video.readyState<2)return;
-  const res=landmarker.detectForVideo(video,performance.now());
+  mpTs+=34; const res=landmarker.detectForVideo(video,mpTs); // ts는 실행 간에도 단조증가
   ctx.clearRect(0,0,overlay.width,overlay.height);
   if(!res.landmarks||!res.landmarks[0])return;
   const lm=res.landmarks[0],wl=(res.worldLandmarks&&res.worldLandmarks[0])||null,P=k=>lm[J[k]],W=k=>wl[J[k]];
