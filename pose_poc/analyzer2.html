@@ -74,6 +74,9 @@
   </div>
 
   <div class="panel">
+    <h2>⓪ 이 카메라로 측정 가능한 것</h2>
+    <div id="viewSummary" class="note" style="margin-top:0">— 카메라(FO/DTL) 선택에 따라 표시 —</div>
+
     <h2>① 자동 검출 이벤트 (P1~P10)</h2>
     <div id="events">— 분석 후 표시 —</div>
 
@@ -136,6 +139,8 @@ async function init(){
   $("status").textContent="준비 완료. 영상을 선택하세요.";
 }
 init().catch(e=>$("status").textContent="모델 로딩 실패: "+e.message);
+$("view").addEventListener("change",()=>{ renderViewSummary(); if(series.length){renderEvents();renderShaftTable();renderSeg();} });
+setTimeout(()=>renderViewSummary(),0); // const 초기화(TDZ) 이후 실행
 
 $("file").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;
   video.src=URL.createObjectURL(f);
@@ -261,7 +266,7 @@ function finish(){
   const sm=smooth(interp(series.map(s=>s.shaft)),2); series.forEach((s,i)=>s.shaftSmooth=sm[i]);
   // 그래프용 누적 어깨회전(프레임0 기준)
   const base=series.find(s=>s.sh); if(base){series.forEach(s=>{ s.turnRel=(s.sh?signedAngle(base.sh,s.sh,s.up):null); });}
-  detectEvents();renderEvents();renderShaftTable();fillSeg();renderSeg();drawGraph();
+  renderViewSummary();detectEvents();renderEvents();renderShaftTable();fillSeg();renderSeg();drawGraph();
   $("csv").disabled=false;
   const sn=series.filter(s=>s.shaft!=null).length;
   $("status").textContent=`완료: ${series.length}프레임 · 샤프트검출 ${sn} · 3D각도 ${series.filter(s=>s.xfactor!=null).length} · P1~P10.`;
@@ -286,9 +291,13 @@ const LBL={P1:"Address",P2:"Toe-up(샤프트평행)",P3:"리드팔평행(BS)",P4
 const SHAFT_EV=new Set(["P2","P6","P8"]);
 const ORD=["P1","P2","P3","P4","P5","P6","P7","P8","P9","P10"];
 function renderEvents(){
+  const fo=$("view").value==="FO";
   $("events").innerHTML=ORD.map(p=>{const f=events[p],cls=SHAFT_EV.has(p)?"shaft":"";
-    return f==null?`<span class="ev miss ${cls}"><b>${p}</b> ${LBL[p]} · 미검출</span>`
-      :`<span class="ev ${cls}"><b>${p}</b> ${LBL[p]} · #${f} (${series[f].t.toFixed(2)}s)</span>`;}).join("");
+    if(f==null){
+      const why=(SHAFT_EV.has(p)&&fo)?"FO라 측정불가(정상)":"미검출";
+      return `<span class="ev miss ${cls}"><b>${p}</b> ${LBL[p]} · ${why}</span>`;
+    }
+    return `<span class="ev ${cls}"><b>${p}</b> ${LBL[p]} · #${f} (${series[f].t.toFixed(2)}s)</span>`;}).join("");
 }
 function renderShaftTable(){
   const any=series.some(s=>s.shaft!=null),tb=$("shaftTable").querySelector("tbody");
@@ -296,8 +305,31 @@ function renderShaftTable(){
   tb.innerHTML=ORD.map(p=>{const f=events[p];if(f==null)return "";const v=series[f].shaftSmooth;
     return `<tr><td>${p}</td><td>${LBL[p]}</td><td class="num">${f}</td><td class="num">${v!=null?v.toFixed(0)+"°":"—"}</td></tr>`;}).join("");
 }
+// ── 카메라 뷰별 측정 신뢰도 (Coordinate System Spec §7) ──
+// ok=신뢰 · weak=약함(깊이축 손실) · no=측정 불가
+const VIEWREL={
+  turn:      {FO:"ok",  DTL:"ok"},    // 회전(수직축 기준) 양뷰 견고
+  xfactor:   {FO:"ok",  DTL:"ok"},
+  spineTilt: {FO:"ok",  DTL:"weak"},  // 좌우틸트=FO / 전후굴곡=DTL (혼합지표라 뷰마다 일부만)
+  leadKnee:  {FO:"ok",  DTL:"ok"},
+  trailKnee: {FO:"ok",  DTL:"ok"},
+  headSway:  {FO:"ok",  DTL:"weak"},  // 좌우 스웨이=FO 우세, DTL은 좌우깊이 약함
+  shaftSmooth:{FO:"no", DTL:"ok"}     // 샤프트각=DTL 전용
+};
+const RELBADGE={ok:'<span style="color:#3ecf8e">✅신뢰</span>',weak:'<span style="color:#ffb648">△약함</span>',no:'<span style="color:#ff7eb6">✕불가</span>'};
+function rel(key){const v=$("view").value;return (VIEWREL[key]&&VIEWREL[key][v])||"ok";}
 // 구간 회전(벡터 기반) + 스칼라 지표
 const SCAL=[["X-Factor(3D)","xfactor",0],["척추 기울기","spineTilt",0],["리드 무릎각","leadKnee",0],["트레일 무릎각","trailKnee",0],["헤드 스웨이","headSway",3],["샤프트각","shaftSmooth",0]];
+function renderViewSummary(){
+  const v=$("view").value;
+  const okList=[],weakList=[],noList=[];
+  const names={turn:"어깨/골반 회전",xfactor:"X-Factor",spineTilt:"척추 기울기",leadKnee:"무릎각",headSway:"헤드 스웨이",shaftSmooth:"샤프트각/플레인"};
+  for(const k in names){const r=(VIEWREL[k]&&VIEWREL[k][v])||"ok";(r==="ok"?okList:r==="weak"?weakList:noList).push(names[k]);}
+  $("viewSummary").innerHTML=`<b>${v==="FO"?"정면(FO)":"측면(DTL)"} 카메라</b> · `
+    +`<span style="color:#3ecf8e">신뢰: ${okList.join(", ")||"—"}</span> · `
+    +`<span style="color:#ffb648">약함: ${weakList.join(", ")||"—"}</span> · `
+    +`<span style="color:#ff7eb6">불가: ${noList.join(", ")||"—"}</span>`;
+}
 function fillSeg(){
   const present=ORD.filter(p=>events[p]!=null),opt=p=>`<option value="${p}">${p} ${LBL[p]}</option>`;
   $("segFrom").innerHTML=present.map(opt).join("");$("segTo").innerHTML=present.map(opt).join("");
@@ -311,14 +343,15 @@ function renderSeg(){
   // 회전(벡터): 어깨회전/힙회전
   if(series[a].sh&&series[b].sh){
     const st=signedAngle(series[a].sh,series[b].sh,series[b].up), ht=signedAngle(series[a].hp,series[b].hp,series[b].up);
-    rows+=`<tr><td>어깨 회전(3D)</td><td class="num">—</td><td class="num">—</td><td class="num" style="color:#3ecf8e">${st>0?"+":""}${st.toFixed(0)}°</td></tr>`;
-    rows+=`<tr><td>골반 회전(3D)</td><td class="num">—</td><td class="num">—</td><td class="num" style="color:#3ecf8e">${ht>0?"+":""}${ht.toFixed(0)}°</td></tr>`;
+    rows+=`<tr><td>어깨 회전(3D) ${RELBADGE[rel("turn")]}</td><td class="num">—</td><td class="num">—</td><td class="num" style="color:#3ecf8e">${st>0?"+":""}${st.toFixed(0)}°</td></tr>`;
+    rows+=`<tr><td>골반 회전(3D) ${RELBADGE[rel("turn")]}</td><td class="num">—</td><td class="num">—</td><td class="num" style="color:#3ecf8e">${ht>0?"+":""}${ht.toFixed(0)}°</td></tr>`;
   }
   rows+=SCAL.map(([name,key,f])=>{
+    const r=rel(key), badge=RELBADGE[r];
     const s=series[a][key],e=series[b][key];
-    if(s==null||e==null)return `<tr><td>${name}</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>`;
+    if(s==null||e==null)return `<tr style="${r==="no"?"opacity:.45":""}"><td>${name} ${badge}</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>`;
     const d=e-s,col=d>0?"#3ecf8e":"#ff7eb6";
-    return `<tr><td>${name}</td><td class="num">${s.toFixed(f)}</td><td class="num">${e.toFixed(f)}</td><td class="num" style="color:${col}">${d>0?"+":""}${d.toFixed(f)}</td></tr>`;
+    return `<tr style="${r==="no"?"opacity:.45":""}"><td>${name} ${badge}</td><td class="num">${s.toFixed(f)}</td><td class="num">${e.toFixed(f)}</td><td class="num" style="color:${col}">${d>0?"+":""}${d.toFixed(f)}</td></tr>`;
   }).join("");
   tb.innerHTML=rows;
 }
