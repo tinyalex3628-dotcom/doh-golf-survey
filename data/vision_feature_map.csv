@@ -1,0 +1,114 @@
+feature_id,node_id,weight,phase,confidence_source,note
+VF001,OBS-002,0.6,P1,vision_pose,spine tilt (S-posture evidence)
+VF001,MOT-001,0.7,P1,vision_pose,address spine angle set
+VF002,OBS-001,0.7,P1,vision_pose,forward spine flexion (C-posture)
+VF002,MOT-001,0.7,P1,vision_pose,address spine angle set
+VF003,OBS-001,0.7,P1,vision_pose,rounded upper back
+VF003,PAT-011,0.6,P1,vision_pose,C-posture pattern evidence
+VF004,OBS-002,0.7,P1,vision_pose,excessive lower back arch
+VF004,PAT-010,0.6,P1,vision_pose,S-posture pattern evidence
+VF005,OBS-003,0.6,P1,vision_pose,weight favoring heels/toes
+VF006,MOT-002,0.6,P1,vision_pose,weight distribution set
+VF011,MOT-003,0.5,P1,vision_pose,lead arm straightness at setup
+VF015,MOT-006,0.8,P4,vision_pose,shoulder turn amount at top
+VF015,OBS-026,0.6,P4,vision_pose,restricted backswing evidence
+VF018,MOT-007,0.8,P4,vision_pose,hip turn amount at top
+VF020,MOT-012,0.8,P4,vision_pose,x-factor at top
+VF021,OBS-026,0.6,P4,vision_pose,backswing length
+VF022,OBS-005,0.6,P4,vision_pose,flat shoulder plane
+VF022,OBS-006,0.6,P4,vision_pose,steep shoulder plane
+VF024,OBS-006,0.7,P4,vision_pose,steep vertical shoulder plane
+VF023,OBS-005,0.7,P4,vision_pose,flat shoulder plane
+VF025,MOT-010,0.7,P4,vision_pose,arm swing plane
+VF026,OBS-007,0.7,P4,vision_pose,trail arm flying elbow
+VF026,PAT-009,0.6,P4,vision_pose,flying elbow pattern
+VF028,MOT-010,0.6,P4,vision_pose,hand depth at top
+VF031,OBS-004,0.7,P1-P4,vision_pose,lateral head sway
+VF031,PAT-002,0.6,P1-P4,vision_pose,sway pattern evidence
+VF034,PAT-002,0.6,P1-P4,vision_pose,pelvis sway
+VF035,MOT-009,0.7,P1-P4,vision_pose,weight shift to trail
+VF036,OBS-008,0.7,P4,vision_pose,reverse spine angle at top
+VF036,PAT-014,0.6,P4,vision_pose,reverse spine pattern
+VF037,PAT-001,0.7,P1-P4,vision_pose,reverse pivot weight
+VF038,OBS-009,0.7,P1-P4,vision_pose,loss of posture (standing up)
+VF038,PAT-012,0.6,P1-P4,vision_pose,loss of posture pattern
+VF041,MOT-013,0.7,P4-P5,vision_pose,lower body initiation sequence
+VF041,CAU-001,0.5,P4-P5,vision_pose,upper-body-dominant sequencing evidence
+VF042,OBS-012,0.7,P4-P5,vision_pose,upper body initiates (OTT setup)
+VF042,PAT-005,0.6,P4-P5,vision_pose,over-the-top pattern
+VF044,OBS-010,0.7,P4-P5,vision_pose,hips slide laterally
+VF044,PAT-003,0.6,P4-P5,vision_pose,slide pattern
+VF045,OBS-011,0.7,P5-P7,vision_pose,early extension (hips toward ball)
+VF045,PAT-004,0.7,P5-P7,vision_pose,early extension pattern
+VF047,MOT-012,0.7,P5,vision_pose,shoulder-hip separation transition
+VF054,CAU-002,0.5,P5-P7,vision_pose,lower body stall evidence
+VF057,OBS-013,0.7,P6-P7,vision_club,over-the-top path (needs club)
+VF057,OBS-014,0.7,P6-P7,vision_club,shallow/stuck path
+VF058,OBS-013,0.7,P5-P6,vision_pose,over-the-top hand path
+VF058,PAT-005,0.6,P5-P6,vision_pose,OTT pattern
+VF060,OBS-014,0.7,P6,vision_pose,stuck/too shallow
+VF061,OBS-027,0.7,P6-P7,vision_club,in-to-out excess (needs club)
+VF062,MOT-017,0.7,P6,vision_club,wrist lag retention (needs club)
+VF063,OBS-018,0.7,P5-P6,vision_club,casting from top
+VF063,PAT-006,0.6,P5-P6,vision_club,casting pattern
+VF064,MOT-015,0.7,P5-P7,vision_pose,shoulder plane through downswing
+VF065,MOT-014,0.7,P6,vision_pose,hip rotation speed
+VF066,OBS-015,0.7,P5-P6,vision_pose,trail knee straightens early
+VF066,COM-011,0.5,P5-P6,vision_pose,early trail knee extension for power
+VF067,OBS-011,0.7,P5-P7,vision_pose,early extension pelvis
+VF067,PAT-004,0.7,P5-P7,vision_pose,early extension pattern
+VF068,COM-002,0.6,P5-P7,vision_pose,standing up through impact
+VF069,MOT-014,0.6,P6-P7,vision_pose,hand speed proxy
+VF069,CAU-013,0.4,P6-P7,vision_pose,overswing/effort evidence
+VF070,COM-001,0.5,P5-P6,vision_pose,steepening plane to avoid fat
+VF072,COM-004,0.5,P5-P7,vision_pose,arm swing compensating restricted hip turn
+VF075,MOT-018,0.7,P1-P7,vision_pose,hip clear amount
+VF076,MOT-019,0.7,P1-P7,vision_pose,spine angle maintenance
+VF076,OBS-009,0.5,P1-P7,vision_pose,loss of posture at impact
+VF077,MOT-020,0.7,P7,vision_club,hand position relative to ball
+VF078,OBS-019,0.7,P7,vision_club,forward shaft lean / hands lead
+VF079,OBS-017,0.7,P7,vision_club,flip/scoop at impact
+VF079,PAT-007,0.6,P7,vision_club,flip pattern
+VF080,MOT-021,0.7,P7,vision_club,clubface angle control
+VF081,OBS-020,0.7,P7,vision_club,open clubface at impact
+VF082,OBS-021,0.7,P7,vision_club,closed clubface at impact
+VF083,BF-001,0.6,P7,vision_club,face-to-path slice tendency
+VF083,BF-002,0.6,P7,vision_club,face-to-path hook tendency
+VF084,MOT-022,0.7,P1-P7,vision_pose,weight transfer completion
+VF085,OBS-022,0.7,P7,vision_pose,hanging back on trail side
+VF085,PAT-013,0.6,P7,vision_pose,hanging back pattern
+VF086,OBS-016,0.7,P7-P8,vision_pose,chicken wing
+VF086,PAT-008,0.6,P7-P8,vision_pose,chicken wing pattern
+VF088,MOT-018,0.6,P7,vision_pose,lead knee angle at impact
+VF090,MOT-019,0.5,P7,vision_pose,head behind ball
+VF091,OBS-010,0.6,P5-P7,vision_pose,hip slide at impact
+VF094,CON-001,0.5,P7,vision_pose,low point fat evidence
+VF094,CON-002,0.5,P7,vision_pose,low point thin evidence
+VF095,CON-003,0.6,P7,vision_club,hosel proximity (shank)
+VF097,MOT-023,0.6,P6-P8,vision_pose,forearm rotation through
+VF097,CAU-014,0.5,P6-P8,vision_pose,late forearm rotation evidence
+VF099,MOT-023,0.6,P7-P8,vision_pose,forearm rotation release
+VF101,OBS-016,0.6,P8,vision_pose,chicken wing follow-through
+VF103,MOT-026,0.7,P1-P10,vision_pose,full rotation completion
+VF104,OBS-024,0.7,P1-P10,vision_pose,incomplete body rotation
+VF105,MOT-025,0.7,P10,vision_pose,balance hold at finish
+VF106,OBS-023,0.7,P8-P10,vision_pose,falling off balance toward trail
+VF108,MOT-022,0.6,P10,vision_pose,weight forward at finish
+VF109,OBS-025,0.7,P1-P10,vision_pose,excessive head movement
+VF111,CAU-012,0.6,all,vision_pose,tempo ratio backswing:downswing
+VF117,CAU-001,0.6,all,vision_pose,kinematic sequence order
+VF117,CAU-002,0.6,all,vision_pose,kinematic sequence order
+VF123,CAU-013,0.5,P4,vision_pose,overswing evidence
+VF124,OBS-026,0.7,P4,vision_pose,restricted/short backswing
+VF124,COM-012,0.5,P4,vision_pose,restricting backswing for balance
+VF126,STR-005,0.3,P4,vision_pose_inferred,thoracic rotation limit (low conf)
+VF127,STR-001,0.3,P4,vision_pose_inferred,hip internal rotation limit (low conf)
+VF129,STR-013,0.3,P10,vision_pose_inferred,balance deficiency (low conf)
+VF136,OBS-013,0.7,P7,vision_club,club path
+VF137,OBS-020,0.7,P7,vision_club,clubface angle
+VF138,BF-001,0.6,P7,vision_club,face-to-path -> slice
+VF138,BF-002,0.6,P7,vision_club,face-to-path -> hook
+VF139,CON-001,0.5,P7,vision_club,dynamic loft -> fat
+VF141,CAU-013,0.5,P6-P7,vision_club,clubhead speed
+VF150,CON-004,0.5,P7,vision_club,strike location toe
+VF150,CON-005,0.5,P7,vision_club,strike location heel
