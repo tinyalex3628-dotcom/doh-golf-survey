@@ -306,13 +306,23 @@ function finish(){
   if(series.length<10){$("status").textContent="프레임이 너무 적습니다.";return;}
   const sm=smooth(interp(series.map(s=>s.shaft)),2);series.forEach((s,i)=>s.shaftSmooth=sm[i]);
   const base=series.find(s=>s.sh);if(base)series.forEach(s=>{s.turnRel=(s.sh?signedAngle(base.sh,s.sh,s.up):null);});
-  applyViewVisibility();detectEvents();renderEvents();renderShaftTriple();fillSeg();renderSeg();drawGraph();setupEvEdit();
+  applyViewVisibility();detectEvents();computeCrop();renderEvents();renderShaftTriple();fillSeg();renderSeg();drawGraph();setupEvEdit();
   $("csv").disabled=false;$("saveLabel").disabled=false;
   $("status").textContent=`완료: ${series.length}프레임 · ${curView==="FO"?"정면":"측면"} 분석.`;
 }
 
 // FO면 샤프트 관련 UI 숨김
 function applyViewVisibility(){ $("shaftSection").style.display = curView==="DTL" ? "block" : "none"; }
+
+// 스윙 구간만 남기고 앞뒤 잘라내기 (15초 영상이라도 스윙 P1~P10 ± 여유만 표시)
+let cropStart=0, cropEnd=0;
+function computeCrop(){
+  const n=series.length, p1=events.P1, p10=events.P10;
+  if(p1==null||p10==null||p10<=p1){ cropStart=0; cropEnd=n-1; return; }
+  const M=Math.round((p10-p1)*0.3);   // 스윙 길이의 30%씩 앞뒤 여유 → 5초 스윙 ≈ 8초 창
+  cropStart=Math.max(0, p1-M);
+  cropEnd=Math.min(n-1, p10+M);
+}
 
 // 위치기반(속도 무관) 검출 — 슬로우모션 영상에도 견고. 사용자 15개 실측라벨로 검증
 //   (P4/P7/P5/P9/P3 평균오차 ~2프레임). 원리: 손이 가장 높은 두 지점(top,finish)과 그 사이 손 최저(impact)
@@ -378,7 +388,8 @@ let scrubIdx=0;
 function refreshAll(){ renderEvents();renderShaftTriple();fillSeg();renderSeg();drawGraph(); }
 function setupEvEdit(){
   $("evEditWrap").style.display="block";
-  const sc=$("scrub"); sc.max=series.length-1; scrubIdx=Math.min(scrubIdx,series.length-1); sc.value=scrubIdx;
+  const sc=$("scrub"); sc.min=cropStart; sc.max=(cropEnd>cropStart?cropEnd:series.length-1);
+  scrubIdx=Math.min(Math.max(scrubIdx,+sc.min),+sc.max); sc.value=scrubIdx;
   sc.oninput=()=>{ scrubIdx=+sc.value; video.pause(); video.currentTime=series[scrubIdx].t;
     ctx.clearRect(0,0,overlay.width,overlay.height);
     $("scrubInfo").innerHTML=`선택 프레임 <b>${scrubIdx}</b> · ${series[scrubIdx].t.toFixed(2)}s — 아래에서 이 프레임을 어느 P로 지정할지 누르세요`; };
@@ -474,12 +485,14 @@ function drawGraph(){
   const plot=[["xfactor","#4ea1ff",series.map(s=>s.xfactor),"X-Factor"],["turnRel","#7ee081",series.map(s=>s.turnRel),"어깨누적회전"],
     ["spineTilt","#ffb648",series.map(s=>s.spineTilt),"척추기울기"]];
   if(curView==="FO")plot.push(["headSway","#ff7eb6",series.map(s=>s.headSway),"헤드스웨이"]); // 샤프트는 그래프에서 제외
-  const n=series.length,pad=26,xat=i=>pad+(c.width-2*pad)*i/(n-1);
-  for(const[,color,vals]of plot){const vv=vals.filter(v=>v!=null);if(!vv.length)continue;
-    const mn=Math.min(...vv),mx=Math.max(...vv),rng=(mx-mn)||1;g.strokeStyle=color;g.lineWidth=1.5;g.beginPath();let st=false;
-    vals.forEach((v,i)=>{if(v==null)return;const y=c.height-pad-(c.height-2*pad)*(v-mn)/rng;st?g.lineTo(xat(i),y):g.moveTo(xat(i),y);st=true;});g.stroke();}
+  const a=cropStart,b=(cropEnd>cropStart?cropEnd:series.length-1),span=(b-a)||1,pad=26,xat=i=>pad+(c.width-2*pad)*(i-a)/span;
+  for(const[,color,vals]of plot){ // 스케일은 스윙 구간(crop) 기준으로
+    const win=vals.slice(a,b+1).filter(v=>v!=null);if(!win.length)continue;
+    const mn=Math.min(...win),mx=Math.max(...win),rng=(mx-mn)||1;g.strokeStyle=color;g.lineWidth=1.5;g.beginPath();let st=false;
+    for(let i=a;i<=b;i++){const v=vals[i];if(v==null)continue;const y=c.height-pad-(c.height-2*pad)*(v-mn)/rng;st?g.lineTo(xat(i),y):g.moveTo(xat(i),y);st=true;}
+    g.stroke();}
   g.font="10px sans-serif";
-  for(const p in events){const f=events[p];if(f==null)continue;const x=xat(f);
+  for(const p in events){const f=events[p];if(f==null||f<a||f>b)continue;const x=xat(f);
     g.strokeStyle=SHAFT_EV.has(p)?"#ffd166":"#ff7eb6";g.setLineDash([3,3]);g.beginPath();g.moveTo(x,8);g.lineTo(x,c.height-8);g.stroke();g.setLineDash([]);
     g.fillStyle=SHAFT_EV.has(p)?"#ffd166":"#ff7eb6";g.fillText(p,x-6,16);}
   $("legend").innerHTML=plot.map(([,color,,nm])=>`<span style="color:${color}">■</span>${nm}`).join(" · ")+` · <span style="color:#ff7eb6">┊</span>이벤트`;
