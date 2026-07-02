@@ -328,8 +328,13 @@ function detectEvents(){
   let top=dsw;const lo=Math.max(0,dsw-Math.round(n*0.5));for(let i=dsw;i>=lo;i--)if(hY[i]<hY[top])top=i;
   // P7 Impact = 다운스윙 이후 손 하강이 멈추는(vy<=0) 첫 지점 = 최저점
   let imp=dsw;for(let i=dsw;i<n;i++){ if(vy[i]<=0){imp=i;break;} imp=i; }
-  // P1 Address = top 이전, 백스윙 시작 직전 정지(속도<thr) 프레임(역방향)
-  let adr=0;for(let i=top;i>=0;i--){ if(sp[i]<thr){ adr=i; break; } }
+  // P1 Address = 탑의 '순간정지'와 백스윙을 건너뛰고, 그 앞의 '진짜 정지(셋업)'을 찾음
+  //   = 샤프트/손이 움직이기 직전(테이크백 시작 직전). 사용자 5개 실측라벨로 보정(P1 오차 38→8프레임)
+  let adr=0,ai=top; const thrLow=spMax*0.03;
+  while(ai>0&&sp[ai]<thr)ai--;       // 탑 전환의 순간 저속 구간 스킵
+  while(ai>0&&sp[ai]>=thr)ai--;      // 백스윙(고속) 스킵
+  while(ai>0&&sp[ai]>=thrLow)ai--;   // 느린 테이크백 스킵 → 셋업 정지 도달
+  adr=ai;
   // P10 Finish = 임팩트 이후 '처음' 멈추는 지점(피니시 홀드). 그 뒤 자세 푸는 동작 제외
   let fin=n-1;for(let i=imp+3;i<n;i++){ if(sp[i]<thr*0.5){ fin=i; break; } }
   const armPar=(a,b)=>{let best=null,bv=1e9;for(let i=a;i<b;i++){const v=series[i].leadArm;if(v!=null&&Math.abs(v)<bv){bv=Math.abs(v);best=i;}}return (best!=null&&bv<25)?best:null;};
