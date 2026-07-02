@@ -289,9 +289,9 @@ function proc(t){
     rec.trailKnee=angle3d(W("TRAIL_HIP"),W("TRAIL_KNEE"),W("TRAIL_ANKLE"));
     rec.leadArm=angBetween(armVec,up)-90;
     rec.headSway=dot(Vv(midHip,W("HEAD")),unit(hipLine))/(nrm(shoulderLine)||1e-9);
-  }else{
-    const d=sub2(P("LEAD_WRIST"),P("LEAD_SHOULDER")); rec.leadArm=deg(Math.atan2(d.y,d.x));
   }
+  // 리드팔 수평각: 2D 화면 기준 접힌 각도(0=지면수평, 90=수직) — P3/P5/P9 검출용(검증됨)
+  { const d=sub2(P("LEAD_WRIST"),P("LEAD_SHOULDER")); const dd=Math.abs(deg(Math.atan2(d.y,d.x))); rec.leadArm=Math.min(dd,180-dd); }
   series.push(rec);
   $("live").innerHTML=`프레임 <b>${series.length}</b>`+(curView==="DTL"?` · 샤프트 <b>${shaftAngle!=null?shaftAngle.toFixed(0)+"°":"—"}</b>`:"")+` · X-Factor <b>${rec.xfactor!=null?rec.xfactor.toFixed(0)+"°":"—"}</b> · 리드무릎 <b>${rec.leadKnee!=null?rec.leadKnee.toFixed(0)+"°":"—"}</b>`;
 }
