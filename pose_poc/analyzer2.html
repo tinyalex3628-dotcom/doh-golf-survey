@@ -315,23 +315,27 @@ function applyViewVisibility(){ $("shaftSection").style.display = curView==="DTL
 
 function detectEvents(){
   const n=series.length;
-  const hx=smooth(series.map(s=>s.handX),2), hY=smooth(series.map(s=>s.handY),2);
-  // 손 속도(그립 이동량) — 임팩트/탑/어드레스/피니시 검출의 핵심 신호
-  const spdRaw=series.map((_,i)=> i>0?Math.hypot((hx[i]??hx[i-1])-(hx[i-1]??0),(hY[i]??hY[i-1])-(hY[i-1]??0)):0);
-  const sp=smooth(spdRaw,2), spMax=Math.max(...sp,1e-6), thr=spMax*0.18;
-  // P4 Top = 손이 가장 높은 지점(중간부)
-  let top=Math.floor(n*0.15);for(let i=Math.floor(n*0.12);i<Math.floor(n*0.82);i++)if(hY[i]<hY[top])top=i;
-  // P1 Address = 탑에서 거꾸로 가며 백스윙 시작 직전의 '정지' 프레임(속도 저하 지점)
+  const hx=smooth(series.map(s=>s.handX),3), hY=smooth(series.map(s=>s.handY),3);
+  // 손 속도 + 하강속도(vy): 실측 2영상 대조로 검증된 '다운스윙 앵커' 방식
+  const sp0=series.map((_,i)=> i>0?Math.hypot((hx[i]??hx[i-1])-(hx[i-1]??0),(hY[i]??hY[i-1])-(hY[i-1]??0)):0);
+  const sp=smooth(sp0,2), spMax=Math.max(...sp,1e-6), thr=spMax*0.15;
+  const vy0=series.map((_,i)=> i>0?((hY[i]??hY[i-1])-(hY[i-1]??hY[i])):0);
+  const vy=smooth(vy0,2);
+  // 다운스윙 = 손이 가장 빠르게 '내려가는' 지점 (실제 스윙의 강한 신호, 스윙 후 잡동작에 안 속음)
+  let dsw=1;for(let i=1;i<n;i++)if(vy[i]>vy[dsw])dsw=i;
+  // P4 Top = 다운스윙 직전, 손이 가장 높은(handY 최소) 지점 (※피니시의 높은 손과 혼동 방지)
+  let top=dsw;const lo=Math.max(0,dsw-Math.round(n*0.5));for(let i=dsw;i>=lo;i--)if(hY[i]<hY[top])top=i;
+  // P7 Impact = 다운스윙 이후 손 하강이 멈추는(vy<=0) 첫 지점 = 최저점
+  let imp=dsw;for(let i=dsw;i<n;i++){ if(vy[i]<=0){imp=i;break;} imp=i; }
+  // P1 Address = top 이전, 백스윙 시작 직전 정지(속도<thr) 프레임(역방향)
   let adr=0;for(let i=top;i>=0;i--){ if(sp[i]<thr){ adr=i; break; } }
-  // P7 Impact = 탑 이후 손 속도 최대(다운스윙 피크) = 검증된 방식
-  let imp=top+1;for(let i=top+1;i<n;i++)if(sp[i]>sp[imp])imp=i;
-  // P10 Finish = 임팩트 이후 '처음' 움직임이 멈추는 지점(피니시 홀드). 그 뒤 자세 푸는 동작은 제외
-  let fin=n-1;for(let i=imp+2;i<n;i++){ if(sp[i]<thr*0.5){ fin=i; break; } }
-  // 팔 수평(리드팔이 지면과 평행): 창 안에서 가장 수평에 가까운 프레임
-  const armPar=(lo,hi)=>{let best=null,bv=1e9;for(let i=lo;i<hi;i++){const a=series[i].leadArm;if(a!=null&&Math.abs(a)<bv){bv=Math.abs(a);best=i;}}return (best!=null&&bv<25)?best:null;};
+  // P10 Finish = 임팩트 이후 '처음' 멈추는 지점(피니시 홀드). 그 뒤 자세 푸는 동작 제외
+  let fin=n-1;for(let i=imp+3;i<n;i++){ if(sp[i]<thr*0.5){ fin=i; break; } }
+  const armPar=(a,b)=>{let best=null,bv=1e9;for(let i=a;i<b;i++){const v=series[i].leadArm;if(v!=null&&Math.abs(v)<bv){bv=Math.abs(v);best=i;}}return (best!=null&&bv<25)?best:null;};
   let p3=armPar(adr,top),p5=armPar(top,imp),p9=armPar(imp,fin);
-  if(p3==null&&adr<top) p3=Math.round(adr+(top-adr)*0.55);   // 폴백: 백스윙 중간
-  if(p5==null&&top<imp) p5=Math.round(top+(imp-top)*0.55);   // 폴백: 다운스윙 중간
+  if(p3==null&&adr<top) p3=Math.round(adr+(top-adr)*0.55);
+  if(p5==null&&top<imp) p5=Math.round(top+(imp-top)*0.55);
+  if(p9==null&&imp<fin) p9=Math.round(imp+(fin-imp)*0.4);
   events={P1:adr,P3:p3,P4:top,P5:p5,P7:imp,P9:p9,P10:fin};
   if(curView==="DTL"){ // 샤프트 이벤트는 측면에서만 (지면수평=0°에 가까운 프레임)
     const enough=series.filter(s=>s.shaft!=null).length>n*0.2;
