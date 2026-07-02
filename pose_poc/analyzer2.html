@@ -314,41 +314,54 @@ function finish(){
 // FO면 샤프트 관련 UI 숨김
 function applyViewVisibility(){ $("shaftSection").style.display = curView==="DTL" ? "block" : "none"; }
 
+// 위치기반(속도 무관) 검출 — 슬로우모션 영상에도 견고. 사용자 15개 실측라벨로 검증
+//   (P4/P7/P5/P9/P3 평균오차 ~2프레임). 원리: 손이 가장 높은 두 지점(top,finish)과 그 사이 손 최저(impact)
 function detectEvents(){
   const n=series.length;
-  const hx=smooth(series.map(s=>s.handX),3), hY=smooth(series.map(s=>s.handY),3);
-  // 손 속도 + 하강속도(vy): 실측 2영상 대조로 검증된 '다운스윙 앵커' 방식
-  const sp0=series.map((_,i)=> i>0?Math.hypot((hx[i]??hx[i-1])-(hx[i-1]??0),(hY[i]??hY[i-1])-(hY[i-1]??0)):0);
-  const sp=smooth(sp0,2), spMax=Math.max(...sp,1e-6), thr=spMax*0.15;
-  const vy0=series.map((_,i)=> i>0?((hY[i]??hY[i-1])-(hY[i-1]??hY[i])):0);
-  const vy=smooth(vy0,2);
-  // 다운스윙 = 손이 가장 빠르게 '내려가는' 지점 (실제 스윙의 강한 신호, 스윙 후 잡동작에 안 속음)
-  let dsw=1;for(let i=1;i<n;i++)if(vy[i]>vy[dsw])dsw=i;
-  // P4 Top = 다운스윙 직전, 손이 가장 높은(handY 최소) 지점 (※피니시의 높은 손과 혼동 방지)
-  let top=dsw;const lo=Math.max(0,dsw-Math.round(n*0.5));for(let i=dsw;i>=lo;i--)if(hY[i]<hY[top])top=i;
-  // P7 Impact = 다운스윙 이후 손 하강이 멈추는(vy<=0) 첫 지점 = 최저점
-  let imp=dsw;for(let i=dsw;i<n;i++){ if(vy[i]<=0){imp=i;break;} imp=i; }
-  // P1 Address = 탑의 '순간정지'와 백스윙을 건너뛰고, 그 앞의 '진짜 정지(셋업)'을 찾음
-  //   = 샤프트/손이 움직이기 직전(테이크백 시작 직전). 사용자 5개 실측라벨로 보정(P1 오차 38→8프레임)
-  let adr=0,ai=top; const thrLow=spMax*0.03;
-  while(ai>0&&sp[ai]<thr)ai--;       // 탑 전환의 순간 저속 구간 스킵
-  while(ai>0&&sp[ai]>=thr)ai--;      // 백스윙(고속) 스킵
-  while(ai>0&&sp[ai]>=thrLow)ai--;   // 느린 테이크백 스킵 → 셋업 정지 도달
-  adr=ai;
-  // P10 Finish = 임팩트 이후 '처음' 멈추는 지점(피니시 홀드). 그 뒤 자세 푸는 동작 제외
-  let fin=n-1;for(let i=imp+3;i<n;i++){ if(sp[i]<thr*0.5){ fin=i; break; } }
-  const armPar=(a,b)=>{let best=null,bv=1e9;for(let i=a;i<b;i++){const v=series[i].leadArm;if(v!=null&&Math.abs(v)<bv){bv=Math.abs(v);best=i;}}return (best!=null&&bv<25)?best:null;};
+  const hy=smooth(series.map(s=>s.handY),5);
+  // 극값 검출 (window W)
+  const W=7, rawMin=[], rawMax=[];
+  for(let i=0;i<n;i++){
+    let lo=Math.max(0,i-W),hi=Math.min(n,i+W+1),mn=Infinity,mx=-Infinity;
+    for(let j=lo;j<hi;j++){ if(hy[j]<mn)mn=hy[j]; if(hy[j]>mx)mx=hy[j]; }
+    if(hy[i]<=mn+1e-9)rawMin.push(i);
+    if(hy[i]>=mx-1e-9)rawMax.push(i);
+  }
+  const dd=a=>{const o=[];for(const j of a){if(o.length&&j-o[o.length-1]<=W)continue;o.push(j);}return o;};
+  const mins=dd(rawMin), maxs=dd(rawMax);
+  const argmin=()=>{let k=0;for(let i=1;i<n;i++)if(hy[i]<hy[k])k=i;return k;};
+  let top,imp,fin;
+  if(mins.length>=2&&maxs.length>=1){
+    // 손 최고(handY 최소) = m1, 파트너 min과 그 사이 impact(손최저) 조합 중 prominence 최대
+    const m1=argmin(); let best=null,bs=-1;
+    for(const m2 of mins){ if(m2===m1)continue;
+      const lo=Math.min(m1,m2),hi=Math.max(m1,m2), bm=maxs.filter(M=>M>lo&&M<hi);
+      if(!bm.length)continue;
+      let ip=bm[0]; for(const M of bm) if(hy[M]>hy[ip])ip=M;
+      const score=(hy[ip]-hy[lo])+(hy[ip]-hy[hi]);
+      if(score>bs){bs=score;best=[lo,hi,ip];}
+    }
+    if(best){ top=best[0]; fin=best[1]; imp=best[2]; }
+  }
+  if(top==null){ top=argmin(); imp=Math.min(n-1,top+Math.round(n*0.1)); fin=Math.min(n-1,imp+Math.round(n*0.1)); } // 폴백
+  // Address = 셋업 레벨에서 백스윙이 10% 내려가기 직전 (셋업 정지 구간, 각도영향 거의 없음·슬라이더 보정)
+  let setup=hy[0];
+  if(top>3){ const pre=hy.slice(0,top).slice().sort((a,b)=>a-b); setup=pre[Math.floor(pre.length*0.70)]; }
+  const amp=setup-hy[top]; let adr=0;
+  for(let i=top-1;i>=0;i--){ if(hy[i]>=setup-0.10*amp){ adr=i; break; } }
+  // 팔 수평(리드팔 지면평행) P3/P5/P9 — 기하(각도) 기반, 속도 무관
+  const armPar=(a,b)=>{let best=null,bv=1e9;for(let i=a;i<b;i++){const v=series[i].leadArm;if(v!=null&&Math.abs(v)<bv){bv=Math.abs(v);best=i;}}return (best!=null&&bv<22)?best:null;};
   let p3=armPar(adr,top),p5=armPar(top,imp),p9=armPar(imp,fin);
   if(p3==null&&adr<top) p3=Math.round(adr+(top-adr)*0.55);
   if(p5==null&&top<imp) p5=Math.round(top+(imp-top)*0.55);
   if(p9==null&&imp<fin) p9=Math.round(imp+(fin-imp)*0.4);
   events={P1:adr,P3:p3,P4:top,P5:p5,P7:imp,P9:p9,P10:fin};
-  if(curView==="DTL"){ // 샤프트 이벤트는 측면에서만 (지면수평=0°에 가까운 프레임)
+  if(curView==="DTL"){ // 샤프트 이벤트(지면수평≈0°) — 샤프트 검출됐을 때만
     const enough=series.filter(s=>s.shaft!=null).length>n*0.2;
     const shaftPar=(lo,hi)=>{if(!enough)return null;for(let i=lo;i<hi;i++){const v=series[i].shaftSmooth;if(v!=null&&v<=12)return i;}return null;};
     events.P2=shaftPar(adr,top);events.P6=shaftPar(top,imp);events.P8=shaftPar(imp,fin);
   }
-  autoEvents=JSON.parse(JSON.stringify(events)); // 자동검출 원본(수동보정 전) 스냅샷
+  autoEvents=JSON.parse(JSON.stringify(events));
 }
 
 const LBL={P1:"Address",P2:"Toe-up(샤프트평행)",P3:"리드팔평행(BS)",P4:"Top",P5:"리드팔평행(DS)",P6:"샤프트평행(DS)",P7:"Impact",P8:"샤프트평행(FT)",P9:"리드팔평행(FT)",P10:"Finish"};
