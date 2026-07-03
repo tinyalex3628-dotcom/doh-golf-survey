@@ -154,7 +154,7 @@ def auto_events(az):
     return p1, p4, p7
 
 
-def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleton="smpl"):
+def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleton="smpl", save_json=None):
     jm = SKELETONS[skeleton]
     data = load_results(path)
     track = pick_track(data)
@@ -212,6 +212,26 @@ def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleto
         print(f"\n검증 포인트: 백스윙탑 흉곽 = {abs(sh_turn[top]):.0f}° "
               f"(기대 ~80~90°. MediaPipe 브라우저판은 여기서 -19° 나왔음)")
 
+    # analyzer2가 읽을 표준 JSON 계약 (doh.vision.rotation.v1)
+    if save_json:
+        import json as _json
+        def _v(fr):
+            fr = max(0, min(T - 1, fr))
+            return dict(thorax=round(float(sh_turn[fr]), 1),
+                        pelvis=round(float(hp_turn[fr]), 1),
+                        xfactor=round(float(xfactor[fr]), 1))
+        out = dict(
+            schema="doh.vision.rotation.v1", source="NLF", skeleton=skeleton, frames=int(T),
+            events=dict(P1=int(p1), P4=int(p4), P7=int(p7)),
+            address=_v(p1), top=_v(p4), impact=_v(p7),
+            series=dict(
+                thorax=[round(float(x), 1) for x in sh_turn],
+                pelvis=[round(float(x), 1) for x in hp_turn],
+                xfactor=[round(float(x), 1) for x in xfactor]),
+        )
+        _json.dump(out, open(save_json, "w"), ensure_ascii=False)
+        print("JSON 저장(analyzer2용):", save_json)
+
     if save_png:
         try:
             import matplotlib
@@ -243,11 +263,12 @@ def main():
     ap.add_argument("--p4", type=int, default=None, help="백스윙탑 프레임")
     ap.add_argument("--p7", type=int, default=None, help="임팩트 프레임")
     ap.add_argument("--png", default=None, help="그래프 저장 경로(png)")
+    ap.add_argument("--json", default=None, help="analyzer2용 회전 JSON 저장 경로")
     ap.add_argument("--skeleton", default="smpl", choices=list(SKELETONS),
                     help="관절 순서: smpl(WHAM) / h36m(MMPose·MotionBERT) / coco")
     ap.add_argument("--check", action="store_true", help="배열 키/shape만 출력")
     a = ap.parse_args()
-    analyze(a.pkl, a.p1, a.p4, a.p7, a.png, a.check, a.skeleton)
+    analyze(a.pkl, a.p1, a.p4, a.p7, a.png, a.check, a.skeleton, a.json)
 
 
 if __name__ == "__main__":
