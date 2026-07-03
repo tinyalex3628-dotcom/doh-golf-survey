@@ -308,6 +308,14 @@ def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleto
         vid = video_id or os.path.splitext(os.path.basename(path))[0]
         inst = emit_vision_v1(sh_turn, hp_turn, xfactor, p1, p4, p7, T, skeleton,
                               manual, view=view, hand=hand, fps=fps, video_id=vid)
+        # 회전 외 포즈 파생 지표(무릎/팔/스웨이/템포)를 같은 계약에 append
+        try:
+            from wham_golf_metrics import compute_metrics
+            more = compute_metrics(J, p1, p4, p7, T, fps=fps, hand=hand, view=view, skeleton=skeleton)
+            inst["features"].extend(more)
+            print(f"metrics 추가: +{len(more)} feature (총 {len(inst['features'])})")
+        except Exception as e:
+            print("metrics 확장 생략:", e)
         _json.dump(inst, open(save_json_v1, "w"), ensure_ascii=False, indent=2)
         print("JSON 저장(doh.vision.v1 계약):", save_json_v1)
 

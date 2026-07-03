@@ -136,10 +136,19 @@ Engine Architecture v1.0 §5의 **예시 JSON**은 Feature Spec **작성 이전*
 | **`doh.vision.v1`** ★ | 본 계약 | **모바일/웹/DOH 공용 정식 계약** | `--json-v1` |
 
 - rotation.v1은 analyzer2가 이미 읽는 표시용 서브셋. 유지(하위호환).
-- **v1이 정식 계약.** 어댑터가 회전 4개(`VF015 어깨턴 / VF018 힙턴 / VF020 X-Factor @P4 / VF075 힙클리어 P1→P7`)를 계약 feature로 방출.
-- 나머지 ~106개 VF(척추·스웨이·머리·무릎·템포…)는 Metrics 확장 단계에서 **같은 계약에** 추가된다(append). UI/DOH/모바일은 그때도 안 바뀐다 — 그게 계약을 먼저 잠근 이유.
+- **v1이 정식 계약.** 어댑터가 회전 4개(`VF015 어깨턴 / VF018 힙턴 / VF020 X-Factor @P4 / VF075 힙클리어 P1→P7`) + **포즈 파생 12개**를 계약 feature로 방출.
+- **Metrics 확장(`pose3d_poc/wham_golf_metrics.py`)** — 회전 외 지표를 **같은 계약에 append**:
 
-**어댑터 사용:**
+  | 분류 | VF | 계산 근거(월드 수직축 불필요, robust) |
+  |---|---|---|
+  | 팔각 | VF011/012/027/087 | 어깨-팔꿈치-손목 **세그먼트 상대각** |
+  | 무릎각 | VF039/040/088 | 엉덩이-무릎-발목 상대각 |
+  | 스웨이 | VF031(머리)/034(골반) | 스탠스선(발목-발목) 투영 / 폭 정규화 |
+  | 템포 | VF111/113/114 | 이벤트 프레임 산술 |
+
+- **아직 안 뽑는 것(정직):** 월드 기준 각(척추 틸트 VF001/전후굴곡 VF002, 어깨플레인 VF022, Loss of Posture VF038 등)은 신뢰할 수 있는 **세계 수직축(up) 보정**이 필요 → 엔진 검증 단계(다음)에서 추가. 그때도 이 계약에 **append만** 하면 UI/DOH/모바일 불변.
+
+**어댑터 사용(회전+metrics 한 번에):**
 ```
 python wham_golf_rotation.py joints.pkl --skeleton smpl \
     --json-v1 doh_vision_v1.json --view FO --hand right --fps 60

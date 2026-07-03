@@ -70,10 +70,17 @@
 - **어댑터:** `wham_golf_rotation.py --json-v1 out.json --view FO --hand right` → 회전 4개(VF015/018/020/075)를 계약으로 방출.
 - 핵심: `feature_id`=DOH어휘(VF###), 모든 feature에 confidence+error_flags 필수, Node 언급 금지, append-only. Metrics 확장은 **이 계약에 추가만** 하면 됨(UI/DOH/모바일 불변).
 
+## 5c. Metrics 확장 1차 — **완료(2026-07-03)** ✅
+`pose3d_poc/wham_golf_metrics.py` — NLF 3D관절(SMPL-24)에서 회전 외 지표를 계약에 append.
+- **12개 방출:** 팔각(VF011/012/027/087)·무릎각(VF039/040/088)·스웨이(VF031/034)·템포(VF111/113/114).
+- **선정 기준(정직):** 월드 수직축 없이도 robust한 것만 — 세그먼트 상대각 / 스탠스선 투영 / 프레임 산술. 순수 파이썬 기하(math만), 합성 관절로 검증(머리스웨이·템포 손검산 일치).
+- **다음 배치(수직축 보정 필요):** 척추 틸트/전후굴곡·어깨플레인·Loss of Posture… → 엔진 검증(down)에서 up축 확정 후 추가.
+- 어댑터 `--json-v1`이 회전4+metrics12=16 feature를 한 계약으로 방출. `python schema/validate.py`로 검증됨.
+
 ## 6. 다음 할 일 (우선순위)
 1. ~~**JSON 계약 `doh.vision.v1` 고정**~~ → **완료(§5b).**
-2. **Metrics 확장**: 회전 외 척추각·스웨이·머리·골반·무릎·팔·클럽 등을 **doh.vision.v1에 append** (VF001~150, MediaPipe로 ~110개 가능). Feature Spec v1.0 기반.
-3. **엔진 완성/검증**: 여러 스윙·정면/측면 비교, 회전값 실측 대조·보정(±10~15° 목표). — 사용자 Colab 루프 필요.
+2. ~~**Metrics 확장 1차**~~ → **완료(§5c).** 다음 배치=월드 수직축 기반 각(척추/플레인/Loss of Posture) — up축 보정 후 append.
+3. **엔진 완성/검증**: 여러 스윙·정면/측면 비교, 회전값 실측 대조·보정(±10~15° 목표) + 위 up축 보정. — 사용자 Colab 루프 필요.
 4. **FastAPI 래핑**: `POST 영상 → doh.vision.v1 JSON`. (rot.py/NLF 그대로 감싸기.) — GPU 서버 생기면 배포.
 5. **프론트**: 웹(analyzer2 진화 or 신규) + 모바일이 같은 API 호출. 지금 `JSON 불러오기`가 그 자리표시자.
 6. **나중**: DOH 진단엔진(Feature→Node→Chain)과 결합. (main 쪽 Feature Dictionary·Node Library + `data/vision_feature_map.csv`.)
