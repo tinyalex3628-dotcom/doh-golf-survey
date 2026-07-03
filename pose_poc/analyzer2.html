@@ -64,9 +64,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v18</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v19</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v18"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v19"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
 </header>
 
 <div class="wrap">
@@ -149,7 +149,7 @@
         </div>
       </div>
       <div class="note">어드레스(P1)=0° 기준 누적 회전량. X-Factor = |상체−하체| (몸통 분리각).
-        <span class="badge" style="color:#ffb648">≈근사</span> 회전 크기는 어깨선/골반선의 <b>화면 너비 축소(acos)</b>, 방향은 <b>어깨 앞뒤 순서</b>로 추정 — 깊이(z) 크기 의존을 제거해 정면/측면 모두 개선. 단일 카메라라 90° 부근은 다소 과소평가될 수 있음.</div>
+        <span class="badge" style="color:#ffb648">≈근사</span> 회전 크기는 어깨선/골반선의 <b>척추수직 방향 너비 축소(acos)</b>, 방향은 <b>어깨 앞뒤 순서(z)</b>로 추정. 각 값은 <b>이벤트±3프레임 평균</b>이며, 옆의 <b>신뢰도 배지</b>는 visibility·너비비율로 계산 — <span style="color:#ff6b6b">불안정</span>은 절대각을 믿지 말고 상대변화/X-Factor 위주로 보세요. 단일 카메라라 90° 부근은 원리적으로 과소평가·포화됩니다.</div>
     </div>
 
     <div id="keySection">
@@ -325,11 +325,19 @@ function proc(t){
   }
   let rec={t:+t.toFixed(4),handX:gripN.x,handY:gripN.y,shaft:shaftAngle,xfactor:null,spineTilt:null,spineGround:null,
     leadKnee:null,trailKnee:null,leadArm:null,headSway:null,headV:null,headLat:null,headDep:null,turnRel:null,sh:null,hp:null,up:null,
-    shW2d:null,hipW2d:null,shZ:null,hpZ:null,shTurn:null,hpTurn:null};
-  // 회전 신호(신방식): 어깨선/골반선의 '2D 투영 너비'(크기용) + worldLandmarks z 순서차(방향용)
-  const px2=(a,b)=>Math.hypot((a.x-b.x)*work.width,(a.y-b.y)*work.height);
-  rec.shW2d=px2(P("LEAD_SHOULDER"),P("TRAIL_SHOULDER"));
-  rec.hipW2d=px2(P("LEAD_HIP"),P("TRAIL_HIP"));
+    shW2d:null,hipW2d:null,shZ:null,hpZ:null,shTurn:null,hpTurn:null,shVis:null,hpVis:null,shConf:null,hpConf:null};
+  // 회전 신호(v19): 크기=척추축에 '수직'인 너비(세로 기울기 제거) + z순서(방향) + visibility(신뢰도)
+  //   기존 hypot(대각선 전체)은 탑에서 척추 옆기울기의 세로성분 때문에 폭이 안 줄어 과소평가됨 → 척추수직 성분만 사용
+  const midSho2=mid2(P("LEAD_SHOULDER"),P("TRAIL_SHOULDER")), midHip2=mid2(P("LEAD_HIP"),P("TRAIL_HIP"));
+  const spx={x:(midSho2.x-midHip2.x)*work.width,y:(midSho2.y-midHip2.y)*work.height};
+  const spl=Math.hypot(spx.x,spx.y)||1e-9, spu={x:spx.x/spl,y:spx.y/spl};
+  const perpW=(a,b)=>{ const v={x:(a.x-b.x)*work.width,y:(a.y-b.y)*work.height};
+    const d=v.x*spu.x+v.y*spu.y; return Math.hypot(v.x-d*spu.x, v.y-d*spu.y); }; // 척추축 성분 제거 → 가로폭만
+  rec.shW2d=perpW(P("LEAD_SHOULDER"),P("TRAIL_SHOULDER"));
+  rec.hipW2d=perpW(P("LEAD_HIP"),P("TRAIL_HIP"));
+  const vis=k=>{const p=P(k);return (p&&p.visibility!=null)?p.visibility:1;};
+  rec.shVis=Math.min(vis("LEAD_SHOULDER"),vis("TRAIL_SHOULDER"));
+  rec.hpVis=Math.min(vis("LEAD_HIP"),vis("TRAIL_HIP"));
   if(wl){
     rec.shZ=W("LEAD_SHOULDER").z-W("TRAIL_SHOULDER").z;   // 부호: 어느 어깨가 카메라에 더 가까운가(앞뒤 순서는 신뢰도 높음)
     rec.hpZ=W("LEAD_HIP").z-W("TRAIL_HIP").z;
@@ -364,17 +372,26 @@ function smooth(a,k=2){return a.map((_,i)=>{let s=0,c=0;for(let j=-k;j<=k;j++){c
 function computeTurns(){
   const n=series.length; if(!n)return;
   const lo=(events.P1!=null)?events.P1:0, hi=(events.P10!=null)?events.P10:n-1;
-  let shMax=1e-9,hipMax=1e-9;
-  for(let i=lo;i<=hi;i++){ const s=series[i]; if(s.shW2d>shMax)shMax=s.shW2d; if(s.hipW2d>hipMax)hipMax=s.hipW2d; }
+  // 강건한 최대너비: 단일 블러/오검출 프레임이 wmax를 부풀리지 않도록 90퍼센타일 사용
+  const pctMax=(field)=>{ const a=[]; for(let i=lo;i<=hi;i++){const v=series[i][field]; if(v!=null)a.push(v);}
+    if(!a.length)return 1e-9; a.sort((x,y)=>x-y); return a[Math.floor(a.length*0.9)]||a[a.length-1]||1e-9; };
+  const shMax=pctMax("shW2d"), hipMax=pctMax("hipW2d");
   const shZs=smooth(series.map(s=>s.shZ),3), hpZs=smooth(series.map(s=>s.hpZ),3);
-  const ac=(w,wm)=>deg(Math.acos(Math.max(0,Math.min(1,w/wm))));
+  const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const ac=(w,wm)=>deg(Math.acos(cl(w/wm,0,1)));
   for(let i=0;i<n;i++){ const s=series[i];
-    const magS=(s.shW2d!=null)?ac(s.shW2d,shMax):null, magH=(s.hipW2d!=null)?ac(s.hipW2d,hipMax):null;
+    const rS=(s.shW2d!=null)?cl(s.shW2d/shMax,0,1):null, rH=(s.hipW2d!=null)?cl(s.hipW2d/hipMax,0,1):null;
+    const magS=(rS==null)?null:ac(s.shW2d,shMax), magH=(rH==null)?null:ac(s.hipW2d,hipMax);
     // 방향 부호: z순서차(스무딩). worldLandmarks 없으면 백스윙(P4 이전)=음수 폴백
     const sgn=(zs,idx)=>{ if(zs[idx]!=null&&Math.abs(zs[idx])>1e-4) return zs[idx]<0?-1:1;
       return (events.P4!=null&&idx<=events.P4)?-1:1; };
     s.shTurn=(magS==null)?null:magS*sgn(shZs,i);
     s.hpTurn=(magH==null)?null:magH*sgn(hpZs,i);
+    // 신뢰도(0~1): visibility × 너비비율 페널티. 폭이 크게 줄면(=탑 근처) acos 포화라 절대각 불안정 → 낮게
+    const visF=v=>(v==null)?0.6:cl((v-0.5)/0.4,0,1);    // vis<0.5→0, >0.9→1
+    const widF=r=>(r==null)?0:cl((r-0.25)/0.25,0.15,1); // 비율<0.25→바닥0.15(포화), >0.5→1
+    s.shConf=(rS==null)?null:cl(visF(s.shVis)*widF(rS),0,1);
+    s.hpConf=(rH==null)?null:cl(visF(s.hpVis)*widF(rH),0,1);
   }
 }
 function interp(a){const r=a.slice();let last=null;for(let i=0;i<r.length;i++){if(r[i]!=null)last=r[i];else r[i]=last;}
@@ -579,20 +596,27 @@ function renderSeg(){
 }
 // 어드레스(P1) 대비 누적 회전량 — 상체(어깨)/하체(골반), X-Factor=|상체−하체|
 //   computeTurns()가 미리 계산한 shTurn/hpTurn(2D너비+z부호)을 어드레스 기준으로 뺌
+function avgAt(fr,field,win=3){ if(fr==null)return null; let s=0,c=0;   // 이벤트 프레임 ±win 평균(null 제외) — 단일 프레임 오차 완화
+  for(let j=-win;j<=win;j++){ const r=series[fr+j]; if(r&&r[field]!=null){s+=r[field];c++;} }
+  return c?s/c:null; }
 function turnAt(fr,key){
-  const ref=(events.P1!=null)?series[events.P1]:null;
-  if(fr==null||!ref)return null;
+  if(events.P1==null)return null;
   const f=(key==="sh")?"shTurn":"hpTurn";
-  const a=series[fr][f], b=ref[f];
+  const a=avgAt(fr,f), b=avgAt(events.P1,f);
   return (a==null||b==null)?null:(a-b);
 }
+function confAt(fr,key){ return avgAt(fr,(key==="sh")?"shConf":"hpConf"); }
 function renderRot(){
-  const fmt=v=>v==null?"—":(v>0?"+":"")+v.toFixed(0)+"°";
   const p4=events.P4,p7=events.P7;
+  // 신뢰도 배지: 높음(≥0.66) 초록 / 보통(≥0.33) 노랑 / 낮음 빨강 — 절대각을 얼마나 믿을지 표시
+  const badge=c=>{ if(c==null)return "";
+    const col=c>=0.66?"#3ecf8e":c>=0.33?"#ffb648":"#ff6b6b", lab=c>=0.66?"신뢰↑":c>=0.33?"보통":"불안정";
+    return ` <small style="font-size:10px;font-weight:700;color:${col};border:1px solid ${col};border-radius:5px;padding:0 4px;vertical-align:middle;white-space:nowrap">${lab} ${(c*100).toFixed(0)}%</small>`; };
+  const cell=(v,c)=>v==null?"—":((v>0?"+":"")+v.toFixed(0)+"°"+badge(c));
   const shT=turnAt(p4,"sh"),hpT=turnAt(p4,"hp"),shI=turnAt(p7,"sh"),hpI=turnAt(p7,"hp");
-  $("rotTopSh").textContent=fmt(shT); $("rotTopHp").textContent=fmt(hpT);
+  $("rotTopSh").innerHTML=cell(shT,confAt(p4,"sh")); $("rotTopHp").innerHTML=cell(hpT,confAt(p4,"hp"));
   $("rotTopXf").textContent=(shT==null||hpT==null)?"—":Math.abs(shT-hpT).toFixed(0)+"°";
-  $("rotImpSh").textContent=fmt(shI); $("rotImpHp").textContent=fmt(hpI);
+  $("rotImpSh").innerHTML=cell(shI,confAt(p7,"sh")); $("rotImpHp").innerHTML=cell(hpI,confAt(p7,"hp"));
 }
 // 정면=머리 좌우 이동 / 측면=척추각 을 P1·P4·P7 세 기준으로 크게 표시
 function renderKey(){
