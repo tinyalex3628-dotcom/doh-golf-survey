@@ -51,9 +51,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v15</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v16</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v15"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v16"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
 </header>
 
 <div class="wrap">
@@ -120,11 +120,17 @@
       <div class="note" id="cvState" style="margin-top:4px"></div>
     </div>
 
-    <h2>③ 두 지점 사이 변화</h2>
+    <div id="rotSection">
+      <h2>③ 회전 (어드레스 대비)</h2>
+      <table id="rotTable"><thead><tr><th>항목</th><th>백스윙탑(P4)</th><th>임팩트(P7)</th></tr></thead><tbody></tbody></table>
+      <div class="note">어드레스(P1)를 0°로 두고, 백스윙탑·임팩트에서의 누적 회전량입니다.</div>
+    </div>
+
+    <h2>④ 두 지점 사이 변화</h2>
     <div class="segsel"><select id="segFrom"></select><span>→</span><select id="segTo"></select><span style="color:#8b97a5">각 지점의 각도를 비교합니다</span></div>
     <table id="segTable"><thead><tr><th>항목</th><th id="thStart">시작</th><th id="thEnd">끝</th><th id="thDelta">변화</th></tr></thead><tbody></tbody></table>
 
-    <h2>④ 시계열 그래프</h2>
+    <h2>⑤ 시계열 그래프</h2>
     <canvas id="graph"></canvas>
     <div class="note" id="legend"></div>
   </div>
@@ -325,7 +331,7 @@ function finish(){
   if(series.length<10){$("status").textContent="프레임이 너무 적습니다.";return;}
   const sm=smooth(interp(series.map(s=>s.shaft)),2);series.forEach((s,i)=>s.shaftSmooth=sm[i]);
   const base=series.find(s=>s.sh);if(base)series.forEach(s=>{s.turnRel=(s.sh?signedAngle(base.sh,s.sh,s.up):null);});
-  applyViewVisibility();detectEvents();computeCrop();renderEvents();renderShaftTriple();fillSeg();renderSeg();drawGraph();setupEvEdit();
+  applyViewVisibility();detectEvents();computeCrop();renderEvents();renderShaftTriple();fillSeg();renderSeg();renderRot();drawGraph();setupEvEdit();
   $("csv").disabled=false;$("saveLabel").disabled=false;
   $("status").textContent=`완료: ${series.length}프레임 · ${curView==="FO"?"정면":"측면"} 분석.`;
 }
@@ -412,7 +418,7 @@ function renderEvents(){
 // ② 샤프트 각도: P1·P3·P5 만. 자동값 + 직접지정(그립→클럽헤드 클릭)
 // ── 이벤트 수동 보정 (슬라이더로 프레임 찾아 P 지정) ──
 let scrubIdx=0;
-function refreshAll(){ renderEvents();renderShaftTriple();fillSeg();renderSeg();drawGraph(); }
+function refreshAll(){ renderEvents();renderShaftTriple();fillSeg();renderSeg();renderRot();drawGraph(); }
 function setupEvEdit(){
   $("evEditWrap").style.display="block";
   const sc=$("scrub"); sc.min=cropStart; sc.max=(cropEnd>cropStart?cropEnd:series.length-1);
@@ -465,24 +471,29 @@ overlay.addEventListener("click",ev=>{
 });
 
 // 이 앵글에서 '보여줄' 스칼라 지표만 (측정 불가 항목은 목록에서 제외)
-// approx=근사(참고) 태그, ok=표시. no(측정불가)는 아예 포함 안 함.
+// approx=근사(참고) 태그, ok=표시. 측정불가 항목은 아예 포함 안 함.
+//   FO(정면): 머리 좌우만 측정 가능 (상하/앞뒤/척추각/무릎각은 정면에서 관측 불가)
+//   DTL(측면): 샤프트각·머리 상하/앞뒤·척추각·무릎각 (머리 좌우는 측면에서 관측 불가)
 function segMetrics(){
   // [이름, 키, 소수자리, 등급]  head는 어깨폭 정규화 값의 '변화'
-  const knees=[["리드 무릎각","leadKnee",0,"ok"],["트레일 무릎각","trailKnee",0,"ok"],["X-Factor(회전)","xfactor",0,"approx"]];
   if(curView==="FO") return [
-    ["머리 상하 변화","headV",3,"ok"],
-    ["머리 좌우(스웨이) 변화","headLat",3,"ok"],
-    ["머리 앞뒤 변화","headDep",3,"approx"],
-    ["척추각(지면기준) 변화","spineGround",0,"approx"],   // 정면=좌우틸트 위주
-    ...knees ];
+    ["머리 좌우(스웨이) 변화","headLat",3,"ok"] ];
   // DTL
   return [
     ["샤프트각(지면기준)","shaftSmooth",0,"ok"],
     ["머리 상하 변화","headV",3,"ok"],
     ["머리 앞뒤 변화","headDep",3,"ok"],
-    ["머리 좌우(스웨이) 변화","headLat",3,"approx"],
     ["척추각(지면기준) 변화","spineGround",0,"ok"],       // 측면=전후 자세각
-    ...knees ];
+    ["리드 무릎각","leadKnee",0,"ok"],                    // P2~P6만 관측 가능(그 외 가려짐)
+    ["트레일 무릎각","trailKnee",0,"ok"] ];               // 측면 전 구간 관측 가능
+}
+// 무릎 관측 가능 여부: FO는 둘 다 불가. DTL 트레일=전구간, 리드=P2~P6 구간만(몸에 가려짐)
+function kneeVisible(frame,key){
+  if(curView!=="DTL") return false;
+  if(key==="trailKnee") return true;
+  const lo=events.P2!=null?events.P2:(events.P1!=null?events.P1:0);
+  const hi=events.P6!=null?events.P6:(events.P7!=null?events.P7:series.length-1);
+  return frame>=lo && frame<=hi;
 }
 const TAG={ok:'',approx:' <span class="badge" style="color:#ffb648">≈근사</span>'};
 function fillSeg(){
@@ -498,31 +509,44 @@ function renderSeg(){
   const a=events[fp],b=events[tp],tb=$("segTable").querySelector("tbody");
   $("thStart").textContent=fp; $("thEnd").textContent=tp; $("thDelta").textContent="변화";
   if(a==null||b==null){tb.innerHTML="";return;}
-  let rows="";
-  // 회전: 어드레스(P1) 대비 회전량으로 각 지점 표기 (한 순간 절대값이 없어 기준 필요)
-  const ref=(events.P1!=null)?series[events.P1]:null;
-  const turnFrom=(rec,key)=>(ref&&rec&&ref[key]&&rec[key])?signedAngle(ref[key],rec[key],rec.up):null;
-  const fmtA=v=>v==null?"—":(v>0?"+":"")+v.toFixed(0)+"°";
-  const fmtD=(x,y)=>(x==null||y==null)?"—":((y-x>0?"+":"")+(y-x).toFixed(0)+"°");
-  if(series[a].sh&&series[b].sh&&ref){
-    const sA=turnFrom(series[a],"sh"),sB=turnFrom(series[b],"sh"),hA=turnFrom(series[a],"hp"),hB=turnFrom(series[b],"hp");
-    rows+=`<tr><td>어깨 회전 ${TAG.approx}<br><span style="color:#8b97a5;font-size:10px">어드레스 대비</span></td><td class="num">${fmtA(sA)}</td><td class="num">${fmtA(sB)}</td><td class="num" style="color:#3ecf8e">${fmtD(sA,sB)}</td></tr>`;
-    rows+=`<tr><td>골반 회전 ${TAG.approx}<br><span style="color:#8b97a5;font-size:10px">어드레스 대비</span></td><td class="num">${fmtA(hA)}</td><td class="num">${fmtA(hB)}</td><td class="num" style="color:#3ecf8e">${fmtD(hA,hB)}</td></tr>`;
-  }
-  rows+=segMetrics().map(([name,key,f,g])=>{
-    const s=series[a][key],e=series[b][key];
-    if(s==null||e==null)return `<tr><td>${name}${TAG[g]}</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>`;
+  const OCC=' <span class="badge" style="color:#8b97a5">가려짐</span>';
+  const rows=segMetrics().map(([name,key,f,g])=>{
+    const isKnee=(key==="leadKnee"||key==="trailKnee");
+    const sVis=isKnee?kneeVisible(a,key):true, eVis=isKnee?kneeVisible(b,key):true;
+    const s=sVis?series[a][key]:null, e=eVis?series[b][key]:null;
+    if(s==null||e==null){
+      const occ=(isKnee&&(!sVis||!eVis))?OCC:'';
+      return `<tr><td>${name}${TAG[g]}${occ}</td><td class="num">${s==null?"—":s.toFixed(f)}</td><td class="num">${e==null?"—":e.toFixed(f)}</td><td class="num">—</td></tr>`;
+    }
     const d=e-s,col=d>0?"#3ecf8e":"#ff7eb6";
     return `<tr><td>${name}${TAG[g]}</td><td class="num">${s.toFixed(f)}</td><td class="num">${e.toFixed(f)}</td><td class="num" style="color:${col}">${d>0?"+":""}${d.toFixed(f)}</td></tr>`;
   }).join("");
   tb.innerHTML=rows;
 }
+// 회전 전용 테이블: 어드레스(P1) 대비 백스윙탑(P4)·임팩트(P7) 누적 회전량 (from/to 선택과 무관, 고정)
+function renderRot(){
+  const tb=$("rotTable").querySelector("tbody"); if(!tb)return;
+  const ref=(events.P1!=null)?series[events.P1]:null;
+  const turnAt=(fr,key)=>{ if(fr==null||!ref)return null; const rec=series[fr];
+    return (rec&&ref[key]&&rec[key])?signedAngle(ref[key],rec[key],rec.up):null; };
+  const fmtA=v=>v==null?"—":(v>0?"+":"")+v.toFixed(0)+"°";
+  const cell=(fr,key)=>`<td class="num">${fmtA(turnAt(fr,key))}</td>`;
+  const p4=events.P4,p7=events.P7;
+  tb.innerHTML=
+    `<tr><td>어깨 회전 ${TAG.approx}</td>${cell(p4,"sh")}${cell(p7,"sh")}</tr>`+
+    `<tr><td>골반 회전 ${TAG.approx}</td>${cell(p4,"hp")}${cell(p7,"hp")}</tr>`;
+}
 function drawGraph(){
   const c=$("graph");c.width=c.clientWidth;c.height=240;const g=c.getContext("2d");
   g.fillStyle="#12161c";g.fillRect(0,0,c.width,c.height);
-  const plot=[["xfactor","#4ea1ff",series.map(s=>s.xfactor),"X-Factor"],["turnRel","#7ee081",series.map(s=>s.turnRel),"어깨누적회전"],
-    ["spineGround","#ffb648",series.map(s=>s.spineGround),"척추각(지면)"]];
-  if(curView==="FO")plot.push(["headLat","#ff7eb6",series.map(s=>s.headLat),"머리좌우"]); // 샤프트는 그래프에서 제외
+  // 그래프도 앵글별 관측 가능 항목만 (표와 동일 규칙)
+  const plot=[["turnRel","#7ee081",series.map(s=>s.turnRel),"어깨누적회전"]];
+  if(curView==="DTL"){
+    plot.push(["spineGround","#ffb648",series.map(s=>s.spineGround),"척추각(지면)"]);
+    plot.push(["headV","#4ea1ff",series.map(s=>s.headV),"머리상하"]);
+  } else { // FO
+    plot.push(["headLat","#ff7eb6",series.map(s=>s.headLat),"머리좌우"]);
+  }
   const a=cropStart,b=(cropEnd>cropStart?cropEnd:series.length-1),span=(b-a)||1,pad=26,xat=i=>pad+(c.width-2*pad)*(i-a)/span;
   for(const[,color,vals]of plot){ // 스케일은 스윙 구간(crop) 기준으로
     const win=vals.slice(a,b+1).filter(v=>v!=null);if(!win.length)continue;
