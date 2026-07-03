@@ -64,9 +64,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v19</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v20</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v19"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v20"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
 </header>
 
 <div class="wrap">
@@ -134,7 +134,8 @@
     </div>
 
     <div id="rotSection">
-      <h2>③ 회전 (어드레스 대비)</h2>
+      <h2>③ 회전 (근사 · 참고용)</h2>
+      <div class="note" id="rotWarn" style="margin:2px 0 8px"></div>
       <div class="mgrid">
         <div class="mcard">
           <h4>백스윙탑 (P4)</h4>
@@ -607,16 +608,24 @@ function turnAt(fr,key){
 }
 function confAt(fr,key){ return avgAt(fr,(key==="sh")?"shConf":"hpConf"); }
 function renderRot(){
-  const p4=events.P4,p7=events.P7;
-  // 신뢰도 배지: 높음(≥0.66) 초록 / 보통(≥0.33) 노랑 / 낮음 빨강 — 절대각을 얼마나 믿을지 표시
+  const p4=events.P4,p7=events.P7, LOW=0.4;
+  // 신뢰도 배지: 높음(≥0.66) 초록 / 보통(≥0.33) 노랑 / 낮음 빨강
   const badge=c=>{ if(c==null)return "";
     const col=c>=0.66?"#3ecf8e":c>=0.33?"#ffb648":"#ff6b6b", lab=c>=0.66?"신뢰↑":c>=0.33?"보통":"불안정";
     return ` <small style="font-size:10px;font-weight:700;color:${col};border:1px solid ${col};border-radius:5px;padding:0 4px;vertical-align:middle;white-space:nowrap">${lab} ${(c*100).toFixed(0)}%</small>`; };
-  const cell=(v,c)=>v==null?"—":((v>0?"+":"")+v.toFixed(0)+"°"+badge(c));
+  // 저신뢰(conf<0.4) 값은 '당당한 숫자'로 안 보여줌 → 회색 참고용으로 강등
+  const cell=(v,c)=>{ if(v==null)return "—"; const txt=(v>0?"+":"")+v.toFixed(0)+"°";
+    return (c!=null&&c<LOW) ? `<span style="color:#6b7684;font-weight:600">${txt}</span>${badge(c)}` : txt+badge(c); };
+  const shC=confAt(p4,"sh"),hpC=confAt(p4,"hp"),shIC=confAt(p7,"sh"),hpIC=confAt(p7,"hp");
   const shT=turnAt(p4,"sh"),hpT=turnAt(p4,"hp"),shI=turnAt(p7,"sh"),hpI=turnAt(p7,"hp");
-  $("rotTopSh").innerHTML=cell(shT,confAt(p4,"sh")); $("rotTopHp").innerHTML=cell(hpT,confAt(p4,"hp"));
-  $("rotTopXf").textContent=(shT==null||hpT==null)?"—":Math.abs(shT-hpT).toFixed(0)+"°";
-  $("rotImpSh").innerHTML=cell(shI,confAt(p7,"sh")); $("rotImpHp").innerHTML=cell(hpI,confAt(p7,"hp"));
+  $("rotTopSh").innerHTML=cell(shT,shC); $("rotTopHp").innerHTML=cell(hpT,hpC);
+  // X-Factor: 상체·하체 둘 다 신뢰 가능할 때만 숫자, 아니면 '불안정' (틀린 분리각 안 보여줌)
+  const xfOK=(shT!=null&&hpT!=null&&shC!=null&&hpC!=null&&shC>=LOW&&hpC>=LOW);
+  $("rotTopXf").innerHTML=xfOK?Math.abs(shT-hpT).toFixed(0)+"°":`<span style="color:#6b7684;font-size:14px;font-weight:600">불안정</span>`;
+  $("rotImpSh").innerHTML=cell(shI,shIC); $("rotImpHp").innerHTML=cell(hpI,hpIC);
+  const w=$("rotWarn"); if(w) w.innerHTML=(curView==="FO")
+    ? "⚠ <b style='color:#ff6b6b'>정면(FO) 회전 절대각은 단일 카메라로 신뢰 불가</b> — 아래 숫자는 근사·참고용(<b style='color:#6b7684'>회색=저신뢰</b>). 회전 정밀도는 측면(DTL)이나 서버 3D 티어에서."
+    : "⚠ 측면(DTL) 회전도 단일 카메라라 <b>근사</b>입니다. 절대각보다 <b>상대변화·X-Factor</b> 위주로 (<b style='color:#6b7684'>회색=저신뢰</b>).";
 }
 // 정면=머리 좌우 이동 / 측면=척추각 을 P1·P4·P7 세 기준으로 크게 표시
 function renderKey(){
