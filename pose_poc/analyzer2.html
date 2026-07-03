@@ -64,9 +64,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v17</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v18</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v17"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v18"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
 </header>
 
 <div class="wrap">
@@ -148,7 +148,8 @@
           <div class="mrow"><span class="lab">하체(골반)</span><span class="val" id="rotImpHp">—</span></div>
         </div>
       </div>
-      <div class="note">어드레스(P1)=0° 기준 누적 회전량. X-Factor = |상체−하체| (몸통 분리각). <span class="badge" style="color:#ffb648">≈근사</span> 단일 카메라 3D 추정.</div>
+      <div class="note">어드레스(P1)=0° 기준 누적 회전량. X-Factor = |상체−하체| (몸통 분리각).
+        <span class="badge" style="color:#ffb648">≈근사</span> 회전 크기는 어깨선/골반선의 <b>화면 너비 축소(acos)</b>, 방향은 <b>어깨 앞뒤 순서</b>로 추정 — 깊이(z) 크기 의존을 제거해 정면/측면 모두 개선. 단일 카메라라 90° 부근은 다소 과소평가될 수 있음.</div>
     </div>
 
     <div id="keySection">
@@ -323,8 +324,15 @@ function proc(t){
       ctx.lineTo(sh.fx/work.width*overlay.width,sh.fy/work.height*overlay.height);ctx.stroke();}
   }
   let rec={t:+t.toFixed(4),handX:gripN.x,handY:gripN.y,shaft:shaftAngle,xfactor:null,spineTilt:null,spineGround:null,
-    leadKnee:null,trailKnee:null,leadArm:null,headSway:null,headV:null,headLat:null,headDep:null,turnRel:null,sh:null,hp:null,up:null};
+    leadKnee:null,trailKnee:null,leadArm:null,headSway:null,headV:null,headLat:null,headDep:null,turnRel:null,sh:null,hp:null,up:null,
+    shW2d:null,hipW2d:null,shZ:null,hpZ:null,shTurn:null,hpTurn:null};
+  // 회전 신호(신방식): 어깨선/골반선의 '2D 투영 너비'(크기용) + worldLandmarks z 순서차(방향용)
+  const px2=(a,b)=>Math.hypot((a.x-b.x)*work.width,(a.y-b.y)*work.height);
+  rec.shW2d=px2(P("LEAD_SHOULDER"),P("TRAIL_SHOULDER"));
+  rec.hipW2d=px2(P("LEAD_HIP"),P("TRAIL_HIP"));
   if(wl){
+    rec.shZ=W("LEAD_SHOULDER").z-W("TRAIL_SHOULDER").z;   // 부호: 어느 어깨가 카메라에 더 가까운가(앞뒤 순서는 신뢰도 높음)
+    rec.hpZ=W("LEAD_HIP").z-W("TRAIL_HIP").z;
     const midHip=mid3(W("LEAD_HIP"),W("TRAIL_HIP")),midSho=mid3(W("LEAD_SHOULDER"),W("TRAIL_SHOULDER")),midAnk=mid3(W("LEAD_ANKLE"),W("TRAIL_ANKLE"));
     const up=unit(Vv(midAnk,midHip));
     const shoulderLine=Vv(W("TRAIL_SHOULDER"),W("LEAD_SHOULDER")),hipLine=Vv(W("TRAIL_HIP"),W("LEAD_HIP")),spine=Vv(midHip,midSho);
@@ -350,6 +358,25 @@ function proc(t){
 }
 
 function smooth(a,k=2){return a.map((_,i)=>{let s=0,c=0;for(let j=-k;j<=k;j++){const m=a[i+j];if(m!=null){s+=m;c++;}}return c?s/c:null;});}
+// 회전 재계산(정면·측면 공통): 크기=2D너비 축소 acos(w/wmax), 방향=z순서 부호
+//   - z의 '크기'는 못 믿지만 '앞뒤 순서(부호)'는 신뢰도 높음 → 크기와 방향을 분리해 각각 관측 가능한 신호로 계산
+//   - wmax=스윙 구간 내 어깨선이 카메라에 가장 펼쳐진(정면) 순간. 어드레스 대비값은 turnAt에서 뺌
+function computeTurns(){
+  const n=series.length; if(!n)return;
+  const lo=(events.P1!=null)?events.P1:0, hi=(events.P10!=null)?events.P10:n-1;
+  let shMax=1e-9,hipMax=1e-9;
+  for(let i=lo;i<=hi;i++){ const s=series[i]; if(s.shW2d>shMax)shMax=s.shW2d; if(s.hipW2d>hipMax)hipMax=s.hipW2d; }
+  const shZs=smooth(series.map(s=>s.shZ),3), hpZs=smooth(series.map(s=>s.hpZ),3);
+  const ac=(w,wm)=>deg(Math.acos(Math.max(0,Math.min(1,w/wm))));
+  for(let i=0;i<n;i++){ const s=series[i];
+    const magS=(s.shW2d!=null)?ac(s.shW2d,shMax):null, magH=(s.hipW2d!=null)?ac(s.hipW2d,hipMax):null;
+    // 방향 부호: z순서차(스무딩). worldLandmarks 없으면 백스윙(P4 이전)=음수 폴백
+    const sgn=(zs,idx)=>{ if(zs[idx]!=null&&Math.abs(zs[idx])>1e-4) return zs[idx]<0?-1:1;
+      return (events.P4!=null&&idx<=events.P4)?-1:1; };
+    s.shTurn=(magS==null)?null:magS*sgn(shZs,i);
+    s.hpTurn=(magH==null)?null:magH*sgn(hpZs,i);
+  }
+}
 function interp(a){const r=a.slice();let last=null;for(let i=0;i<r.length;i++){if(r[i]!=null)last=r[i];else r[i]=last;}
   let nx=null;for(let i=r.length-1;i>=0;i--){if(r[i]!=null)nx=r[i];else if(nx!=null)r[i]=nx;}return r;}
 
@@ -358,7 +385,7 @@ function finish(){
   if(series.length<10){$("status").textContent="프레임이 너무 적습니다.";return;}
   const sm=smooth(interp(series.map(s=>s.shaft)),2);series.forEach((s,i)=>s.shaftSmooth=sm[i]);
   const base=series.find(s=>s.sh);if(base)series.forEach(s=>{s.turnRel=(s.sh?signedAngle(base.sh,s.sh,s.up):null);});
-  applyViewVisibility();detectEvents();computeCrop();renderEvents();renderShaftTriple();fillSeg();renderSeg();renderRot();renderKey();setupEvEdit();
+  applyViewVisibility();detectEvents();computeTurns();computeCrop();renderEvents();renderShaftTriple();fillSeg();renderSeg();renderRot();renderKey();setupEvEdit();
   $("csv").disabled=false;$("saveLabel").disabled=false;
   $("status").textContent=`완료: ${series.length}프레임 · ${curView==="FO"?"정면":"측면"} 분석.`;
 }
@@ -445,7 +472,7 @@ function renderEvents(){
 // ② 샤프트 각도: P1·P3·P5 만. 자동값 + 직접지정(그립→클럽헤드 클릭)
 // ── 이벤트 수동 보정 (슬라이더로 프레임 찾아 P 지정) ──
 let scrubIdx=0;
-function refreshAll(){ renderEvents();renderShaftTriple();fillSeg();renderSeg();renderRot();renderKey(); }
+function refreshAll(){ computeTurns();renderEvents();renderShaftTriple();fillSeg();renderSeg();renderRot();renderKey(); }
 function setupEvEdit(){
   $("evEditWrap").style.display="block";
   const sc=$("scrub"); sc.min=cropStart; sc.max=(cropEnd>cropStart?cropEnd:series.length-1);
@@ -551,10 +578,13 @@ function renderSeg(){
   tb.innerHTML=rows;
 }
 // 어드레스(P1) 대비 누적 회전량 — 상체(어깨)/하체(골반), X-Factor=|상체−하체|
+//   computeTurns()가 미리 계산한 shTurn/hpTurn(2D너비+z부호)을 어드레스 기준으로 뺌
 function turnAt(fr,key){
   const ref=(events.P1!=null)?series[events.P1]:null;
-  if(fr==null||!ref)return null; const rec=series[fr];
-  return (rec&&ref[key]&&rec[key])?signedAngle(ref[key],rec[key],rec.up):null;
+  if(fr==null||!ref)return null;
+  const f=(key==="sh")?"shTurn":"hpTurn";
+  const a=series[fr][f], b=ref[f];
+  return (a==null||b==null)?null:(a-b);
 }
 function renderRot(){
   const fmt=v=>v==null?"—":(v>0?"+":"")+v.toFixed(0)+"°";
