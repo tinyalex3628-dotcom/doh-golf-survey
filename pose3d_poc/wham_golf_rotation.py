@@ -32,9 +32,17 @@ WHAM demo.py 산출물 `wham_output.pkl` (dict). 트랙별로 아래 중 하나 
 import sys, os, pickle, argparse
 import numpy as np
 
-# --- SMPL-24 관절 인덱스 (WHAM 'joints'가 SMPL-24 순서일 때) ---
-SMPL = dict(pelvis=0, l_hip=1, r_hip=2, spine1=3, spine2=6, spine3=9,
-            neck=12, l_shoulder=16, r_shoulder=17)
+# --- 스켈레톤별 관절 인덱스 프리셋 ---
+# 모델마다 관절 순서가 다르므로 --skeleton 로 선택. 회전엔 어깨/골반 4점만 필요.
+SKELETONS = {
+    # WHAM 등 SMPL-24
+    "smpl": dict(l_shoulder=16, r_shoulder=17, l_hip=1, r_hip=2),
+    # Human3.6M 17관절 (MMPose human3d, VideoPose3D, MotionBERT 등)
+    "h36m": dict(l_shoulder=11, r_shoulder=14, l_hip=4, r_hip=1),
+    # COCO 17관절
+    "coco": dict(l_shoulder=5, r_shoulder=6, l_hip=11, r_hip=12),
+}
+SMPL = SKELETONS["smpl"]  # 하위호환
 
 
 def load_results(path):
@@ -122,7 +130,8 @@ def turn_relative(ang, ref_frame):
     return ang - r
 
 
-def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False):
+def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleton="smpl"):
+    jm = SKELETONS[skeleton]
     data = load_results(path)
     track = pick_track(data)
 
@@ -134,20 +143,20 @@ def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False):
                 print(f"  {k:16s} shape={a.shape} dtype={a.dtype}")
             except Exception:
                 print(f"  {k:16s} (non-array: {type(v).__name__})")
-        print("\nSMPL-24 인덱스 가정:", SMPL)
-        print("joints가 (T,J,3)이고 J>=18 이면 SMPL-24 인덱스 사용 가능.")
+        print(f"\nskeleton={skeleton} 인덱스:", jm)
+        print("joints가 (T,J,3)인지, J가 프리셋 최대인덱스보다 큰지 확인.")
         return
 
     J = get_joints(track)
     T = J.shape[0]
-    print(f"프레임 {T} · 관절 {J.shape[1]}")
+    print(f"프레임 {T} · 관절 {J.shape[1]} · skeleton={skeleton}")
 
-    up = estimate_up(J, SMPL["l_shoulder"], SMPL["r_shoulder"], SMPL["l_hip"], SMPL["r_hip"])
+    up = estimate_up(J, jm["l_shoulder"], jm["r_shoulder"], jm["l_hip"], jm["r_hip"])
     e1, e2 = plane_basis(up)
     print(f"추정 up축: [{up[0]:+.2f} {up[1]:+.2f} {up[2]:+.2f}]")
 
-    sh_az = azimuth_series(J, SMPL["r_shoulder"], SMPL["l_shoulder"], up, e1, e2)  # 흉곽
-    hp_az = azimuth_series(J, SMPL["r_hip"], SMPL["l_hip"], up, e1, e2)            # 골반
+    sh_az = azimuth_series(J, jm["r_shoulder"], jm["l_shoulder"], up, e1, e2)  # 흉곽
+    hp_az = azimuth_series(J, jm["r_hip"], jm["l_hip"], up, e1, e2)            # 골반
 
     sh_turn = turn_relative(sh_az, p1)
     hp_turn = turn_relative(hp_az, p1)
@@ -200,9 +209,11 @@ def main():
     ap.add_argument("--p4", type=int, default=None, help="백스윙탑 프레임")
     ap.add_argument("--p7", type=int, default=None, help="임팩트 프레임")
     ap.add_argument("--png", default=None, help="그래프 저장 경로(png)")
+    ap.add_argument("--skeleton", default="smpl", choices=list(SKELETONS),
+                    help="관절 순서: smpl(WHAM) / h36m(MMPose·MotionBERT) / coco")
     ap.add_argument("--check", action="store_true", help="배열 키/shape만 출력")
     a = ap.parse_args()
-    analyze(a.pkl, a.p1, a.p4, a.p7, a.png, a.check)
+    analyze(a.pkl, a.p1, a.p4, a.p7, a.png, a.check, a.skeleton)
 
 
 if __name__ == "__main__":
