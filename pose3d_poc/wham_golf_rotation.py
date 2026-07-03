@@ -184,8 +184,8 @@ def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleto
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots(figsize=(10, 4))
-            ax.plot(sh_turn, label="흉곽(thorax)")
-            ax.plot(hp_turn, label="골반(pelvis)")
+            ax.plot(sh_turn, label="Thorax (shoulders)")
+            ax.plot(hp_turn, label="Pelvis (hips)")
             ax.plot(xfactor, "--", label="X-Factor")
             for fr, nm, c in [(p1, "P1", "gray"), (p4, "P4", "red"), (p7, "P7", "green")]:
                 if fr is not None:
@@ -193,7 +193,7 @@ def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleto
                     ax.text(fr, ax.get_ylim()[1], nm, color=c, fontsize=8, va="top")
             ax.axhline(0, color="k", lw=.5)
             ax.set_xlabel("frame"); ax.set_ylabel("rotation (deg)")
-            ax.legend(); ax.set_title("DOH · WHAM 3D rotation (address-relative)")
+            ax.legend(); ax.set_title("DOH 3D rotation (NLF, address-relative)")
             fig.tight_layout(); fig.savefig(save_png, dpi=120)
             print(f"\n그래프 저장: {save_png}")
         except Exception as e:
