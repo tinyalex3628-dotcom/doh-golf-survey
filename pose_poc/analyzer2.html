@@ -64,9 +64,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v20</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v21</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v20"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v21"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
 </header>
 
 <div class="wrap">
@@ -134,7 +134,11 @@
     </div>
 
     <div id="rotSection">
-      <h2>③ 회전 (근사 · 참고용)</h2>
+      <h2 id="rotTitle">③ 회전 (근사 · 참고용)</h2>
+      <div style="margin:2px 0 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label style="display:inline-block;background:#12202e;color:#3ecf8e;border:1px solid #3ecf8e;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:600">🎯 3D 회전결과(JSON) 불러오기<input id="load3d" type="file" accept=".json,application/json" style="display:none"/></label>
+        <span id="v3dStat" style="font-size:11px;color:#3ecf8e"></span>
+      </div>
       <div class="note" id="rotWarn" style="margin:2px 0 8px"></div>
       <div class="mgrid">
         <div class="mcard">
@@ -233,6 +237,21 @@ function loadVideo(e,view){
 }
 $("fileFO").addEventListener("change",e=>loadVideo(e,"FO"));
 $("fileDTL").addEventListener("change",e=>loadVideo(e,"DTL"));
+
+// Tier-B 3D 회전 JSON 불러오기 (Colab NLF 산출 doh_vision.json)
+$("load3d").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{ try{
+    const d=JSON.parse(r.result);
+    if(!d||!d.top||!d.schema||d.schema.indexOf("doh.vision.rotation")<0){
+      $("v3dStat").textContent="⚠ 형식 불일치 (doh_vision.json 맞는지 확인)"; $("v3dStat").style.color="#ff6b6b"; return; }
+    vision3d=d; $("v3dStat").textContent="✅ 3D 로드됨 — 회전카드가 정밀값으로 교체";
+    $("v3dStat").style.color="#3ecf8e"; $("rotTitle").textContent="③ 회전 (3D 정밀 · NLF)";
+    renderRot();
+  }catch(err){ $("v3dStat").textContent="⚠ JSON 읽기 실패"; $("v3dStat").style.color="#ff6b6b"; } };
+  r.readAsText(f);
+});
 
 // ── 프레임별 seek 방식 (재생X → 프레임 안 건너뜀, 매번 동일) ──
 let stepping=false, tCur=0, stepDt=1/60, mpTs=0;
@@ -607,7 +626,20 @@ function turnAt(fr,key){
   return (a==null||b==null)?null:(a-b);
 }
 function confAt(fr,key){ return avgAt(fr,(key==="sh")?"shConf":"hpConf"); }
+// Tier-B(서버 NLF 3D) 회전결과 JSON. 로드되면 브라우저 근사값 대신 이걸 표시.
+let vision3d=null;
+function render3dRot(){
+  const d=vision3d, g="#3ecf8e";
+  const bd=`<small style="font-size:10px;font-weight:700;color:${g};border:1px solid ${g};border-radius:5px;padding:0 4px;vertical-align:middle">3D정밀</small>`;
+  const fmt=v=>(v==null)?"—":((v>0?"+":"")+Math.round(v)+"° "+bd);
+  const t=d.top||{}, i=d.impact||{}, e=d.events||{};
+  $("rotTopSh").innerHTML=fmt(t.thorax); $("rotTopHp").innerHTML=fmt(t.pelvis);
+  $("rotTopXf").textContent=(t.xfactor==null)?"—":Math.abs(t.xfactor).toFixed(0)+"°";
+  $("rotImpSh").innerHTML=fmt(i.thorax); $("rotImpHp").innerHTML=fmt(i.pelvis);
+  const w=$("rotWarn"); if(w) w.innerHTML=`✅ <b style="color:${g}">3D 정밀값 로드됨 (${d.source||"NLF"})</b> — 서버 3D 복원값이라 절대각 신뢰 가능. 프레임 P1/P4/P7 = ${(e.P1!=null)?e.P1+"/"+e.P4+"/"+e.P7:"—"}`;
+}
 function renderRot(){
+  if(vision3d){ render3dRot(); return; }
   const p4=events.P4,p7=events.P7, LOW=0.4;
   // 신뢰도 배지: 높음(≥0.66) 초록 / 보통(≥0.33) 노랑 / 낮음 빨강
   const badge=c=>{ if(c==null)return "";
