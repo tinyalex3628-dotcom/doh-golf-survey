@@ -51,9 +51,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v14</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v15</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v14"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v15"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
 </header>
 
 <div class="wrap">
@@ -256,9 +256,11 @@ function detectShaft(gripPx,shoWpx){
       const da=Math.hypot(a.x-gx,a.y-gy),db=Math.hypot(b.x-gx,b.y-gy),near=Math.min(da,db),far=Math.max(da,db);
       if(near>nearR)continue;
       const fp=da>db?a:b,dx=fp.x-gx,dy=fp.y-gy,angG=deg(Math.atan2(Math.abs(dy),Math.abs(dx))); // 지면(수평) 기준: 0°=수평,90°=수직
-      let score=far; if(prevShaft!=null)score-=Math.abs(angG-prevShaft)*1.3;
+      let score=far; if(prevShaft!=null)score-=Math.abs(angG-prevShaft)*2.4; // 프레임간 연속성 가중 강화(팔/배경 엣지 오검출 억제)
       if(score>bestScore){bestScore=score;best={angle:angG,fx:fp.x+x0,fy:fp.y+y0};}
     }
+    // 이전 프레임 대비 급격한 튐(>28°)은 노이즈로 간주 → 버리고(null) 보간으로 채움
+    if(best && prevShaft!=null && Math.abs(best.angle-prevShaft)>28) best=null;
     if(cvState.prevGray)cvState.prevGray.delete(); cvState.prevGray=gray; gray=null;
     return best;
   }catch(e){return null;}
@@ -371,6 +373,13 @@ function detectEvents(){
     if(best){ top=best[0]; fin=best[1]; imp=best[2]; }
   }
   if(top==null){ top=argmin(); imp=Math.min(n-1,top+Math.round(n*0.1)); fin=Math.min(n-1,imp+Math.round(n*0.1)); } // 폴백
+  // Finish 보정: 손높이 2차 극값(fin)은 임팩트 직후 잔여 움직임에 낚일 수 있음
+  //   → 임팩트 이후 손 움직임이 실제로 멎어(안정화) 유지되는 첫 구간으로 대체(실측 라벨로 검증: 78→88 보정)
+  { const vel=hy.map((_,i)=>{const a=hy[Math.max(0,i-2)],b=hy[Math.min(n-1,i+2)];return Math.abs(b-a)/4;});
+    const winLen=6, eps=0.0018; let stable=null;
+    for(let i=imp+5;i<n-winLen;i++){ let ok=true; for(let j=i;j<i+winLen;j++){ if(vel[j]>eps){ok=false;break;} } if(ok){stable=i;break;} }
+    if(stable!=null && stable>imp) fin=Math.max(fin,stable);
+  }
   // Address = 셋업 레벨에서 백스윙이 10% 내려가기 직전 (셋업 정지 구간, 각도영향 거의 없음·슬라이더 보정)
   let setup=hy[0];
   if(top>3){ const pre=hy.slice(0,top).slice().sort((a,b)=>a-b); setup=pre[Math.floor(pre.length*0.70)]; }
@@ -385,7 +394,8 @@ function detectEvents(){
   events={P1:adr,P3:p3,P4:top,P5:p5,P7:imp,P9:p9,P10:fin};
   if(curView==="DTL"){ // 샤프트 이벤트(지면수평≈0°) — 샤프트 검출됐을 때만
     const enough=series.filter(s=>s.shaft!=null).length>n*0.2;
-    const shaftPar=(lo,hi)=>{if(!enough)return null;for(let i=lo;i<hi;i++){const v=series[i].shaftSmooth;if(v!=null&&v<=12)return i;}return null;};
+    // 고정 임계값(≤12°) 대신 구간 내 "0°(지면평행)에 가장 가까운 지점" 채택 — 추적 노이즈로 임계값을 못 넘는 경우 대응
+    const shaftPar=(lo,hi)=>{if(!enough||lo>=hi)return null;let best=null,bv=1e9;for(let i=lo;i<hi;i++){const v=series[i].shaftSmooth;if(v!=null&&v<bv){bv=v;best=i;}}return (best!=null&&bv<25)?best:null;};
     events.P2=shaftPar(adr,top);events.P6=shaftPar(top,imp);events.P8=shaftPar(imp,fin);
   }
   autoEvents=JSON.parse(JSON.stringify(events));
