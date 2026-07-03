@@ -47,13 +47,26 @@
   .segsel{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap;}
   .note{color:var(--sub);font-size:11px;margin-top:10px;line-height:1.55;}
   .badge{font-size:10px;padding:1px 6px;border-radius:5px;background:#222c39;border:1px solid #33404f;color:var(--sub);}
+  /* 주요 지표 카드 (회전/머리/척추) — 얇은 표 대신 크게 병기 */
+  .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 6px;}
+  .mcard{background:#161b22;border:1px solid #33404f;border-radius:10px;padding:12px 14px;}
+  .mcard h4{margin:0 0 8px;font-size:12px;color:var(--accent);letter-spacing:.3px;font-weight:700;}
+  .mrow{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:1px solid #222b35;}
+  .mrow:last-child{border-bottom:none;}
+  .mrow .lab{color:var(--sub);font-size:12px;} .mrow .val{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);}
+  .mrow .val.xf{color:var(--warn);}
+  .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 6px;}
+  .pcell{background:#161b22;border:1px solid #33404f;border-radius:10px;padding:10px 8px;text-align:center;}
+  .pcell.mid{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+  .pcell .pk{font-size:11px;color:var(--sub);margin-bottom:3px;} .pcell .pv{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.15;}
+  .pcell .pd{font-size:11px;color:#3ecf8e;margin-top:2px;min-height:14px;}
 </style>
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v16</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v17</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v16"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v17"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
 </header>
 
 <div class="wrap">
@@ -122,17 +135,31 @@
 
     <div id="rotSection">
       <h2>③ 회전 (어드레스 대비)</h2>
-      <table id="rotTable"><thead><tr><th>항목</th><th>백스윙탑(P4)</th><th>임팩트(P7)</th></tr></thead><tbody></tbody></table>
-      <div class="note">어드레스(P1)를 0°로 두고, 백스윙탑·임팩트에서의 누적 회전량입니다.</div>
+      <div class="mgrid">
+        <div class="mcard">
+          <h4>백스윙탑 (P4)</h4>
+          <div class="mrow"><span class="lab">상체(어깨)</span><span class="val" id="rotTopSh">—</span></div>
+          <div class="mrow"><span class="lab">하체(골반)</span><span class="val" id="rotTopHp">—</span></div>
+          <div class="mrow"><span class="lab">X-Factor</span><span class="val xf" id="rotTopXf">—</span></div>
+        </div>
+        <div class="mcard">
+          <h4>임팩트 (P7)</h4>
+          <div class="mrow"><span class="lab">상체(어깨)</span><span class="val" id="rotImpSh">—</span></div>
+          <div class="mrow"><span class="lab">하체(골반)</span><span class="val" id="rotImpHp">—</span></div>
+        </div>
+      </div>
+      <div class="note">어드레스(P1)=0° 기준 누적 회전량. X-Factor = |상체−하체| (몸통 분리각). <span class="badge" style="color:#ffb648">≈근사</span> 단일 카메라 3D 추정.</div>
     </div>
 
-    <h2>④ 두 지점 사이 변화</h2>
+    <div id="keySection">
+      <h2 id="keyTitle">④ 주요 지표</h2>
+      <div class="pgrid" id="keyGrid"></div>
+      <div class="note" id="keyNote"></div>
+    </div>
+
+    <h2>⑤ 두 지점 사이 변화</h2>
     <div class="segsel"><select id="segFrom"></select><span>→</span><select id="segTo"></select><span style="color:#8b97a5">각 지점의 각도를 비교합니다</span></div>
     <table id="segTable"><thead><tr><th>항목</th><th id="thStart">시작</th><th id="thEnd">끝</th><th id="thDelta">변화</th></tr></thead><tbody></tbody></table>
-
-    <h2>⑤ 시계열 그래프</h2>
-    <canvas id="graph"></canvas>
-    <div class="note" id="legend"></div>
   </div>
 </div>
 
@@ -331,7 +358,7 @@ function finish(){
   if(series.length<10){$("status").textContent="프레임이 너무 적습니다.";return;}
   const sm=smooth(interp(series.map(s=>s.shaft)),2);series.forEach((s,i)=>s.shaftSmooth=sm[i]);
   const base=series.find(s=>s.sh);if(base)series.forEach(s=>{s.turnRel=(s.sh?signedAngle(base.sh,s.sh,s.up):null);});
-  applyViewVisibility();detectEvents();computeCrop();renderEvents();renderShaftTriple();fillSeg();renderSeg();renderRot();drawGraph();setupEvEdit();
+  applyViewVisibility();detectEvents();computeCrop();renderEvents();renderShaftTriple();fillSeg();renderSeg();renderRot();renderKey();setupEvEdit();
   $("csv").disabled=false;$("saveLabel").disabled=false;
   $("status").textContent=`완료: ${series.length}프레임 · ${curView==="FO"?"정면":"측면"} 분석.`;
 }
@@ -418,7 +445,7 @@ function renderEvents(){
 // ② 샤프트 각도: P1·P3·P5 만. 자동값 + 직접지정(그립→클럽헤드 클릭)
 // ── 이벤트 수동 보정 (슬라이더로 프레임 찾아 P 지정) ──
 let scrubIdx=0;
-function refreshAll(){ renderEvents();renderShaftTriple();fillSeg();renderSeg();renderRot();drawGraph(); }
+function refreshAll(){ renderEvents();renderShaftTriple();fillSeg();renderSeg();renderRot();renderKey(); }
 function setupEvEdit(){
   $("evEditWrap").style.display="block";
   const sc=$("scrub"); sc.min=cropStart; sc.max=(cropEnd>cropStart?cropEnd:series.length-1);
@@ -523,41 +550,45 @@ function renderSeg(){
   }).join("");
   tb.innerHTML=rows;
 }
-// 회전 전용 테이블: 어드레스(P1) 대비 백스윙탑(P4)·임팩트(P7) 누적 회전량 (from/to 선택과 무관, 고정)
-function renderRot(){
-  const tb=$("rotTable").querySelector("tbody"); if(!tb)return;
+// 어드레스(P1) 대비 누적 회전량 — 상체(어깨)/하체(골반), X-Factor=|상체−하체|
+function turnAt(fr,key){
   const ref=(events.P1!=null)?series[events.P1]:null;
-  const turnAt=(fr,key)=>{ if(fr==null||!ref)return null; const rec=series[fr];
-    return (rec&&ref[key]&&rec[key])?signedAngle(ref[key],rec[key],rec.up):null; };
-  const fmtA=v=>v==null?"—":(v>0?"+":"")+v.toFixed(0)+"°";
-  const cell=(fr,key)=>`<td class="num">${fmtA(turnAt(fr,key))}</td>`;
-  const p4=events.P4,p7=events.P7;
-  tb.innerHTML=
-    `<tr><td>어깨 회전 ${TAG.approx}</td>${cell(p4,"sh")}${cell(p7,"sh")}</tr>`+
-    `<tr><td>골반 회전 ${TAG.approx}</td>${cell(p4,"hp")}${cell(p7,"hp")}</tr>`;
+  if(fr==null||!ref)return null; const rec=series[fr];
+  return (rec&&ref[key]&&rec[key])?signedAngle(ref[key],rec[key],rec.up):null;
 }
-function drawGraph(){
-  const c=$("graph");c.width=c.clientWidth;c.height=240;const g=c.getContext("2d");
-  g.fillStyle="#12161c";g.fillRect(0,0,c.width,c.height);
-  // 그래프도 앵글별 관측 가능 항목만 (표와 동일 규칙)
-  const plot=[["turnRel","#7ee081",series.map(s=>s.turnRel),"어깨누적회전"]];
-  if(curView==="DTL"){
-    plot.push(["spineGround","#ffb648",series.map(s=>s.spineGround),"척추각(지면)"]);
-    plot.push(["headV","#4ea1ff",series.map(s=>s.headV),"머리상하"]);
-  } else { // FO
-    plot.push(["headLat","#ff7eb6",series.map(s=>s.headLat),"머리좌우"]);
-  }
-  const a=cropStart,b=(cropEnd>cropStart?cropEnd:series.length-1),span=(b-a)||1,pad=26,xat=i=>pad+(c.width-2*pad)*(i-a)/span;
-  for(const[,color,vals]of plot){ // 스케일은 스윙 구간(crop) 기준으로
-    const win=vals.slice(a,b+1).filter(v=>v!=null);if(!win.length)continue;
-    const mn=Math.min(...win),mx=Math.max(...win),rng=(mx-mn)||1;g.strokeStyle=color;g.lineWidth=1.5;g.beginPath();let st=false;
-    for(let i=a;i<=b;i++){const v=vals[i];if(v==null)continue;const y=c.height-pad-(c.height-2*pad)*(v-mn)/rng;st?g.lineTo(xat(i),y):g.moveTo(xat(i),y);st=true;}
-    g.stroke();}
-  g.font="10px sans-serif";
-  for(const p in events){const f=events[p];if(f==null||f<a||f>b)continue;const x=xat(f);
-    g.strokeStyle=SHAFT_EV.has(p)?"#ffd166":"#ff7eb6";g.setLineDash([3,3]);g.beginPath();g.moveTo(x,8);g.lineTo(x,c.height-8);g.stroke();g.setLineDash([]);
-    g.fillStyle=SHAFT_EV.has(p)?"#ffd166":"#ff7eb6";g.fillText(p,x-6,16);}
-  $("legend").innerHTML=plot.map(([,color,,nm])=>`<span style="color:${color}">■</span>${nm}`).join(" · ")+` · <span style="color:#ff7eb6">┊</span>이벤트`;
+function renderRot(){
+  const fmt=v=>v==null?"—":(v>0?"+":"")+v.toFixed(0)+"°";
+  const p4=events.P4,p7=events.P7;
+  const shT=turnAt(p4,"sh"),hpT=turnAt(p4,"hp"),shI=turnAt(p7,"sh"),hpI=turnAt(p7,"hp");
+  $("rotTopSh").textContent=fmt(shT); $("rotTopHp").textContent=fmt(hpT);
+  $("rotTopXf").textContent=(shT==null||hpT==null)?"—":Math.abs(shT-hpT).toFixed(0)+"°";
+  $("rotImpSh").textContent=fmt(shI); $("rotImpHp").textContent=fmt(hpI);
+}
+// 정면=머리 좌우 이동 / 측면=척추각 을 P1·P4·P7 세 기준으로 크게 표시
+function renderKey(){
+  const grid=$("keyGrid"); if(!grid)return;
+  const pts=["P1","P4","P7"], fo=(curView==="FO"), key=fo?"headLat":"spineGround";
+  $("keyTitle").textContent=fo?"④ 머리 좌우 이동 (정면)":"④ 척추각 (측면, 지면기준)";
+  $("keyNote").innerHTML=fo
+    ? "어드레스(P1) 대비 머리 좌우 이동량(어깨폭 대비 %). +/− 는 좌우 방향."
+    : "각 지점의 척추각(0°=지면수평, 90°=수직)과 어드레스(P1) 대비 변화.";
+  const base=(events.P1!=null&&series[events.P1])?series[events.P1][key]:null;
+  grid.innerHTML=pts.map(p=>{
+    const fr=events[p], rec=(fr!=null)?series[fr]:null, v=(rec!=null)?rec[key]:null;
+    let pv="—",pd="";
+    if(v!=null){
+      if(fo){
+        const mv=(base!=null)?(v-base)*100:null;
+        pv=(p==="P1")?"0%":(mv==null?"—":(mv>0?"+":"")+mv.toFixed(0)+"%");
+        pd=(p==="P1")?"기준":"어깨폭 대비";
+      }else{
+        pv=v.toFixed(0)+"°";
+        const d=(base!=null)?(v-base):null;
+        pd=(p==="P1")?"기준":(d==null?"":(d>0?"+":"")+d.toFixed(0)+"°");
+      }
+    }
+    return `<div class="pcell${p==="P4"?" mid":""}"><div class="pk">${p} ${LBL[p]}</div><div class="pv">${pv}</div><div class="pd">${pd}</div></div>`;
+  }).join("");
 }
 // ── 라벨 저장(학습 데이터): 자동값 + 수동보정값(정답) + 프레임특징 ──
 $("saveLabel").addEventListener("click",()=>{
