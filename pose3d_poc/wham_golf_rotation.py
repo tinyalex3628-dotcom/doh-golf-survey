@@ -183,6 +183,8 @@ def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleto
     hp_az = azimuth_series(J, jm["r_hip"], jm["l_hip"], up, e1, e2)            # 골반
 
     # P구간 자동검출 (수동으로 준 값은 그대로 존중)
+    if p1 is not None and p1 == p4 == p7:   # 0/0/0 같은 placeholder → 자동으로
+        p1 = p4 = p7 = None
     a1, a4, a7 = auto_events(sh_az)
     manual = (p1 is not None) or (p4 is not None) or (p7 is not None)
     if p1 is None: p1 = a1
