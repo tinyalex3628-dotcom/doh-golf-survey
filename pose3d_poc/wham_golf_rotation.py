@@ -130,6 +130,30 @@ def turn_relative(ang, ref_frame):
     return ang - r
 
 
+def auto_events(az):
+    """어깨 azimuth 곡선에서 P1(어드레스)/P4(탑)/P7(임팩트) 자동검출.
+    규칙: 피니시 방향의 반대쪽 극점=백스윙탑, 탑 이후 첫 0교차=임팩트,
+          탑 이전 마지막 평탄구간=어드레스. (프레임 수동입력 없이 영상만으로)"""
+    n = len(az)
+    b = az - az[0]
+    tail = max(5, n // 20)
+    end_dir = 1.0 if np.mean(b[-tail:]) >= 0 else -1.0   # 피니시가 어느 방향인가
+    p4 = int(np.argmin(b)) if end_dir >= 0 else int(np.argmax(b))  # 백스윙=반대 극점
+    amp = abs(b[p4]) or 1.0
+    p7 = p4                                              # 임팩트=탑 이후 0교차
+    for i in range(p4, n):
+        if (end_dir >= 0 and b[i] >= 0) or (end_dir < 0 and b[i] <= 0):
+            p7 = i
+            break
+    p1 = 0                                               # 어드레스=탑 이전 마지막 평탄
+    thr = max(3.0, 0.05 * amp)
+    for i in range(p4, -1, -1):
+        if abs(b[i]) < thr:
+            p1 = i
+            break
+    return p1, p4, p7
+
+
 def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleton="smpl"):
     jm = SKELETONS[skeleton]
     data = load_results(path)
@@ -157,6 +181,14 @@ def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleto
 
     sh_az = azimuth_series(J, jm["r_shoulder"], jm["l_shoulder"], up, e1, e2)  # 흉곽
     hp_az = azimuth_series(J, jm["r_hip"], jm["l_hip"], up, e1, e2)            # 골반
+
+    # P구간 자동검출 (수동으로 준 값은 그대로 존중)
+    a1, a4, a7 = auto_events(sh_az)
+    manual = (p1 is not None) or (p4 is not None) or (p7 is not None)
+    if p1 is None: p1 = a1
+    if p4 is None: p4 = a4
+    if p7 is None: p7 = a7
+    print(f"이벤트 P1/P4/P7 = {p1}/{p4}/{p7}" + ("  (일부 수동지정)" if manual else "  (자동검출)"))
 
     sh_turn = turn_relative(sh_az, p1)
     hp_turn = turn_relative(hp_az, p1)
