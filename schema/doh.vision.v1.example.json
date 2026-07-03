@@ -1,0 +1,106 @@
+{
+  "schema": "doh.vision.v1",
+  "generated_at": "2026-07-03T12:00:00Z",
+
+  "source": {
+    "video_id": "verified_front_swing_0001",
+    "handedness": "right",
+    "camera_view": "FO",
+    "fps_declared": 60,
+    "fps_effective": 60,
+    "resolution": [1080, 1920],
+    "duration_frames": 195
+  },
+
+  "engines": {
+    "pose":   { "name": "nlf", "variant": "nlf_l_multi", "version": "0.3.2" },
+    "event":  { "name": "pose_rule_auto", "variant": "azimuth_extrema", "version": "wham_golf_rotation.py" },
+    "object": null
+  },
+
+  "swing_events": [
+    { "p": "P1", "name": "Address", "frame": 55, "confidence": 0.85, "method": "pose_rule" },
+    { "p": "P4", "name": "Top",     "frame": 80, "confidence": 0.90, "method": "pose_rule" },
+    { "p": "P7", "name": "Impact",  "frame": 89, "confidence": 0.80, "method": "pose_rule" }
+  ],
+
+  "features": [
+    {
+      "feature_id": "VF015",
+      "name": "Shoulder Turn @P4",
+      "value": -101.5,
+      "unit": "deg",
+      "phase": "P4",
+      "coord": "BODY",
+      "operator": "OP006",
+      "primitives": ["SHOULDER_LINE_TRACK"],
+      "landmarks_used": ["LEAD_SHOULDER", "TRAIL_SHOULDER", "LEAD_HIP", "TRAIL_HIP"],
+      "confidence": 0.82,
+      "error_flags": [],
+      "source_engine": "pose"
+    },
+    {
+      "feature_id": "VF018",
+      "name": "Hip Turn @P4",
+      "value": -27.8,
+      "unit": "deg",
+      "phase": "P4",
+      "coord": "BODY",
+      "operator": "OP006",
+      "primitives": ["HIP_LINE_TRACK"],
+      "landmarks_used": ["LEAD_HIP", "TRAIL_HIP"],
+      "confidence": 0.80,
+      "error_flags": [],
+      "source_engine": "pose"
+    },
+    {
+      "feature_id": "VF020",
+      "name": "X-Factor @P4",
+      "value": -73.8,
+      "unit": "deg",
+      "phase": "P4",
+      "coord": "BODY",
+      "operator": "OP002",
+      "primitives": ["SHOULDER_LINE", "HIP_LINE", "GROUND_NORMAL"],
+      "landmarks_used": ["LEAD_SHOULDER", "TRAIL_SHOULDER", "LEAD_HIP", "TRAIL_HIP"],
+      "confidence": 0.78,
+      "error_flags": [],
+      "source_engine": "pose"
+    },
+    {
+      "feature_id": "VF075",
+      "name": "Hip Clear Amount",
+      "value": -0.1,
+      "unit": "deg",
+      "phase": "P1->P7",
+      "coord": "BODY",
+      "operator": "OP006",
+      "primitives": ["HIP_LINE_TRACK"],
+      "landmarks_used": ["LEAD_HIP", "TRAIL_HIP"],
+      "confidence": 0.75,
+      "error_flags": [],
+      "source_engine": "pose"
+    },
+    {
+      "feature_id": "VF078",
+      "name": "Forward Shaft Lean",
+      "value": null,
+      "unit": "deg",
+      "phase": "P7",
+      "coord": "TARGET",
+      "operator": "OP002",
+      "primitives": ["CLUB_VECTOR", "VERTICAL"],
+      "landmarks_used": [],
+      "confidence": 0.0,
+      "error_flags": ["club_not_detected"],
+      "source_engine": "object"
+    }
+  ],
+
+  "quality": {
+    "overall_confidence": 0.80,
+    "mean_visibility": 0.88,
+    "view_match": true,
+    "warnings": ["object_engine_absent: club/ball features unavailable (2nd-stage)"]
+  }
+}

@@ -61,13 +61,22 @@
   "series":{"thorax":[...],"pelvis":[...],"xfactor":[...]} }
 ```
 
+## 5b. JSON 계약 `doh.vision.v1` — **LOCKED (2026-07-03)** ✅
+전체 지표를 담는 정식 계약을 **잠갔다.** rotation.v1(위 §5)은 analyzer2 레거시 표시용으로 유지.
+- **문서:** `DOH_Vision_JSON_Contract_v1.0.md` (불변원칙·버전정책·VF어휘 정합)
+- **스키마:** `schema/doh.vision.v1.schema.json` (Draft 2020-12, 기계검증)
+- **정본예제:** `schema/doh.vision.v1.example.json` (실측 스윙값)
+- **검증기:** `python schema/validate.py` (jsonschema 있으면 정식 / 없으면 내장 인터프리터)
+- **어댑터:** `wham_golf_rotation.py --json-v1 out.json --view FO --hand right` → 회전 4개(VF015/018/020/075)를 계약으로 방출.
+- 핵심: `feature_id`=DOH어휘(VF###), 모든 feature에 confidence+error_flags 필수, Node 언급 금지, append-only. Metrics 확장은 **이 계약에 추가만** 하면 됨(UI/DOH/모바일 불변).
+
 ## 6. 다음 할 일 (우선순위)
-1. **엔진 완성/검증**: 여러 스윙·정면/측면 비교, 회전값 실측 대조·보정(±10~15° 목표).
-2. **Metrics 확장**: 회전 외 척추각·스웨이·머리·골반·무릎·팔·클럽 등도 JSON으로 (MediaPipe로 상당수 가능).
-3. **JSON 계약 확장·고정** (`doh.vision.v1` 전체 지표).
-4. **FastAPI 래핑**: `POST 영상 → doh_vision.json`. (rot.py/NLF 그대로 감싸기.) — GPU 서버 생기면 배포.
+1. ~~**JSON 계약 `doh.vision.v1` 고정**~~ → **완료(§5b).**
+2. **Metrics 확장**: 회전 외 척추각·스웨이·머리·골반·무릎·팔·클럽 등을 **doh.vision.v1에 append** (VF001~150, MediaPipe로 ~110개 가능). Feature Spec v1.0 기반.
+3. **엔진 완성/검증**: 여러 스윙·정면/측면 비교, 회전값 실측 대조·보정(±10~15° 목표). — 사용자 Colab 루프 필요.
+4. **FastAPI 래핑**: `POST 영상 → doh.vision.v1 JSON`. (rot.py/NLF 그대로 감싸기.) — GPU 서버 생기면 배포.
 5. **프론트**: 웹(analyzer2 진화 or 신규) + 모바일이 같은 API 호출. 지금 `JSON 불러오기`가 그 자리표시자.
-6. **나중**: DOH 진단엔진(Feature→Node→Chain)과 결합. (main/vkc1jk 쪽 Feature Dictionary·Node Library 자산.)
+6. **나중**: DOH 진단엔진(Feature→Node→Chain)과 결합. (main 쪽 Feature Dictionary·Node Library + `data/vision_feature_map.csv`.)
 
 ## 7. 제약/환경
 - 사용자: **사지방(군내망)**, 로컬 GPU 없음. Colab은 구글 클라우드라 동작(모델다운·GPU OK). jsdelivr/raw.githack은 군내망서 열림. **터널류(ngrok 등)는 막힐 수 있음.**
@@ -78,3 +87,5 @@
 - Colab: `https://colab.research.google.com/github/tinyalex3628-dotcom/doh-golf-survey/blob/claude/ai-video-analysis-engine-wlr06k/pose3d_poc/pose3d_simple.ipynb`
 - analyzer2: `https://raw.githack.com/tinyalex3628-dotcom/doh-golf-survey/claude/ai-video-analysis-engine-wlr06k/pose_poc/analyzer2.html`
 - 회전 추출: `python rot.py joints.pkl --skeleton smpl --png rot.png --json doh_vision.json` (P구간 자동)
+- 계약 방출: `python pose3d_poc/wham_golf_rotation.py joints.pkl --skeleton smpl --json-v1 doh_vision_v1.json --view FO --hand right`
+- 계약 검증: `python schema/validate.py doh_vision_v1.json`

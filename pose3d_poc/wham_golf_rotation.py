@@ -154,7 +154,77 @@ def auto_events(az):
     return p1, p4, p7
 
 
-def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleton="smpl", save_json=None):
+def emit_vision_v1(sh_turn, hp_turn, xfactor, p1, p4, p7, T, skeleton,
+                   manual, view="unknown", hand="right", fps=None, video_id=None):
+    """rotation 결과 → doh.vision.v1 계약(JSON dict) 어댑터.
+    schema/doh.vision.v1.schema.json 을 만족하는 인스턴스를 만든다.
+    이 파이프라인이 '실제로 재는' 회전 4개(VF015/018/020/075)만 채우고,
+    나머지 Feature/클럽은 다른 엔진의 몫이라 생략(부분출력 허용).
+    """
+    from datetime import datetime, timezone
+
+    def val(fr, arr):
+        fr = max(0, min(T - 1, fr))
+        return round(float(arr[fr]), 1)
+
+    # view가 정면/후면이면 회전 신뢰 높음, unknown/side면 강등
+    view_ok = view in ("FO", "DTL")
+    c = 0.8 if view_ok else 0.65
+    ev_method = "manual" if manual else "pose_rule"
+    ev_conf = 0.95 if manual else 0.85
+
+    def feat(fid, name, value, phase, op, prims, conf, lms):
+        return dict(feature_id=fid, name=name, value=value, unit="deg", phase=phase,
+                    coord="BODY", operator=op, primitives=prims, landmarks_used=lms,
+                    confidence=round(conf, 2), error_flags=[], source_engine="pose")
+
+    SH = ["LEAD_SHOULDER", "TRAIL_SHOULDER"]
+    HP = ["LEAD_HIP", "TRAIL_HIP"]
+    return {
+        "schema": "doh.vision.v1",
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "source": {
+            "video_id": video_id or "swing",
+            "handedness": hand,
+            "camera_view": view,
+            "fps_declared": fps,
+            "fps_effective": fps,
+            "resolution": None,
+            "duration_frames": int(T),
+        },
+        "engines": {
+            "pose": {"name": "nlf", "variant": "nlf_l_multi", "version": "0.3.2"},
+            "event": {"name": "pose_rule_auto", "variant": "azimuth_extrema",
+                      "version": "wham_golf_rotation.py"},
+            "object": None,
+        },
+        "swing_events": [
+            {"p": "P1", "name": "Address", "frame": int(p1), "confidence": ev_conf, "method": ev_method},
+            {"p": "P4", "name": "Top",     "frame": int(p4), "confidence": ev_conf, "method": ev_method},
+            {"p": "P7", "name": "Impact",  "frame": int(p7), "confidence": ev_conf, "method": ev_method},
+        ],
+        "features": [
+            feat("VF015", "Shoulder Turn @P4", val(p4, sh_turn), "P4", "OP006",
+                 ["SHOULDER_LINE_TRACK"], c, SH + HP),
+            feat("VF018", "Hip Turn @P4", val(p4, hp_turn), "P4", "OP006",
+                 ["HIP_LINE_TRACK"], c, HP),
+            feat("VF020", "X-Factor @P4", val(p4, xfactor), "P4", "OP002",
+                 ["SHOULDER_LINE", "HIP_LINE", "GROUND_NORMAL"], c - 0.04, SH + HP),
+            feat("VF075", "Hip Clear Amount", val(p7, hp_turn), "P1->P7", "OP006",
+                 ["HIP_LINE_TRACK"], c - 0.05, HP),
+        ],
+        "quality": {
+            "overall_confidence": round(c, 2),
+            "mean_visibility": None,
+            "view_match": view_ok,
+            "warnings": ([] if view_ok else ["camera_view unknown/side: rotation confidence reduced"])
+                        + ["object_engine_absent: club/ball features unavailable (2nd-stage)"],
+        },
+    }
+
+
+def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleton="smpl",
+            save_json=None, save_json_v1=None, view="unknown", hand="right", fps=None, video_id=None):
     jm = SKELETONS[skeleton]
     data = load_results(path)
     track = pick_track(data)
@@ -232,6 +302,15 @@ def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleto
         _json.dump(out, open(save_json, "w"), ensure_ascii=False)
         print("JSON 저장(analyzer2용):", save_json)
 
+    # doh.vision.v1 계약 출력 (모바일/웹 공용 API·DOH 소비용)
+    if save_json_v1:
+        import json as _json
+        vid = video_id or os.path.splitext(os.path.basename(path))[0]
+        inst = emit_vision_v1(sh_turn, hp_turn, xfactor, p1, p4, p7, T, skeleton,
+                              manual, view=view, hand=hand, fps=fps, video_id=vid)
+        _json.dump(inst, open(save_json_v1, "w"), ensure_ascii=False, indent=2)
+        print("JSON 저장(doh.vision.v1 계약):", save_json_v1)
+
     if save_png:
         try:
             import matplotlib
@@ -263,12 +342,20 @@ def main():
     ap.add_argument("--p4", type=int, default=None, help="백스윙탑 프레임")
     ap.add_argument("--p7", type=int, default=None, help="임팩트 프레임")
     ap.add_argument("--png", default=None, help="그래프 저장 경로(png)")
-    ap.add_argument("--json", default=None, help="analyzer2용 회전 JSON 저장 경로")
+    ap.add_argument("--json", default=None, help="analyzer2용 회전 JSON 저장 경로(doh.vision.rotation.v1)")
+    ap.add_argument("--json-v1", dest="json_v1", default=None,
+                    help="doh.vision.v1 계약 JSON 저장 경로 (모바일/웹/DOH 공용)")
+    ap.add_argument("--view", default="unknown", choices=["FO", "DTL", "SIDE", "unknown"],
+                    help="촬영방향: FO(정면)/DTL(후면)/SIDE/unknown")
+    ap.add_argument("--hand", default="right", choices=["right", "left"], help="주손(lead/trail 해석)")
+    ap.add_argument("--fps", type=float, default=None, help="영상 fps (계약 source에 기록)")
+    ap.add_argument("--video-id", dest="video_id", default=None, help="계약 source.video_id")
     ap.add_argument("--skeleton", default="smpl", choices=list(SKELETONS),
                     help="관절 순서: smpl(WHAM) / h36m(MMPose·MotionBERT) / coco")
     ap.add_argument("--check", action="store_true", help="배열 키/shape만 출력")
     a = ap.parse_args()
-    analyze(a.pkl, a.p1, a.p4, a.p7, a.png, a.check, a.skeleton, a.json)
+    analyze(a.pkl, a.p1, a.p4, a.p7, a.png, a.check, a.skeleton, a.json,
+            save_json_v1=a.json_v1, view=a.view, hand=a.hand, fps=a.fps, video_id=a.video_id)
 
 
 if __name__ == "__main__":
