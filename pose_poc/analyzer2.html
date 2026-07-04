@@ -64,10 +64,10 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v25</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v26</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v25"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
-  <br><b style="color:#4ea1ff">NEW v25:</b> 백엔드를 <b>FastAPI 비동기 계약</b>(<code>/v1/analyze/video</code> → job_id → 폴링)으로 전환 · 순수 fetch. 백엔드가 Colab·Modal·전용서버 무엇이든 <b>주소 하나만</b> 바꾸면 됨. (v24: P구간 칩 클릭→영상 이동)</p>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v26"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <br><b style="color:#4ea1ff">NEW v26:</b> <b>🔌 연결 테스트</b> 버튼 — 영상 없이 <code>/v1/health</code>로 접속·CORS·GPU만 먼저 확인("열림"과 "분석됨" 분리 진단). 분석 상태도 7단계로 표시. (v25: FastAPI 비동기 계약 · 순수 fetch)</p>
 </header>
 
 <div class="wrap">
@@ -120,6 +120,7 @@
       <div style="font-size:13px;font-weight:700;color:#4ea1ff;margin-bottom:7px">☁️ GPU 서버로 3D 정밀분석 <span class="badge" style="color:#3ecf8e">권장</span></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
         <input id="beUrl" placeholder="DOH Vision 백엔드 주소 (예: 콜랩/집PC 터널, 나중엔 https://api.dohvision.com)" style="flex:1;min-width:210px;background:#222c39;color:#e8edf2;border:1px solid #33404f;border-radius:6px;padding:8px;font-size:12px"/>
+        <button id="beHealth" style="white-space:nowrap" title="영상 없이 서버 연결·CORS·GPU만 먼저 확인">🔌 연결 테스트</button>
         <button id="beRun" class="primary" style="white-space:nowrap">서버로 분석</button>
       </div>
       <div id="beStat" class="note" style="margin-top:7px">FastAPI 백엔드(<code>/v1/analyze/video</code>) 주소를 넣고, <b>각도 카드로 영상 선택</b> 후 <b>[서버로 분석]</b>. 업로드→job_id→결과(비동기). 백엔드가 Colab·Modal·전용서버 무엇이든 <b>주소만</b> 바꾸면 됨.</div>
@@ -287,23 +288,47 @@ function beStat(msg,col){ const el=$("beStat"); if(el){ el.innerHTML=msg; el.sty
 (function initBe(){ const s=localStorage.getItem("doh_be_url"); if(s&&$("beUrl")) $("beUrl").value=s; })();
 const _sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
+// 🔌 연결 테스트 — 영상 없이 /v1/health 로 [1)접속 2)CORS 3)GPU유무] 만 먼저 확인.
+//    "사이트가 열린다"와 "분석이 된다"를 분리 진단. 여기서 실패하면 업로드/분석 볼 것도 없음.
+async function serverHealth(){
+  const base=apiBase();
+  if(!base){ beStat("먼저 백엔드 주소를 넣어주세요.","#ffb648"); return; }
+  localStorage.setItem("doh_be_url",($("beUrl").value||"").trim().replace(/\/+$/,""));
+  $("beHealth").disabled=true; beStat("연결 확인 중… (GET /v1/health)","#8b97a5");
+  try{
+    const h=await fetch(base+"/v1/health"); if(!h.ok) throw new Error("HTTP "+h.status);
+    const j=await h.json();
+    let cap=null; try{ cap=await (await fetch(base+"/v1/capabilities")).json(); }catch(_){}
+    const gpu=j.cuda?("✅ GPU "+(j.gpu||"cuda")):"⚠️ CPU (느림)";
+    const mdl=j.model_loaded?"로드됨":"미로드(첫 분석 때 로드)";
+    beStat(`✅ <b style="color:#3ecf8e">연결 OK · CORS 통과</b> · ${gpu} · 모델 ${mdl}`
+      + (cap?` · 스키마 ${(cap.schemas||[]).join(",")}`:"")
+      + `<br>1~2단계 통과 — 이제 영상 올리고 <b>[서버로 분석]</b> 으로 3~7단계 확인.`,"#3ecf8e");
+  }catch(e){
+    const msg=((e&&e.message)||e)+"";
+    beStat("❌ 연결 실패: <b>"+msg+"</b><br>"
+      +"주소가 열려도 여기서 막히면 = <b>서버 안 켜짐 / 주소 오타 / CORS 미허용</b> 중 하나. "
+      +"(server/app.py는 CORS 허용돼 있으니 보통은 서버 미실행·주소 문제.)","#ff6b6b");
+  }finally{ $("beHealth").disabled=false; }
+}
+
 async function serverAnalyze(){
   const base=apiBase();
   if(!base){ beStat("먼저 <b>DOH Vision 백엔드 주소</b>를 넣어주세요 (예: 콜랩/집PC 터널 주소 또는 https://api.dohvision.com).","#ffb648"); return; }
   if(!curFile){ beStat("먼저 위 <b>각도 카드</b>에서 영상을 선택하세요.","#ffb648"); return; }
   localStorage.setItem("doh_be_url",($("beUrl").value||"").trim().replace(/\/+$/,""));
-  $("beRun").disabled=true; beStat("영상 업로드 중…","#8b97a5");
+  $("beRun").disabled=true; beStat("③ 영상 업로드 중…","#8b97a5");
   try{
-    // 1) 영상 제출 → job_id
+    // ③ 영상 업로드 + ④ Job 생성
     const fd=new FormData();
     fd.append("file",curFile,curFile.name||"swing.mp4");
     fd.append("view",curView||"FO"); fd.append("hand",$("hand").value);
     const sub=await fetch(base+"/v1/analyze/video",{method:"POST",body:fd});
-    if(!sub.ok) throw new Error("제출 실패 HTTP "+sub.status);
+    if(!sub.ok) throw new Error("업로드/제출 실패 HTTP "+sub.status);
     const {job_id}=await sub.json();
-    if(!job_id) throw new Error("job_id를 못 받음");
-    // 2) 폴링 (최대 ~5분)
-    beStat("3D 추론 중… (20~60초, GPU면 빠름)","#8b97a5");
+    if(!job_id) throw new Error("job_id를 못 받음(④ Job 생성 실패)");
+    // ⑤ 분석 진행 폴링 → ⑥ 결과 수신 (최대 ~5분)
+    beStat(`④ Job 생성됨(${job_id}) · ⑤ 3D 추론 중…`,"#8b97a5");
     const t0=Date.now();
     while(true){
       await _sleep(1500);
@@ -311,14 +336,14 @@ async function serverAnalyze(){
       if(!jr.ok) throw new Error("작업 조회 실패 HTTP "+jr.status);
       const j=await jr.json();
       if(j.status==="done"){
-        renderV1(j.result);
+        renderV1(j.result);   // ⑦ UI 표시
         if($("v3dStat")) $("v3dStat").textContent="✅ 서버 3D 분석 완료";
         $("v1panel").scrollIntoView({behavior:"smooth",block:"start"});
-        beStat("✅ 완료 — 위 <b>3D 정밀 결과</b> 표시됨.","#3ecf8e"); return;
+        beStat("✅ 7단계 전부 완료 — 위 <b>3D 정밀 결과</b> 표시됨. (Stage 0 검증 성공!)","#3ecf8e"); return;
       }
-      if(j.status==="error"){ beStat("분석 실패: <b>"+(j.error||"?")+"</b>","#ff6b6b"); return; }
+      if(j.status==="error"){ beStat("⑤ 분석 실패: <b>"+(j.error||"?")+"</b>","#ff6b6b"); return; }
       const sec=((Date.now()-t0)/1000|0);
-      beStat(`3D 추론 중… (${j.status}, ${sec}s 경과)`,"#8b97a5");
+      beStat(`⑤ 3D 추론 중… (${j.status}, ${sec}s 경과)`,"#8b97a5");
       if(Date.now()-t0>300000){ beStat("시간 초과(5분). 서버 상태를 확인하세요.","#ff6b6b"); return; }
     }
   }catch(e){
@@ -331,6 +356,7 @@ async function serverAnalyze(){
   }finally{ $("beRun").disabled=false; }
 }
 $("beRun").addEventListener("click",serverAnalyze);
+$("beHealth").addEventListener("click",serverHealth);
 
 // ── 프레임별 seek 방식 (재생X → 프레임 안 건너뜀, 매번 동일) ──
 let stepping=false, tCur=0, stepDt=1/60, mpTs=0;

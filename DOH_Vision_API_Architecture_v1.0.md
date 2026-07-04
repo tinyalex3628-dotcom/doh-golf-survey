@@ -6,6 +6,19 @@
 
 ---
 
+## ⛔ 계약 동결 선언 (2026-07-04, Stage 0 이후)
+
+**클라이언트 계약은 안정적으로 유지하는 것이 최우선 원칙이다.** 내부 구현(Colab/Modal/Cloud Run/
+Cloudflare/GPU종류)은 얼마든지 바뀌어도 되지만, analyzer2·모바일이 의존하는 **아래 계약은 함부로 바꾸지 않는다.**
+
+- **동결 대상:** `POST /v1/analyze/video`, `GET /v1/jobs/{id}`, `GET /v1/capabilities`, `GET /v1/health`,
+  그리고 응답 스키마 `doh.vision.v1`.
+- **허용되는 변경(비파괴):** 스키마에 필드 **추가**(append-only), 새 엔드포인트 **추가**(`/v1/diagnose` 등),
+  새 `error_flags`/`warnings` 값 추가. → 기존 클라이언트 안 깨짐.
+- **금지되는 변경(파괴):** 기존 필드 삭제/개명/의미변경, 기존 엔드포인트 경로·요청형식·응답형식 변경,
+  이벤트/feature id 재정의. → 필요하면 **`/v2`** 로 새로 낸다(구 `/v1`은 유지).
+- 검증 게이트: 계약을 건드리는 PR은 `schema/validate.py`(doh.vision.v1) 통과 + analyzer2 renderV1 호환 확인 필수.
+
 ## 0. 설계 원칙 (5개)
 
 1. **Contract-first.** 고정하는 건 인프라가 아니라 ① 요청 API(`POST /v1/analyze/*`)와
