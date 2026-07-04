@@ -1,0 +1,6 @@
+gradio>=4
+spaces
+torch
+torchvision
+opencv-python-headless
+numpy
