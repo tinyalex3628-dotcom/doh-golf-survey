@@ -39,30 +39,44 @@ model = torch.jit.load(NLF_M).eval()
 print(">>> NLF 로드 완료")
 
 
-def video_to_joints(path, dev, max_side=720):
+def video_to_joints(path, dev, max_side=None, target_frames=90):
+    """영상 → 3D 관절 (T,24,3), 효과적 fps.
+       CPU(무료 Space)에서 감당되게 **최대 ~target_frames로 균등 샘플링**하고 그만큼 fps를 보정.
+       → 프레임#/효과적fps = 원본 시간이 유지되므로 회전·템포·analyzer2 seek 모두 정합.
+       GPU면 target_frames를 크게(또는 stride=1) 잡아 정밀도 유지."""
+    gpu_on = (dev == "cuda")
+    if max_side is None:
+        max_side = 720 if gpu_on else 560      # CPU는 더 작게(속도)
+    if gpu_on:
+        target_frames = 400                     # GPU는 촘촘히
     cap = cv2.VideoCapture(path)
     fps = cap.get(cv2.CAP_PROP_FPS) or 60.0
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+    stride = max(1, round(total / target_frames)) if total > target_frames else 1
+    eff_fps = fps / stride
     J = []
+    idx = 0
     with torch.inference_mode():
         while True:
             ok, fr = cap.read()
             if not ok:
                 break
-            h, w = fr.shape[:2]
-            sc = max_side / max(h, w)
-            if sc < 1:
-                fr = cv2.resize(fr, (int(w * sc), int(h * sc)), interpolation=cv2.INTER_AREA)
-            rgb = cv2.cvtColor(fr, cv2.COLOR_BGR2RGB)
-            t = torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).to(dev)
-            pred = model.detect_smpl_batched(t)
-            per = pred["joints3d"][0]
-            if per is None or len(per) == 0:
-                continue
-            kp = per[0]
-            kp = kp.detach().cpu().numpy() if torch.is_tensor(kp) else np.asarray(kp)
-            J.append(kp)
+            if idx % stride == 0:
+                h, w = fr.shape[:2]
+                sc = max_side / max(h, w)
+                if sc < 1:
+                    fr = cv2.resize(fr, (int(w * sc), int(h * sc)), interpolation=cv2.INTER_AREA)
+                rgb = cv2.cvtColor(fr, cv2.COLOR_BGR2RGB)
+                t = torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).to(dev)
+                pred = model.detect_smpl_batched(t)
+                per = pred["joints3d"][0]
+                if per is not None and len(per) > 0:
+                    kp = per[0]
+                    kp = kp.detach().cpu().numpy() if torch.is_tensor(kp) else np.asarray(kp)
+                    J.append(kp)
+            idx += 1
     cap.release()
-    return np.asarray(J), round(float(fps), 2)
+    return np.asarray(J), round(float(eff_fps), 2)
 
 
 @gpu
