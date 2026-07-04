@@ -223,6 +223,37 @@ def emit_vision_v1(sh_turn, hp_turn, xfactor, p1, p4, p7, T, skeleton,
     }
 
 
+def build_v1(J, skeleton="smpl", view="unknown", hand="right", fps=None, video_id="swing",
+             p1=None, p4=None, p7=None):
+    """3D 관절(T,J,3) → doh.vision.v1 계약 dict. (서버/재사용용, 출력·파일 없음)
+    회전 4 + 포즈지표 + 척추각을 한 계약으로. analyze()의 CLI 경로와 동일 로직."""
+    jm = SKELETONS[skeleton]
+    T = int(J.shape[0])
+    up = estimate_up(J, jm["l_shoulder"], jm["r_shoulder"], jm["l_hip"], jm["r_hip"])
+    e1, e2 = plane_basis(up)
+    sh_az = azimuth_series(J, jm["r_shoulder"], jm["l_shoulder"], up, e1, e2)
+    hp_az = azimuth_series(J, jm["r_hip"], jm["l_hip"], up, e1, e2)
+    if p1 is not None and p1 == p4 == p7:
+        p1 = p4 = p7 = None
+    a1, a4, a7 = auto_events(sh_az)
+    manual = (p1 is not None) or (p4 is not None) or (p7 is not None)
+    if p1 is None: p1 = a1
+    if p4 is None: p4 = a4
+    if p7 is None: p7 = a7
+    sh_turn = turn_relative(sh_az, p1)
+    hp_turn = turn_relative(hp_az, p1)
+    xfactor = sh_turn - hp_turn
+    inst = emit_vision_v1(sh_turn, hp_turn, xfactor, p1, p4, p7, T, skeleton,
+                          manual, view=view, hand=hand, fps=fps, video_id=video_id)
+    try:
+        from wham_golf_metrics import compute_metrics
+        inst["features"].extend(
+            compute_metrics(J, p1, p4, p7, T, fps=fps, hand=hand, view=view, skeleton=skeleton))
+    except Exception as e:
+        inst.setdefault("quality", {}).setdefault("warnings", []).append(f"metrics_skipped: {e}")
+    return inst
+
+
 def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleton="smpl",
             save_json=None, save_json_v1=None, view="unknown", hand="right", fps=None, video_id=None):
     jm = SKELETONS[skeleton]

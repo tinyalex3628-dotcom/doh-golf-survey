@@ -85,10 +85,19 @@
 - **5개 추가:** VF002(척추각@P1)·VF038(Loss of Posture)·VF076(척추각 유지 P1→P7)·VF022(어깨플레인)=측면전용, VF001(좌우틸트)=정면전용. 계약 총 21 feature, 검증 통과.
 - **다음 실측검증:** 측면 영상 재실행 시 척추각 나옴 — 어드레스 55~65°·Loss of Posture 작은지·up quality 확인 필요.
 
+## 5e. 집 PC 서버 + 웹UI — **완료(2026-07-04)** ✅
+콜랩 없이 집 PC(RTX 2060 SUPER 8GB)에서 서버 켜고 브라우저로 분석. `server/` 폴더:
+- `server/app.py` — FastAPI: NLF 로드 + `POST /analyze`(영상→doh.vision.v1) + 웹UI 서빙. 8GB VRAM 대비 프레임 다운스케일(`NLF_MAX_SIDE`, 기본720).
+- `server/index.html` — 업로드/각도·주손 선택/결과카드 웹UI. 뷰별 측정불가는 정직 표시.
+- `server/start.bat` + `집PC_설치.md` — 원클릭 설치·실행(비개발자용, 윈도우).
+- 엔진 재사용: `wham_golf_rotation.build_v1(J,...)` 신설 — 콜랩과 동일 로직(회전+척추각+지표). 서버는 영상→관절(NLF)만 담당.
+- 배포처: **집 PC 확정.** (사양: i5-12400F/16GB/RTX2060S/NVMe.) 밖에서 접속은 나중(터널, 군내망 이슈).
+- ⚠️ 미검증: 이 세션엔 GPU/torch 없어 서버 실물 구동 못 함(구문·로직만 확인). 집 PC 첫 구동에서 검증 필요.
+
 ## 6. 다음 할 일 (우선순위)
-1. ~~**JSON 계약 `doh.vision.v1` 고정**~~ → **완료(§5b).**
-2. ~~**Metrics 확장 1차**~~ → **완료(§5c).** 다음 배치=월드 수직축 기반 각(척추/플레인/Loss of Posture) — up축 보정 후 append.
-3. **엔진 완성/검증**: 여러 스윙·정면/측면 비교, 회전값 실측 대조·보정(±10~15° 목표) + 위 up축 보정. — 사용자 Colab 루프 필요.
+1. ~~JSON 계약 고정~~(§5b) · ~~Metrics 1차~~(§5c) · ~~up축+척추각~~(§5d) · ~~집PC 서버+웹UI~~(§5e) → **완료.**
+2. **집 PC 첫 구동·검증**: start.bat → localhost:8000 → 측면영상 분석 → 척추각 55~65°·스웨이 null 확인. `/health` cuda:true.
+3. **엔진 정밀 보정**: X-Factor 스케일(58~73°→클래식~45°), 여러 스윙 실측 대조. 다운스윙 지표(얼리익스텐션 등) 계약에 append.
 4. **FastAPI 래핑**: `POST 영상 → doh.vision.v1 JSON`. (rot.py/NLF 그대로 감싸기.) — GPU 서버 생기면 배포.
 5. **프론트**: 웹(analyzer2 진화 or 신규) + 모바일이 같은 API 호출. 지금 `JSON 불러오기`가 그 자리표시자.
 6. **나중**: DOH 진단엔진(Feature→Node→Chain)과 결합. (main 쪽 Feature Dictionary·Node Library + `data/vision_feature_map.csv`.)

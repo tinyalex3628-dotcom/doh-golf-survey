@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOH 스윙분석</title>
+<style>
+  :root{ --bg:#0d1117; --card:#161b22; --line:#232b36; --fg:#e6edf3; --mut:#8b949e;
+         --accent:#3fb950; --accent2:#58a6ff; --warn:#d29922; --bad:#6e7681; }
+  *{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,"Segoe UI",Roboto,"Malgun Gothic",sans-serif}
+  .wrap{max-width:920px;margin:0 auto;padding:20px}
+  header{padding:26px 0 14px}
+  h1{margin:0;font-size:26px;letter-spacing:-.5px}
+  h1 .g{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--mut);margin-top:6px;font-size:14px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:16px}
+  label{font-size:13px;color:var(--mut);display:block;margin-bottom:7px}
+  .drop{border:2px dashed var(--line);border-radius:12px;padding:26px;text-align:center;cursor:pointer;transition:.15s}
+  .drop:hover,.drop.hot{border-color:var(--accent2)}
+  .drop.hot{background:rgba(88,166,255,.06)}
+  .drop b{color:var(--accent2)} .drop small{display:block;color:var(--mut);margin-top:6px}
+  .row{display:flex;gap:22px;flex-wrap:wrap;margin-top:16px}
+  .seg{display:inline-flex;background:#0d1117;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{background:none;border:0;color:var(--mut);padding:9px 16px;font-size:14px;cursor:pointer}
+  .seg button.on{background:var(--accent2);color:#04101f;font-weight:700}
+  .go{margin-top:18px;width:100%;padding:14px;border:0;border-radius:11px;font-size:16px;font-weight:700;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));color:#04101f;cursor:pointer}
+  .go:disabled{opacity:.5;cursor:default;filter:grayscale(.4)}
+  .status{margin-top:14px;color:var(--mut);font-size:14px;text-align:center;min-height:20px}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent2);
+    border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px;margin-right:7px}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .events{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 2px}
+  .ev{background:#0d1117;border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-size:13px}
+  .ev b{color:var(--accent2)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:12px}
+  .card{background:#0d1117;border:1px solid var(--line);border-radius:12px;padding:14px}
+  .card .n{font-size:12px;color:var(--mut);line-height:1.3;min-height:31px}
+  .card .v{font-size:26px;font-weight:800;margin-top:6px}
+  .card .u{font-size:13px;color:var(--mut);font-weight:600;margin-left:3px}
+  .card.na .v{color:var(--bad);font-size:18px;font-weight:700}
+  .card .cf{margin-top:8px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+  .card .cf i{display:block;height:100%;background:var(--accent)}
+  .card .fl{margin-top:7px;font-size:11px;color:var(--warn)}
+  .sec{margin-top:22px;font-size:14px;font-weight:700;color:var(--fg);opacity:.9}
+  .sec span{color:var(--mut);font-weight:400;font-size:12px;margin-left:6px}
+  .qbar{margin-top:14px;font-size:13px;color:var(--mut)}
+  .err{color:#f85149}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="g">DOH</span> 스윙분석</h1>
+    <div class="sub">영상 올리면 3D로 회전·척추각·자세를 분석합니다. (집 PC · RTX GPU)</div>
+  </header>
+
+  <div class="panel">
+    <div id="drop" class="drop">
+      <b>영상 선택</b> 또는 여기로 드래그
+      <small>정면(FO) 또는 측면(DTL) 스윙 · mp4/mov</small>
+      <input id="file" type="file" accept="video/*" class="hide">
+    </div>
+    <div class="row">
+      <div>
+        <label>촬영 각도</label>
+        <div class="seg" id="view">
+          <button data-v="FO" class="on">정면 (FO)</button>
+          <button data-v="DTL">측면 (DTL)</button>
+        </div>
+      </div>
+      <div>
+        <label>주손</label>
+        <div class="seg" id="hand">
+          <button data-h="right" class="on">오른손</button>
+          <button data-h="left">왼손</button>
+        </div>
+      </div>
+    </div>
+    <button id="go" class="go" disabled>분석하기</button>
+    <div id="status" class="status"></div>
+  </div>
+
+  <div id="result" class="hide"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let picked = {file:null, view:"FO", hand:"right"};
+
+// 파일 선택/드래그
+const drop = $("#drop"), fileIn = $("#file");
+drop.onclick = () => fileIn.click();
+fileIn.onchange = e => setFile(e.target.files[0]);
+["dragover","dragenter"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("hot");}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("hot");}));
+drop.addEventListener("drop", e => setFile(e.dataTransfer.files[0]));
+function setFile(f){ if(!f) return; picked.file=f;
+  drop.innerHTML = `<b>${f.name}</b><small>${(f.size/1e6).toFixed(1)} MB · 각도·주손 확인 후 분석</small>`;
+  $("#go").disabled=false; }
+
+// 토글
+function toggle(id,key,attr){ $("#"+id).querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  $("#"+id).querySelectorAll("button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); picked[key]=b.dataset[attr]; }); }
+toggle("view","view","v"); toggle("hand","hand","h");
+
+// 지표 표시 정보 (VF → 한글명 + 그룹)
+const META = {
+  VF015:["어깨 회전 @탑","회전"], VF018:["골반 회전 @탑","회전"], VF020:["X-Factor @탑","회전"],
+  VF075:["힙 클리어 (어드→임팩)","회전"],
+  VF002:["척추각 @어드레스","자세 (측면)"], VF038:["자세 유지 (어드→탑)","자세 (측면)"],
+  VF076:["척추각 유지 (어드→임팩)","자세 (측면)"], VF022:["어깨 플레인 각","자세 (측면)"],
+  VF001:["좌우 틸트 @어드레스","자세 (정면)"],
+  VF011:["리드팔 곧음 @어드레스","팔·무릎"], VF012:["트레일팔 굽힘 @어드레스","팔·무릎"],
+  VF027:["트레일 팔꿈치각 @탑","팔·무릎"], VF087:["리드팔 굽힘 @임팩트","팔·무릎"],
+  VF039:["리드무릎 굽힘변화","팔·무릎"], VF040:["트레일무릎 굽힘 @탑","팔·무릎"],
+  VF088:["리드무릎각 @임팩트","팔·무릎"],
+  VF031:["머리 스웨이","스웨이 (정면)"], VF034:["골반 스웨이","스웨이 (정면)"],
+  VF113:["백스윙 시간","템포"], VF114:["다운스윙 시간","템포"], VF111:["템포 비율 (백:다운)","템포"],
+};
+const FLAG = { view_mismatch:"이 각도에선 측정 불가", off_axis_view:"각도 미상 — 참고용",
+  depth_unreliable:"깊이 불안정", interpolated_event:"이벤트 보간", club_not_detected:"클럽 미검출" };
+const GROUPS = ["회전","자세 (측면)","자세 (정면)","팔·무릎","스웨이 (정면)","템포"];
+
+$("#go").onclick = async () => {
+  if(!picked.file) return;
+  $("#go").disabled=true; $("#result").classList.add("hide");
+  $("#status").innerHTML = `<span class="spin"></span>3D 분석 중… (영상 길이에 따라 20~90초)`;
+  const fd = new FormData();
+  fd.append("file", picked.file); fd.append("view", picked.view); fd.append("hand", picked.hand);
+  try{
+    const r = await fetch("/analyze", {method:"POST", body:fd});
+    const d = await r.json();
+    if(!r.ok || d.error){ $("#status").innerHTML = `<span class="err">에러: ${d.error||r.status}</span>`; }
+    else { $("#status").innerHTML=""; render(d); }
+  }catch(e){ $("#status").innerHTML = `<span class="err">서버 연결 실패: ${e}</span>`; }
+  $("#go").disabled=false;
+};
+
+function card(f){
+  const [name] = META[f.feature_id] || [f.name, "기타"];
+  const na = f.value===null || f.value===undefined;
+  const flags = (f.error_flags||[]).map(x=>FLAG[x]||x).join(" · ");
+  const val = na ? (flags||"측정 불가")
+                 : `${f.value}<span class="u">${f.unit==="deg"?"°":(f.unit==="ratio"?"":(" "+f.unit))}</span>`;
+  const cf = Math.round((f.confidence||0)*100);
+  return `<div class="card ${na?'na':''}">
+    <div class="n">${name}</div>
+    <div class="v">${val}</div>
+    ${na?'':`<div class="cf"><i style="width:${cf}%"></i></div>`}
+    ${(!na&&flags)?`<div class="fl">${flags}</div>`:''}
+  </div>`;
+}
+
+function render(d){
+  const ev = {}; (d.swing_events||[]).forEach(e=>ev[e.p]=e.frame);
+  const q = d.quality||{};
+  const byg = {}; GROUPS.forEach(g=>byg[g]=[]);
+  (d.features||[]).forEach(f=>{ const g=(META[f.feature_id]||[,"기타"])[1]; (byg[g]=byg[g]||[]).push(f); });
+  let html = `<div class="panel">
+    <div class="events">
+      <div class="ev">촬영 <b>${d.source?.camera_view||"?"}</b></div>
+      <div class="ev">P1 어드레스 <b>${ev.P1??"?"}</b></div>
+      <div class="ev">P4 탑 <b>${ev.P4??"?"}</b></div>
+      <div class="ev">P7 임팩트 <b>${ev.P7??"?"}</b></div>
+      <div class="ev">프레임 <b>${d.source?.duration_frames??"?"}</b></div>
+    </div>`;
+  GROUPS.forEach(g=>{ const fs=byg[g]; if(!fs||!fs.length) return;
+    html += `<div class="sec">${g}</div><div class="grid">${fs.map(card).join("")}</div>`; });
+  const warns = (q.warnings||[]).filter(w=>!w.startsWith("joints=")&&!w.startsWith("object_engine"));
+  html += `<div class="qbar">종합 신뢰도 <b>${Math.round((q.overall_confidence||0)*100)}%</b>
+     · 각도 적합 ${q.view_match?"✅":"⚠️"}${warns.length?" · "+warns.join(" · "):""}</div></div>`;
+  $("#result").innerHTML = html; $("#result").classList.remove("hide");
+  $("#result").scrollIntoView({behavior:"smooth"});
+}
+</script>
+</body>
+</html>
