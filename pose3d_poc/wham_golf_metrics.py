@@ -31,14 +31,14 @@ import math
 # SMPL-24 관절 인덱스 (wham_golf_rotation SKELETONS['smpl']와 정합)
 SMPL24 = dict(
     pelvis=0, l_hip=1, r_hip=2, l_knee=4, r_knee=5, l_ankle=7, r_ankle=8,
-    head=15, l_shoulder=16, r_shoulder=17, l_elbow=18, r_elbow=19,
-    l_wrist=20, r_wrist=21,
+    l_foot=10, r_foot=11, neck=12, head=15, l_shoulder=16, r_shoulder=17,
+    l_elbow=18, r_elbow=19, l_wrist=20, r_wrist=21,
 )
 
 # 지표가 신뢰되는 카메라 뷰 (측정 축이 화면 안에 있는가)
 BOTH = ("FO", "DTL")   # 3D 세그먼트각·회전·시간 — 양쪽 OK (실측 확인)
-FRONT = ("FO",)        # 타깃선 방향(스웨이) — 정면만
-# DTL = ("DTL",)       # (예정) 깊이축 지표: 샤프트린·핸드뎁스 등 — 측면만
+FRONT = ("FO",)        # 타깃선 방향(스웨이·좌우틸트) — 정면만
+SIDE = ("DTL",)        # 시상면(척추 전후굴곡·플레인) — 측면만
 
 
 # ── 순수 벡터 기하 (3-튜플) ─────────────────────────────────────────────
@@ -66,6 +66,86 @@ def _row(J, fr, idx):
     """J[fr][idx] → float 3-튜플 (numpy row/list 모두 대응)."""
     p = J[fr][idx]
     return (float(p[0]), float(p[1]), float(p[2]))
+
+
+# ── 세계 수직축(up) 추정 — 발/지면에서 (torso 무관) ──────────────────────
+def _jacobi_eig3(A):
+    """3x3 대칭행렬 A의 고유값/고유벡터 (순수 파이썬 Jacobi). numpy 불필요.
+    반환: (evals[3], evecs[3]) — evecs[k]가 evals[k]에 대응하는 열벡터."""
+    a = [row[:] for row in A]
+    v = [[1.0 if i == j else 0.0 for j in range(3)] for i in range(3)]
+    for _ in range(60):
+        off = abs(a[0][1]) + abs(a[0][2]) + abs(a[1][2])
+        if off < 1e-14:
+            break
+        for p in range(3):
+            for q in range(p + 1, 3):
+                if abs(a[p][q]) < 1e-20:
+                    continue
+                theta = (a[q][q] - a[p][p]) / (2 * a[p][q])
+                t = (1.0 if theta >= 0 else -1.0) / (abs(theta) + math.sqrt(theta * theta + 1))
+                c = 1.0 / math.sqrt(t * t + 1); s = t * c
+                app, aqq, apq = a[p][p], a[q][q], a[p][q]
+                a[p][p] = c * c * app - 2 * s * c * apq + s * s * aqq
+                a[q][q] = s * s * app + 2 * s * c * apq + c * c * aqq
+                a[p][q] = a[q][p] = 0.0
+                for i in range(3):
+                    if i != p and i != q:
+                        aip, aiq = a[i][p], a[i][q]
+                        a[i][p] = a[p][i] = c * aip - s * aiq
+                        a[i][q] = a[q][i] = s * aip + c * aiq
+                for i in range(3):
+                    vip, viq = v[i][p], v[i][q]
+                    v[i][p] = c * vip - s * viq
+                    v[i][q] = s * vip + c * viq
+    evals = [a[i][i] for i in range(3)]
+    evecs = [[v[i][k] for i in range(3)] for k in range(3)]
+    return evals, evecs
+
+
+def estimate_up(J, T, ix, p_lo, p_hi):
+    """발/지면(발목+발)에서 세계 수직축을 추정한다.
+    원리: 발목은 지면 높이에 planted → 수평으로만 퍼지고(스탠스폭·체중이동) 수직
+          분산은 작다 → 점구름의 '최소 분산 축' = up. torso 기울기와 무관.
+    (발끝/발은 발목보다 앞·아래라 발 자체 대각구조가 PCA를 기울여서 제외 — 합성검증.)
+    범위는 어드레스~임팩트(p_lo..p_hi)로 제한(팔로우 힐업 배제).
+    반환: (up_unit or None, quality 0..1)  quality=고유값 분리도(지면이 뚜렷한가)."""
+    lo, hi = max(0, min(T - 1, p_lo)), max(0, min(T - 1, p_hi))
+    if hi <= lo:
+        lo, hi = 0, T - 1
+    pts, heads = [], []
+    for fr in range(lo, hi + 1):
+        for k in ("l_ankle", "r_ankle"):
+            p = _row(J, fr, ix[k])
+            if p != (0.0, 0.0, 0.0):
+                pts.append(p)
+        heads.append(_row(J, fr, ix["head"]))
+    if len(pts) < 6:
+        return None, 0.0
+    n = len(pts)
+    mx = sum(p[0] for p in pts) / n; my = sum(p[1] for p in pts) / n; mz = sum(p[2] for p in pts) / n
+    cov = [[0.0] * 3 for _ in range(3)]
+    for p in pts:
+        d = (p[0] - mx, p[1] - my, p[2] - mz)
+        for i in range(3):
+            for j in range(3):
+                cov[i][j] += d[i] * d[j]
+    evals, evecs = _jacobi_eig3(cov)
+    order = sorted(range(3), key=lambda k: evals[k])   # 오름차순(최소=지면법선)
+    up = _unit(evecs[order[0]])
+    # 몸통 대략 수직(머리-발) — 부호 결정 + 정합 가드용 (앞숙임에 조금 기울지만 절대 수평 아님)
+    hm = (sum(h[0] for h in heads) / len(heads),
+          sum(h[1] for h in heads) / len(heads),
+          sum(h[2] for h in heads) / len(heads))
+    body_up = _unit(_sub(hm, (mx, my, mz)))
+    if _dot(up, body_up) < 0:
+        up = (-up[0], -up[1], -up[2])
+    e0, e1 = evals[order[0]], evals[order[1]]
+    sep = max(0.0, min(1.0, 1.0 - (e0 / (e1 + 1e-12))))   # 지면축 분리도
+    align = _dot(up, body_up)                              # 몸통 수직과 정합
+    if align < 0.82:            # PCA up이 몸통 수직과 크게 어긋남 → 지면 모호(체중이동 부족 등)
+        return body_up, 0.3 * sep    # 절대 수평은 아닌 몸통방향으로 폴백 + 낮은 품질
+    return up, sep * align
 
 
 # ── 좌우 → lead/trail (오른손잡이: lead=타깃쪽=왼쪽) ──────────────────────
@@ -185,5 +265,47 @@ def compute_metrics(J, p1, p4, p7, T, fps=None, hand="right", view="unknown", sk
         tempo, "ratio", "global", "none",
         "OP010", ["t(P1->P4)/t(P4->P7)"], [], ctempo,
         [] if ds_frames > 0 else ["interpolated_event"], BOTH)
+
+    # ── 5) 척추각 / 플레인 (지면 0° 기준, 세계 수직축 필요 → 측면 전용) ──
+    up, upq = estimate_up(J, T, ix, p1, p7)
+    if up is not None:
+        cpos = round(0.6 * max(0.15, upq), 2)               # up 품질에 비례
+        upflags = [] if upq >= 0.5 else ["depth_unreliable"]
+
+        def mid(fr, a, b):
+            pa, pb = J_(fr, a), J_(fr, b)
+            return tuple((pa[i] + pb[i]) / 2 for i in range(3))
+
+        def spine_from_ground(fr):
+            """척추(골반→목) 축의 지면(수평) 대비 각. 눕힘=0°, 수직=90°."""
+            spine = _sub(J_(fr, "neck"), J_(fr, "pelvis"))
+            return 90.0 - _angle(spine, up)
+
+        # VF002 Spine Angle @P1 (지면 기준, 어드레스 자세각 ~55~65° 기대)
+        add("VF002", "Spine Angle @P1 (from ground, 0=flat/90=upright)",
+            spine_from_ground(p1), "deg", "P1", "GROUND",
+            "OP005", ["TORSO_AXIS", "GROUND"], ["PELVIS", "NECK"], cpos, upflags, SIDE)
+        # VF038 Loss of Posture (어드레스→탑 척추각 변화, 0에 가까울수록 유지)
+        add("VF038", "Loss of Posture (spine angle Δ, P4-P1)",
+            spine_from_ground(p4) - spine_from_ground(p1), "deg", "P1_vs_P4", "GROUND",
+            "OP005", ["TORSO_AXIS", "GROUND"], ["PELVIS", "NECK"], cpos, upflags, SIDE)
+        # VF076 Spine Angle Maintenance (어드레스→임팩트 변화)
+        add("VF076", "Spine Angle Maintenance (Δ, P7-P1)",
+            spine_from_ground(p7) - spine_from_ground(p1), "deg", "P1_vs_P7", "GROUND",
+            "OP005", ["TORSO_AXIS", "GROUND"], ["PELVIS", "NECK"], cpos, upflags, SIDE)
+        # VF022 Shoulder Plane Angle @P4 (어깨선의 지면 대비 기울기)
+        sl = _sub(J_(p4, L_SH), J_(p4, T_SH))
+        add("VF022", "Shoulder Plane Angle @P4 (tilt from ground)",
+            abs(90.0 - _angle(sl, up)), "deg", "P4", "GROUND",
+            "OP005", ["SHOULDER_LINE", "GROUND_NORMAL"], ["LEAD_SHOULDER", "TRAIL_SHOULDER"],
+            cpos, upflags, SIDE)
+        # VF001 Spine Tilt 좌우 @P1 (프론트 전용) — 스탠스선 성분
+        stance_h = _sub(J_(p1, T_AN), J_(p1, L_AN))
+        t_axis = _unit(_sub(stance_h, tuple(up[i] * _dot(stance_h, up) for i in range(3))))
+        sp1 = _unit(_sub(J_(p1, "neck"), J_(p1, "pelvis")))
+        lat = math.degrees(math.atan2(_dot(sp1, t_axis), _dot(sp1, up)))
+        add("VF001", "Spine Tilt lateral @P1 (from vertical, +=trail lean)",
+            lat, "deg", "P1", "GROUND",
+            "OP005", ["TORSO_AXIS", "VERTICAL"], ["PELVIS", "NECK"], cpos, upflags, FRONT)
 
     return feats
