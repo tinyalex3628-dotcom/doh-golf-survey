@@ -64,10 +64,10 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v23</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v24</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v23"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
-  <br><b style="color:#4ea1ff">NEW v23:</b> <b>☁️ GPU 서버로 3D 정밀분석</b> — 영상 올리고 콜랩(무료 GPU) 백엔드 주소만 넣으면 <b>이 페이지 안에서</b> 업로드→분석→결과(21지표)가 한 번에. (백엔드는 나중에 HF Spaces·GPU서버로 주소만 교체)</p>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v24"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <br><b style="color:#4ea1ff">NEW v24:</b> 3D 결과의 <b>P구간 칩을 클릭하면 영상이 그 프레임으로 이동</b> — P1~P10이 맞는지 눈으로 확인. (v23: ☁️ GPU 서버로 3D 정밀분석 — 콜랩 백엔드로 이 페이지에서 업로드→분석→결과)</p>
 </header>
 
 <div class="wrap">
@@ -722,6 +722,7 @@ function renderV1(d){
   const fd={}; (d.features||[]).forEach(f=>fd[f.feature_id]=f);
   const ev={},evm={}; (d.swing_events||[]).forEach(e=>{ev[e.p]=e.frame;evm[e.p]=e.method;});
   const src=d.source||{}, q=d.quality||{}, view=src.camera_view||"?";
+  const fps=src.fps_effective||src.fps_declared||60;   // 프레임#→영상시간(frame/fps) 변환용
   const conf=Math.round((q.overall_confidence||0)*100);
   const pose=(d.engines&&d.engines.pose&&d.engines.pose.name)||"NLF";
   let h=`<h2 style="color:#3ecf8e;margin-top:0">🎯 3D 정밀 결과 <span class="badge" style="color:#3ecf8e">doh.vision.v1 · ${pose}</span></h2>`;
@@ -733,11 +734,11 @@ function renderV1(d){
   // 스윙 P구간 (P1~P10)
   h+=`<h2>스윙 P구간 (P1~P10, 3D 자동검출)</h2><div style="display:flex;flex-wrap:wrap;gap:5px">`;
   V1PORD.forEach(p=>{
-    if(ev[p]!=null){ const itp=evm[p]==="interpolated";
-      h+=`<span class="ev"><b>${p}</b> ${V1PLBL[p]} <span style="color:#8b97a5">#${ev[p]}${itp?" ·보간":""}</span></span>`; }
+    if(ev[p]!=null){ const itp=evm[p]==="interpolated", t=(ev[p]/fps).toFixed(4);
+      h+=`<span class="ev v1ev" data-t="${t}" data-p="${p}" style="cursor:pointer" title="클릭 → 영상을 이 프레임(#${ev[p]}, ${(+t).toFixed(2)}s)으로 이동"><b>${p}</b> ${V1PLBL[p]} <span style="color:#8b97a5">#${ev[p]}${itp?" ·보간":""}</span></span>`; }
     else h+=`<span class="ev miss"><b>${p}</b> ${V1PLBL[p]} <span style="color:#8b97a5">미검출</span></span>`;
   });
-  h+=`</div><div class="note">P2·P6·P8(샤프트 평행)은 클럽 검출이 있어야 잡혀요 — 포즈 엔진만으론 미검출(2차 클럽엔진 몫).</div>`;
+  h+=`</div><div class="note"><b style="color:#4ea1ff">칩을 클릭하면 영상이 그 프레임으로 이동</b>합니다 — P구간이 맞는지 눈으로 확인하세요. (영상이 위에 올라가 있어야 함) · P2·P6·P8(샤프트 평행)은 클럽 검출 필요라 미검출.</div>`;
   // 회전 (3D 정밀)
   h+=`<h2>회전 (3D 정밀)</h2><div class="mgrid">`;
   h+=`<div class="mcard"><h4>백스윙탑 (P4)</h4>${v1mrow("상체(어깨)",fd.VF015)}${v1mrow("하체(골반)",fd.VF018)}${v1mrow("X-Factor",fd.VF020,"xf")}</div>`;
@@ -755,6 +756,18 @@ function renderV1(d){
   if(warns.length) h+=`<div class="note">참고: ${warns.join(" · ")}</div>`;
   h+=`<div class="note" style="border-top:1px solid #2a323d;margin-top:12px;padding-top:8px">아래 <b>①~⑤</b>는 브라우저(MediaPipe) 근사 분석 — 영상 오버레이·수동보정용 참고. 정밀값은 위 3D 결과를 보세요.</div>`;
   const el=$("v1panel"); el.innerHTML=h; el.style.display="block";
+  // P구간 칩 클릭 → 영상을 그 프레임으로 이동(눈으로 P구간 검증). 영상 미로드 시 안내.
+  el.querySelectorAll(".v1ev").forEach(c=>c.onclick=()=>{
+    const t=parseFloat(c.dataset.t);
+    if(!video.getAttribute("src")){ beStat("먼저 위 <b>각도 카드</b>에서 영상을 올리면, 칩 클릭으로 그 프레임을 볼 수 있어요.","#ffb648"); return; }
+    if(isNaN(t))return;
+    video.pause(); video.currentTime=t;
+    ctx.clearRect(0,0,overlay.width,overlay.height);
+    const st=document.querySelector(".stage"); if(st) st.scrollIntoView({behavior:"smooth",block:"center"});
+    el.querySelectorAll(".v1ev").forEach(x=>x.style.outline="");
+    c.style.outline="2px solid #4ea1ff";   // 현재 선택 칩 강조
+    $("status").textContent=`${c.dataset.p} → 영상 ${t.toFixed(2)}s (프레임 #${Math.round(t*(src.fps_effective||src.fps_declared||60))})`;
+  });
 }
 // Tier-B(서버 NLF 3D) 회전결과 JSON. 로드되면 브라우저 근사값 대신 이걸 표시.
 let vision3d=null;
