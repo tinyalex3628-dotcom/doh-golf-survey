@@ -102,6 +102,19 @@
 - `server/`(FastAPI+집PC)는 **나중 클라우드 배포용으로 보존** — 같은 app.py가 HF Spaces 등에 그대로 올라감(월 소액). 지금은 무료 Colab 경로.
 - ⚠️ 미검증: 이 세션 GPU 없어 Gradio 실물 구동 못 함(render 로직만 확인). 사용자 콜랩 첫 구동에서 검증.
 
+## 5g. P1~P10 자동검출 + Colab UI를 analyzer2 v21 스타일로 — **완료(2026-07-04)** ✅
+브라우저 analyzer2 v21에만 있던 P1~P10 이벤트 + 다크패널 UI를 무료 Colab Gradio 경로로 이식.
+- **엔진(`wham_golf_rotation.py`):** `detect_p_events()` 신설 — 기존 azimuth 검출 P1/P4/P7은 그대로 두고,
+  그 사이 **P3/P5/P9**(리드팔이 지면과 평행: 리드어깨→리드손목 벡터가 up과 90°에 가장 가까운 프레임)와
+  **P10**(임팩트 이후 손 최고점=피니시)를 3D 기하로 채움. 못 잡으면 보간(method=interpolated).
+  **P2/P6/P8(샤프트 평행)은 클럽 검출이 있어야 함 → pose만으론 미검출**(정직, 2차 클럽엔진 몫).
+  SKELETONS에 손목 인덱스(smpl 20/21) 추가. `_build_events()`가 P순서로 병합해 swing_events로 방출(schema 준수).
+  합성 스윙 검증: P1#2·P3#22·P4#45·P5#59·P7#75·P9#95·P10#119 (순서·중간지점 정합), doh.vision.v1 PASS.
+- **Colab UI(`pose3d_simple.ipynb` 2칸):** `render()` 전면 재작성 — analyzer2 v21 팔레트(#0f1216/#4ea1ff/#ff7eb6…)·
+  섹션구조 이식. ①스윙 P구간(P1~P10 칩, 미검출 흐리게)·②회전 mgrid(백스윙탑 P4 / 임팩트 P7 카드)·
+  ③자세·팔·무릎·스웨이·템포 그리드. Gradio 다크 테마. `BR`을 현재 브랜치로 지정(엔진파일 fetch 정합).
+- ⚠️ 미검증: 이 세션 GPU 없어 실물 구동은 못 함(render/검출 로직만 합성·격리검증). 사용자 콜랩 첫 구동에서 P3/P5/P9 실측 위치 확인 필요.
+
 ## 6. 다음 할 일 (우선순위)
 1. ~~JSON 계약 고정~~(§5b) · ~~Metrics 1차~~(§5c) · ~~up축+척추각~~(§5d) · ~~집PC 서버+웹UI~~(§5e) · ~~무료 Colab Gradio UI~~(§5f) → **완료.**
 2. **집 PC 첫 구동·검증**: start.bat → localhost:8000 → 측면영상 분석 → 척추각 55~65°·스웨이 null 확인. `/health` cuda:true.

@@ -36,11 +36,11 @@ import numpy as np
 # 모델마다 관절 순서가 다르므로 --skeleton 로 선택. 회전엔 어깨/골반 4점만 필요.
 SKELETONS = {
     # WHAM 등 SMPL-24
-    "smpl": dict(l_shoulder=16, r_shoulder=17, l_hip=1, r_hip=2),
+    "smpl": dict(l_shoulder=16, r_shoulder=17, l_hip=1, r_hip=2, l_wrist=20, r_wrist=21),
     # Human3.6M 17관절 (MMPose human3d, VideoPose3D, MotionBERT 등)
-    "h36m": dict(l_shoulder=11, r_shoulder=14, l_hip=4, r_hip=1),
+    "h36m": dict(l_shoulder=11, r_shoulder=14, l_hip=4, r_hip=1, l_wrist=13, r_wrist=16),
     # COCO 17관절
-    "coco": dict(l_shoulder=5, r_shoulder=6, l_hip=11, r_hip=12),
+    "coco": dict(l_shoulder=5, r_shoulder=6, l_hip=11, r_hip=12, l_wrist=9, r_wrist=10),
 }
 SMPL = SKELETONS["smpl"]  # 하위호환
 
@@ -154,8 +154,68 @@ def auto_events(az):
     return p1, p4, p7
 
 
+#  P구간 라벨 (analyzer2 v21과 동일 어휘)
+P_LABELS = {
+    "P1": "Address", "P2": "Toe-up", "P3": "Lead Arm Parallel (BS)", "P4": "Top",
+    "P5": "Lead Arm Parallel (DS)", "P6": "Shaft Parallel (DS)", "P7": "Impact",
+    "P8": "Shaft Parallel (FT)", "P9": "Lead Arm Parallel (FT)", "P10": "Finish",
+}
+P_ORDER = ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "P10"]
+
+
+def detect_p_events(J, jm, up, p1, p4, p7, hand="right"):
+    """P1/P4/P7(azimuth 검출) 사이·이후의 중간 이벤트를 3D 기하로 채운다.
+       - P3/P5/P9: 리드팔(리드어깨→리드손목)이 지면과 평행(up과 90°)에 가장 가까운 프레임.
+       - P10(Finish): 임팩트 이후 손이 다시 최고점에 오르는 프레임.
+       - P2/P6/P8(샤프트 평행): 클럽/샤프트 검출이 있어야 함 → pose만으론 불가(None).
+       반환: {P#: (frame|None, method)}  method ∈ pose_rule / interpolated / (없으면 제외)"""
+    T = int(J.shape[0])
+    up = np.asarray(up, float); up = up / (np.linalg.norm(up) + 1e-9)
+    lead = "l" if hand == "right" else "r"
+    sh_i, wr_i = jm[lead + "_shoulder"], jm[lead + "_wrist"]
+    grip = 0.5 * (J[:, jm["l_wrist"]] + J[:, jm["r_wrist"]])       # 양손 중점 (T,3)
+    hand_h = grip @ up                                            # up 방향 높이(클수록 위)
+    arm = J[:, wr_i] - J[:, sh_i]
+    arm_n = arm / (np.linalg.norm(arm, axis=1, keepdims=True) + 1e-9)
+    arm_from_up = np.degrees(np.arccos(np.clip(arm_n @ up, -1.0, 1.0)))  # up과의 각(90=수평)
+
+    def arm_parallel(lo, hi):
+        if lo is None or hi is None or hi - lo < 2:
+            return None
+        seg = np.abs(arm_from_up[lo:hi + 1] - 90.0)
+        k = int(np.argmin(seg))
+        return int(lo + k) if seg[k] < 25.0 else None
+
+    def lerp(a, b, f):
+        return int(round(a + (b - a) * f)) if (a is not None and b is not None) else None
+
+    # P10: 임팩트 이후 손 최고점(피니시). 없으면 마지막 프레임.
+    p10 = int(p7 + np.argmax(hand_h[p7:])) if (p7 is not None and p7 < T - 1) else T - 1
+    p3, p5, p9 = arm_parallel(p1, p4), arm_parallel(p4, p7), arm_parallel(p7, p10)
+    out = {}
+    out["P3"] = (p3, "pose_rule") if p3 is not None else (lerp(p1, p4, 0.55), "interpolated")
+    out["P5"] = (p5, "pose_rule") if p5 is not None else (lerp(p4, p7, 0.55), "interpolated")
+    out["P9"] = (p9, "pose_rule") if p9 is not None else (lerp(p7, p10, 0.40), "interpolated")
+    out["P10"] = (p10, "pose_rule")
+    return {k: v for k, v in out.items() if v[0] is not None}
+
+
+def _build_events(p1, p4, p7, ev_conf, ev_method, p_events):
+    """P1/P4/P7(회전곡선 검출) + P3/P5/P9/P10(detect_p_events) 을 P순서로 병합.
+       P2/P6/P8(샤프트)은 클럽엔진 부재라 생략(정직). schema swing_events 준수."""
+    base = {"P1": (int(p1), ev_conf, ev_method),
+            "P4": (int(p4), ev_conf, ev_method),
+            "P7": (int(p7), ev_conf, ev_method)}
+    for p, (fr, m) in (p_events or {}).items():
+        base[p] = (int(fr), 0.7 if m == "pose_rule" else 0.5, m)
+    return [{"p": p, "name": P_LABELS[p], "frame": base[p][0],
+             "confidence": base[p][1], "method": base[p][2]}
+            for p in P_ORDER if p in base]
+
+
 def emit_vision_v1(sh_turn, hp_turn, xfactor, p1, p4, p7, T, skeleton,
-                   manual, view="unknown", hand="right", fps=None, video_id=None):
+                   manual, view="unknown", hand="right", fps=None, video_id=None,
+                   p_events=None):
     """rotation 결과 → doh.vision.v1 계약(JSON dict) 어댑터.
     schema/doh.vision.v1.schema.json 을 만족하는 인스턴스를 만든다.
     이 파이프라인이 '실제로 재는' 회전 4개(VF015/018/020/075)만 채우고,
@@ -198,11 +258,7 @@ def emit_vision_v1(sh_turn, hp_turn, xfactor, p1, p4, p7, T, skeleton,
                       "version": "wham_golf_rotation.py"},
             "object": None,
         },
-        "swing_events": [
-            {"p": "P1", "name": "Address", "frame": int(p1), "confidence": ev_conf, "method": ev_method},
-            {"p": "P4", "name": "Top",     "frame": int(p4), "confidence": ev_conf, "method": ev_method},
-            {"p": "P7", "name": "Impact",  "frame": int(p7), "confidence": ev_conf, "method": ev_method},
-        ],
+        "swing_events": _build_events(p1, p4, p7, ev_conf, ev_method, p_events),
         "features": [
             feat("VF015", "Shoulder Turn @P4", val(p4, sh_turn), "P4", "OP006",
                  ["SHOULDER_LINE_TRACK"], c, SH + HP),
@@ -243,8 +299,10 @@ def build_v1(J, skeleton="smpl", view="unknown", hand="right", fps=None, video_i
     sh_turn = turn_relative(sh_az, p1)
     hp_turn = turn_relative(hp_az, p1)
     xfactor = sh_turn - hp_turn
+    pev = detect_p_events(J, jm, up, p1, p4, p7, hand=hand)
     inst = emit_vision_v1(sh_turn, hp_turn, xfactor, p1, p4, p7, T, skeleton,
-                          manual, view=view, hand=hand, fps=fps, video_id=video_id)
+                          manual, view=view, hand=hand, fps=fps, video_id=video_id,
+                          p_events=pev)
     try:
         from wham_golf_metrics import compute_metrics
         inst["features"].extend(
@@ -337,8 +395,10 @@ def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleto
     if save_json_v1:
         import json as _json
         vid = video_id or os.path.splitext(os.path.basename(path))[0]
+        pev = detect_p_events(J, jm, up, p1, p4, p7, hand=hand)
         inst = emit_vision_v1(sh_turn, hp_turn, xfactor, p1, p4, p7, T, skeleton,
-                              manual, view=view, hand=hand, fps=fps, video_id=vid)
+                              manual, view=view, hand=hand, fps=fps, video_id=vid,
+                              p_events=pev)
         # 회전 외 포즈 파생 지표(무릎/팔/스웨이/템포)를 같은 계약에 append
         try:
             from wham_golf_metrics import compute_metrics
