@@ -143,6 +143,14 @@
 - **관찰된 TODO:** ① X-Factor -88°로 과대(클래식 ~45°) = 회전 스케일 보정 필요(기존 TODO 재확인).
   ② 임팩트 직후 잘린 영상에선 P10(피니시)이 임팩트 근처로 당겨질 수 있음 — 영상 길이 의존. 여러 스윙 실측 검증 필요.
 
+## 5j. HF Spaces 백엔드 (진짜 원클릭 · 영구 URL) — **파일 준비 완료(2026-07-04)** ✅
+콜랩 한계(매번 켜야 함 + gradio.live 주소 매번 바뀜 + 웹에서 자동실행 불가)를 넘으려 백엔드를 HF Spaces로.
+- **`hf_space/`:** `app.py`(NLF + `/analyze` api_name → doh.vision.v1, ZeroGPU `@spaces.GPU`/CPU 자동, spaces→torch 순),
+  `requirements.txt`, `README.md`(HF frontmatter), `배포방법.md`(컴맹 10분 가이드). 엔진은 GitHub raw 공유(단일 소스).
+- 출력 순서 [HTML, 다운로드, JSON] = analyzer2 `data[2]` 계약과 동일 → **analyzer2는 URL만 이 Space로 바꾸면 무수정.**
+- 사용자가 HF Space 만들고 파일 3개 올리면 `https://<id>-<space>.hf.space` 영구주소 생성 → analyzer2에 1회 입력 = 원클릭.
+- ⚠️ 미배포/미검증: 사용자 HF 계정 필요. ZeroGPU 가용/CORS는 첫 배포에서 확인(막히면 CORS 한 줄 추가 or CPU).
+
 ## 6. 다음 할 일 (우선순위)
 1. ~~JSON 계약 고정~~(§5b) · ~~Metrics 1차~~(§5c) · ~~up축+척추각~~(§5d) · ~~집PC 서버+웹UI~~(§5e) · ~~무료 Colab Gradio UI~~(§5f) → **완료.**
 2. **집 PC 첫 구동·검증**: start.bat → localhost:8000 → 측면영상 분석 → 척추각 55~65°·스웨이 null 확인. `/health` cuda:true.
