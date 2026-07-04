@@ -64,10 +64,10 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v22</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v23</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v22"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
-  <br><b style="color:#4ea1ff">NEW v22:</b> GPU(NLF) 3D 엔진이 낸 <b>doh.vision.v1</b>(P1~P10·회전·척추각·자세·팔·무릎·스웨이·템포 21지표) JSON을 이 UI에 통째로 표시. (아래 <b>③ 회전</b> 옆 <b>불러오기</b>)</p>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v23"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <br><b style="color:#4ea1ff">NEW v23:</b> <b>☁️ GPU 서버로 3D 정밀분석</b> — 영상 올리고 콜랩(무료 GPU) 백엔드 주소만 넣으면 <b>이 페이지 안에서</b> 업로드→분석→결과(21지표)가 한 번에. (백엔드는 나중에 HF Spaces·GPU서버로 주소만 교체)</p>
 </header>
 
 <div class="wrap">
@@ -108,12 +108,22 @@
       <select id="hand"><option value="right">오른손잡이</option><option value="left">왼손잡이</option></select>
       <select id="sfps" title="샘플링 정밀도"><option value="30">30fps(빠름)</option><option value="60" selected>60fps(권장)</option><option value="120">120fps(정밀)</option></select>
       <label style="display:flex;gap:5px;align-items:center;color:var(--sub);font-size:12px"><input type="checkbox" id="useMotion" checked/> 모션마스크</label>
-      <button id="run" class="primary" disabled>분석 시작</button>
+      <button id="run" disabled title="브라우저 MediaPipe 근사 분석 (오버레이·수동보정용)">분석 시작 (근사)</button>
       <button id="csv" disabled>CSV</button>
       <button id="saveLabel" disabled title="자동값+내가 보정한 값+프레임특징을 학습데이터로 저장">라벨 저장</button>
     </div>
     <div class="status" id="status">모델 로딩 대기…</div>
     <div class="live" id="live"></div>
+
+    <!-- ☁️ GPU 백엔드(무료 Colab NLF)로 3D 정밀분석 — 영상 업로드→서버추론→결과 한 흐름 -->
+    <div id="beBox" style="margin-top:12px;border:1px solid #33404f;border-radius:10px;padding:11px;background:#12181f">
+      <div style="font-size:13px;font-weight:700;color:#4ea1ff;margin-bottom:7px">☁️ GPU 서버로 3D 정밀분석 <span class="badge" style="color:#3ecf8e">권장</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <input id="beUrl" placeholder="https://XXXX.gradio.live  (콜랩 실행 시 출력됨)" style="flex:1;min-width:210px;background:#222c39;color:#e8edf2;border:1px solid #33404f;border-radius:6px;padding:8px;font-size:12px"/>
+        <button id="beRun" class="primary" style="white-space:nowrap">서버로 분석</button>
+      </div>
+      <div id="beStat" class="note" style="margin-top:7px">콜랩(무료 GPU)에서 노트북 실행 → 뜬 <b>gradio.live</b> 주소를 붙여넣고, 위에서 <b>각도 카드로 영상 선택</b> 후 <b>[서버로 분석]</b>. (백엔드는 나중에 HF Spaces·GPU서버로 주소만 교체)</div>
+    </div>
   </div>
 
   <div class="panel">
@@ -198,7 +208,7 @@ function jmap(h){const rh=h==="right",L=rh?"L":"R",T=rh?"R":"L",g=s=>MP[s];
 const $=id=>document.getElementById(id);
 const video=$("video"),overlay=$("overlay"),ctx=overlay.getContext("2d");
 const work=$("work"),wctx=work.getContext("2d",{willReadFrequently:true});
-let landmarker=null,running=false,series=[],events={},J=null,prevShaft=null,curView=null;
+let landmarker=null,running=false,series=[],events={},J=null,prevShaft=null,curView=null,curFile=null;
 let manualShaft={},drawTarget=null,drawPts=[],autoEvents={};
 const cvState={prevGray:null};
 
@@ -228,7 +238,7 @@ init().catch(e=>$("status").textContent="모델 로딩 실패: "+e.message);
 
 function loadVideo(e,view){
   const f=e.target.files[0]; if(!f)return;
-  curView=view;
+  curView=view; curFile=f;
   $("cardFO").classList.toggle("active",view==="FO");
   $("cardDTL").classList.toggle("active",view==="DTL");
   $("pickFO").textContent=view==="FO"?("✓ "+f.name):"";
@@ -265,6 +275,37 @@ $("load3d").addEventListener("change",e=>{
   }catch(err){ $("v3dStat").textContent="⚠ JSON 읽기 실패"; $("v3dStat").style.color="#ff6b6b"; } };
   r.readAsText(f);
 });
+
+// ── ☁️ GPU 백엔드 연결: 영상 → Colab(Gradio /analyze API) → doh.vision.v1 → renderV1 ──
+//    백엔드 URL은 설정값(입력칸+localStorage). 프론트 코드는 그대로 두고 백엔드 주소만
+//    Colab → HF Spaces → GPU 서버로 교체하면 됨(핵심: doh.vision.v1 계약이 동일).
+const GRADIO_CLIENT_URL="https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
+function beStat(msg,col){ const el=$("beStat"); if(el){ el.innerHTML=msg; el.style.color=col||"#8b97a5"; } }
+(function initBe(){ const s=localStorage.getItem("doh_be_url"); if(s&&$("beUrl")) $("beUrl").value=s; })();
+async function serverAnalyze(){
+  const url=(($("beUrl").value)||"").trim().replace(/\/+$/,"");
+  if(!url){ beStat("먼저 콜랩에서 뜬 <b>gradio.live</b> 백엔드 URL을 넣어주세요.","#ffb648"); return; }
+  if(!curFile){ beStat("먼저 위 <b>각도 카드</b>에서 영상을 선택하세요.","#ffb648"); return; }
+  localStorage.setItem("doh_be_url",url);
+  $("beRun").disabled=true; beStat("서버 연결 중…","#8b97a5");
+  try{
+    const mod=await import(GRADIO_CLIENT_URL);
+    const connect=mod.Client?mod.Client.connect.bind(mod.Client):mod.client;  // v1(Client.connect)/v0(client) 호환
+    const app=await connect(url);
+    beStat("영상 업로드·3D 추론 중… (콜랩 GPU, 20~60초)","#8b97a5");
+    const vidArg=mod.handle_file?mod.handle_file(curFile):curFile;   // v1은 파일을 handle_file로 감싸야 함
+    const r=await app.predict("/analyze",[vidArg, curView||"FO", $("hand").value]);
+    const inst=(r&&r.data)?r.data[2]:null;   // 출력 순서 [HTML, 다운로드, doh.vision.v1(JSON)]
+    if(!inst){ beStat("서버가 결과를 못 냈어요 (사람/프레임이 부족한 영상일 수 있음).","#ff6b6b"); return; }
+    renderV1(inst);
+    if($("v3dStat")) $("v3dStat").textContent="✅ 서버 3D 분석 완료";
+    $("v1panel").scrollIntoView({behavior:"smooth",block:"start"});
+    beStat("✅ 완료 — 위 <b>3D 정밀 결과</b> 표시됨.","#3ecf8e");
+  }catch(e){
+    beStat("서버 연결/분석 실패: <b>"+((e&&e.message)||e)+"</b><br>사지방에서 gradio.live가 막혔을 수 있어요 → 아래 <b>③ 회전</b> 옆 JSON 파일 불러오기로 우회하거나, 백엔드를 HF Spaces로 옮기세요.","#ff6b6b");
+  }finally{ $("beRun").disabled=false; }
+}
+$("beRun").addEventListener("click",serverAnalyze);
 
 // ── 프레임별 seek 방식 (재생X → 프레임 안 건너뜀, 매번 동일) ──
 let stepping=false, tCur=0, stepDt=1/60, mpTs=0;

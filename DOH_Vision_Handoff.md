@@ -126,6 +126,20 @@
 - 검증: 합성 21지표 v1 JSON을 격리 렌더 → JS에러0·전 지표 정상·스타일 일치(스샷 확인).
 - **다음(GPU 생기면):** analyzer2에서 `POST 영상 → GPU서버(NLF) → doh.vision.v1` 자동수신(지금은 파일 불러오기가 그 자리표시자). `server/app.py`가 이미 그 계약을 냄 → 그 서버를 GPU에 올리고 analyzer2가 fetch만 하면 됨.
 
+## 5i. analyzer2 ↔ Colab GPU 백엔드 연결 (한 페이지 UX) — **완료(2026-07-04)** ✅
+"analyzer2=프론트, Colab Gradio=무료 GPU 백엔드 API"로 결선. GPU 서버 계약 없이 개발단계 UX 완성.
+- **백엔드(`pose3d_simple.ipynb`):** `analyze_fn`이 (HTML, DownloadButton, **doh.vision.v1 dict**) 반환.
+  숨은 `gr.JSON` 출력 + `btn.click(..., api_name="analyze")` → 외부에서 `/analyze` API로 계약 수령.
+  `demo.launch(share=True)` → 공개 `xxxx.gradio.live` URL 생성. `_analyze_core()`로 UI/API 로직 공유.
+- **프론트(`analyzer2.html` BUILD v23):** `☁️ GPU 서버로 3D 정밀분석` 박스 — 백엔드 URL 입력(localStorage 저장)
+  + [서버로 분석]. `@gradio/client`(jsdelivr, v1/v0 호환, `handle_file`) 동적 import → `predict("/analyze",[영상,뷰,주손])`
+  → `data[2]`(doh.vision.v1) → `renderV1()`. 업로드→분석→결과가 한 페이지에서 끝.
+- **교체용이성:** 백엔드 URL이 설정값이라 **Colab → HF Spaces → GPU서버**로 주소만 바꾸면 프론트 무수정.
+  핵심은 어느 백엔드든 **doh.vision.v1 계약**을 낸다는 것.
+- JSON 파일 불러오기(§5h)는 **비상 폴백**으로 유지(사지방서 gradio.live 터널 막힐 때).
+- 검증: analyzer2 모듈 JS `node --check` 통과, renderV1 격리 렌더 정상. ⚠️ 실 백엔드 왕복은 미검증
+  (이 세션 GPU/네트워크 없음) — 사용자 콜랩 `share=True` URL로 첫 왕복 확인 필요. **터널 열림 여부가 유일 미지수.**
+
 ## 6. 다음 할 일 (우선순위)
 1. ~~JSON 계약 고정~~(§5b) · ~~Metrics 1차~~(§5c) · ~~up축+척추각~~(§5d) · ~~집PC 서버+웹UI~~(§5e) · ~~무료 Colab Gradio UI~~(§5f) → **완료.**
 2. **집 PC 첫 구동·검증**: start.bat → localhost:8000 → 측면영상 분석 → 척추각 55~65°·스웨이 null 확인. `/health` cuda:true.
