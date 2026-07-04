@@ -151,6 +151,23 @@
 - 사용자가 HF Space 만들고 파일 3개 올리면 `https://<id>-<space>.hf.space` 영구주소 생성 → analyzer2에 1회 입력 = 원클릭.
 - ⚠️ 미배포/미검증: 사용자 HF 계정 필요. ZeroGPU 가용/CORS는 첫 배포에서 확인(막히면 CORS 한 줄 추가 or CPU).
 
+## 5k. Stage 0 — API 계약 고정(FastAPI 비동기 Job) — **완료(2026-07-04)** ✅
+아키텍처 문서(`DOH_Vision_API_Architecture_v1.0.md`)의 Stage 0 구현. **고정하는 건 인프라가 아니라 계약.**
+- **`server/app.py` (FastAPI):** 비동기 Job 계약 —
+  `POST /v1/analyze/video`→`202 {job_id}`, `GET /v1/jobs/{id}`→`{status,result}`(폴링), `/v1/capabilities`, `/v1/health`.
+  CORS(기본 `*`, env `DOH_CORS_ORIGINS`), ThreadPoolExecutor(GPU1개 순차), `analyze_to_inst()` 동기/비동기 공용.
+  하위호환 `POST /analyze`(동기) 유지. CF 100초 리밋·모바일 백그라운드 대비.
+- **`analyzer2.html` v25:** `@gradio/client` 완전 제거 → **순수 fetch 비동기 폴링**. `DOH_API_BASE` 상수(프로덕션=
+  api.dohvision.com) + 개발용 override 입력칸. 백엔드가 Colab/Modal/집PC/전용서버 무엇이든 **주소만** 바꾸면 무수정.
+- **`pose3d_simple.ipynb`:** Gradio → **FastAPI 백엔드 러너**로 개조. server/app.py 받아 `uvicorn` 실행 +
+  **cloudflared quick tunnel**(trycloudflare.com, 계정불필요) → 공개 URL 출력. Gradio는 폐기(계약이 UI).
+- **검증:** 목 FastAPI(torch 없이 계약만) + Chromium에서 **업로드→job_id→폴링→renderV1** 전 과정 PASS(P칩7·회전카드2).
+  server/app.py `py_compile` OK, analyzer2 `node --check` OK.
+- ⚠️ **미검증:** 실 GPU 왕복(콜랩), **trycloudflare가 사지방서 열리는지**(gradio.live는 됐지만 다른 터널).
+  막히면 → 집PC localhost(터널 불필요) 또는 Stage1 Modal. **계약은 인프라 무관하게 고정됨.**
+- 집PC 개발루프(터널 불필요): `uvicorn app:app --port 8000` 후 analyzer2 override칸에 `http://localhost:8000`
+  (브라우저의 localhost 예외로 https페이지→http localhost fetch 허용).
+
 ## 6. 다음 할 일 (우선순위)
 1. ~~JSON 계약 고정~~(§5b) · ~~Metrics 1차~~(§5c) · ~~up축+척추각~~(§5d) · ~~집PC 서버+웹UI~~(§5e) · ~~무료 Colab Gradio UI~~(§5f) → **완료.**
 2. **집 PC 첫 구동·검증**: start.bat → localhost:8000 → 측면영상 분석 → 척추각 55~65°·스웨이 null 확인. `/health` cuda:true.
