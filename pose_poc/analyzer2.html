@@ -302,7 +302,11 @@ async function serverAnalyze(){
     $("v1panel").scrollIntoView({behavior:"smooth",block:"start"});
     beStat("✅ 완료 — 위 <b>3D 정밀 결과</b> 표시됨.","#3ecf8e");
   }catch(e){
-    beStat("서버 연결/분석 실패: <b>"+((e&&e.message)||e)+"</b><br>사지방에서 gradio.live가 막혔을 수 있어요 → 아래 <b>③ 회전</b> 옆 JSON 파일 불러오기로 우회하거나, 백엔드를 HF Spaces로 옮기세요.","#ff6b6b");
+    const msg=((e&&e.message)||e)+"";
+    const fetchFail=/failed to fetch|networkerror|load failed/i.test(msg);
+    beStat("서버 연결/분석 실패: <b>"+msg+"</b><br>"+(fetchFail
+      ? "<b style='color:#ffb648'>이 주소가 죽었을 가능성이 큽니다.</b> gradio.live 주소는 <b>콜랩이 켜져 있는 동안만</b> 살아있고, 콜랩을 다시 실행하면 <b>주소가 새로 바뀝니다</b>.<br>① 콜랩 탭이 아직 실행 중인지 확인 → 끊겼으면 2칸 셀 다시 실행 → <b>새로 뜬 주소</b>를 위 칸에 덮어쓰기.<br>② 매번 이러기 싫으면 백엔드를 <b>HF Spaces</b>(주소 영구고정)로 옮기면 이 버튼이 진짜 원클릭이 됩니다."
+      : "사지방 네트워크가 막았거나 서버 오류일 수 있어요. 아래 <b>③ 회전</b> 옆 JSON 파일 불러오기로 우회 가능."),"#ff6b6b");
   }finally{ $("beRun").disabled=false; }
 }
 $("beRun").addEventListener("click",serverAnalyze);
