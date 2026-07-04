@@ -64,9 +64,10 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v21</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v22</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v21"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v22"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <br><b style="color:#4ea1ff">NEW v22:</b> GPU(NLF) 3D 엔진이 낸 <b>doh.vision.v1</b>(P1~P10·회전·척추각·자세·팔·무릎·스웨이·템포 21지표) JSON을 이 UI에 통째로 표시. (아래 <b>③ 회전</b> 옆 <b>불러오기</b>)</p>
 </header>
 
 <div class="wrap">
@@ -117,7 +118,9 @@
 
   <div class="panel">
     <div id="activeInfo" class="note" style="margin-top:0">— 앵글을 선택하고 영상을 올리세요 —</div>
-    <h2>① 자동 검출 이벤트</h2>
+    <!-- GPU(NLF) 3D 엔진 산출 doh.vision.v1 전체를 표시하는 패널 (JSON 불러오면 채워짐) -->
+    <div id="v1panel" style="display:none;margin-bottom:8px"></div>
+    <h2>① 자동 검출 이벤트 <span class="badge" style="color:#8b97a5">브라우저 근사</span></h2>
     <div id="events">— 분석 후 표시 —</div>
     <div id="evEditWrap" style="display:none">
       <div class="note" style="margin:8px 0 4px">자동이 틀리면: 슬라이더로 프레임을 찾아(영상에 표시됨) → 그 프레임을 해당 P 버튼으로 지정.</div>
@@ -136,7 +139,7 @@
     <div id="rotSection">
       <h2 id="rotTitle">③ 회전 (근사 · 참고용)</h2>
       <div style="margin:2px 0 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <label style="display:inline-block;background:#12202e;color:#3ecf8e;border:1px solid #3ecf8e;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:600">🎯 3D 회전결과(JSON) 불러오기<input id="load3d" type="file" accept=".json,application/json" style="display:none"/></label>
+        <label style="display:inline-block;background:#12202e;color:#3ecf8e;border:1px solid #3ecf8e;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:600">🎯 3D 결과(JSON) 불러오기 <span style="color:#8b97a5;font-weight:400">— doh.vision.v1(21지표)/회전</span><input id="load3d" type="file" accept=".json,application/json" style="display:none"/></label>
         <span id="v3dStat" style="font-size:11px;color:#3ecf8e"></span>
       </div>
       <div class="note" id="rotWarn" style="margin:2px 0 8px"></div>
@@ -244,11 +247,21 @@ $("load3d").addEventListener("change",e=>{
   const r=new FileReader();
   r.onload=()=>{ try{
     const d=JSON.parse(r.result);
-    if(!d||!d.top||!d.schema||d.schema.indexOf("doh.vision.rotation")<0){
-      $("v3dStat").textContent="⚠ 형식 불일치 (doh_vision.json 맞는지 확인)"; $("v3dStat").style.color="#ff6b6b"; return; }
-    vision3d=d; $("v3dStat").textContent="✅ 3D 로드됨 — 회전카드가 정밀값으로 교체";
-    $("v3dStat").style.color="#3ecf8e"; $("rotTitle").textContent="③ 회전 (3D 정밀 · NLF)";
-    renderRot();
+    const sc=(d&&d.schema)||"";
+    if(sc.indexOf("doh.vision.v1")===0){            // 정식 계약(21지표 전부) → 전용 패널에 통째로 표시
+      renderV1(d);
+      $("v3dStat").textContent="✅ doh.vision.v1 로드됨 — P1~P10·회전·자세·팔·무릎·스웨이·템포 전체 표시";
+      $("v3dStat").style.color="#3ecf8e";
+      $("v1panel").scrollIntoView({behavior:"smooth",block:"start"});
+      return;
+    }
+    if(d&&d.top&&sc.indexOf("doh.vision.rotation")>=0){   // 레거시 회전 전용 → 회전카드만 교체
+      vision3d=d; $("v3dStat").textContent="✅ 3D 회전 로드됨 — 회전카드 정밀값 교체";
+      $("v3dStat").style.color="#3ecf8e"; $("rotTitle").textContent="③ 회전 (3D 정밀 · NLF)";
+      renderRot(); return;
+    }
+    $("v3dStat").textContent="⚠ 형식 불일치 (doh.vision.v1 또는 doh.vision.rotation.v1 이어야 함)";
+    $("v3dStat").style.color="#ff6b6b";
   }catch(err){ $("v3dStat").textContent="⚠ JSON 읽기 실패"; $("v3dStat").style.color="#ff6b6b"; } };
   r.readAsText(f);
 });
@@ -626,6 +639,82 @@ function turnAt(fr,key){
   return (a==null||b==null)?null:(a-b);
 }
 function confAt(fr,key){ return avgAt(fr,(key==="sh")?"shConf":"hpConf"); }
+// ── doh.vision.v1 (정식 계약, 21지표) 렌더러 — GPU(NLF) 3D 엔진 산출물을 이 UI에 통째로 표시 ──
+//   analyzer2 기존 클래스(.ev/.mgrid/.mcard/.mrow/.pcell/.badge)를 재사용해 페이지 룩과 일치.
+const V1META={
+ VF015:["어깨 회전 @탑","rot"],VF018:["골반 회전 @탑","rot"],VF020:["X-Factor @탑","rot"],VF075:["힙 클리어","rot"],
+ VF002:["척추각 @어드레스","자세 (측면)"],VF038:["자세 유지 (어드→탑)","자세 (측면)"],
+ VF076:["척추각 유지","자세 (측면)"],VF022:["어깨 플레인","자세 (측면)"],VF001:["좌우 틸트","자세 (정면)"],
+ VF011:["리드팔 곧음","팔·무릎"],VF012:["트레일팔 굽힘","팔·무릎"],VF027:["트레일 팔꿈치각","팔·무릎"],
+ VF087:["리드팔 굽힘 @임팩트","팔·무릎"],VF039:["리드무릎 굽힘변화","팔·무릎"],
+ VF040:["트레일무릎 굽힘","팔·무릎"],VF088:["리드무릎각 @임팩트","팔·무릎"],
+ VF031:["머리 스웨이","스웨이 (정면)"],VF034:["골반 스웨이","스웨이 (정면)"],
+ VF113:["백스윙 시간","템포"],VF114:["다운스윙 시간","템포"],VF111:["템포 비율","템포"]};
+const V1FLAG={view_mismatch:"이 각도에선 측정 불가",off_axis_view:"각도 미상·참고용",depth_unreliable:"깊이 불안정",
+ interpolated_event:"이벤트 보간",club_not_detected:"클럽 미검출"};
+const V1GROUPS=["자세 (측면)","자세 (정면)","팔·무릎","스웨이 (정면)","템포"];
+const V1PLBL={P1:"어드레스",P2:"토업",P3:"리드팔평행(BS)",P4:"탑",P5:"리드팔평행(DS)",P6:"샤프트평행(DS)",
+ P7:"임팩트",P8:"샤프트평행(FT)",P9:"리드팔평행(FT)",P10:"피니시"};
+const V1PORD=["P1","P2","P3","P4","P5","P6","P7","P8","P9","P10"];
+function v1num(f){
+  const flags=(f.error_flags||[]).map(x=>V1FLAG[x]||x).join(" · ");
+  if(f.value==null) return {v:null,cf:0,flags:flags||"측정 불가"};
+  const u=f.unit==="deg"?"°":(f.unit==="ratio"?"":" "+f.unit);
+  return {v:f.value+u,cf:Math.round((f.confidence||0)*100),flags};
+}
+function v1mrow(lab,f,cls){
+  if(!f) return `<div class="mrow"><span class="lab">${lab}</span><span class="val">—</span></div>`;
+  const n=v1num(f);
+  if(n.v==null) return `<div class="mrow"><span class="lab">${lab}</span><span class="val" style="font-size:13px;color:#6b7684">${n.flags}</span></div>`;
+  return `<div class="mrow"><span class="lab">${lab}</span><span class="val ${cls||''}">${n.v}</span></div>`;
+}
+function v1card(f){
+  const meta=V1META[f.feature_id]||[f.name,"기타"], n=v1num(f);
+  let body;
+  if(n.v==null) body=`<div style="font-size:14px;font-weight:700;color:#6b7684">${n.flags}</div>`;
+  else{ body=`<div class="pv" style="font-size:22px">${n.v}</div>`
+    +`<div style="margin-top:8px;height:4px;border-radius:2px;background:#222b35"><div style="width:${n.cf}%;height:100%;border-radius:2px;background:#3ecf8e"></div></div>`;
+    if(n.flags) body+=`<div style="margin-top:6px;font-size:11px;color:#ffb648">${n.flags}</div>`; }
+  return `<div class="mcard" style="padding:12px"><div style="font-size:12px;color:#8b97a5;min-height:28px;line-height:1.3">${meta[0]}</div>${body}</div>`;
+}
+function renderV1(d){
+  const fd={}; (d.features||[]).forEach(f=>fd[f.feature_id]=f);
+  const ev={},evm={}; (d.swing_events||[]).forEach(e=>{ev[e.p]=e.frame;evm[e.p]=e.method;});
+  const src=d.source||{}, q=d.quality||{}, view=src.camera_view||"?";
+  const conf=Math.round((q.overall_confidence||0)*100);
+  const pose=(d.engines&&d.engines.pose&&d.engines.pose.name)||"NLF";
+  let h=`<h2 style="color:#3ecf8e;margin-top:0">🎯 3D 정밀 결과 <span class="badge" style="color:#3ecf8e">doh.vision.v1 · ${pose}</span></h2>`;
+  h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">`;
+  [["촬영",view==="FO"?"정면(FO)":view==="DTL"?"측면(DTL)":view],["종합 신뢰도",conf+"%"],
+   ["각도",q.view_match?"✅ 적합":"⚠️ 부적합"],["프레임",src.duration_frames||"?"]]
+   .forEach(([l,v])=>{h+=`<span class="ev"><b style="color:#4ea1ff">${l}</b> ${v}</span>`;});
+  h+=`</div>`;
+  // 스윙 P구간 (P1~P10)
+  h+=`<h2>스윙 P구간 (P1~P10, 3D 자동검출)</h2><div style="display:flex;flex-wrap:wrap;gap:5px">`;
+  V1PORD.forEach(p=>{
+    if(ev[p]!=null){ const itp=evm[p]==="interpolated";
+      h+=`<span class="ev"><b>${p}</b> ${V1PLBL[p]} <span style="color:#8b97a5">#${ev[p]}${itp?" ·보간":""}</span></span>`; }
+    else h+=`<span class="ev miss"><b>${p}</b> ${V1PLBL[p]} <span style="color:#8b97a5">미검출</span></span>`;
+  });
+  h+=`</div><div class="note">P2·P6·P8(샤프트 평행)은 클럽 검출이 있어야 잡혀요 — 포즈 엔진만으론 미검출(2차 클럽엔진 몫).</div>`;
+  // 회전 (3D 정밀)
+  h+=`<h2>회전 (3D 정밀)</h2><div class="mgrid">`;
+  h+=`<div class="mcard"><h4>백스윙탑 (P4)</h4>${v1mrow("상체(어깨)",fd.VF015)}${v1mrow("하체(골반)",fd.VF018)}${v1mrow("X-Factor",fd.VF020,"xf")}</div>`;
+  h+=`<div class="mcard"><h4>임팩트 (P7)</h4>${v1mrow("힙 클리어",fd.VF075)}</div></div>`;
+  // 자세·팔·무릎·스웨이·템포
+  const byg={}; V1GROUPS.forEach(g=>byg[g]=[]);
+  (d.features||[]).forEach(f=>{ const g=(V1META[f.feature_id]||[,"기타"])[1]; if(byg[g])byg[g].push(f); });
+  let started=false;
+  V1GROUPS.forEach(g=>{ if(!byg[g].length)return;
+    if(!started){h+=`<h2>자세 · 팔 · 무릎 · 스웨이 · 템포</h2>`;started=true;}
+    h+=`<div style="font-size:13px;font-weight:700;margin:8px 0 6px">${g}</div>`
+      +`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:4px">`
+      +byg[g].map(v1card).join("")+`</div>`; });
+  const warns=(q.warnings||[]).filter(w=>w.indexOf("joints=")!==0&&w.indexOf("object_engine")!==0);
+  if(warns.length) h+=`<div class="note">참고: ${warns.join(" · ")}</div>`;
+  h+=`<div class="note" style="border-top:1px solid #2a323d;margin-top:12px;padding-top:8px">아래 <b>①~⑤</b>는 브라우저(MediaPipe) 근사 분석 — 영상 오버레이·수동보정용 참고. 정밀값은 위 3D 결과를 보세요.</div>`;
+  const el=$("v1panel"); el.innerHTML=h; el.style.display="block";
+}
 // Tier-B(서버 NLF 3D) 회전결과 JSON. 로드되면 브라우저 근사값 대신 이걸 표시.
 let vision3d=null;
 function render3dRot(){
