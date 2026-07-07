@@ -1,0 +1,381 @@
+{
+  "dictionary": "Mechanism Dictionary",
+  "schema_version": "0.1",
+  "created": "2026-07-07",
+  "layer": "Inference (Cause↔Result link language)",
+  "priority": "CORE — DOH에서 가장 중요한 Dictionary. Cause와 Result를 연결하는 표준 문장을 고정한다.",
+  "principle": [
+    "동일한 의미의 인과 연결 문장은 항상 하나의 표준 Mechanism 문장으로 표현한다.",
+    "각 Mechanism은 고정 ID(M-XXX-NN)를 가진다. Feature/Chain은 문장 텍스트가 아니라 이 ID로 Mechanism을 참조한다.",
+    "표준 문장은 EN 정문(현재시제, 완결형) + (한글) 쌍으로 고정한다.",
+    "replaces에 나열된 비표준 동의 표현들은 문서 전체에서 더 이상 사용하지 않는다."
+  ],
+  "id_scheme": {
+    "format": "M-<CATEGORY>-<NN>",
+    "categories": {
+      "ROT": "Rotation — 골반/흉곽 회전 (Amount·Timing·Velocity·Axis)",
+      "PRS": "Pressure — 트레일/리드 하중 및 압력 이동",
+      "ARM": "Arm Delivery — 팔·손·팔꿈치의 하강과 전달",
+      "CLB": "Club Delivery — 릴리즈·경로·가파름·최저점·래그",
+      "SPC": "Space — 몸-팔 전달 공간",
+      "LOD": "Loading — 리드/트레일측 하중 수용과 안정",
+      "CMP": "Compensation — 팔·손·몸의 보상 동작"
+    }
+  },
+  "mechanisms": {
+    "M-ROT-01": {
+      "id": "M-ROT-01", "category": "ROT",
+      "statement_en": "The Pelvis Opens Before Arm Delivery.",
+      "statement_ko": "팔 전달 전에 골반이 먼저 열린다.",
+      "replaces": ["The Pelvis Opens Early", "The Pelvis Opens Too Soon", "The Pelvis Opens Before The Arms", "Early Pelvis Rotation", "Body Rotation Starts Early", "The Body Opens Early"],
+      "used_in": ["pelvis_open_early"]
+    },
+    "M-ROT-02": {
+      "id": "M-ROT-02", "category": "ROT",
+      "statement_en": "The Thorax Opens Before Arm Delivery.",
+      "statement_ko": "팔 전달 전에 흉곽이 먼저 열린다.",
+      "replaces": ["The Upper Body Opens Early", "The Thorax Opens Too Soon", "The Chest Opens Early"],
+      "used_in": ["thorax_open_early", "thorax_rotation_excessive"]
+    },
+    "M-ROT-03": {
+      "id": "M-ROT-03", "category": "ROT",
+      "statement_en": "The Thorax Rotates Rapidly During Transition.",
+      "statement_ko": "전환 구간에서 흉곽이 급격하게 회전한다.",
+      "replaces": ["Rapid Thorax Rotation", "The Thorax Spins Fast Early"],
+      "used_in": ["high_hands", "arm_stuck"],
+      "note": "M001~M007 시트의 Rapid Thorax Rotation 표준화."
+    },
+    "M-ROT-04": {
+      "id": "M-ROT-04", "category": "ROT",
+      "statement_en": "Thorax Rotation Is Delayed.",
+      "statement_ko": "흉곽 회전이 지연된다.",
+      "replaces": ["Thorax Rotation Lags", "The Chest Turns Late"],
+      "used_in": ["thorax_rotation_insufficient"],
+      "note": "시트 M004."
+    },
+    "M-ROT-05": {
+      "id": "M-ROT-05", "category": "ROT",
+      "statement_en": "Pelvis Rotation Decelerates Before Impact.",
+      "statement_ko": "임팩트 전에 골반 회전이 감속한다.",
+      "replaces": ["Pelvis Rotation Stops", "The Hips Stall", "Pelvis Slows Down Early"],
+      "used_in": ["pelvis_stall"]
+    },
+    "M-ROT-06": {
+      "id": "M-ROT-06", "category": "ROT",
+      "statement_en": "Thorax Rotation Decelerates Before Impact.",
+      "statement_ko": "임팩트 전에 흉곽 회전이 감속한다.",
+      "replaces": ["Thorax Rotation Stops", "The Chest Stalls"],
+      "used_in": ["thorax_stall"]
+    },
+    "M-ROT-07": {
+      "id": "M-ROT-07", "category": "ROT",
+      "statement_en": "Pelvis Rotation Does Not Complete Through Impact.",
+      "statement_ko": "골반 회전이 임팩트까지 완성되지 않는다.",
+      "replaces": ["Insufficient Pelvis Rotation", "The Hips Do Not Turn Enough"],
+      "used_in": ["pelvis_rotation_insufficient"]
+    },
+    "M-ROT-08": {
+      "id": "M-ROT-08", "category": "ROT",
+      "statement_en": "Thorax Rotation Does Not Complete Through Impact.",
+      "statement_ko": "흉곽 회전이 임팩트까지 완성되지 않는다.",
+      "replaces": ["Insufficient Thorax Rotation", "The Chest Does Not Turn Enough"],
+      "used_in": ["thorax_rotation_insufficient"]
+    },
+    "M-ROT-09": {
+      "id": "M-ROT-09", "category": "ROT",
+      "statement_en": "The Body Rotates Around The Trail Side.",
+      "statement_ko": "몸이 트레일측을 중심으로 회전한다.",
+      "replaces": ["The Body Spins Around The Right Side", "Rotation Axis Stays On The Trail Side"],
+      "used_in": ["spin_out", "pelvis_rotation_excessive"]
+    },
+    "M-ROT-10": {
+      "id": "M-ROT-10", "category": "ROT",
+      "statement_en": "The Lead Side Cannot Become The Primary Rotation Axis.",
+      "statement_ko": "리드측이 주 회전축이 되지 못한다.",
+      "replaces": ["The Body Cannot Rotate Around The Lead Side Efficiently", "No Left Side Post"],
+      "used_in": ["pelvis_stall", "early_extension"]
+    },
+    "M-ROT-11": {
+      "id": "M-ROT-11", "category": "ROT",
+      "statement_en": "The Pelvis Rotates Faster Than The Arms Can Follow.",
+      "statement_ko": "팔이 따라올 수 없을 만큼 골반이 빠르게 회전한다.",
+      "replaces": ["The Hips Outrun The Arms", "Pelvis Outpaces Arm Delivery"],
+      "used_in": ["pelvis_rotation_excessive"]
+    },
+    "M-PRS-01": {
+      "id": "M-PRS-01", "category": "PRS",
+      "statement_en": "Pressure Remains On The Trail Side.",
+      "statement_ko": "압력이 트레일측에 남아있다.",
+      "replaces": ["Pressure Stays On The Right Side", "Weight Remains On The Trail Side", "Pressure Does Not Move Left", "Hanging Back Pressure"],
+      "used_in": ["hanging_back", "head_hanging_back"]
+    },
+    "M-PRS-02": {
+      "id": "M-PRS-02", "category": "PRS",
+      "statement_en": "Pressure Transfers To The Lead Side Too Early.",
+      "statement_ko": "압력이 리드측으로 너무 빨리 이동한다.",
+      "replaces": ["Lead Pressure Early", "Early Weight Shift Left", "Pressure Moves Left Too Soon"],
+      "used_in": ["pelvis_open_early", "lead_pressure_excessive"]
+    },
+    "M-PRS-03": {
+      "id": "M-PRS-03", "category": "PRS",
+      "statement_en": "Pressure Does Not Reach The Lead Side Before Impact.",
+      "statement_ko": "임팩트 전까지 압력이 리드측에 도달하지 못한다.",
+      "replaces": ["Late Pressure Shift", "Lead Side Pressure Insufficient", "Weight Does Not Get Left In Time"],
+      "used_in": ["pelvis_rotation_insufficient", "pelvis_stall", "early_extension", "head_elevation", "head_hanging_back", "spine_extension_excessive"]
+    },
+    "M-PRS-04": {
+      "id": "M-PRS-04", "category": "PRS",
+      "statement_en": "The Player Never Establishes Adequate Trail Side Loading.",
+      "statement_ko": "충분한 트레일측 하중이 형성되지 않는다.",
+      "replaces": ["No Trail Side Load", "Trail Loading Failure", "Weak Backswing Load"],
+      "used_in": ["hanging_back"],
+      "note": "Reverse Pivot 상위 경로와 연결 (Node Library N03)."
+    },
+    "M-PRS-05": {
+      "id": "M-PRS-05", "category": "PRS",
+      "statement_en": "Pressure On The Lead Side Becomes Excessive.",
+      "statement_ko": "리드측 압력이 과도해진다.",
+      "replaces": ["Lead Pressure Excessive", "Too Much Weight Left"],
+      "used_in": ["pelvis_rotation_excessive", "head_drop"]
+    },
+    "M-PRS-06": {
+      "id": "M-PRS-06", "category": "PRS",
+      "statement_en": "Pressure Remains On The Lead Side.",
+      "statement_ko": "압력이 리드측에 남아있다.",
+      "replaces": ["Weight Stuck On Left", "Reverse Pivot Pressure"],
+      "used_in": [],
+      "note": "백스윙 리드측 압력 잔류(Reverse Pivot) 표현. P4~P5 연계용으로 예약."
+    },
+    "M-ARM-01": {
+      "id": "M-ARM-01", "category": "ARM",
+      "statement_en": "The Arms Fall Behind The Rotating Body.",
+      "statement_ko": "회전하는 몸에 비해 팔이 뒤처진다.",
+      "replaces": ["The Arms Get Stuck Behind", "Arm Stuck", "The Arms Trail The Body"],
+      "used_in": ["arm_stuck", "pelvis_rotation_excessive", "thorax_rotation_excessive"]
+    },
+    "M-ARM-02": {
+      "id": "M-ARM-02", "category": "ARM",
+      "statement_en": "Thorax Rotation Outpaces Arm Delivery.",
+      "statement_ko": "흉곽 회전이 팔 전달보다 앞선다.",
+      "replaces": ["The Chest Beats The Arms", "Body Ahead Of Arms"],
+      "used_in": ["thorax_open_early", "thorax_rotation_excessive"]
+    },
+    "M-ARM-03": {
+      "id": "M-ARM-03", "category": "ARM",
+      "statement_en": "Arm Delivery Space Is Reduced.",
+      "statement_ko": "팔이 내려올 공간이 감소한다.",
+      "replaces": ["Less Room For The Arms", "Arm Space Shrinks"],
+      "used_in": ["pelvis_open_early", "early_extension", "arm_drop_insufficient"]
+    },
+    "M-ARM-04": {
+      "id": "M-ARM-04", "category": "ARM",
+      "statement_en": "The Arms Cannot Reach Delivery Position In Time.",
+      "statement_ko": "팔이 전달 위치에 제시간에 도달하지 못한다.",
+      "replaces": ["The Arms Are Late", "Arms Cannot Catch Up"],
+      "used_in": ["late_release", "arm_drop_insufficient"]
+    },
+    "M-ARM-05": {
+      "id": "M-ARM-05", "category": "ARM",
+      "statement_en": "The Trail Elbow Falls Behind The Thorax.",
+      "statement_ko": "트레일 팔꿈치가 흉곽보다 뒤처진다.",
+      "replaces": ["Trail Elbow Stuck", "Right Elbow Behind Body"],
+      "used_in": ["arm_stuck"]
+    },
+    "M-ARM-06": {
+      "id": "M-ARM-06", "category": "ARM",
+      "statement_en": "Arm Drop Is Insufficient.",
+      "statement_ko": "팔의 하강이 충분하지 않다.",
+      "replaces": ["Arms Do Not Drop Enough", "Arm Drop Insufficient"],
+      "used_in": ["high_hands", "steep_shaft", "arm_drop_insufficient"],
+      "note": "시트 Mechanism (Arm Drop Is Insufficient)."
+    },
+    "M-ARM-07": {
+      "id": "M-ARM-07", "category": "ARM",
+      "statement_en": "The Hands Start Downswing From Behind The Thorax.",
+      "statement_ko": "손이 몸통보다 뒤쪽에서 다운스윙을 시작한다.",
+      "replaces": ["Hands Behind The Body At Transition", "Hands Trapped Behind"],
+      "used_in": ["high_hands"],
+      "note": "시트 M003. P4 Arm Depth Excessive → P6 High Hands 체인의 시작 링크."
+    },
+    "M-ARM-08": {
+      "id": "M-ARM-08", "category": "ARM",
+      "statement_en": "Rapid Thorax Rotation Reduces Available Arm Drop Time.",
+      "statement_ko": "급격한 흉곽 회전으로 팔이 하강할 시간이 부족해진다.",
+      "replaces": ["No Time For Arms To Drop", "Fast Chest Leaves No Arm Time"],
+      "used_in": ["high_hands"],
+      "note": "P4→P6 연결 체인의 핵심 Transition Mechanism."
+    },
+    "M-ARM-09": {
+      "id": "M-ARM-09", "category": "ARM",
+      "statement_en": "The Arm Starts Downswing From A Higher Position.",
+      "statement_ko": "팔이 높은 위치에서 다운스윙을 시작한다.",
+      "replaces": ["Arms High At Transition", "Arm Starts Downswing From Higher Position"],
+      "used_in": ["high_hands"],
+      "note": "시트 M001."
+    },
+    "M-ARM-10": {
+      "id": "M-ARM-10", "category": "ARM",
+      "statement_en": "Vertical Arm Drop During Downswing Is Insufficient.",
+      "statement_ko": "다운스윙 동안 팔의 수직 하강이 충분하지 않다.",
+      "replaces": ["Insufficient Vertical Arm Drop During Downswing"],
+      "used_in": ["high_hands", "steep_shaft"],
+      "note": "시트 M002. M-ARM-06의 수직 방향 특화 변형."
+    },
+    "M-CLB-01": {
+      "id": "M-CLB-01", "category": "CLB",
+      "statement_en": "The Club Is Released Early To Reach The Ball.",
+      "statement_ko": "공에 도달하기 위해 클럽을 조기에 푼다.",
+      "replaces": ["Casting", "Early Release", "The Club Unhinges Early", "Hand Dominance Release"],
+      "used_in": ["casting", "flip_release"]
+    },
+    "M-CLB-02": {
+      "id": "M-CLB-02", "category": "CLB",
+      "statement_en": "The Club Approaches From Outside.",
+      "statement_ko": "클럽이 바깥쪽 경로로 접근한다.",
+      "replaces": ["Over The Top", "Outside Delivery", "Out-To-In Path"],
+      "used_in": ["outside_delivery"]
+    },
+    "M-CLB-03": {
+      "id": "M-CLB-03", "category": "CLB",
+      "statement_en": "The Club Approaches From A Steeper Delivery Pattern.",
+      "statement_ko": "클럽이 가파른 전달 패턴으로 접근한다.",
+      "replaces": ["Steep Shaft Delivery", "The Shaft Steepens"],
+      "used_in": ["steep_shaft", "high_hands"]
+    },
+    "M-CLB-04": {
+      "id": "M-CLB-04", "category": "CLB",
+      "statement_en": "The Club Bottoms Out Behind The Ball.",
+      "statement_ko": "클럽 최저점이 볼 뒤에서 형성된다.",
+      "replaces": ["Low Point Behind Ball", "Bottoms Out Early"],
+      "used_in": ["fat_contact", "head_drop", "head_hanging_back"]
+    },
+    "M-CLB-05": {
+      "id": "M-CLB-05", "category": "CLB",
+      "statement_en": "Lag Is Lost Before Impact.",
+      "statement_ko": "임팩트 전에 래그가 소실된다.",
+      "replaces": ["Loss Of Lag", "Angle Released Too Soon"],
+      "used_in": ["casting", "flip_release"]
+    },
+    "M-CLB-06": {
+      "id": "M-CLB-06", "category": "CLB",
+      "statement_en": "The Clubhead Overtakes The Hands Early.",
+      "statement_ko": "클럽헤드가 손보다 먼저 앞선다.",
+      "replaces": ["Flip", "Clubhead Passes Hands Early", "Scoop"],
+      "used_in": ["flip_release"]
+    },
+    "M-CLB-07": {
+      "id": "M-CLB-07", "category": "CLB",
+      "statement_en": "The Club Face Cannot Square In Time.",
+      "statement_ko": "클럽페이스가 제시간에 스퀘어되지 못한다.",
+      "replaces": ["Face Stays Open", "Face Cannot Rotate In Time"],
+      "used_in": ["club_face_open"]
+    },
+    "M-SPC-01": {
+      "id": "M-SPC-01", "category": "SPC",
+      "statement_en": "The Body Reaches The Lead Side Before The Arms.",
+      "statement_ko": "몸이 팔보다 먼저 리드측에 도달한다.",
+      "replaces": ["Body Ahead Of Arms Into Impact", "Body Gets Left First"],
+      "used_in": ["pelvis_open_early", "arm_stuck"]
+    },
+    "M-SPC-02": {
+      "id": "M-SPC-02", "category": "SPC",
+      "statement_en": "The Body Loses Delivery Space.",
+      "statement_ko": "다운스윙 공간이 부족해진다.",
+      "replaces": ["No Room To Deliver", "Space Collapses"],
+      "used_in": ["early_extension", "high_hands"]
+    },
+    "M-SPC-03": {
+      "id": "M-SPC-03", "category": "SPC",
+      "statement_en": "Reduced Arm Space Promotes Early Club Release.",
+      "statement_ko": "팔 공간 부족으로 클럽을 조기에 풀게 된다.",
+      "replaces": ["No Space Forces Casting", "Tight Space Causes Early Release"],
+      "used_in": ["casting", "early_extension"]
+    },
+    "M-SPC-04": {
+      "id": "M-SPC-04", "category": "SPC",
+      "statement_en": "The Lead Arm Remains Connected To The Thorax.",
+      "statement_ko": "리드암이 흉곽에 계속 붙어 있다.",
+      "replaces": ["Lead Arm Trapped On Chest", "No Arm Separation"],
+      "used_in": ["arm_stuck"]
+    },
+    "M-SPC-05": {
+      "id": "M-SPC-05", "category": "SPC",
+      "statement_en": "The Body Moves Toward The Ball And Loses Space.",
+      "statement_ko": "몸이 볼 방향으로 이동하며 공간을 잃는다.",
+      "replaces": ["Body Drifts To The Ball", "Toward-Ball Movement"],
+      "used_in": ["early_extension", "high_hands"]
+    },
+    "M-LOD-01": {
+      "id": "M-LOD-01", "category": "LOD",
+      "statement_en": "The Lead Hip Cannot Accept Body Load.",
+      "statement_ko": "리드 고관절이 하중을 받아들이지 못한다.",
+      "replaces": ["Lead Hip Fails To Load", "No Left Hip Acceptance"],
+      "used_in": ["early_extension", "pelvis_stall"]
+    },
+    "M-LOD-02": {
+      "id": "M-LOD-02", "category": "LOD",
+      "statement_en": "The Lead Side Cannot Stabilize During Transition.",
+      "statement_ko": "전환 과정에서 리드측이 안정되지 못한다.",
+      "replaces": ["Lead Side Collapses", "No Left Side Stability"],
+      "used_in": ["early_extension"]
+    },
+    "M-LOD-03": {
+      "id": "M-LOD-03", "category": "LOD",
+      "statement_en": "The Lead Leg Accepts Body Load Too Early.",
+      "statement_ko": "리드다리가 너무 일찍 하중을 받아낸다.",
+      "replaces": ["Early Lead Leg Load", "Left Leg Loads Too Soon"],
+      "used_in": ["pelvis_open_early"]
+    },
+    "M-LOD-04": {
+      "id": "M-LOD-04", "category": "LOD",
+      "statement_en": "The Trail Side Continues Supporting Rotation.",
+      "statement_ko": "트레일측이 계속 회전을 지지한다.",
+      "replaces": ["Trail Side Keeps Posting", "Right Side Stays Loaded"],
+      "used_in": ["hanging_back", "head_hanging_back"]
+    },
+    "M-CMP-01": {
+      "id": "M-CMP-01", "category": "CMP",
+      "statement_en": "The Arms Compensate For Delayed Body Motion.",
+      "statement_ko": "몸의 지연을 팔이 보상한다.",
+      "replaces": ["Arms Save The Swing", "Arm Compensation"],
+      "used_in": ["casting", "flip_release", "arm_stuck"]
+    },
+    "M-CMP-02": {
+      "id": "M-CMP-02", "category": "CMP",
+      "statement_en": "The Trail Arm Extends Early To Deliver The Club.",
+      "statement_ko": "클럽 전달을 위해 트레일 팔이 일찍 펴진다.",
+      "replaces": ["Right Arm Straightens Early", "Early Trail Arm Extension"],
+      "used_in": ["casting"]
+    },
+    "M-CMP-03": {
+      "id": "M-CMP-03", "category": "CMP",
+      "statement_en": "The Hands Take Over Club Delivery.",
+      "statement_ko": "손이 클럽 전달을 주도한다.",
+      "replaces": ["Hand Dominance Increase", "Hands Take Control"],
+      "used_in": ["flip_release", "casting", "hand_dominance_increase"]
+    },
+    "M-CMP-04": {
+      "id": "M-CMP-04", "category": "CMP",
+      "statement_en": "The Body Extends Early To Create Space.",
+      "statement_ko": "공간을 만들기 위해 몸이 일찍 신전한다.",
+      "replaces": ["Stand Up To Make Room", "Early Extension Compensation"],
+      "used_in": ["early_extension", "spine_extension_excessive", "head_elevation"]
+    },
+    "M-CMP-05": {
+      "id": "M-CMP-05", "category": "CMP",
+      "statement_en": "The Trail Elbow Collapses Toward The Body.",
+      "statement_ko": "트레일 팔꿈치가 몸통 쪽으로 급격하게 붙는다.",
+      "replaces": ["Trail Elbow Pinch", "Right Elbow Jams In"],
+      "used_in": ["arm_stuck"],
+      "note": "시트 M006."
+    },
+    "M-CMP-06": {
+      "id": "M-CMP-06", "category": "CMP",
+      "statement_en": "The Lead Arm Separates From The Thorax.",
+      "statement_ko": "리드암이 몸통과 분리된다.",
+      "replaces": ["Chicken Wing", "Lead Arm Flies Off Chest"],
+      "used_in": [],
+      "note": "시트 M007. Chicken Wing 전조. P7 연계용 예약."
+    }
+  }
+}
