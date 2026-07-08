@@ -64,10 +64,10 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v26</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v27</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v26"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
-  <br><b style="color:#4ea1ff">NEW v26:</b> <b>🔌 연결 테스트</b> 버튼 — 영상 없이 <code>/v1/health</code>로 접속·CORS·GPU만 먼저 확인("열림"과 "분석됨" 분리 진단). 분석 상태도 7단계로 표시. (v25: FastAPI 비동기 계약 · 순수 fetch)</p>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v27"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <br><b style="color:#4ea1ff">v27(안정화):</b> fetch 타임아웃 · 폴링 <b>일시실패 자동 재시도</b>(터널 흔들림 대비) · 업로드 거부/Job 만료 메시지 개선. Stage 0 5회 연속 검증용. (계약 <code>/v1/*·doh.vision.v1</code>는 동결 — 내부만 하드닝)</p>
 </header>
 
 <div class="wrap">
@@ -287,6 +287,12 @@ function apiBase(){ return (($("beUrl").value||"").trim().replace(/\/+$/,"")) ||
 function beStat(msg,col){ const el=$("beStat"); if(el){ el.innerHTML=msg; el.style.color=col||"#8b97a5"; } }
 (function initBe(){ const s=localStorage.getItem("doh_be_url"); if(s&&$("beUrl")) $("beUrl").value=s; })();
 const _sleep=ms=>new Promise(r=>setTimeout(r,ms));
+// 타임아웃 있는 fetch (AbortController) — 멈춘 요청이 영원히 대기하지 않게
+async function fetchT(url,opts,ms){
+  const ac=new AbortController(), to=setTimeout(()=>ac.abort(),ms);
+  try{ return await fetch(url,Object.assign({},opts||{},{signal:ac.signal})); }
+  finally{ clearTimeout(to); }
+}
 
 // 🔌 연결 테스트 — 영상 없이 /v1/health 로 [1)접속 2)CORS 3)GPU유무] 만 먼저 확인.
 //    "사이트가 열린다"와 "분석이 된다"를 분리 진단. 여기서 실패하면 업로드/분석 볼 것도 없음.
@@ -296,9 +302,9 @@ async function serverHealth(){
   localStorage.setItem("doh_be_url",($("beUrl").value||"").trim().replace(/\/+$/,""));
   $("beHealth").disabled=true; beStat("연결 확인 중… (GET /v1/health)","#8b97a5");
   try{
-    const h=await fetch(base+"/v1/health"); if(!h.ok) throw new Error("HTTP "+h.status);
+    const h=await fetchT(base+"/v1/health",{},8000); if(!h.ok) throw new Error("HTTP "+h.status);
     const j=await h.json();
-    let cap=null; try{ cap=await (await fetch(base+"/v1/capabilities")).json(); }catch(_){}
+    let cap=null; try{ cap=await (await fetchT(base+"/v1/capabilities",{},8000)).json(); }catch(_){}
     const gpu=j.cuda?("✅ GPU "+(j.gpu||"cuda")):"⚠️ CPU (느림)";
     const mdl=j.model_loaded?"로드됨":"미로드(첫 분석 때 로드)";
     beStat(`✅ <b style="color:#3ecf8e">연결 OK · CORS 통과</b> · ${gpu} · 모델 ${mdl}`
@@ -319,22 +325,35 @@ async function serverAnalyze(){
   localStorage.setItem("doh_be_url",($("beUrl").value||"").trim().replace(/\/+$/,""));
   $("beRun").disabled=true; beStat("③ 영상 업로드 중…","#8b97a5");
   try{
-    // ③ 영상 업로드 + ④ Job 생성
+    // ③ 영상 업로드 + ④ Job 생성 (업로드 타임아웃 120초)
     const fd=new FormData();
     fd.append("file",curFile,curFile.name||"swing.mp4");
     fd.append("view",curView||"FO"); fd.append("hand",$("hand").value);
-    const sub=await fetch(base+"/v1/analyze/video",{method:"POST",body:fd});
-    if(!sub.ok) throw new Error("업로드/제출 실패 HTTP "+sub.status);
+    let sub;
+    try{ sub=await fetchT(base+"/v1/analyze/video",{method:"POST",body:fd},120000); }
+    catch(e){ throw new Error(/abort/i.test((e&&e.message)||"")?"③ 업로드 시간 초과(120초) — 파일이 크거나 연결이 느립니다.":"③ 업로드 전송 실패 — 연결/주소 확인."); }
+    if(!sub.ok){
+      let em="HTTP "+sub.status; try{ const b=await sub.json(); if(b&&b.error) em=b.error; }catch(_){}
+      throw new Error("③ 업로드 거부됨: "+em);
+    }
     const {job_id}=await sub.json();
-    if(!job_id) throw new Error("job_id를 못 받음(④ Job 생성 실패)");
-    // ⑤ 분석 진행 폴링 → ⑥ 결과 수신 (최대 ~5분)
+    if(!job_id) throw new Error("④ Job 생성 실패(job_id 없음)");
+    // ⑤ 폴링 → ⑥ 결과 → ⑦ 표시. 일시적 조회 실패는 재시도(터널 흔들림 대비), 최대 ~5분.
     beStat(`④ Job 생성됨(${job_id}) · ⑤ 3D 추론 중…`,"#8b97a5");
-    const t0=Date.now();
+    const t0=Date.now(); let pollFails=0;
     while(true){
       await _sleep(1500);
-      const jr=await fetch(base+"/v1/jobs/"+job_id);
-      if(!jr.ok) throw new Error("작업 조회 실패 HTTP "+jr.status);
-      const j=await jr.json();
+      let j;
+      try{
+        const jr=await fetchT(base+"/v1/jobs/"+job_id,{},10000);
+        if(jr.status===404){ beStat("⑤ 작업을 서버에서 못 찾음(서버 재시작·Job 만료 가능). 다시 <b>[서버로 분석]</b>.","#ff6b6b"); return; }
+        if(!jr.ok) throw new Error("HTTP "+jr.status);
+        j=await jr.json(); pollFails=0;
+      }catch(err){
+        pollFails++;
+        if(pollFails>=4) throw new Error("⑤ 작업 조회 연속 실패("+pollFails+"): "+((err&&err.message)||err));
+        beStat(`⑤ 추론 중… (일시적 연결 흔들림, 재시도 ${pollFails}/3)`,"#ffb648"); continue;
+      }
       if(j.status==="done"){
         renderV1(j.result);   // ⑦ UI 표시
         if($("v3dStat")) $("v3dStat").textContent="✅ 서버 3D 분석 완료";
@@ -344,15 +363,14 @@ async function serverAnalyze(){
       if(j.status==="error"){ beStat("⑤ 분석 실패: <b>"+(j.error||"?")+"</b>","#ff6b6b"); return; }
       const sec=((Date.now()-t0)/1000|0);
       beStat(`⑤ 3D 추론 중… (${j.status}, ${sec}s 경과)`,"#8b97a5");
-      if(Date.now()-t0>300000){ beStat("시간 초과(5분). 서버 상태를 확인하세요.","#ff6b6b"); return; }
+      if(Date.now()-t0>300000){ beStat("⑤ 시간 초과(5분) — 서버 상태를 확인하세요.","#ff6b6b"); return; }
     }
   }catch(e){
     const msg=((e&&e.message)||e)+"";
-    const fetchFail=/failed to fetch|networkerror|load failed/i.test(msg);
-    beStat("서버 연결/분석 실패: <b>"+msg+"</b><br>"+(fetchFail
-      ? "백엔드에 못 닿았어요 — ① 주소가 맞고 서버가 켜져 있는지 ② (콜랩/터널이면) 아직 살아있는지 확인. "
-        + "터널 주소는 재시작 시 바뀝니다. 정식 배포(api.dohvision.com) 후엔 고정됩니다."
-      : "서버 오류일 수 있어요. 아래 <b>③ 회전</b> 옆 JSON 파일 불러오기로 우회 가능."),"#ff6b6b");
+    const fetchFail=/failed to fetch|networkerror|load failed|전송 실패/i.test(msg);
+    beStat("분석 중단: <b>"+msg+"</b>"+(fetchFail
+      ? "<br>백엔드에 못 닿았어요 — ① 주소가 맞고 서버가 켜져 있는지 ② (콜랩/터널이면) 아직 살아있는지. 🔌 연결 테스트로 먼저 확인하세요."
+      : ""),"#ff6b6b");
   }finally{ $("beRun").disabled=false; }
 }
 $("beRun").addEventListener("click",serverAnalyze);

@@ -168,6 +168,23 @@
 - 집PC 개발루프(터널 불필요): `uvicorn app:app --port 8000` 후 analyzer2 override칸에 `http://localhost:8000`
   (브라우저의 localhost 예외로 https페이지→http localhost fetch 허용).
 
+## 5l. Stage 0 안정화(하드닝) — **진행중(2026-07-04)** 🔨  계약 동결 유지
+기능 추가 중단, 버그·안정성 우선. **`/v1/*`·`doh.vision.v1` 계약 무변경.**
+- **서버(`server/app.py`):** 구조화 로그(job 수명·소요초), 업로드 검증(빈/초과 `DOH_MAX_UPLOAD_MB` 400),
+  영상 열기 실패·0프레임 명시 에러, 긴 영상 안전샘플(`NLF_MAX_FRAMES` 균등, fps보정), **GPU `empty_cache()` (8GB 집PC 5연속 대비)**,
+  OOM 전용 메시지, Job 자동정리(`DOH_MAX_JOBS`). 동기 `/analyze`도 400 정합.
+- **프론트(`analyzer2` v27):** `fetchT`(AbortController 타임아웃: 업로드 120s·폴링 10s),
+  **폴링 일시실패 자동 재시도(3회)** — 터널 흔들림에도 안 죽음. 404(Job 만료)·업로드 거부 메시지 개선. 7단계 라벨.
+- **검증(목서버+Chromium):** 빈파일→"③ 업로드 거부됨", 폴링 첫2회 503→재시도→"✅ 7단계 완료" PASS. server compile·analyzer2 node --check OK.
+- ⚠️ 실 GPU/사지방 왕복 미검증(이 세션 GPU 없음).
+
+## Stage 0 완료 기준 (사용자 확정 — 이거 다 되면 완료)
+**기능(7):** 연결테스트·업로드·Job생성·GPU분석완료·JSON반환·analyzer2 렌더 (7단계 초록).
+**안정성:** 같은 영상 **5회 연속** — 실패0·Job누락0·UI오류0.
+**환경:** **집PC** + **사지방** 둘 다 확인.
+**계약:** Stage0 종료까지 `/v1/*`·doh.vision.v1 **무변경**.
+→ 핵심 성공기준: "사용자가 아무 설정 신경 안 쓰고 업로드→분석→결과가 안정 반복." 완료 후 Stage1(Modal PoC) 시작.
+
 ## 6. 다음 할 일 (우선순위)
 1. ~~JSON 계약 고정~~(§5b) · ~~Metrics 1차~~(§5c) · ~~up축+척추각~~(§5d) · ~~집PC 서버+웹UI~~(§5e) · ~~무료 Colab Gradio UI~~(§5f) → **완료.**
 2. **집 PC 첫 구동·검증**: start.bat → localhost:8000 → 측면영상 분석 → 척추각 55~65°·스웨이 null 확인. `/health` cuda:true.

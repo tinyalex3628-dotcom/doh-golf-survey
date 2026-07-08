@@ -16,8 +16,11 @@ DOH Vision 서버 (FastAPI) — Stage 0 계약 고정
 실행:  python -m uvicorn app:app --host 0.0.0.0 --port 8000
 환경변수: NLF_MODEL, NLF_MAX_SIDE(기본 720), DOH_CORS_ORIGINS(기본 *)
 """
-import os, sys, uuid, tempfile, traceback, threading
+import os, sys, uuid, time, tempfile, traceback, threading, logging
 from concurrent.futures import ThreadPoolExecutor
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] doh: %(message)s")
+log = logging.getLogger("doh")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -37,6 +40,9 @@ from wham_golf_rotation import build_v1
 MODEL_URL = "https://github.com/isarandi/nlf/releases/download/v0.3.2/nlf_l_multi_0.3.2.torchscript"
 MODEL_PATH = os.environ.get("NLF_MODEL", os.path.join(HERE, "nlf_l_multi_0.3.2.torchscript"))
 MAX_SIDE = int(os.environ.get("NLF_MAX_SIDE", "720"))
+MAX_FRAMES = int(os.environ.get("NLF_MAX_FRAMES", "600"))     # 안전 상한: 긴 영상 균등샘플(정상 스윙엔 영향 없음)
+MAX_JOBS = int(os.environ.get("DOH_MAX_JOBS", "50"))          # Job 메모리 상한(오래된 완료건 제거)
+MAX_UPLOAD_MB = int(os.environ.get("DOH_MAX_UPLOAD_MB", "200"))
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 POSE_MODEL = "nlf_l_multi 0.3.2"
 
@@ -73,31 +79,42 @@ def _ensure_model():
 
 
 def video_to_joints(path, max_side=MAX_SIDE):
-    """영상 → (T,J,3) SMPL-24 3D 관절 + fps. 프레임을 max_side로 줄여 VRAM 절약."""
+    """영상 → (T,J,3) SMPL-24 3D 관절 + 효과적 fps.
+       프레임을 max_side로 줄여 VRAM 절약. 매우 긴 영상은 MAX_FRAMES로 균등샘플(fps 보정)해 처리시간 제한."""
     model = _ensure_model()
     cap = cv2.VideoCapture(path)
+    if not cap.isOpened():
+        cap.release()
+        raise ValueError("영상을 열 수 없음(형식 손상/미지원 코덱). mp4·mov 권장.")
     fps = cap.get(cv2.CAP_PROP_FPS) or 60.0
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+    stride = max(1, round(total / MAX_FRAMES)) if (MAX_FRAMES and total > MAX_FRAMES) else 1
+    eff_fps = fps / stride
     J = []
+    idx = 0
     with torch.inference_mode():
         while True:
             ok, fr = cap.read()
             if not ok:
                 break
-            h, w = fr.shape[:2]
-            sc = max_side / max(h, w)
-            if sc < 1.0:
-                fr = cv2.resize(fr, (int(w * sc), int(h * sc)), interpolation=cv2.INTER_AREA)
-            rgb = cv2.cvtColor(fr, cv2.COLOR_BGR2RGB)
-            t = torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).to(DEVICE)  # [1,3,H,W] uint8
-            pred = model.detect_smpl_batched(t)
-            per = pred["joints3d"][0]
-            if per is None or len(per) == 0:
-                continue
-            kp = per[0]
-            kp = kp.detach().cpu().numpy() if torch.is_tensor(kp) else np.asarray(kp)
-            J.append(kp)
+            if idx % stride == 0:
+                h, w = fr.shape[:2]
+                sc = max_side / max(h, w)
+                if sc < 1.0:
+                    fr = cv2.resize(fr, (int(w * sc), int(h * sc)), interpolation=cv2.INTER_AREA)
+                rgb = cv2.cvtColor(fr, cv2.COLOR_BGR2RGB)
+                t = torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).to(DEVICE)  # [1,3,H,W] uint8
+                pred = model.detect_smpl_batched(t)
+                per = pred["joints3d"][0]
+                if per is not None and len(per) > 0:
+                    kp = per[0]
+                    kp = kp.detach().cpu().numpy() if torch.is_tensor(kp) else np.asarray(kp)
+                    J.append(kp)
+            idx += 1
     cap.release()
-    return np.asarray(J), round(float(fps), 2)
+    if idx == 0:
+        raise ValueError("프레임을 하나도 못 읽음(빈/손상 영상).")
+    return np.asarray(J), round(float(eff_fps), 2)
 
 
 def analyze_to_inst(path, view, hand, filename):
@@ -114,28 +131,61 @@ def analyze_to_inst(path, view, hand, filename):
     return inst
 
 
+def _evict_jobs():
+    """Job 메모리 상한: 완료/에러된 오래된 것부터 제거(진행중은 유지). dict는 생성순."""
+    if len(JOBS) <= MAX_JOBS:
+        return
+    done = [k for k, v in JOBS.items() if v["status"] in ("done", "error")]
+    for k in done[:max(0, len(JOBS) - MAX_JOBS)]:
+        JOBS.pop(k, None)
+
+
 def _run_job(job_id, path, view, hand, filename):
+    t0 = time.time()
     JOBS[job_id]["status"] = "running"
+    log.info("job %s running (view=%s hand=%s file=%s)", job_id, view, hand, filename)
     try:
         inst = analyze_to_inst(path, view, hand, filename)
         JOBS[job_id].update(status="done", result=inst)
-    except ValueError as e:
+        log.info("job %s done in %.1fs (feat=%d ev=%d)", job_id, time.time() - t0,
+                 len(inst.get("features", [])), len(inst.get("swing_events", [])))
+    except ValueError as e:                    # 사용자 원인(영상 문제) — 조용히 에러 상태로
         JOBS[job_id].update(status="error", error=str(e))
+        log.warning("job %s user-error: %s", job_id, e)
+    except RuntimeError as e:                   # OOM 등 런타임
+        oom = "out of memory" in str(e).lower()
+        msg = "GPU 메모리 부족 — NLF_MAX_SIDE를 낮추거나 더 짧은 영상으로." if oom else f"런타임 오류: {e}"
+        JOBS[job_id].update(status="error", error=msg)
+        log.error("job %s runtime%s: %s", job_id, " OOM" if oom else "", e)
     except Exception as e:
         traceback.print_exc()
-        JOBS[job_id].update(status="error", error=str(e))
+        JOBS[job_id].update(status="error", error=f"내부 오류: {e}")
+        log.error("job %s exception: %s", job_id, e)
     finally:
+        if DEVICE == "cuda":                    # 5연속 분석 시 8GB VRAM 파편화/누적 방지
+            try:
+                torch.cuda.empty_cache()
+            except Exception:
+                pass
         try:
             os.unlink(path)
         except Exception:
             pass
+        _evict_jobs()
 
 
 async def _save_upload(file):
+    """업로드 파일 검증 후 임시 저장. 빈 파일/초과 시 ValueError."""
+    data = await file.read()
+    if not data:
+        raise ValueError("빈 파일 — 영상이 업로드되지 않았습니다.")
+    if len(data) > MAX_UPLOAD_MB * 1024 * 1024:
+        raise ValueError(f"파일이 너무 큽니다(>{MAX_UPLOAD_MB}MB). 더 짧거나 작은 영상으로.")
     suffix = os.path.splitext(file.filename or "video.mp4")[1] or ".mp4"
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-    tmp.write(await file.read())
+    tmp.write(data)
     tmp.close()
+    log.info("upload received: %s (%.1f MB)", file.filename, len(data) / 1e6)
     return tmp.name
 
 
@@ -144,10 +194,14 @@ async def _save_upload(file):
 async def analyze_video(file: UploadFile = File(...),
                         view: str = Form("unknown"), hand: str = Form("right")):
     """영상 제출 → job_id 반환(202). 무거운 분석은 백그라운드에서. 결과는 /v1/jobs/{id} 폴링."""
-    path = await _save_upload(file)
+    try:
+        path = await _save_upload(file)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
     job_id = uuid.uuid4().hex[:12]
     JOBS[job_id] = {"status": "queued", "result": None, "error": None}
     _EXEC.submit(_run_job, job_id, path, view, hand, file.filename)
+    log.info("job %s queued (pending=%d)", job_id, len(JOBS))
     return JSONResponse({"job_id": job_id, "status": "queued"}, status_code=202)
 
 
@@ -195,7 +249,10 @@ def health():
 async def analyze(file: UploadFile = File(...),
                   view: str = Form("unknown"), hand: str = Form("right")):
     """동기: 영상 → doh.vision.v1 즉시 반환(레거시/짧은 영상용)."""
-    path = await _save_upload(file)
+    try:
+        path = await _save_upload(file)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
     try:
         return JSONResponse(analyze_to_inst(path, view, hand, file.filename))
     except ValueError as e:
