@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+body{margin:0;background:#E4E0D6;font-family:Pretendard,-apple-system,sans-serif;color:#1B2620}
+a{color:#2E5C44;text-decoration:none}a:hover{color:#17382A}
+@keyframes scrIn{0%{transform:translateX(22px);opacity:0}100%{transform:translateX(0);opacity:1}}
+@keyframes scrBack{0%{transform:translateX(-22px);opacity:0}100%{transform:translateX(0);opacity:1}}
+@keyframes sheetUp{0%{transform:translateY(100%)}100%{transform:translateY(0)}}
+@keyframes fadeBg{0%{opacity:0}100%{opacity:1}}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:24px;background:transparent;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:100px;background:rgba(247,244,236,.25)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#EDD9A3;margin-top:-7px;border:2px solid #0F2419;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+::-webkit-scrollbar{width:0;height:0}
+.doh-btn{cursor:pointer;user-select:none}
+</style>
+</helmet>
+
+<div style="display:flex; gap:28px; align-items:flex-start; padding:34px; box-sizing:border-box; min-height:100vh">
+
+  <!-- ═══ SIDE: flow legend ═══ -->
+  <div style="width:264px; flex:none; position:sticky; top:34px">
+    <div style="font-size:20px; font-weight:800; letter-spacing:-.02em; color:#17382A">DOH · User Flow</div>
+    <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:3px; line-height:1.5">버튼을 누르면 화면이 이동하는 동작 프로토타입. 각 화면은 독립 페이지입니다.</div>
+
+    <div style="margin-top:18px; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(27,38,32,.45)">현재 페이지</div>
+    <div style="margin-top:6px; padding:11px 13px; background:#17382A; border-radius:11px; color:#F7F4EC">
+      <div style="font-size:13px; font-weight:800">{{ curName }}</div>
+      <div style="font-size:10.5px; color:rgba(247,244,236,.6); margin-top:2px; line-height:1.45">{{ curPurpose }}</div>
+    </div>
+
+    <div style="margin-top:8px; padding:11px 13px; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); border-radius:11px">
+      <div style="font-size:9px; font-weight:800; letter-spacing:.08em; color:#B07A2E">이동 가능한 다음 페이지</div>
+      <div style="font-size:11px; color:rgba(27,38,32,.72); margin-top:4px; line-height:1.55">{{ curNext }}</div>
+      <div style="font-size:9px; font-weight:800; letter-spacing:.08em; color:#B07A2E; margin-top:8px">이전 페이지</div>
+      <div style="font-size:11px; color:rgba(27,38,32,.72); margin-top:4px; line-height:1.55">{{ curBack }}</div>
+    </div>
+
+    <div style="margin-top:14px; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(27,38,32,.45)">전체 페이지 바로가기</div>
+    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:8px">
+      <sc-for list="{{ jumpList }}" as="j" hint-placeholder-count="14">
+        <div class="doh-btn" onClick="{{ j.go }}" style="{{ j.style }}">{{ j.label }}</div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ═══ PHONE ═══ -->
+  <div style="flex:none; width:378px; height:800px; border-radius:44px; background:#0F2419; border:11px solid #0B1510; box-shadow:0 40px 80px -24px rgba(11,21,16,.55); position:relative; overflow:hidden; box-sizing:border-box">
+    <div style="position:absolute; top:11px; left:50%; transform:translateX(-50%); width:118px; height:26px; background:#0B1510; border-radius:100px; z-index:40"></div>
+
+    <!-- SCREEN VIEWPORT -->
+    <div style="position:absolute; inset:0; background:#F2EFE8; overflow:hidden">
+      <div key="{{ route }}" style="{{ screenAnim }}; position:absolute; inset:0; display:flex; flex-direction:column">
+
+        <!-- top bar -->
+        <div style="flex:none; height:52px; padding:14px 16px 0; display:flex; align-items:center; justify-content:space-between; box-sizing:border-box">
+          <sc-if value="{{ showBack }}" hint-placeholder-val="{{ false }}">
+            <div class="doh-btn" onClick="{{ goBack }}" style="width:34px; height:34px; border-radius:50%; background:rgba(27,38,32,.06); display:flex; align-items:center; justify-content:center; font-size:19px; color:#17382A; margin-top:6px" style-active="background:rgba(27,38,32,.14)">‹</div>
+          </sc-if>
+          <sc-if value="{{ showBrand }}" hint-placeholder-val="{{ true }}">
+            <div style="font-size:17px; font-weight:800; letter-spacing:-.02em; color:#17382A; margin-top:6px">DOH</div>
+          </sc-if>
+          <div style="font-size:12.5px; font-weight:800; color:#17382A; margin-top:6px; text-align:center; flex:1">{{ barTitle }}</div>
+          <div style="width:34px; margin-top:6px"></div>
+        </div>
+
+        <!-- scroll body -->
+        <div style="flex:1; overflow-y:auto; padding:8px 16px 92px; box-sizing:border-box">
+
+          <!-- ═══════ HOME ═══════ -->
+          <sc-if value="{{ rHome }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:6px 2px 0">
+              <div style="font-size:23px; font-weight:800; letter-spacing:-.02em; color:#17382A; line-height:1.25">안녕하세요,<br>오늘도 한 걸음 나아가요</div>
+              <div style="font-size:12.5px; color:rgba(27,38,32,.5); margin-top:5px">7월 22일 · 연속 6일째</div>
+            </div>
+
+            <div class="doh-btn" onClick="{{ toHomework }}" style="margin-top:16px; border-radius:20px; padding:18px 20px; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); box-shadow:0 10px 26px -16px rgba(11,21,16,.4)" style-active="transform:scale(.99)">
+              <div style="display:flex; align-items:center; justify-content:space-between">
+                <div style="font-size:10.5px; font-weight:800; letter-spacing:.1em; color:#B07A2E">이번 주 목표 숙제</div>
+                <div style="padding:3px 10px; border-radius:100px; background:rgba(176,122,46,.14); color:#B07A2E; font-size:10.5px; font-weight:800">2개 남음</div>
+              </div>
+              <div style="font-size:18px; font-weight:800; margin-top:8px; letter-spacing:-.02em; color:#17382A; line-height:1.35">임팩트에서 골반 먼저 리드하기<br>+ 백스윙 탑 위치 고정</div>
+              <div style="margin-top:12px; height:7px; border-radius:100px; background:rgba(27,38,32,.08); overflow:hidden">
+                <div style="width:40%; height:100%; border-radius:100px; background:linear-gradient(90deg,#2E5C44,#17382A)"></div>
+              </div>
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-top:9px">
+                <div style="font-size:11px; color:rgba(27,38,32,.5)">이도형 프로 · 마감 7/27</div>
+                <div style="font-size:12.5px; font-weight:800; color:#2E5C44">확인하기 ›</div>
+              </div>
+            </div>
+
+            <div style="font-size:11px; font-weight:800; color:rgba(27,38,32,.45); margin-top:20px; letter-spacing:.04em">바로가기</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px">
+              <div class="doh-btn" onClick="{{ toHub1 }}" style="border-radius:18px; padding:16px; aspect-ratio:1/0.92; background:linear-gradient(160deg,#1B4030,#17382A); color:#F7F4EC; display:flex; flex-direction:column; box-shadow:0 12px 26px -14px rgba(23,56,42,.45)" style-active="transform:scale(.98)">
+                <div style="flex:none; width:40px; height:40px; border-radius:12px; background:rgba(237,217,163,.16); display:flex; align-items:center; justify-content:center; font-size:19px">🎬</div>
+                <div style="margin-top:auto"><div style="font-size:16px; font-weight:800">스윙 분석</div><div style="font-size:10.5px; color:rgba(247,244,236,.6); margin-top:3px; line-height:1.35">AI 분석 · 업로드 · 갤러리</div></div>
+              </div>
+              <div class="doh-btn" onClick="{{ toHub2 }}" style="border-radius:18px; padding:16px; aspect-ratio:1/0.92; background:#FFFFFF; border:1.5px solid #B07A2E; display:flex; flex-direction:column" style-active="transform:scale(.98)">
+                <div style="flex:none; width:40px; height:40px; border-radius:12px; background:rgba(176,122,46,.14); display:flex; align-items:center; justify-content:center; font-size:19px">⚔</div>
+                <div style="margin-top:auto"><div style="font-size:16px; font-weight:800; color:#17382A">프로와 비교</div><div style="font-size:10.5px; color:rgba(27,38,32,.55); margin-top:3px; line-height:1.35">프로 스윙과 나란히</div></div>
+              </div>
+              <div class="doh-btn" onClick="{{ toFeedback }}" style="border-radius:18px; padding:16px; aspect-ratio:1/0.92; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); display:flex; flex-direction:column" style-active="transform:scale(.98)">
+                <div style="flex:none; width:40px; height:40px; border-radius:12px; background:rgba(46,92,68,.1); display:flex; align-items:center; justify-content:center; font-size:19px">💬</div>
+                <div style="margin-top:auto"><div style="font-size:16px; font-weight:800; color:#17382A">프로에게 문의</div><div style="font-size:10.5px; color:rgba(27,38,32,.5); margin-top:3px; line-height:1.35">궁금할 때 언제든</div></div>
+              </div>
+              <div class="doh-btn" onClick="{{ toSubscription }}" style="border-radius:18px; padding:16px; aspect-ratio:1/0.92; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); display:flex; flex-direction:column" style-active="transform:scale(.98)">
+                <div style="flex:none; width:40px; height:40px; border-radius:12px; background:rgba(46,92,68,.1); display:flex; align-items:center; justify-content:center; font-size:19px">📖</div>
+                <div style="margin-top:auto"><div style="font-size:16px; font-weight:800; color:#17382A">구독 안내</div><div style="font-size:10.5px; color:rgba(27,38,32,.5); margin-top:3px; line-height:1.35">혜택 · 오프라인 · 프로</div></div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ═══════ HUB 1 · 내 스윙 분석하기 ═══════ -->
+          <sc-if value="{{ rHub1 }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:2px 2px 0">
+              <div style="font-size:22px; font-weight:800; letter-spacing:-.02em; color:#17382A; line-height:1.25">스윙 분석</div>
+              <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:4px; line-height:1.5">AI 분석부터 시작하거나, 아래 페이지로 바로 이동할 수 있어요.</div>
+            </div>
+            <div class="doh-btn" onClick="{{ toAiSurvey }}" style="margin-top:16px; border-radius:20px; padding:20px; background:linear-gradient(160deg,#1B4030,#17382A); color:#F7F4EC; box-shadow:0 14px 30px -12px rgba(23,56,42,.4)" style-active="transform:scale(.99)">
+              <div style="font-size:10.5px; font-weight:800; letter-spacing:.1em; color:#EDD9A3">AI 스윙분석 · 추천</div>
+              <div style="font-size:21px; font-weight:800; margin-top:6px; letter-spacing:-.02em">AI 스윙분석 + 설문</div>
+              <div style="font-size:12px; color:rgba(247,244,236,.6); margin-top:5px; line-height:1.55">간단한 설문 → 스윙 등록 → 추가 질문 → 맞춤 분석 결과<br>내 몸과 목표에 맞춘 분석을 받아보세요</div>
+              <div style="margin-top:14px; display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:800; color:#EDD9A3">시작하기 <span style="font-size:15px">›</span></div>
+            </div>
+            <div style="font-size:11px; font-weight:800; color:rgba(27,38,32,.45); margin-top:18px; letter-spacing:.04em">또는 직접 이동하기</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:9px">
+              <sc-for list="{{ hub1Cards }}" as="c" hint-placeholder-count="4">
+                <div class="doh-btn" onClick="{{ c.go }}" style="border-radius:16px; padding:15px; aspect-ratio:1/0.9; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); display:flex; flex-direction:column" style-active="transform:scale(.98)">
+                  <div style="flex:none; width:40px; height:40px; border-radius:12px; background:{{ c.iconBg }}; display:flex; align-items:center; justify-content:center; font-size:19px">{{ c.icon }}</div>
+                  <div style="margin-top:auto">
+                    <div style="font-size:9px; font-weight:800; letter-spacing:.06em; color:#B07A2E">{{ c.tag }}</div>
+                    <div style="font-size:14.5px; font-weight:800; color:#17382A; margin-top:2px">{{ c.name }}</div>
+                    <div style="font-size:10.5px; color:rgba(27,38,32,.5); margin-top:2px; line-height:1.35">{{ c.desc }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div class="doh-btn" onClick="{{ toHub2 }}" style="margin-top:12px; border-radius:16px; padding:15px 16px; background:#17382A; color:#F7F4EC; display:flex; align-items:center; gap:11px" style-active="transform:scale(.99)">
+              <div style="flex:none; width:36px; height:36px; border-radius:10px; background:rgba(237,217,163,.16); display:flex; align-items:center; justify-content:center; font-size:17px">⚔</div>
+              <div style="flex:1"><div style="font-size:14px; font-weight:800">프로와 비교하기 (Hub 2)</div><div style="font-size:10.5px; color:rgba(247,244,236,.6); margin-top:1px">여기서도, Home에서도 진입 가능</div></div>
+              <div style="color:#EDD9A3; font-size:16px">›</div>
+            </div>
+          </sc-if>
+
+          <!-- ═══════ 스윙 업로드 ═══════ -->
+          <sc-if value="{{ rUpload }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:20px; font-weight:800; letter-spacing:-.02em; color:#17382A; padding-top:2px">오늘 스윙을 올려볼까요?</div>
+            <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:4px">정면과 측면, 두 각도를 올리면 더 정확해요.</div>
+            <div style="display:flex; gap:11px; margin-top:18px">
+              <sc-for list="{{ uploadSlots }}" as="u" hint-placeholder-count="2">
+                <div class="doh-btn" onClick="{{ u.toggle }}" style="{{ u.style }}" style-active="transform:scale(.98)">
+                  <div style="font-size:30px">{{ u.icon }}</div>
+                  <div style="font-size:14px; font-weight:800; margin-top:8px; color:{{ u.fg }}">{{ u.label }}</div>
+                  <div style="font-size:10.5px; margin-top:3px; color:{{ u.subFg }}">{{ u.state }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div class="doh-btn" onClick="{{ toSingle }}" style="{{ uploadNextStyle }}" style-active="transform:scale(.99)">단독 분석으로 이동 ›</div>
+            <div style="margin-top:12px; padding:13px 15px; background:rgba(27,38,32,.04); border-radius:13px; font-size:11.5px; line-height:1.6; color:rgba(27,38,32,.6)">두 슬롯을 탭해 업로드 상태를 토글해 보세요. 업로드가 완료되면 <b>단독 분석 페이지</b>로 넘어갑니다.</div>
+          </sc-if>
+
+          <!-- ═══════ 갤러리 ═══════ -->
+          <sc-if value="{{ rGallery }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:20px; font-weight:800; letter-spacing:-.02em; color:#17382A; padding-top:2px">내 스윙 갤러리</div>
+            <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:4px">과거 스윙을 날짜별로 모아뒀어요. 탭하면 단독 분석으로.</div>
+            <div style="display:flex; flex-direction:column; gap:16px; margin-top:16px">
+              <sc-for list="{{ galleryGroups }}" as="g" hint-placeholder-count="2">
+                <div>
+                  <div style="font-size:11px; font-weight:800; color:rgba(27,38,32,.45); letter-spacing:.04em">{{ g.date }}</div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:8px">
+                    <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2">
+                      <div class="doh-btn" onClick="{{ toSingle }}" style="background:#FFFFFF; border:1px solid rgba(27,38,32,.09); border-radius:13px; padding:8px" style-active="transform:scale(.98)">
+                        <div style="aspect-ratio:4/5; border-radius:9px; background:linear-gradient(150deg,#3A5E4A,#0F2419); position:relative; overflow:hidden">
+                          <div style="position:absolute; top:6px; left:6px; padding:2px 7px; border-radius:100px; background:rgba(11,21,16,.72); color:#EDD9A3; font-size:9px; font-weight:800">{{ it.side }}</div>
+                          <div style="position:absolute; bottom:6px; right:6px; width:22px; height:22px; border-radius:50%; background:rgba(247,244,236,.9); display:flex; align-items:center; justify-content:center; font-size:10px; color:#17382A">▶</div>
+                        </div>
+                        <div style="font-size:11px; font-weight:800; color:#17382A; margin-top:6px">{{ it.club }}</div>
+                        <div style="font-size:10px; color:rgba(27,38,32,.5); margin-top:1px">{{ it.tag }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- ═══════ 단독 분석 ═══════ -->
+          <sc-if value="{{ rSingle }}" hint-placeholder-val="{{ false }}">
+            <div style="border-radius:16px; overflow:hidden; background:#0F2419; position:relative; aspect-ratio:3/4">
+              <div style="position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); width:34%; height:74%; border-radius:42% 42% 30% 30%; background:rgba(247,244,236,.1); border:1px dashed rgba(247,244,236,.3)"></div>
+              <svg style="position:absolute; inset:0; width:100%; height:100%" viewBox="0 0 100 133" preserveAspectRatio="none">
+                <line x1="14" y1="115" x2="86" y2="115" stroke="rgba(237,217,163,.4)" stroke-width=".4" stroke-dasharray="2 2"></line>
+                <line x1="30" y1="115" x2="70" y2="{{ lineY }}" stroke="#EDD9A3" stroke-width="1"></line>
+              </svg>
+              <div style="position:absolute; top:50%; left:56%; padding:3px 8px; border-radius:100px; background:rgba(11,21,16,.85); color:#EDD9A3; font-size:11px; font-weight:800">{{ angleTxt }}</div>
+              <div style="position:absolute; top:10px; left:10px; display:flex; gap:6px">
+                <div class="doh-btn" onClick="{{ toggleLine }}" style="{{ lineBtnStyle }}" style-active="opacity:.7">✎ 선 그리기</div>
+              </div>
+              <div style="position:absolute; top:10px; right:10px; display:flex; gap:6px">
+                <div class="doh-btn" onClick="{{ doCapture }}" style="padding:5px 9px; border-radius:100px; background:rgba(11,21,16,.65); color:#F7F4EC; font-size:11px; font-weight:800" style-active="opacity:.7">📷</div>
+              </div>
+              <!-- P ticks -->
+              <div style="position:absolute; bottom:44px; left:10px; right:10px; display:flex; gap:2px">
+                <sc-for list="{{ pTicks }}" as="p" hint-placeholder-count="10">
+                  <div style="flex:1; text-align:center; font-size:8px; font-weight:800; padding:2px 0; border-radius:4px; color:{{ p.color }}; background:{{ p.bg }}">{{ p.label }}</div>
+                </sc-for>
+              </div>
+              <div style="position:absolute; bottom:12px; left:12px; right:12px">
+                <input type="range" min="0" max="100" value="{{ frame }}" onInput="{{ onFrame }}">
+              </div>
+            </div>
+            <div style="display:flex; gap:7px; margin-top:10px">
+              <div class="doh-btn" onClick="{{ stepBack }}" style="flex:1; padding:11px; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); border-radius:11px; text-align:center; font-size:12px; font-weight:800; color:#17382A" style-active="transform:scale(.97)">◀ 프레임</div>
+              <div class="doh-btn" onClick="{{ stepFwd }}" style="flex:1; padding:11px; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); border-radius:11px; text-align:center; font-size:12px; font-weight:800; color:#17382A" style-active="transform:scale(.97)">프레임 ▶</div>
+            </div>
+            <div style="margin-top:10px; background:#FFFFFF; border:1px solid rgba(27,38,32,.09); border-radius:14px; padding:14px 15px">
+              <div style="font-size:9.5px; font-weight:800; letter-spacing:.06em; color:#B07A2E">AI 분석 · 참고용</div>
+              <div style="font-size:13.5px; font-weight:700; color:#17382A; margin-top:4px; line-height:1.5">임팩트(P4)에서 골반 회전이 어깨보다 늦게 시작돼요.</div>
+            </div>
+            <div style="font-size:11px; font-weight:800; color:rgba(27,38,32,.45); margin-top:16px; letter-spacing:.04em">다음 페이지로 이동</div>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px">
+              <div class="doh-btn" onClick="{{ toMulti }}" style="padding:14px 16px; border-radius:13px; background:#17382A; color:#F7F4EC; display:flex; align-items:center; justify-content:space-between" style-active="transform:scale(.99)"><span style="font-size:13.5px; font-weight:800">멀티스크린 비교</span><span>›</span></div>
+              <div class="doh-btn" onClick="{{ toHub2 }}" style="padding:14px 16px; border-radius:13px; background:#FFFFFF; border:1.5px solid #B07A2E; color:#17382A; display:flex; align-items:center; justify-content:space-between" style-active="transform:scale(.99)"><span style="font-size:13.5px; font-weight:800">프로와 비교하기</span><span style="color:#B07A2E">›</span></div>
+              <div class="doh-btn" onClick="{{ toFeedback }}" style="padding:13px 16px; border-radius:13px; background:rgba(176,122,46,.09); border:1px dashed rgba(176,122,46,.4); color:#17382A; display:flex; align-items:center; justify-content:space-between" style-active="transform:scale(.99)"><span style="font-size:12.5px; font-weight:800">이 부분, 프로에게 물어보기</span><span style="color:#B07A2E">›</span></div>
+            </div>
+          </sc-if>
+
+          <!-- ═══════ 멀티스크린 비교 ═══════ -->
+          <sc-if value="{{ rMulti }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; gap:8px">
+              <div style="flex:1; aspect-ratio:3/5; border-radius:13px; background:linear-gradient(150deg,#3A5E4A,#0F2419); position:relative; overflow:hidden">
+                <div style="position:absolute; top:7px; left:7px; padding:2px 7px; border-radius:100px; background:rgba(11,21,16,.72); color:#EDD9A3; font-size:9px; font-weight:800">과거 6/28</div>
+                <div style="position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); width:42%; height:74%; border-radius:42% 42% 30% 30%; background:rgba(247,244,236,.1)"></div>
+              </div>
+              <div style="flex:1; aspect-ratio:3/5; border-radius:13px; background:linear-gradient(150deg,#3A5E4A,#0F2419); position:relative; overflow:hidden">
+                <div style="position:absolute; top:7px; left:7px; padding:2px 7px; border-radius:100px; background:rgba(11,21,16,.72); color:#9FD8B4; font-size:9px; font-weight:800">현재 7/22</div>
+                <div style="position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); width:42%; height:74%; border-radius:42% 42% 30% 30%; background:rgba(247,244,236,.1)"></div>
+              </div>
+            </div>
+            <div style="margin-top:10px; padding:9px 13px; background:rgba(46,92,68,.09); border-radius:100px; font-size:11.5px; font-weight:800; color:#2E5C44; text-align:center">🔗 프레임 동기화 ON · 두 영상이 함께 움직여요</div>
+            <div style="margin-top:10px; background:#17382A; border-radius:14px; padding:12px 14px">
+              <div style="display:flex; gap:2px">
+                <sc-for list="{{ pTicks }}" as="p" hint-placeholder-count="10">
+                  <div style="flex:1; text-align:center; font-size:8.5px; font-weight:800; color:{{ p.colorInv }}; padding:2px 0; border-radius:4px; background:{{ p.bgInv }}">{{ p.label }}</div>
+                </sc-for>
+              </div>
+              <div style="margin-top:6px"><input type="range" min="0" max="100" value="{{ frame }}" onInput="{{ onFrame }}"></div>
+              <div style="display:flex; gap:7px; margin-top:8px">
+                <div class="doh-btn" onClick="{{ doCapture }}" style="flex:1; padding:9px; background:rgba(247,244,236,.14); border-radius:9px; text-align:center; font-size:11.5px; font-weight:800; color:#F7F4EC" style-active="opacity:.7">📷 양쪽 동시 캡처</div>
+                <div class="doh-btn" onClick="{{ toggleLine }}" style="padding:9px 13px; background:rgba(247,244,236,.14); border-radius:9px; text-align:center; font-size:11.5px; font-weight:800; color:#F7F4EC" style-active="opacity:.7">✎ 선</div>
+              </div>
+            </div>
+            <div style="font-size:11px; font-weight:800; color:rgba(27,38,32,.45); margin-top:16px; letter-spacing:.04em">다음 페이지로 이동</div>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px">
+              <div class="doh-btn" onClick="{{ toHub2 }}" style="padding:14px 16px; border-radius:13px; background:#FFFFFF; border:1.5px solid #B07A2E; color:#17382A; display:flex; align-items:center; justify-content:space-between" style-active="transform:scale(.99)"><span style="font-size:13.5px; font-weight:800">프로와 비교하기</span><span style="color:#B07A2E">›</span></div>
+              <div class="doh-btn" onClick="{{ toFeedback }}" style="padding:13px 16px; border-radius:13px; background:rgba(176,122,46,.09); border:1px dashed rgba(176,122,46,.4); color:#17382A; display:flex; align-items:center; justify-content:space-between" style-active="transform:scale(.99)"><span style="font-size:12.5px; font-weight:800">이 변화, 프로에게 확인받기</span><span style="color:#B07A2E">›</span></div>
+            </div>
+          </sc-if>
+
+          <!-- ═══════ HUB 2 · 프로와 비교 ═══════ -->
+          <sc-if value="{{ rHub2 }}" hint-placeholder-val="{{ false }}">
+            <div style="border-radius:18px; padding:18px; background:linear-gradient(160deg,#1B4030,#17382A); color:#F7F4EC">
+              <div style="font-size:10px; font-weight:800; letter-spacing:.1em; color:#EDD9A3">DOH 핵심 차별화</div>
+              <div style="font-size:21px; font-weight:800; margin-top:6px; letter-spacing:-.02em; line-height:1.25">프로 스윙을 배우고<br>내 스윙과 비교해요</div>
+              <div style="font-size:12px; color:rgba(247,244,236,.6); margin-top:6px; line-height:1.5">프로 선택 → 카메라 → 프로 단독 분석 → 내 스윙과 비교. P1–P10 버튼으로 자세를 학습해요.</div>
+            </div>
+            <div style="font-size:11px; font-weight:800; color:rgba(27,38,32,.45); margin-top:18px; letter-spacing:.04em">이 Hub의 페이지</div>
+            <div style="display:flex; flex-direction:column; gap:9px; margin-top:9px">
+              <sc-for list="{{ hub2Cards }}" as="c" hint-placeholder-count="4">
+                <div class="doh-btn" onClick="{{ c.go }}" style="border-radius:15px; padding:15px 16px; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); display:flex; align-items:center; gap:12px" style-active="transform:scale(.99)">
+                  <div style="flex:none; width:30px; height:30px; border-radius:9px; background:rgba(46,92,68,.1); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#2E5C44">{{ c.num }}</div>
+                  <div style="flex:1"><div style="font-size:14.5px; font-weight:800; color:#17382A">{{ c.name }}</div><div style="font-size:11px; color:rgba(27,38,32,.55); margin-top:1px">{{ c.desc }}</div></div>
+                  <div style="color:rgba(27,38,32,.35); font-size:17px">›</div>
+                </div>
+              </sc-for>
+            </div>
+            <div class="doh-btn" onClick="{{ toProSelect }}" style="margin-top:14px; padding:15px; border-radius:14px; background:#17382A; color:#F7F4EC; text-align:center; font-size:14px; font-weight:800" style-active="transform:scale(.99)">시작하기 — 프로 선택부터 ›</div>
+          </sc-if>
+
+          <!-- ═══════ 프로 선택 ═══════ -->
+          <sc-if value="{{ rProSelect }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:20px; font-weight:800; letter-spacing:-.02em; color:#17382A; padding-top:2px">누구의 스윙을 배워볼까요?</div>
+            <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:4px">프로를 선택하면 카메라 각도를 고르게 돼요.</div>
+            <div style="display:flex; flex-direction:column; gap:11px; margin-top:18px">
+              <sc-for list="{{ proList }}" as="p" hint-placeholder-count="2">
+                <div class="doh-btn" onClick="{{ p.pick }}" style="{{ p.cardStyle }}" style-active="transform:scale(.99)">
+                  <div style="flex:none; width:52px; height:52px; border-radius:50%; border:1.5px dashed {{ p.ring }}; display:flex; align-items:center; justify-content:center; font-size:9px; color:{{ p.ring }}">PRO</div>
+                  <div style="flex:1"><div style="font-size:16px; font-weight:800; color:{{ p.fg }}">{{ p.name }}</div><div style="font-size:11.5px; color:{{ p.subFg }}; margin-top:1px">{{ p.tag }}</div></div>
+                  <div style="{{ p.checkStyle }}">✓</div>
+                </div>
+              </sc-for>
+            </div>
+            <div class="doh-btn" onClick="{{ toCamera }}" style="{{ proNextStyle }}" style-active="transform:scale(.99)">카메라 선택으로 이동 ›</div>
+          </sc-if>
+
+          <!-- ═══════ 카메라 선택 ═══════ -->
+          <sc-if value="{{ rCamera }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:20px; font-weight:800; letter-spacing:-.02em; color:#17382A; padding-top:2px">어느 각도로 볼까요?</div>
+            <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:4px">{{ pickedProName }} 프로의 영상을 정면 또는 측면으로.</div>
+            <div style="display:flex; gap:11px; margin-top:18px">
+              <sc-for list="{{ cameraList }}" as="c" hint-placeholder-count="2">
+                <div class="doh-btn" onClick="{{ c.pick }}" style="{{ c.style }}" style-active="transform:scale(.98)">
+                  <div style="font-size:30px">{{ c.icon }}</div>
+                  <div style="font-size:15px; font-weight:800; margin-top:8px; color:{{ c.fg }}">{{ c.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div class="doh-btn" onClick="{{ toProSolo }}" style="{{ cameraNextStyle }}" style-active="transform:scale(.99)">프로 단독 분석으로 이동 ›</div>
+          </sc-if>
+
+          <!-- ═══════ 프로 단독 분석 ═══════ -->
+          <sc-if value="{{ rProSolo }}" hint-placeholder-val="{{ false }}">
+            <div style="border-radius:16px; overflow:hidden; background:#0F2419; position:relative; aspect-ratio:3/4">
+              <div style="position:absolute; top:9px; left:9px; padding:3px 9px; border-radius:100px; background:rgba(237,217,163,.9); color:#0B1510; font-size:10px; font-weight:800">{{ pickedProName }} · {{ pickedCam }}</div>
+              <div style="position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); width:34%; height:74%; border-radius:42% 42% 30% 30%; background:rgba(237,217,163,.14); border:1px solid rgba(237,217,163,.3)"></div>
+              <div style="position:absolute; bottom:52px; left:10px; right:10px; text-align:center; color:#EDD9A3; font-size:12px; font-weight:800">현재 포지션 · {{ curP }}</div>
+              <div style="position:absolute; bottom:14px; left:12px; right:12px"><input type="range" min="0" max="100" value="{{ frame }}" onInput="{{ onFrame }}"></div>
+            </div>
+            <div style="margin-top:10px; background:#FFFFFF; border:1px solid rgba(27,38,32,.09); border-radius:14px; padding:13px 13px">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:0 2px"><div style="font-size:9.5px; font-weight:800; color:#B07A2E; letter-spacing:.06em">P1–P10 · 슬라이드바 연동</div><div style="font-size:9px; color:rgba(27,38,32,.4); font-weight:700">Address → Finish</div></div>
+              <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:9px">
+                <sc-for list="{{ pButtons }}" as="p" hint-placeholder-count="10">
+                  <div class="doh-btn" onClick="{{ p.go }}" style="{{ p.style }}" style-active="transform:scale(.94)">{{ p.label }}</div>
+                </sc-for>
+              </div>
+              <div style="font-size:10.5px; color:rgba(27,38,32,.5); margin-top:10px; line-height:1.5">버튼을 누르면 슬라이드바가 그 포지션으로 이동해요. "P2가 어디지?"를 눈으로 익히는 학습 UX.</div>
+            </div>
+            <div class="doh-btn" onClick="{{ toProCompare }}" style="margin-top:12px; padding:15px; border-radius:14px; background:#17382A; color:#F7F4EC; text-align:center; font-size:14px; font-weight:800" style-active="transform:scale(.99)">프로와 내 스윙 비교하기 ›</div>
+          </sc-if>
+
+          <!-- ═══════ 프로 + 내 스윙 비교 ═══════ -->
+          <sc-if value="{{ rProCompare }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; gap:8px">
+              <div style="flex:1; aspect-ratio:3/5; border-radius:13px; background:linear-gradient(150deg,#2E5C44,#0F2419); position:relative; overflow:hidden">
+                <div style="position:absolute; top:7px; left:7px; padding:2px 7px; border-radius:100px; background:rgba(237,217,163,.9); color:#0B1510; font-size:9px; font-weight:800">PRO {{ curP }}</div>
+                <div style="position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); width:44%; height:74%; border-radius:42% 42% 30% 30%; background:rgba(237,217,163,.16); border:1px solid rgba(237,217,163,.3)"></div>
+              </div>
+              <div style="flex:1; aspect-ratio:3/5; border-radius:13px; background:linear-gradient(150deg,#3A5E4A,#0F2419); position:relative; overflow:hidden">
+                <div style="position:absolute; top:7px; left:7px; padding:2px 7px; border-radius:100px; background:rgba(159,216,180,.9); color:#0B1510; font-size:9px; font-weight:800">ME {{ curP }}</div>
+                <div style="position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); width:44%; height:74%; border-radius:42% 42% 30% 30%; background:rgba(159,216,180,.14); border:1px solid rgba(159,216,180,.3)"></div>
+              </div>
+            </div>
+            <div style="margin-top:9px; padding:8px 12px; background:rgba(46,92,68,.09); border-radius:100px; font-size:11px; font-weight:800; color:#2E5C44; text-align:center">🔗 프레임 동기화 ON</div>
+            <div style="margin-top:10px; background:#17382A; border-radius:14px; padding:12px 13px">
+              <div style="font-size:9.5px; font-weight:800; color:#EDD9A3; letter-spacing:.06em; padding:0 2px">P1–P10 · 양쪽 슬라이드바 연동</div>
+              <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:9px">
+                <sc-for list="{{ pButtonsInv }}" as="p" hint-placeholder-count="10">
+                  <div class="doh-btn" onClick="{{ p.go }}" style="{{ p.style }}" style-active="transform:scale(.94)">{{ p.label }}</div>
+                </sc-for>
+              </div>
+              <div style="margin-top:9px"><input type="range" min="0" max="100" value="{{ frame }}" onInput="{{ onFrame }}"></div>
+              <div style="display:flex; gap:7px; margin-top:8px">
+                <div class="doh-btn" onClick="{{ toggleLine }}" style="flex:1; padding:9px; background:rgba(247,244,236,.14); border-radius:9px; text-align:center; font-size:11px; font-weight:800; color:#F7F4EC" style-active="opacity:.7">✎ 선 그리기</div>
+                <div class="doh-btn" onClick="{{ doCapture }}" style="flex:1; padding:9px; background:rgba(247,244,236,.14); border-radius:9px; text-align:center; font-size:11px; font-weight:800; color:#F7F4EC" style-active="opacity:.7">📷 캡처</div>
+              </div>
+            </div>
+            <div class="doh-btn" onClick="{{ toSameAsPro }}" style="margin-top:12px; padding:14px 16px; border-radius:14px; background:#FFFFFF; border:1.5px solid #B07A2E; display:flex; align-items:center; justify-content:space-between" style-active="transform:scale(.99)">
+              <div><div style="font-size:13.5px; font-weight:800; color:#17382A">프로와 똑같이 해야 하나요?</div><div style="font-size:10.5px; color:rgba(27,38,32,.55); margin-top:1px">궁금하다면 눌러보세요</div></div>
+              <div style="width:26px; height:26px; border-radius:50%; background:rgba(176,122,46,.14); display:flex; align-items:center; justify-content:center; color:#B07A2E; font-weight:800">?</div>
+            </div>
+          </sc-if>
+
+          <!-- ═══════ 프로에게 문의 (feedback) ═══════ -->
+          <sc-if value="{{ rFeedback }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:center; gap:13px; padding-top:4px">
+              <div style="flex:none; width:56px; height:56px; border-radius:50%; border:1.5px dashed rgba(27,38,32,.3); display:flex; align-items:center; justify-content:center; font-size:9px; color:rgba(27,38,32,.5)">PRO</div>
+              <div><div style="font-size:18px; font-weight:800; color:#17382A; letter-spacing:-.01em">이도형 프로에게 문의</div><div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:2px">궁금한 스윙을 첨부해 물어보세요</div></div>
+            </div>
+            <div style="margin-top:16px; background:#FFFFFF; border:1px solid rgba(27,38,32,.09); border-radius:14px; padding:15px">
+              <div style="font-size:11px; font-weight:800; color:rgba(27,38,32,.45); letter-spacing:.04em">첨부된 스윙</div>
+              <div style="display:flex; gap:8px; margin-top:9px">
+                <div style="width:56px; height:70px; border-radius:9px; background:linear-gradient(150deg,#3A5E4A,#0F2419)"></div>
+                <div style="width:56px; height:70px; border-radius:9px; border:1.5px dashed rgba(27,38,32,.2); display:flex; align-items:center; justify-content:center; color:rgba(27,38,32,.35); font-size:22px">+</div>
+              </div>
+              <div style="margin-top:13px; background:rgba(27,38,32,.04); border-radius:11px; padding:12px 13px; font-size:12.5px; color:rgba(27,38,32,.55); line-height:1.5">"임팩트에서 골반이 늦게 도는 것 같은데, 어떻게 고칠까요?"</div>
+            </div>
+            <div style="margin-top:14px; padding:16px; border-radius:16px; background:linear-gradient(160deg,#1B4030,#17382A); color:#F7F4EC">
+              <div style="font-size:11px; font-weight:800; letter-spacing:.08em; color:#EDD9A3">MEMBERSHIP으로 연결</div>
+              <div style="font-size:15px; font-weight:800; margin-top:6px; line-height:1.4">프로 피드백은 관리 플랜에서<br>이어집니다</div>
+              <div style="font-size:11.5px; color:rgba(247,244,236,.6); margin-top:6px; line-height:1.55">강요가 아니라, 궁금증이 생긴 지금이 자연스러운 순간이에요.</div>
+              <div class="doh-btn" onClick="{{ toMembership }}" style="margin-top:13px; padding:13px; border-radius:12px; background:#EDD9A3; color:#0F2419; text-align:center; font-size:13.5px; font-weight:800" style-active="transform:scale(.99)">관리 플랜 살펴보기 ›</div>
+            </div>
+          </sc-if>
+
+          <!-- ═══════ MEMBERSHIP ═══════ -->
+          <sc-if value="{{ rMembership }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:20px; font-weight:800; letter-spacing:-.02em; color:#17382A; padding-top:2px">어디까지 관리받을까요?</div>
+            <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:4px">이도형 프로가 계속 내 골프를 관리해주는 플랜.</div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px">
+              <sc-for list="{{ plans }}" as="p" hint-placeholder-count="3">
+                <div style="{{ p.cardStyle }}">
+                  <div style="display:flex; justify-content:space-between; align-items:baseline"><div style="font-size:15px; font-weight:800; color:{{ p.fg }}">{{ p.name }}</div><div style="font-size:13px; font-weight:800; color:{{ p.priceFg }}">{{ p.price }}</div></div>
+                  <div style="font-size:11.5px; color:{{ p.subFg }}; margin-top:4px; line-height:1.5">{{ p.desc }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div class="doh-btn" onClick="{{ toHome }}" style="margin-top:14px; padding:14px; border-radius:13px; background:#17382A; color:#F7F4EC; text-align:center; font-size:13.5px; font-weight:800" style-active="transform:scale(.99)">홈으로 돌아가기</div>
+          </sc-if>
+
+          <!-- ═══════ 이번 주 목표 숙제 ═══════ -->
+          <sc-if value="{{ rHomework }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:2px 2px 0">
+              <div style="font-size:22px; font-weight:800; letter-spacing:-.02em; color:#17382A; line-height:1.25">이번 주 목표 숙제</div>
+              <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:4px; line-height:1.5">이도형 프로가 내준 숙제를 확인하고 수행해요.</div>
+            </div>
+            <div style="display:flex; gap:4px; margin-top:14px; background:rgba(27,38,32,.05); padding:4px; border-radius:12px">
+              <sc-for list="{{ hwTabs }}" as="t" hint-placeholder-count="4">
+                <div class="doh-btn" onClick="{{ t.pick }}" style="{{ t.style }}">{{ t.label }}</div>
+              </sc-for>
+            </div>
+
+            <!-- 상태: 아직 숙제 없음 -->
+            <sc-if value="{{ hwEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:18px; text-align:center; padding:24px 16px">
+                <div style="width:72px; height:72px; border-radius:50%; margin:0 auto; background:rgba(27,38,32,.05); display:flex; align-items:center; justify-content:center; font-size:30px">📭</div>
+                <div style="font-size:17px; font-weight:800; color:#17382A; margin-top:14px">아직 받은 숙제가 없어요</div>
+                <div style="font-size:12.5px; color:rgba(27,38,32,.55); margin-top:5px; line-height:1.55">먼저 스윙을 보내면 프로가<br>나에게 맞는 숙제를 만들어드려요.</div>
+              </div>
+              <div class="doh-btn" onClick="{{ toUpload }}" style="padding:15px; border-radius:14px; background:#17382A; color:#F7F4EC; text-align:center; font-size:14px; font-weight:800" style-active="transform:scale(.99)">스윙 전송하기 ›</div>
+              <div class="doh-btn" onClick="{{ toSubscription }}" style="margin-top:10px; padding:14px; border-radius:14px; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); text-align:center; font-size:13px; font-weight:800; color:#17382A" style-active="transform:scale(.99)">숙제는 어떻게 받나요? · 구독 안내</div>
+            </sc-if>
+
+            <!-- 상태: 이번 주 숙제 확인 -->
+            <sc-if value="{{ hwHas }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex; flex-direction:column; gap:11px; margin-top:16px">
+                <sc-for list="{{ hwItems }}" as="h" hint-placeholder-count="2">
+                  <div style="background:#FFFFFF; border:1px solid rgba(27,38,32,.1); border-radius:16px; padding:16px 17px">
+                    <div style="display:flex; align-items:baseline; justify-content:space-between">
+                      <div style="font-size:15px; font-weight:800; color:#17382A; line-height:1.35; flex:1">{{ h.title }}</div>
+                      <div style="flex:none; margin-left:10px; font-size:11px; font-weight:800; color:#B07A2E">{{ h.due }}</div>
+                    </div>
+                    <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:5px; line-height:1.5">{{ h.desc }}</div>
+                    <div style="margin-top:11px; height:6px; border-radius:100px; background:rgba(27,38,32,.08); overflow:hidden">
+                      <div style="width:{{ h.prog }}%; height:100%; border-radius:100px; background:linear-gradient(90deg,#2E5C44,#17382A)"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="font-size:11px; font-weight:800; color:rgba(27,38,32,.45); margin-top:18px; letter-spacing:.04em">숙제, 어떻게 할까요?</div>
+              <div class="doh-btn" onClick="{{ toUpload }}" style="margin-top:9px; padding:15px 16px; border-radius:13px; background:#17382A; color:#F7F4EC; display:flex; align-items:center; justify-content:space-between" style-active="transform:scale(.99)"><span style="font-size:13.5px; font-weight:800">숙제 다 했어요 — 스윙 업로드</span><span>›</span></div>
+              <div class="doh-btn" onClick="{{ toSubscription }}" style="margin-top:9px; padding:14px 16px; border-radius:13px; background:rgba(176,122,46,.09); border:1px dashed rgba(176,122,46,.4); color:#17382A; display:flex; align-items:center; justify-content:space-between" style-active="transform:scale(.99)"><span style="font-size:12.5px; font-weight:800">숙제 중 잘 모르겠어요 — 문의하기</span><span style="color:#B07A2E">›</span></div>
+            </sc-if>
+
+            <!-- 상태: 숙제 다 했어요 -->
+            <sc-if value="{{ hwDone }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:18px; text-align:center; padding:24px 16px; border-radius:18px; background:linear-gradient(160deg,#1B4030,#17382A); color:#F7F4EC">
+                <div style="width:64px; height:64px; border-radius:50%; margin:0 auto; background:rgba(237,217,163,.16); display:flex; align-items:center; justify-content:center; font-size:28px">🎉</div>
+                <div style="font-size:18px; font-weight:800; margin-top:14px">이번 주 숙제, 다 하셨네요!</div>
+                <div style="font-size:12.5px; color:rgba(247,244,236,.65); margin-top:6px; line-height:1.55">완료한 스윙을 남겨두면 프로가 확인하고<br>다음 숙제를 만들어드려요.</div>
+              </div>
+              <div class="doh-btn" onClick="{{ toUpload }}" style="margin-top:12px; padding:15px; border-radius:14px; background:#EDD9A3; color:#0F2419; text-align:center; font-size:14px; font-weight:800" style-active="transform:scale(.99)">스윙 업로드하기 ›</div>
+              <div class="doh-btn" onClick="{{ toSubscription }}" style="margin-top:10px; padding:14px; border-radius:14px; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); text-align:center; font-size:13px; font-weight:800; color:#17382A" style-active="transform:scale(.99)">다음 숙제 더 받고 싶어요</div>
+            </sc-if>
+
+            <!-- 상태: 잘 모르겠어요 -->
+            <sc-if value="{{ hwConfused }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:18px; text-align:center; padding:24px 16px">
+                <div style="width:72px; height:72px; border-radius:50%; margin:0 auto; background:rgba(176,122,46,.12); display:flex; align-items:center; justify-content:center; font-size:30px; color:#B07A2E">？</div>
+                <div style="font-size:17px; font-weight:800; color:#17382A; margin-top:14px">숙제 중 잘 모르겠는 게 있나요?</div>
+                <div style="font-size:12.5px; color:rgba(27,38,32,.55); margin-top:5px; line-height:1.55">혼자 고민하지 말고, 프로에게<br>바로 물어볼 수 있어요.</div>
+              </div>
+              <div style="background:rgba(27,38,32,.04); border-radius:13px; padding:13px 15px; font-size:12.5px; color:rgba(27,38,32,.6); line-height:1.6">"골반 먼저 리드하라는데, 어떤 느낌인지 잘 모르겠어요."</div>
+              <div class="doh-btn" onClick="{{ toSubscription }}" style="margin-top:12px; padding:15px; border-radius:14px; background:#17382A; color:#F7F4EC; text-align:center; font-size:14px; font-weight:800" style-active="transform:scale(.99)">문의하기 ›</div>
+            </sc-if>
+          </sc-if>
+
+          <!-- ═══════ AI 스윙분석 + 설문 ═══════ -->
+          <sc-if value="{{ rAiSurvey }}" hint-placeholder-val="{{ false }}">
+            <!-- intro -->
+            <sc-if value="{{ aiPhaseIntro }}" hint-placeholder-val="{{ true }}">
+              <div style="border-radius:18px; padding:20px; background:linear-gradient(160deg,#1B4030,#17382A); color:#F7F4EC">
+                <div style="font-size:10.5px; font-weight:800; letter-spacing:.1em; color:#EDD9A3">AI 스윙분석</div>
+                <div style="font-size:22px; font-weight:800; margin-top:6px; letter-spacing:-.02em; line-height:1.3">몇 가지만 알려주시면<br>더 정확하게 분석해요</div>
+                <div style="font-size:12px; color:rgba(247,244,236,.62); margin-top:8px; line-height:1.6">체형·목표·습관에 따라 좋은 스윙은 달라져요. 분석 전 간단한 설문으로 나를 이해할게요.</div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:9px; margin-top:16px">
+                <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); border-radius:14px; padding:14px 16px">
+                  <div style="flex:none; width:28px; height:28px; border-radius:9px; background:rgba(46,92,68,.1); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#2E5C44">1</div>
+                  <div style="flex:1"><div style="font-size:13.5px; font-weight:800; color:#17382A">간단한 설문 (8문항)</div><div style="font-size:11px; color:rgba(27,38,32,.5); margin-top:1px">경력·목표·습관 파악</div></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); border-radius:14px; padding:14px 16px">
+                  <div style="flex:none; width:28px; height:28px; border-radius:9px; background:rgba(46,92,68,.1); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#2E5C44">2</div>
+                  <div style="flex:1"><div style="font-size:13.5px; font-weight:800; color:#17382A">스윙 등록</div><div style="font-size:11px; color:rgba(27,38,32,.5); margin-top:1px">정면·측면 영상 업로드</div></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); border-radius:14px; padding:14px 16px">
+                  <div style="flex:none; width:28px; height:28px; border-radius:9px; background:rgba(176,122,46,.14); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#B07A2E">3</div>
+                  <div style="flex:1"><div style="font-size:13.5px; font-weight:800; color:#17382A">추가 질문 → 결과</div><div style="font-size:11px; color:rgba(27,38,32,.5); margin-top:1px">맞춤 분석 · 신체 테스트 제안</div></div>
+                </div>
+              </div>
+              <div class="doh-btn" onClick="{{ aiStart }}" style="margin-top:16px; padding:15px; border-radius:14px; background:#17382A; color:#F7F4EC; text-align:center; font-size:14px; font-weight:800" style-active="transform:scale(.99)">설문 시작하기 ›</div>
+            </sc-if>
+
+            <!-- 설문 (1·2 공통) -->
+            <sc-if value="{{ aiSurveyPhase }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; align-items:center; justify-content:space-between; padding-top:2px">
+                <div style="font-size:11px; font-weight:800; color:#B07A2E; letter-spacing:.04em">{{ aiProgress }}</div>
+              </div>
+              <div style="margin-top:8px; height:6px; border-radius:100px; background:rgba(27,38,32,.08); overflow:hidden">
+                <div style="width:{{ aiPct }}%; height:100%; border-radius:100px; background:linear-gradient(90deg,#2E5C44,#17382A); transition:width .3s ease"></div>
+              </div>
+              <div style="font-size:20px; font-weight:800; letter-spacing:-.02em; color:#17382A; margin-top:20px; line-height:1.35">{{ aiQ }}</div>
+              <div style="display:flex; flex-direction:column; gap:9px; margin-top:18px">
+                <sc-for list="{{ aiOpts }}" as="o" hint-placeholder-count="4">
+                  <div class="doh-btn" onClick="{{ o.pick }}" style="{{ o.style }}" style-active="transform:scale(.99)">
+                    <span>{{ o.label }}</span>
+                    <div style="{{ o.checkStyle }}">{{ o.check }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex; gap:8px; margin-top:20px">
+                <div class="doh-btn" onClick="{{ aiPrev }}" style="flex:none; padding:15px 18px; border-radius:14px; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); font-size:14px; font-weight:800; color:#17382A" style-active="transform:scale(.98)">이전</div>
+                <div class="doh-btn" onClick="{{ aiNext }}" style="{{ nextBtnStyle }}" style-active="transform:scale(.99)">다음</div>
+              </div>
+            </sc-if>
+
+            <!-- 스윙 등록 -->
+            <sc-if value="{{ aiPhaseRegister }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:20px; font-weight:800; letter-spacing:-.02em; color:#17382A; padding-top:2px">이제 스윙을 등록해주세요</div>
+              <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:4px">정면과 측면을 올리면 더 정확하게 분석해요.</div>
+              <div style="display:flex; gap:11px; margin-top:18px">
+                <sc-for list="{{ uploadSlots }}" as="u" hint-placeholder-count="2">
+                  <div class="doh-btn" onClick="{{ u.toggle }}" style="{{ u.style }}" style-active="transform:scale(.98)">
+                    <div style="font-size:30px">{{ u.icon }}</div>
+                    <div style="font-size:14px; font-weight:800; margin-top:8px; color:{{ u.fg }}">{{ u.label }}</div>
+                    <div style="font-size:10.5px; margin-top:3px; color:{{ u.subFg }}">{{ u.state }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex; gap:8px; margin-top:20px">
+                <div class="doh-btn" onClick="{{ aiPrev }}" style="flex:none; padding:15px 18px; border-radius:14px; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); font-size:14px; font-weight:800; color:#17382A" style-active="transform:scale(.98)">이전</div>
+                <div class="doh-btn" onClick="{{ aiRegisterNext }}" style="flex:1; padding:15px; border-radius:14px; background:#17382A; color:#F7F4EC; text-align:center; font-size:14px; font-weight:800" style-active="transform:scale(.99)">등록 완료 · 계속</div>
+              </div>
+            </sc-if>
+
+            <!-- 결과 -->
+            <sc-if value="{{ aiPhaseResult }}" hint-placeholder-val="{{ false }}">
+              <div style="border-radius:18px; padding:20px; background:linear-gradient(160deg,#1B4030,#17382A); color:#F7F4EC">
+                <div style="font-size:10.5px; font-weight:800; letter-spacing:.1em; color:#EDD9A3">AI 분석 결과 · 참고용</div>
+                <div style="display:flex; align-items:center; gap:16px; margin-top:12px">
+                  <div style="flex:none; width:76px; height:76px; border-radius:50%; background:conic-gradient(#EDD9A3 0 72%, rgba(247,244,236,.14) 72% 100%); display:flex; align-items:center; justify-content:center">
+                    <div style="width:58px; height:58px; border-radius:50%; background:#17382A; display:flex; flex-direction:column; align-items:center; justify-content:center"><div style="font-size:22px; font-weight:800; color:#EDD9A3">72</div><div style="font-size:8.5px; color:rgba(247,244,236,.6)">SCORE</div></div>
+                  </div>
+                  <div style="flex:1"><div style="font-size:15px; font-weight:800; line-height:1.4">임팩트 구간 개선이<br>가장 필요해요</div></div>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:9px; margin-top:12px">
+                <div style="background:#FFFFFF; border:1px solid rgba(27,38,32,.09); border-radius:14px; padding:14px 15px">
+                  <div style="font-size:9.5px; font-weight:800; color:#B07A2E; letter-spacing:.06em">핵심 피드백</div>
+                  <div style="font-size:13.5px; font-weight:700; color:#17382A; margin-top:4px; line-height:1.5">임팩트(P4)에서 골반 회전이 어깨보다 늦게 시작돼요. 하체 리드를 먼저 만들어보세요.</div>
+                </div>
+                <div style="background:#FFFFFF; border:1px solid rgba(27,38,32,.09); border-radius:14px; padding:14px 15px">
+                  <div style="font-size:9.5px; font-weight:800; color:#2E5C44; letter-spacing:.06em">잘하고 있는 점</div>
+                  <div style="font-size:13.5px; font-weight:700; color:#17382A; margin-top:4px; line-height:1.5">백스윙 템포가 안정적이에요. 지금 리듬을 유지하세요.</div>
+                </div>
+              </div>
+              <div style="margin-top:14px; padding:16px; border-radius:16px; background:rgba(176,122,46,.09); border:1px solid rgba(176,122,46,.25)">
+                <div style="font-size:14.5px; font-weight:800; color:#17382A; line-height:1.4">더 정확하게 알고 싶다면?<br>신체 테스트도 해볼까요?</div>
+                <div style="font-size:11.5px; color:rgba(27,38,32,.6); margin-top:6px; line-height:1.55">유연성·균형을 확인하면 나에게 맞는 스윙을 더 잘 찾을 수 있어요.</div>
+                <div style="display:flex; gap:8px; margin-top:12px">
+                  <div class="doh-btn" onClick="{{ aiSkipPhysical }}" style="flex:1; padding:13px; border-radius:12px; background:#FFFFFF; border:1px solid rgba(27,38,32,.12); text-align:center; font-size:13px; font-weight:800; color:#17382A" style-active="transform:scale(.98)">나중에</div>
+                  <div class="doh-btn" onClick="{{ aiWantPhysical }}" style="flex:1; padding:13px; border-radius:12px; background:#17382A; color:#F7F4EC; text-align:center; font-size:13px; font-weight:800" style-active="transform:scale(.98)">테스트 하기 ›</div>
+                </div>
+              </div>
+              <div class="doh-btn" onClick="{{ aiRestart }}" style="margin-top:10px; text-align:center; font-size:11.5px; font-weight:700; color:rgba(27,38,32,.45)" style-active="opacity:.6">설문 다시 하기</div>
+            </sc-if>
+
+            <!-- 신체 테스트 -->
+            <sc-if value="{{ aiPhasePhysical }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:20px; font-weight:800; letter-spacing:-.02em; color:#17382A; padding-top:2px">신체 테스트</div>
+              <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:4px; line-height:1.5">각 항목을 안내에 따라 측정해요. (측정 UI는 준비 중)</div>
+              <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px">
+                <sc-for list="{{ physItems }}" as="p" hint-placeholder-count="4">
+                  <div style="background:#FFFFFF; border:1px solid rgba(27,38,32,.1); border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:12px">
+                    <div style="flex:1"><div style="font-size:14px; font-weight:800; color:#17382A">{{ p.name }}</div><div style="font-size:11px; color:rgba(27,38,32,.5); margin-top:1px">{{ p.desc }}</div></div>
+                    <div class="doh-btn" style="flex:none; padding:9px 15px; border-radius:100px; background:rgba(46,92,68,.1); color:#2E5C44; font-size:12px; font-weight:800" style-active="transform:scale(.96)">측정</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div class="doh-btn" onClick="{{ aiFinishPhysical }}" style="margin-top:16px; padding:15px; border-radius:14px; background:#17382A; color:#F7F4EC; text-align:center; font-size:14px; font-weight:800" style-active="transform:scale(.99)">테스트 완료</div>
+            </sc-if>
+          </sc-if>
+
+          <!-- ═══════ 골프 사전 ═══════ -->
+          <sc-if value="{{ rDict }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:22px; font-weight:800; letter-spacing:-.02em; color:#17382A; padding-top:2px">골프 사전</div>
+            <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:4px">궁금한 용어를 검색하면 영상이나 설명을 볼 수 있어요.</div>
+            <div style="margin-top:14px; display:flex; align-items:center; gap:9px; background:#FFFFFF; border:1px solid rgba(27,38,32,.12); border-radius:100px; padding:12px 18px">
+              <div style="font-size:15px; color:rgba(27,38,32,.4)">🔍</div>
+              <input type="text" value="{{ dictQ }}" onInput="{{ onDict }}" placeholder="예: 임팩트, 릴리즈, 템포" style="flex:1; border:none; outline:none; background:transparent; font-family:inherit; font-size:14px; font-weight:600; color:#17382A">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:9px; margin-top:14px">
+              <sc-for list="{{ dictList }}" as="d" hint-placeholder-count="6">
+                <div style="background:#FFFFFF; border:1px solid rgba(27,38,32,.09); border-radius:14px; padding:15px 16px">
+                  <div style="display:flex; align-items:center; gap:9px">
+                    <div style="font-size:15px; font-weight:800; color:#17382A">{{ d.term }}</div>
+                    <div style="{{ d.typeStyle }}">{{ d.typeLabel }}</div>
+                  </div>
+                  <div style="font-size:12.5px; color:rgba(27,38,32,.6); margin-top:6px; line-height:1.55">{{ d.body }}</div>
+                  <sc-if value="{{ d.isVideo }}" hint-placeholder-val="{{ false }}">
+                    <a href="#" style="margin-top:10px; display:inline-flex; align-items:center; gap:7px; padding:8px 13px; border-radius:100px; background:rgba(176,122,46,.1); color:#B07A2E; font-size:11.5px; font-weight:800; text-decoration:none">▶ 유튜브에서 보기 · {{ d.yt }}</a>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ dictEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="text-align:center; padding:34px 16px; color:rgba(27,38,32,.45); font-size:13px; font-weight:600">'{{ dictQ }}'에 대한 결과가 없어요.<br><span style="font-size:11.5px">데이터는 계속 추가될 예정이에요.</span></div>
+            </sc-if>
+          </sc-if>
+
+          <!-- ═══════ 프로필 ═══════ -->
+          <sc-if value="{{ rProfile }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:center; gap:14px; padding:6px 2px 0">
+              <div style="flex:none; width:60px; height:60px; border-radius:50%; background:linear-gradient(150deg,#3A5E4A,#0F2419); display:flex; align-items:center; justify-content:center; color:#EDD9A3; font-size:20px; font-weight:800">나</div>
+              <div style="flex:1"><div style="font-size:19px; font-weight:800; color:#17382A; letter-spacing:-.01em">골프러버</div><div style="font-size:12px; color:rgba(27,38,32,.5); margin-top:2px">연속 6일째 · 등록 스윙 12개</div></div>
+            </div>
+            <div style="margin-top:14px; padding:15px 17px; border-radius:16px; background:linear-gradient(160deg,#1B4030,#17382A); color:#F7F4EC; display:flex; align-items:center; justify-content:space-between">
+              <div><div style="font-size:10px; font-weight:800; letter-spacing:.08em; color:#EDD9A3">MY PLAN</div><div style="font-size:16px; font-weight:800; margin-top:3px">Coaching · 월 2회 피드백</div></div>
+              <div class="doh-btn" onClick="{{ toMembership }}" style="padding:8px 14px; border-radius:100px; background:rgba(237,217,163,.16); color:#EDD9A3; font-size:11.5px; font-weight:800" style-active="opacity:.8">관리</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:9px; margin-top:14px">
+              <div class="doh-btn" onClick="{{ toHomework }}" style="background:#FFFFFF; border:1px solid rgba(27,38,32,.1); border-radius:14px; padding:15px 16px; display:flex; align-items:center; gap:13px" style-active="transform:scale(.99)"><div style="flex:none; width:38px; height:38px; border-radius:11px; background:rgba(46,92,68,.1); display:flex; align-items:center; justify-content:center; font-size:17px">📝</div><div style="flex:1"><div style="font-size:14px; font-weight:800; color:#17382A">이번 주 목표 숙제</div><div style="font-size:11px; color:rgba(27,38,32,.5); margin-top:1px">2개 남음 · 마감 7/27</div></div><div style="color:rgba(27,38,32,.35); font-size:17px">›</div></div>
+              <div class="doh-btn" onClick="{{ toSubscription }}" style="background:#FFFFFF; border:1px solid rgba(27,38,32,.1); border-radius:14px; padding:15px 16px; display:flex; align-items:center; gap:13px" style-active="transform:scale(.99)"><div style="flex:none; width:38px; height:38px; border-radius:11px; background:rgba(176,122,46,.14); display:flex; align-items:center; justify-content:center; font-size:17px">📖</div><div style="flex:1"><div style="font-size:14px; font-weight:800; color:#17382A">구독별 안내사항</div><div style="font-size:11px; color:rgba(27,38,32,.5); margin-top:1px">혜택 · 오프라인 · 프로 · 피드백</div></div><div style="color:rgba(27,38,32,.35); font-size:17px">›</div></div>
+              <div class="doh-btn" onClick="{{ toDict }}" style="background:#FFFFFF; border:1px solid rgba(27,38,32,.1); border-radius:14px; padding:15px 16px; display:flex; align-items:center; gap:13px" style-active="transform:scale(.99)"><div style="flex:none; width:38px; height:38px; border-radius:11px; background:rgba(46,92,68,.1); display:flex; align-items:center; justify-content:center; font-size:17px">📚</div><div style="flex:1"><div style="font-size:14px; font-weight:800; color:#17382A">골프 사전</div><div style="font-size:11px; color:rgba(27,38,32,.5); margin-top:1px">용어 검색 · 영상 · 설명</div></div><div style="color:rgba(27,38,32,.35); font-size:17px">›</div></div>
+            </div>
+          </sc-if>
+
+          <!-- ═══════ 구독별 안내사항 (Hub) ═══════ -->
+          <sc-if value="{{ rSubscription }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:2px 2px 0">
+              <div style="font-size:22px; font-weight:800; letter-spacing:-.02em; color:#17382A; line-height:1.25">구독별 안내사항</div>
+              <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:4px; line-height:1.5">숙제를 더 받거나 프로에게 문의하고 싶다면 여기서 시작해요.</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px">
+              <sc-for list="{{ subCards }}" as="c" hint-placeholder-count="4">
+                <div class="doh-btn" onClick="{{ c.go }}" style="background:#FFFFFF; border:1px solid rgba(27,38,32,.1); border-radius:16px; padding:16px 17px; display:flex; align-items:center; gap:13px" style-active="transform:scale(.99)">
+                  <div style="flex:none; width:42px; height:42px; border-radius:12px; background:rgba(27,38,32,.05); display:flex; align-items:center; justify-content:center; font-size:19px">{{ c.icon }}</div>
+                  <div style="flex:1"><div style="font-size:15px; font-weight:800; color:#17382A">{{ c.name }}</div><div style="font-size:11.5px; color:rgba(27,38,32,.55); margin-top:2px; line-height:1.4">{{ c.desc }}</div></div>
+                  <div style="color:rgba(27,38,32,.35); font-size:17px">›</div>
+                </div>
+              </sc-for>
+            </div>
+            <div class="doh-btn" onClick="{{ toMembership }}" style="margin-top:12px; padding:15px; border-radius:14px; background:#17382A; color:#F7F4EC; text-align:center; font-size:14px; font-weight:800" style-active="transform:scale(.99)">플랜 가입 · 문의하기 ›</div>
+          </sc-if>
+
+          <!-- ═══════ 구독별 혜택 안내 ═══════ -->
+          <sc-if value="{{ rSubBenefits }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:20px; font-weight:800; letter-spacing:-.02em; color:#17382A; padding-top:2px">구독별 혜택 안내</div>
+            <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:4px">플랜별 혜택을 비교해보세요. (상세 내용은 추후 업데이트)</div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px">
+              <sc-for list="{{ plans }}" as="p" hint-placeholder-count="3">
+                <div style="{{ p.cardStyle }}">
+                  <div style="display:flex; justify-content:space-between; align-items:baseline"><div style="font-size:15px; font-weight:800; color:{{ p.fg }}">{{ p.name }}</div><div style="font-size:13px; font-weight:800; color:{{ p.priceFg }}">{{ p.price }}</div></div>
+                  <div style="font-size:11.5px; color:{{ p.subFg }}; margin-top:4px; line-height:1.5">{{ p.desc }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div class="doh-btn" onClick="{{ toMembership }}" style="margin-top:14px; padding:14px; border-radius:13px; background:#17382A; color:#F7F4EC; text-align:center; font-size:13.5px; font-weight:800" style-active="transform:scale(.99)">플랜 가입하기</div>
+          </sc-if>
+
+          <!-- ═══════ 오프라인 레슨 정보 ═══════ -->
+          <sc-if value="{{ rSubOffline }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:20px; font-weight:800; letter-spacing:-.02em; color:#17382A; padding-top:2px">오프라인 레슨 정보</div>
+            <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:4px">현장 레슨 위치·일정·예약 안내가 들어갈 곳이에요.</div>
+            <div style="margin-top:16px; aspect-ratio:16/10; border-radius:16px; background:linear-gradient(150deg,#3A5E4A,#0F2419); position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center">
+              <div style="color:rgba(247,244,236,.55); font-size:12px; font-weight:700">지도 · 위치 (준비 중)</div>
+              <div style="position:absolute; bottom:12px; left:12px; padding:5px 11px; border-radius:100px; background:rgba(11,21,16,.7); color:#EDD9A3; font-size:11px; font-weight:800">📍 DOH 골프 스튜디오</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:9px; margin-top:12px">
+              <div style="background:#FFFFFF; border:1px solid rgba(27,38,32,.09); border-radius:13px; padding:14px 16px"><div style="font-size:11px; font-weight:800; color:#B07A2E; letter-spacing:.04em">위치</div><div style="font-size:13px; color:#17382A; margin-top:3px">주소가 여기 들어가요 (직접 입력)</div></div>
+              <div style="background:#FFFFFF; border:1px solid rgba(27,38,32,.09); border-radius:13px; padding:14px 16px"><div style="font-size:11px; font-weight:800; color:#B07A2E; letter-spacing:.04em">운영 시간 · 예약</div><div style="font-size:13px; color:#17382A; margin-top:3px">일정 및 예약 방법 안내 (직접 입력)</div></div>
+            </div>
+          </sc-if>
+
+          <!-- ═══════ 이도형 프로는? ═══════ -->
+          <sc-if value="{{ rSubPro }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center; padding-top:8px">
+              <div style="width:88px; height:88px; border-radius:50%; margin:0 auto; background:linear-gradient(150deg,#3A5E4A,#0F2419); border:2px solid #EDD9A3; display:flex; align-items:center; justify-content:center; color:#EDD9A3; font-size:11px; font-weight:800">PRO</div>
+              <div style="font-size:21px; font-weight:800; color:#17382A; margin-top:14px; letter-spacing:-.02em">이도형 프로</div>
+              <div style="font-size:12.5px; color:rgba(27,38,32,.55); margin-top:4px; line-height:1.55">프로필 소개 문구가 여기 들어가요.<br>경력 · 지도 철학 등 (직접 입력)</div>
+            </div>
+            <a href="#" style="margin-top:18px; display:flex; align-items:center; gap:13px; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); border-radius:16px; padding:15px 16px; text-decoration:none" style-active="transform:scale(.99)">
+              <div style="flex:none; width:42px; height:42px; border-radius:12px; background:rgba(220,50,50,.1); display:flex; align-items:center; justify-content:center; font-size:19px; color:#D33">▶</div>
+              <div style="flex:1"><div style="font-size:14px; font-weight:800; color:#17382A">유튜브 채널 바로가기</div><div style="font-size:11px; color:rgba(27,38,32,.5); margin-top:1px">youtube.com/@doh-golf (링크 입력)</div></div>
+              <div style="color:rgba(27,38,32,.35); font-size:17px">›</div>
+            </a>
+          </sc-if>
+
+          <!-- ═══════ 피드백 과정 영상 ═══════ -->
+          <sc-if value="{{ rSubFeedback }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:20px; font-weight:800; letter-spacing:-.02em; color:#17382A; padding-top:2px">피드백 과정 영상</div>
+            <div style="font-size:12px; color:rgba(27,38,32,.55); margin-top:4px; line-height:1.5">구독자가 실제로 받는 피드백이 어떻게 진행되는지 영상으로 보여드려요.</div>
+            <div style="margin-top:16px; aspect-ratio:16/9; border-radius:16px; background:#0F2419; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center">
+              <div style="width:52px; height:52px; border-radius:50%; background:rgba(247,244,236,.92); display:flex; align-items:center; justify-content:center; font-size:18px; color:#17382A">▶</div>
+              <div style="position:absolute; bottom:12px; left:12px; padding:4px 11px; border-radius:100px; background:rgba(11,21,16,.7); color:#EDD9A3; font-size:11px; font-weight:800">피드백 예시 영상 (첨부 예정)</div>
+            </div>
+            <div style="margin-top:12px; background:rgba(27,38,32,.04); border-radius:13px; padding:14px 16px; font-size:12.5px; color:rgba(27,38,32,.6); line-height:1.6">스윙 등록 → 프로 분석 → 맞춤 피드백 → 숙제 → 재확인. 구독하면 이 과정을 반복하며 스윙이 관리돼요.</div>
+            <div class="doh-btn" onClick="{{ toMembership }}" style="margin-top:14px; padding:14px; border-radius:13px; background:#17382A; color:#F7F4EC; text-align:center; font-size:13.5px; font-weight:800" style-active="transform:scale(.99)">플랜 살펴보기 ›</div>
+          </sc-if>
+
+        </div>
+
+        <!-- ═══ 똑같이 해야하나요 (팝업 시트) ═══ -->
+        <sc-if value="{{ sameOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute; inset:0; z-index:50">
+            <div class="doh-btn" onClick="{{ closeSame }}" style="position:absolute; inset:0; background:rgba(11,21,16,.45); animation:fadeBg .2s ease both"></div>
+            <div style="position:absolute; left:0; right:0; bottom:0; background:#F7F4EC; border-radius:24px 24px 0 0; padding:22px 20px 26px; animation:sheetUp .28s cubic-bezier(.2,.8,.2,1) both">
+              <div style="width:40px; height:4px; border-radius:100px; background:rgba(27,38,32,.15); margin:0 auto 16px"></div>
+              <div style="font-size:10.5px; font-weight:800; letter-spacing:.1em; color:#B07A2E">궁금증 · 자주 묻는 질문</div>
+              <div style="font-size:21px; font-weight:800; letter-spacing:-.02em; color:#17382A; margin-top:6px; line-height:1.3">프로와 똑같이<br>해야 하나요?</div>
+              <div style="font-size:13px; line-height:1.75; color:rgba(27,38,32,.72); margin-top:12px">모든 골퍼가 프로와 같은 스윙을 해야 하는 것은 아닙니다. <b style="color:#17382A">체형, 유연성, 운동능력, 신체 조건</b>에 따라 최적의 스윙은 달라질 수 있어요.</div>
+              <div class="doh-btn" onClick="{{ toFeedbackFromSame }}" style="margin-top:16px; padding:14px 15px; border-radius:14px; background:#FFFFFF; border:1px solid rgba(27,38,32,.1); display:flex; align-items:center; gap:12px" style-active="transform:scale(.99)">
+                <div style="flex:none; width:38px; height:38px; border-radius:50%; border:1.5px dashed rgba(27,38,32,.3); display:flex; align-items:center; justify-content:center; font-size:8px; color:rgba(27,38,32,.5)">PRO</div>
+                <div style="flex:1"><div style="font-size:12.5px; font-weight:800; color:#17382A">내 몸에 맞는 스윙, 프로에게 문의</div><div style="font-size:10.5px; color:rgba(27,38,32,.55); margin-top:1px">→ Membership으로 자연스럽게</div></div>
+                <div style="color:#B07A2E; font-size:15px">›</div>
+              </div>
+              <div class="doh-btn" onClick="{{ closeSame }}" style="margin-top:10px; padding:13px; border-radius:12px; background:#17382A; color:#F7F4EC; text-align:center; font-size:13.5px; font-weight:800" style-active="transform:scale(.99)">이해했어요</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- bottom nav -->
+        <div style="position:absolute; left:0; right:0; bottom:0; z-index:30; background:rgba(247,244,236,.94); backdrop-filter:blur(12px); border-top:1px solid rgba(27,38,32,.08); display:flex; padding:9px 8px 22px; box-sizing:border-box">
+          <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="4">
+            <div class="doh-btn" onClick="{{ n.go }}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding-top:2px">
+              <div style="{{ n.iconStyle }}"></div>
+              <div style="{{ n.labelStyle }}">{{ n.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- toast -->
+        <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute; left:50%; bottom:96px; transform:translateX(-50%); z-index:60; background:#17382A; color:#F7F4EC; padding:10px 18px; border-radius:100px; font-size:12.5px; font-weight:700; white-space:nowrap; box-shadow:0 10px 24px rgba(11,21,16,.35)">{{ toast }}</div>
+        </sc-if>
+
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:720,&quot;height&quot;:860}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.PAGES = {
+      home:        { name: 'Home', purpose: '앱 시작점. 이번 주 숙제·분석·구독으로 진입.', next: '목표 숙제 · 스윙 분석 · 프로 문의', back: '—', tab: 'home' },
+      homework:    { name: '이번 주 목표 숙제', purpose: '프로가 내준 숙제를 확인하고 수행.', next: '스윙 업로드 · 구독 안내(문의)', back: 'Home', tab: 'home' },
+      hub1:        { name: '스윙 분석', purpose: '내 스윙 관리의 시작점. AI 분석 진입.', next: 'AI 분석 · 업로드 · 갤러리 · 프로 비교', back: '—', tab: 'analysis' },
+      aiSurvey:    { name: 'AI 스윙분석 + 설문', purpose: '설문→스윙등록→추가설문→결과→신체테스트.', next: '결과 · 신체 테스트', back: '스윙 분석', tab: 'analysis' },
+      upload:      { name: '스윙 업로드', purpose: '정면·측면 영상을 올린다.', next: '단독 분석', back: '스윙 분석', tab: 'analysis' },
+      gallery:     { name: '내 스윙 갤러리', purpose: '과거 스윙을 날짜별로 조회.', next: '단독 분석', back: '스윙 분석', tab: 'analysis' },
+      single:      { name: '단독 분석', purpose: '영상 분석·슬라이드바·선·캡처.', next: '멀티 비교 · 프로 비교 · 프로 문의', back: '업로드/갤러리', tab: 'analysis' },
+      multi:       { name: '멀티스크린 비교', purpose: '현재↔과거 스윙 비교.', next: '프로 비교 · 프로 문의', back: '단독 분석', tab: 'analysis' },
+      hub2:        { name: '프로와 비교하기', purpose: 'DOH 핵심 차별화. 프로 비교 Hub.', next: '프로 선택 · 카메라 · 프로 단독 · 프로 비교', back: '스윙 분석', tab: 'analysis' },
+      proSelect:   { name: '프로 선택', purpose: '남성/여성 프로를 고른다.', next: '카메라 선택', back: '프로 비교', tab: 'analysis' },
+      camera:      { name: '카메라 선택', purpose: '정면/측면 각도를 고른다.', next: '프로 단독 분석', back: '프로 선택', tab: 'analysis' },
+      proSolo:     { name: '프로 단독 분석', purpose: '프로 영상 분석 · P1–P10 학습.', next: '프로와 내 스윙 비교', back: '카메라 선택', tab: 'analysis' },
+      proCompare:  { name: '프로와 내 스윙 비교', purpose: '멀티스크린 비교 · P버튼 연동.', next: '똑같이? · 프로 문의', back: '프로 단독 분석', tab: 'analysis' },
+      feedback:    { name: '프로에게 문의', purpose: '궁금증을 프로에게. 구독 안내로 연결.', next: '구독 안내', back: '직전 페이지', tab: 'analysis' },
+      dict:        { name: '골프 사전', purpose: '키워드 검색 → 유튜브 영상·앱 설명.', next: '—', back: '—', tab: 'dict' },
+      profile:     { name: '프로필', purpose: '내 정보·구독 상태·숙제·안내 진입.', next: '숙제 · 구독 안내 · 멤버십', back: '—', tab: 'profile' },
+      subscription:{ name: '구독별 안내사항', purpose: '혜택·오프라인·프로소개·피드백 안내.', next: '상세 4종', back: '직전 페이지', tab: 'profile' },
+      subBenefits: { name: '구독별 혜택 안내', purpose: 'Basic·Coaching·Elite 혜택 비교.', next: '멤버십', back: '구독 안내', tab: 'profile' },
+      subOffline:  { name: '오프라인 레슨 정보', purpose: '현장 레슨 위치·일정·예약.', next: '—', back: '구독 안내', tab: 'profile' },
+      subPro:      { name: '이도형 프로는?', purpose: '프로 소개 · 유튜브 채널.', next: '—', back: '구독 안내', tab: 'profile' },
+      subFeedback: { name: '피드백 과정 영상', purpose: '구독자 혜택 · 실제 피드백 예시.', next: '멤버십', back: '구독 안내', tab: 'profile' },
+      membership:  { name: 'Membership', purpose: '관리 플랜 가입. 최종 전환.', next: '—', back: '구독 안내', tab: 'profile' }
+    };
+    this.state = {
+      route: 'home', history: [], dir: 'fwd',
+      up: [false, false], pro: null, cam: null, pIdx: 3, frame: 38,
+      line: false, sameOpen: false, toast: '',
+      hwState: 'has',
+      aiPhase: 'intro', aiI: 0, aiA1: {}, aiA2: {},
+      dictQ: ''
+    };
+  }
+  go(route) {
+    this.setState(s => ({ route, history: [...s.history, s.route], dir: 'fwd', sameOpen: false }));
+  }
+  back() {
+    this.setState(s => {
+      if (!s.history.length) return { route: 'home', dir: 'back', sameOpen: false };
+      const h = [...s.history]; const prev = h.pop();
+      return { route: prev, history: h, dir: 'back', sameOpen: false };
+    });
+  }
+  toastMsg(t) { this.setState({ toast: t }); clearTimeout(this._tt); this._tt = setTimeout(() => this.setState({ toast: '' }), 1700); }
+  setFrameFromP(i) { this.setState({ pIdx: i, frame: Math.round(i / 9 * 100) }); }
+
+  renderVals() {
+    const s = this.state;
+    const P = this.PAGES[s.route];
+    const p10 = ['P1','P2','P3','P4','P5','P6','P7','P8','P9','P10'];
+    const curP = p10[s.pIdx];
+    const nav = (r) => () => this.go(r);
+
+    const pTicks = p10.map((l, i) => ({
+      label: l,
+      color: i === s.pIdx ? '#0B1510' : 'rgba(247,244,236,.55)',
+      bg: i === s.pIdx ? '#EDD9A3' : 'transparent',
+      colorInv: i === s.pIdx ? '#0B1510' : 'rgba(247,244,236,.5)',
+      bgInv: i === s.pIdx ? '#EDD9A3' : 'transparent'
+    }));
+    const mkPBtn = (dark) => p10.map((l, i) => ({
+      label: l,
+      go: () => this.setFrameFromP(i),
+      style: {
+        flex: '0 0 auto', width: 'calc(20% - 4px)', textAlign: 'center', fontSize: '11px', fontWeight: 800,
+        padding: '7px 0', borderRadius: '8px',
+        background: i === s.pIdx ? '#EDD9A3' : (dark ? 'rgba(247,244,236,.1)' : 'rgba(27,38,32,.05)'),
+        color: i === s.pIdx ? '#0B1510' : (dark ? '#F7F4EC' : '#17382A')
+      }
+    }));
+
+    const jumpList = Object.keys(this.PAGES).map(k => ({
+      label: this.PAGES[k].name.replace(/ \(.*\)/, ''),
+      go: () => this.go(k),
+      style: {
+        padding: '6px 11px', borderRadius: '100px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+        background: k === s.route ? '#17382A' : '#FFFFFF',
+        color: k === s.route ? '#F7F4EC' : 'rgba(27,38,32,.7)',
+        border: '1px solid ' + (k === s.route ? '#17382A' : 'rgba(27,38,32,.12)')
+      }
+    }));
+
+    const NAV = [
+      { label: '홈', tab: 'home', go: () => this.go('home') },
+      { label: '스윙분석', tab: 'analysis', go: () => this.go('hub1') },
+      { label: '골프사전', tab: 'dict', go: () => this.go('dict') },
+      { label: '프로필', tab: 'profile', go: () => this.go('profile') }
+    ];
+    const navItems = NAV.map(n => {
+      const on = n.tab === P.tab;
+      return {
+        label: n.label, go: n.go,
+        iconStyle: { width: '22px', height: '22px', borderRadius: on ? '7px' : '50%', background: on ? '#17382A' : 'rgba(27,38,32,.25)' },
+        labelStyle: { fontSize: '10px', fontWeight: on ? 800 : 600, color: on ? '#17382A' : 'rgba(27,38,32,.45)' }
+      };
+    });
+
+    const proNames = { m: '이도형', f: '김지원' };
+    const uploadSlots = [
+      { key: 0, icon: '📹', label: '정면' },
+      { key: 1, icon: '📹', label: '측면' }
+    ].map(u => {
+      const done = s.up[u.key];
+      return {
+        icon: done ? '✓' : u.icon, label: u.label,
+        state: done ? '업로드 완료' : '탭해서 업로드',
+        toggle: () => this.setState(st => { const up = [...st.up]; up[u.key] = !up[u.key]; return { up }; }),
+        fg: done ? '#F7F4EC' : '#17382A', subFg: done ? 'rgba(247,244,236,.6)' : 'rgba(27,38,32,.5)',
+        style: {
+          flex: 1, borderRadius: '16px', padding: '22px 14px', textAlign: 'center', cursor: 'pointer',
+          background: done ? 'linear-gradient(160deg,#1B4030,#17382A)' : '#FFFFFF',
+          border: '1.5px solid ' + (done ? '#17382A' : 'rgba(27,38,32,.12)')
+        }
+      };
+    });
+    const anyUp = s.up[0] || s.up[1];
+    const uploadNextStyle = {
+      marginTop: '16px', padding: '15px', borderRadius: '14px', textAlign: 'center',
+      fontSize: '14px', fontWeight: 800, cursor: 'pointer',
+      background: anyUp ? '#17382A' : 'rgba(27,38,32,.08)',
+      color: anyUp ? '#F7F4EC' : 'rgba(27,38,32,.35)'
+    };
+
+    const proList = [
+      { key: 'm', name: '이도형', tag: '남성 프로 · 대표' },
+      { key: 'f', name: '김지원', tag: '여성 프로' }
+    ].map(p => {
+      const on = s.pro === p.key;
+      return {
+        name: p.name, tag: p.tag,
+        pick: () => this.setState({ pro: p.key }),
+        ring: on ? '#EDD9A3' : 'rgba(27,38,32,.3)',
+        fg: on ? '#F7F4EC' : '#17382A', subFg: on ? 'rgba(247,244,236,.6)' : 'rgba(27,38,32,.5)',
+        cardStyle: {
+          display: 'flex', alignItems: 'center', gap: '13px', padding: '15px 16px', borderRadius: '16px', cursor: 'pointer',
+          background: on ? 'linear-gradient(160deg,#1B4030,#17382A)' : '#FFFFFF',
+          border: '1.5px solid ' + (on ? '#17382A' : 'rgba(27,38,32,.12)')
+        },
+        checkStyle: {
+          width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '13px', fontWeight: 800,
+          background: on ? '#EDD9A3' : 'transparent', color: on ? '#0B1510' : 'transparent',
+          border: on ? 'none' : '1.5px solid rgba(27,38,32,.2)'
+        }
+      };
+    });
+    const proNextStyle = {
+      marginTop: '18px', padding: '15px', borderRadius: '14px', textAlign: 'center', fontSize: '14px', fontWeight: 800, cursor: 'pointer',
+      background: s.pro ? '#17382A' : 'rgba(27,38,32,.08)', color: s.pro ? '#F7F4EC' : 'rgba(27,38,32,.35)'
+    };
+
+    const cameraList = [
+      { key: '정면', icon: '⬆' }, { key: '측면', icon: '➡' }
+    ].map(c => {
+      const on = s.cam === c.key;
+      return {
+        label: c.key, icon: c.icon, pick: () => this.setState({ cam: c.key }),
+        fg: on ? '#F7F4EC' : '#17382A',
+        style: {
+          flex: 1, borderRadius: '16px', padding: '24px 14px', textAlign: 'center', cursor: 'pointer',
+          background: on ? 'linear-gradient(160deg,#1B4030,#17382A)' : '#FFFFFF',
+          border: '1.5px solid ' + (on ? '#17382A' : 'rgba(27,38,32,.12)')
+        }
+      };
+    });
+    const cameraNextStyle = {
+      marginTop: '18px', padding: '15px', borderRadius: '14px', textAlign: 'center', fontSize: '14px', fontWeight: 800, cursor: 'pointer',
+      background: s.cam ? '#17382A' : 'rgba(27,38,32,.08)', color: s.cam ? '#F7F4EC' : 'rgba(27,38,32,.35)'
+    };
+
+    const plans = [
+      { name: 'Basic', price: '무료', desc: 'AI 분석 · 갤러리 · 프로 스윙 열람', on: false },
+      { name: 'Coaching', price: '월 39,000원', desc: '프로 피드백 월 2회 · 2주 목표 관리', on: true },
+      { name: 'Elite', price: '월 99,000원', desc: '무제한 피드백 · 1:1 영상 코칭 · 맞춤 드릴', on: false }
+    ].map(p => ({
+      name: p.name, price: p.price, desc: p.desc,
+      fg: p.on ? '#F7F4EC' : '#17382A', priceFg: p.on ? '#EDD9A3' : '#2E5C44', subFg: p.on ? 'rgba(247,244,236,.65)' : 'rgba(27,38,32,.55)',
+      cardStyle: {
+        borderRadius: '16px', padding: '16px 17px',
+        background: p.on ? 'linear-gradient(160deg,#1B4030,#17382A)' : '#FFFFFF',
+        border: '1.5px solid ' + (p.on ? '#17382A' : 'rgba(27,38,32,.12)')
+      }
+    }));
+
+    const hub1Cards = [
+      { tag: 'PAGE ①', icon: '⬆', iconBg: 'rgba(46,92,68,.1)', name: '스윙 업로드', desc: '정면·측면 영상 올리기', go: () => this.go('upload') },
+      { tag: 'PAGE ②', icon: '🖼', iconBg: 'rgba(46,92,68,.1)', name: '내 스윙 갤러리', desc: '과거 스윙 날짜별 조회', go: () => this.go('gallery') },
+      { tag: 'PAGE ③', icon: '🎬', iconBg: 'rgba(176,122,46,.14)', name: '단독 분석', desc: '슬라이드바·선·캡처·AI', go: () => this.go('single') },
+      { tag: 'PAGE ④', icon: '⚖', iconBg: 'rgba(176,122,46,.14)', name: '멀티스크린 비교', desc: '현재↔과거 스윙 비교', go: () => this.go('multi') }
+    ];
+    const hub2Cards = [
+      { num: '1', name: '프로 선택', desc: '남성/여성 프로', go: () => this.go('proSelect') },
+      { num: '2', name: '카메라 선택', desc: '정면/측면 각도', go: () => this.go('camera') },
+      { num: '3', name: '프로 단독 분석', desc: 'P1–P10 학습', go: () => this.go('proSolo') },
+      { num: '4', name: '프로와 내 스윙 비교', desc: '멀티스크린 · 프레임 동기화', go: () => this.go('proCompare') }
+    ];
+    const galleryGroups = [
+      { date: '7월 · 이번 주', items: [ { side: '정면', club: '드라이버', tag: '골반 회전' }, { side: '측면', club: '드라이버', tag: '템포 좋음' } ] },
+      { date: '6월', items: [ { side: '정면', club: '아이언', tag: '숙제 완료' }, { side: '측면', club: '드라이버', tag: '피니시' } ] }
+    ];
+
+    // ═══ 목표 숙제 ═══
+    const hwStates = [
+      { key: 'empty', label: '숙제 없음' },
+      { key: 'has', label: '이번 주' },
+      { key: 'done', label: '다 했어요' },
+      { key: 'confused', label: '모르겠어요' }
+    ];
+    const hwTabs = hwStates.map(t => ({
+      label: t.label,
+      pick: () => this.setState({ hwState: t.key }),
+      style: {
+        flex: 1, textAlign: 'center', padding: '9px 0', borderRadius: '9px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer',
+        background: s.hwState === t.key ? '#FFFFFF' : 'transparent',
+        color: s.hwState === t.key ? '#17382A' : 'rgba(27,38,32,.5)',
+        boxShadow: s.hwState === t.key ? '0 2px 6px rgba(11,21,16,.1)' : 'none'
+      }
+    }));
+    const hwItems = [
+      { title: '임팩트에서 골반 먼저 리드하기', due: '~7/27', prog: 60, desc: '다운스윙에서 골반이 어깨보다 먼저 열리도록 10회 반복 촬영' },
+      { title: '백스윙 탑 위치 고정', due: '~7/27', prog: 20, desc: '탑에서 0.5초 멈추는 드릴 · 정면에서 촬영해 확인' }
+    ];
+
+    // ═══ 구독별 안내사항 ═══
+    const subCards = [
+      { key: 'subBenefits', icon: '🎁', name: '구독별 혜택 안내', desc: 'Basic · Coaching · Elite 혜택 비교' },
+      { key: 'subOffline', icon: '📍', name: '오프라인 레슨 정보', desc: '현장 레슨 위치 · 일정 · 예약' },
+      { key: 'subPro', icon: '👤', name: '이도형 프로는?', desc: '프로 소개 · 유튜브 채널 링크' },
+      { key: 'subFeedback', icon: '🎬', name: '피드백 과정 영상', desc: '구독자 혜택 · 실제 피드백 예시' }
+    ].map(c => ({ ...c, go: () => this.go(c.key) }));
+
+    // ═══ 골프 사전 ═══
+    const DICT = [
+      { term: '임팩트', type: '설명', body: '클럽 헤드가 공에 맞는 순간. 손이 공보다 살짝 앞선 상태가 이상적이에요.' },
+      { term: '릴리즈', type: '영상', body: '임팩트 구간에서 손목 코킹을 풀어주는 동작.', yt: 'youtu.be/doh-release' },
+      { term: '템포', type: '설명', body: '백스윙과 다운스윙의 시간 비율. 보통 3:1이 안정적이에요.' },
+      { term: '캐스팅', type: '영상', body: '다운스윙 초반에 손목이 일찍 풀리는 대표적 실수.', yt: 'youtu.be/doh-casting' },
+      { term: '레깅 (래그)', type: '설명', body: '다운스윙에서 손목 각을 최대한 유지하는 것. 비거리의 핵심.' },
+      { term: '스웨이', type: '영상', body: '백스윙에서 몸이 오른쪽으로 밀리는 실수.', yt: 'youtu.be/doh-sway' }
+    ];
+    const dq = (s.dictQ || '').trim();
+    const dictList = DICT.filter(d => !dq || d.term.includes(dq) || d.body.includes(dq)).map(d => ({
+      term: d.term, body: d.body, yt: d.yt || '', isVideo: d.type === '영상',
+      typeStyle: {
+        flex: 'none', padding: '3px 9px', borderRadius: '100px', fontSize: '10px', fontWeight: 800,
+        background: d.type === '영상' ? 'rgba(176,122,46,.14)' : 'rgba(46,92,68,.1)',
+        color: d.type === '영상' ? '#B07A2E' : '#2E5C44'
+      },
+      typeLabel: d.type
+    }));
+
+    // ═══ AI 스윙분석 + 설문 ═══
+    const SURVEY1 = [
+      { id: 'q1', q: '골프 경력이 어느 정도 되세요?', opts: ['6개월 미만', '6개월~2년', '2~5년', '5년 이상'] },
+      { id: 'q2', q: '이번에 분석할 클럽은?', opts: ['드라이버', '아이언', '웨지', '퍼터'] },
+      { id: 'q3', q: '평균 스코어대는?', opts: ['100타 이상', '90타대', '80타대', '70타대'] },
+      { id: 'q4', q: '이번 분석의 목표는?', opts: ['비거리', '방향성', '일관성', '자세 교정'] },
+      { id: 'q5', q: '가장 고민되는 구간은?', opts: ['어드레스·백스윙', '탑', '임팩트', '팔로우·피니시'] },
+      { id: 'q6', q: '요즘 자주 나는 실수는?', opts: ['슬라이스', '훅', '뒤땅·토핑', '잘 모르겠어요'] },
+      { id: 'q7', q: '일주일 연습 빈도는?', opts: ['거의 못해요', '1~2회', '3~4회', '5회 이상'] },
+      { id: 'q8', q: '불편한 신체 부위가 있나요?', opts: ['없어요', '허리', '어깨', '무릎'] }
+    ];
+    const SURVEY2 = [
+      { id: 'r1', q: '방금 스윙, 힘이 잘 전달되는 느낌이었나요?', opts: ['그렇다', '보통', '아니다'] },
+      { id: 'r2', q: '평소 스윙과 비교하면 어땠나요?', opts: ['평소와 비슷', '더 좋았어요', '더 안 좋았어요'] },
+      { id: 'r3', q: '오늘 몸 상태(컨디션)는?', opts: ['좋아요', '보통', '안 좋아요'] }
+    ];
+    const isS2 = s.aiPhase === 'survey2';
+    const curSurvey = isS2 ? SURVEY2 : SURVEY1;
+    const aiQ = curSurvey[s.aiI] || curSurvey[0];
+    const ansMap = isS2 ? s.aiA2 : s.aiA1;
+    const aiOpts = (aiQ ? aiQ.opts : []).map(o => {
+      const on = ansMap[aiQ.id] === o;
+      return {
+        label: o, check: on ? '✓' : '',
+        pick: () => this.setState(st => {
+          const key = st.aiPhase === 'survey2' ? 'aiA2' : 'aiA1';
+          return { [key]: { ...st[key], [aiQ.id]: o } };
+        }),
+        style: {
+          padding: '15px 17px', borderRadius: '14px', cursor: 'pointer', fontSize: '14px', fontWeight: 800,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: on ? 'linear-gradient(160deg,#1B4030,#17382A)' : '#FFFFFF',
+          color: on ? '#F7F4EC' : '#17382A',
+          border: '1.5px solid ' + (on ? '#17382A' : 'rgba(27,38,32,.12)')
+        },
+        checkStyle: {
+          width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '12px', fontWeight: 800, background: on ? '#EDD9A3' : 'transparent', color: on ? '#0B1510' : 'transparent',
+          border: on ? 'none' : '1.5px solid rgba(27,38,32,.2)'
+        }
+      };
+    });
+    const aiTotal = curSurvey.length;
+    const aiCanNext = aiQ && ansMap[aiQ.id] != null;
+    const aiProgress = (isS2 ? '추가 질문 ' : '') + (s.aiI + 1) + ' / ' + aiTotal;
+    const aiPct = Math.round((s.aiI + 1) / aiTotal * 100);
+    const aiNext = () => this.setState(st => {
+      const arr = st.aiPhase === 'survey2' ? SURVEY2 : SURVEY1;
+      if (st.aiI < arr.length - 1) return { aiI: st.aiI + 1 };
+      if (st.aiPhase === 'survey1') return { aiPhase: 'register', aiI: 0 };
+      if (st.aiPhase === 'survey2') return { aiPhase: 'result' };
+      return {};
+    });
+    const aiPrev = () => this.setState(st => {
+      if (st.aiI > 0) return { aiI: st.aiI - 1 };
+      if (st.aiPhase === 'survey2') return { aiPhase: 'register' };
+      if (st.aiPhase === 'register') return { aiPhase: 'survey1', aiI: SURVEY1.length - 1 };
+      if (st.aiPhase === 'survey1') return { aiPhase: 'intro' };
+      return {};
+    });
+    const nextBtnStyle = {
+      flex: 1, padding: '15px', borderRadius: '14px', textAlign: 'center', fontSize: '14px', fontWeight: 800, cursor: 'pointer',
+      background: aiCanNext ? '#17382A' : 'rgba(27,38,32,.08)', color: aiCanNext ? '#F7F4EC' : 'rgba(27,38,32,.35)'
+    };
+    const physItems = [
+      { name: '어깨 회전 유연성', desc: '상체 회전 가동 범위' },
+      { name: '골반 분리 (X-Factor)', desc: '상·하체 분리 능력' },
+      { name: '코어 안정성', desc: '스윙 중 몸통을 버티는 힘' },
+      { name: '발목 가동성', desc: '체중 이동 안정성' }
+    ];
+
+    return {
+      route: s.route,
+      screenAnim: s.dir === 'back' ? 'animation:scrBack .26s ease both' : 'animation:scrIn .26s ease both',
+      curName: P.name, curPurpose: P.purpose, curNext: P.next, curBack: P.back,
+      barTitle: s.route === 'home' ? '' : P.name.replace(/ \(.*\)/, ''),
+      showBack: s.route !== 'home', showBrand: s.route === 'home',
+      jumpList, navItems,
+      rHome: s.route === 'home', rHub1: s.route === 'hub1', rUpload: s.route === 'upload',
+      rGallery: s.route === 'gallery', rSingle: s.route === 'single', rMulti: s.route === 'multi',
+      rHub2: s.route === 'hub2', rProSelect: s.route === 'proSelect', rCamera: s.route === 'camera',
+      rProSolo: s.route === 'proSolo', rProCompare: s.route === 'proCompare',
+      rFeedback: s.route === 'feedback', rMembership: s.route === 'membership',
+      rHomework: s.route === 'homework', rDict: s.route === 'dict', rProfile: s.route === 'profile',
+      rSubscription: s.route === 'subscription', rSubBenefits: s.route === 'subBenefits',
+      rSubOffline: s.route === 'subOffline', rSubPro: s.route === 'subPro', rSubFeedback: s.route === 'subFeedback',
+      rAiSurvey: s.route === 'aiSurvey',
+      // 숙제
+      hwTabs, hwItems, hwEmpty: s.hwState === 'empty', hwHas: s.hwState === 'has',
+      hwDone: s.hwState === 'done', hwConfused: s.hwState === 'confused',
+      // 구독 · 사전
+      subCards, dictList, dictQ: s.dictQ, onDict: (e) => this.setState({ dictQ: e.target.value }),
+      dictEmpty: dictList.length === 0,
+      // AI 설문
+      aiPhaseIntro: s.aiPhase === 'intro', aiPhaseSurvey1: s.aiPhase === 'survey1',
+      aiPhaseRegister: s.aiPhase === 'register', aiPhaseSurvey2: s.aiPhase === 'survey2',
+      aiPhaseResult: s.aiPhase === 'result', aiPhasePhysical: s.aiPhase === 'physical',
+      aiSurveyPhase: s.aiPhase === 'survey1' || s.aiPhase === 'survey2',
+      aiQ: aiQ ? aiQ.q : '', aiOpts, aiProgress, aiPct, nextBtnStyle, physItems,
+      aiStart: () => this.setState({ aiPhase: 'survey1', aiI: 0 }),
+      aiNext, aiPrev,
+      aiRegisterNext: () => this.setState({ aiPhase: 'survey2', aiI: 0 }),
+      aiRestart: () => this.setState({ aiPhase: 'intro', aiI: 0, aiA1: {}, aiA2: {} }),
+      aiWantPhysical: () => this.setState({ aiPhase: 'physical' }),
+      aiSkipPhysical: () => { this.toastMsg('분석 결과를 저장했어요'); this.go('hub1'); },
+      aiFinishPhysical: () => { this.toastMsg('신체 테스트 결과 저장됨'); this.go('hub1'); },
+      // nav actions
+      toHomework: () => this.go('homework'), toSubscription: () => this.go('subscription'),
+      toDict: () => this.go('dict'), toProfile: () => this.go('profile'),
+      toAiSurvey: () => { this.setState({ aiPhase: 'intro', aiI: 0 }); this.go('aiSurvey'); },
+      // nav actions
+      toHome: () => this.go('home'), toHub1: () => this.go('hub1'), toHub2: () => this.go('hub2'),
+      toUpload: () => this.go('upload'), toGallery: () => this.go('gallery'), toSingle: () => this.go('single'),
+      toMulti: () => this.go('multi'), toProSelect: () => this.go('proSelect'), toCamera: () => this.go('camera'),
+      toProSolo: () => this.go('proSolo'), toProCompare: () => this.go('proCompare'),
+      toFeedback: () => this.go('feedback'), toMembership: () => this.go('membership'),
+      toSameAsPro: () => this.setState({ sameOpen: true }),
+      closeSame: () => this.setState({ sameOpen: false }),
+      toFeedbackFromSame: () => this.go('feedback'),
+      goBack: () => this.back(),
+      // widgets
+      pTicks, pButtons: mkPBtn(false), pButtonsInv: mkPBtn(true), curP,
+      frame: s.frame, onFrame: (e) => { const v = +e.target.value; this.setState({ frame: v, pIdx: Math.round(v / 100 * 9) }); },
+      stepBack: () => this.setState(st => ({ frame: Math.max(0, st.frame - 4) })),
+      stepFwd: () => this.setState(st => ({ frame: Math.min(100, st.frame + 4) })),
+      lineY: s.line ? 70 : 88, angleTxt: s.line ? '32°' : '선 없음',
+      toggleLine: () => this.setState(st => ({ line: !st.line })),
+      lineBtnStyle: {
+        padding: '5px 9px', borderRadius: '100px', fontSize: '11px', fontWeight: 800, cursor: 'pointer',
+        background: s.line ? '#EDD9A3' : 'rgba(11,21,16,.65)', color: s.line ? '#0B1510' : '#F7F4EC'
+      },
+      doCapture: () => this.toastMsg('📷 캡처 저장됨'),
+      uploadSlots, uploadNextStyle, proList, proNextStyle, cameraList, cameraNextStyle, plans,
+      hub1Cards, hub2Cards, galleryGroups,
+      pickedProName: proNames[s.pro] || '이도형', pickedCam: s.cam || '정면',
+      sameOpen: s.sameOpen, toast: s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>
