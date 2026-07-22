@@ -19,6 +19,11 @@ export default function MultiScreen() {
 
   return (
     <Screen>
+      <View style={{ paddingHorizontal: 2, marginBottom: 12 }}>
+        <Text style={styles.title}>과거 스윙과 비교</Text>
+        <Text style={styles.subtitle}>예전 스윙을 골라 지금 스윙과 나란히 놓고 봐요.</Text>
+      </View>
+
       <View style={styles.syncBadge}>
         <Text style={styles.syncText}>◎ 프레임 동기화 ON</Text>
       </View>
@@ -26,7 +31,10 @@ export default function MultiScreen() {
       <View style={styles.split}>
         <View style={styles.half}>
           <SwingStage badge="과거" />
-          <Text style={styles.caption}>6월 · 드라이버</Text>
+          <Press activeScale={0.97} onPress={() => go('gallery')} style={styles.pickPast}>
+            <Text style={styles.pickPastText}>6월 · 드라이버</Text>
+            <Text style={styles.pickPastChange}>바꾸기 ›</Text>
+          </Press>
         </View>
         <View style={styles.half}>
           <SwingStage badge="현재" />
@@ -57,11 +65,25 @@ export default function MultiScreen() {
 }
 
 const styles = StyleSheet.create({
+  title: { fontSize: 20, fontWeight: weight.black, letterSpacing: -0.4, color: colors.ink },
+  subtitle: { fontSize: 12, color: colors.textSecondary, marginTop: 4, lineHeight: 18 },
   syncBadge: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, backgroundColor: 'rgba(46,92,68,.12)', marginBottom: 10 },
   syncText: { fontSize: 11, fontWeight: weight.black, color: colors.accentGreen },
   split: { flexDirection: 'row', gap: 9 },
   half: { flex: 1 },
   caption: { fontSize: 11, color: colors.textWeak, marginTop: 6, fontWeight: weight.bold, textAlign: 'center' },
+  pickPast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 6,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(176,122,46,.1)',
+  },
+  pickPastText: { fontSize: 11, color: colors.ink, fontWeight: weight.bold },
+  pickPastChange: { fontSize: 11, color: colors.gold, fontWeight: weight.black },
   panel: { marginTop: 12, backgroundColor: colors.darkestGreen, borderRadius: radius.card, padding: 14 },
   panelLabel: { fontSize: 9.5, fontWeight: weight.black, color: colors.goldLight, letterSpacing: 0.5, marginBottom: 12 },
   captureBtn: { marginTop: 12, paddingVertical: 12, borderRadius: radius.iconTile, backgroundColor: 'rgba(247,244,236,.1)', alignItems: 'center' },

@@ -2,22 +2,15 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Screen } from '../components/Screen';
-import { DarkCard, IconTile, Press, SectionLabel, t as tt } from '../components/ui';
+import { Card, DarkCard, IconTile, Press, SectionLabel, t as tt } from '../components/ui';
 import { colors, radius, weight } from '../theme/tokens';
 import { useNav } from '../navigation/useNav';
-import { RouteName } from '../navigation/pages';
 
 // 최근 스윙 (더미) — 실제로는 백엔드/갤러리에서 로드
 const RECENT = [
   { side: '정면', day: '오늘', club: '드라이버' },
   { side: '측면', day: '오늘', club: '드라이버' },
   { side: '정면', day: '6/28', club: '아이언' },
-];
-
-// 스윙으로 하는 분석 액션
-const TOOLS: { icon: string; iconBg: string; name: string; desc: string; route: RouteName }[] = [
-  { icon: '🎬', iconBg: 'rgba(176,122,46,.14)', name: '단독 분석', desc: '한 스윙을 프레임·각도·선으로 자세히', route: 'single' },
-  { icon: '⚖', iconBg: 'rgba(176,122,46,.14)', name: '멀티스크린 비교', desc: '과거↔현재 스윙을 나란히 놓고 비교', route: 'multi' },
 ];
 
 export default function Hub1Screen() {
@@ -41,70 +34,64 @@ export default function Hub1Screen() {
         </DarkCard>
       </Press>
 
-      {/* ── 내 스윙 (가져오기: 촬영/갤러리 통합) ── */}
-      <View style={[styles.sectionHead, { marginTop: 22 }]}>
-        <SectionLabel>내 스윙</SectionLabel>
-        <Press activeScale={0.96} onPress={() => go('gallery')} hitSlop={8}>
-          <Text style={styles.seeAll}>전체 12개 ›</Text>
-        </Press>
-      </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.strip}
-        style={{ marginHorizontal: -2 }}
-      >
-        {/* 새 스윙 올리기 — 촬영/업로드 진입 */}
-        <Press onPress={() => go('upload')} style={styles.addTile}>
-          <View style={styles.addInner}>
-            <Text style={styles.addPlus}>＋</Text>
-            <Text style={styles.addLabel}>새 스윙</Text>
-            <Text style={styles.addSub}>촬영·업로드</Text>
+      {/* ── 내 스윙 분석하기 (핵심 · 상단) ── */}
+      <Card style={styles.analyzeCard}>
+        <Press onPress={() => go('single')} activeScale={0.99} style={styles.analyzeHead}>
+          <IconTile emoji="🎬" size={44} bg="rgba(176,122,46,.14)" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.analyzeTitle}>내 스윙 분석하기</Text>
+            <Text style={styles.analyzeDesc}>프레임·각도·선으로 자세히 · 과거 스윙과 비교까지</Text>
           </View>
+          <Text style={{ color: colors.textDisabled, fontSize: 18 }}>›</Text>
         </Press>
 
-        {RECENT.map((s, i) => (
-          <Press key={i} onPress={() => go('single')} style={styles.thumbWrap}>
-            <LinearGradient
-              colors={[colors.highlightGreen, colors.darkestGreen]}
-              start={{ x: 0.1, y: 0 }}
-              end={{ x: 0.9, y: 1 }}
-              style={styles.thumb}
-            >
-              <View style={styles.thumbTag}>
-                <Text style={styles.thumbTagText}>{s.side}</Text>
-              </View>
-              <View style={styles.playDot}>
-                <Text style={{ fontSize: 9, color: colors.ink }}>▶</Text>
-              </View>
-            </LinearGradient>
-            <Text style={styles.thumbClub}>{s.club}</Text>
-            <Text style={styles.thumbDay}>{s.day}</Text>
-          </Press>
-        ))}
-      </ScrollView>
+        <View style={styles.divider} />
 
-      {/* ── 분석 도구 (분석하기: 단독/멀티) ── */}
-      <SectionLabel style={{ marginTop: 20 }}>분석 도구</SectionLabel>
-      <Text style={styles.toolHint}>올리거나 고른 스윙으로 자세히 보고, 비교해요.</Text>
-      <View style={styles.toolGroup}>
-        {TOOLS.map((tool, i) => (
-          <Press key={tool.route} onPress={() => go(tool.route)} activeScale={0.99}>
-            <View style={[styles.toolRow, i > 0 && styles.toolDivider]}>
-              <IconTile emoji={tool.icon} size={40} bg={tool.iconBg} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.toolName}>{tool.name}</Text>
-                <Text style={styles.toolDesc}>{tool.desc}</Text>
-              </View>
-              <Text style={{ color: colors.textDisabled, fontSize: 17 }}>›</Text>
-            </View>
+        <View style={styles.recentHead}>
+          <Text style={styles.recentLabel}>최근 내 스윙</Text>
+          <Press activeScale={0.96} onPress={() => go('gallery')} hitSlop={8}>
+            <Text style={styles.seeAll}>전체 12개 ›</Text>
           </Press>
-        ))}
-      </View>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+          {RECENT.map((s, i) => (
+            <Press key={i} onPress={() => go('single')} style={styles.thumbWrap}>
+              <LinearGradient
+                colors={[colors.highlightGreen, colors.darkestGreen]}
+                start={{ x: 0.1, y: 0 }}
+                end={{ x: 0.9, y: 1 }}
+                style={styles.thumb}
+              >
+                <View style={styles.thumbTag}>
+                  <Text style={styles.thumbTagText}>{s.side}</Text>
+                </View>
+                <View style={styles.playDot}>
+                  <Text style={{ fontSize: 9, color: colors.ink }}>▶</Text>
+                </View>
+              </LinearGradient>
+              <Text style={styles.thumbClub}>{s.club}</Text>
+              <Text style={styles.thumbDay}>{s.day}</Text>
+            </Press>
+          ))}
+        </ScrollView>
+      </Card>
+
+      {/* ── 새 스윙 올리기 (중하단) ── */}
+      <Press onPress={() => go('upload')} activeScale={0.99} style={{ marginTop: 12 }}>
+        <View style={styles.uploadCard}>
+          <View style={styles.uploadPlus}>
+            <Text style={styles.uploadPlusText}>＋</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.uploadTitle}>새 스윙 올리기</Text>
+            <Text style={styles.uploadDesc}>지금 촬영하거나 영상을 업로드해요</Text>
+          </View>
+          <Text style={{ color: colors.textDisabled, fontSize: 17 }}>›</Text>
+        </View>
+      </Press>
 
       {/* 프로와 비교 진입 */}
-      <Press onPress={() => go('hub2')} activeScale={0.99} style={{ marginTop: 14 }}>
+      <Press onPress={() => go('hub2')} activeScale={0.99} style={{ marginTop: 12 }}>
         <View style={styles.hub2Banner}>
           <IconTile emoji="⚔" size={36} bg="rgba(237,217,163,.16)" fontSize={17} />
           <View style={{ flex: 1 }}>
@@ -123,29 +110,18 @@ const styles = StyleSheet.create({
   emphDesc: { fontSize: 12, color: colors.onDarkSecondary, marginTop: 5, lineHeight: 19 },
   emphCta: { marginTop: 14, fontSize: 12.5, fontWeight: weight.black, color: colors.goldLight },
 
-  sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  // 내 스윙 분석하기 카드
+  analyzeCard: { marginTop: 18, padding: 16, borderRadius: radius.card },
+  analyzeHead: { flexDirection: 'row', alignItems: 'center', gap: 13 },
+  analyzeTitle: { fontSize: 16.5, fontWeight: weight.black, color: colors.ink },
+  analyzeDesc: { fontSize: 11.5, color: colors.textSecondary, marginTop: 2, lineHeight: 16 },
+  divider: { height: 1, backgroundColor: colors.border, marginVertical: 14 },
+  recentHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  recentLabel: { fontSize: 11, fontWeight: weight.black, color: colors.textFaint, letterSpacing: 0.4 },
   seeAll: { fontSize: 11.5, fontWeight: weight.black, color: colors.accentGreen },
-
-  strip: { gap: 10, paddingHorizontal: 2, paddingVertical: 1 },
-  // 새 스윙 추가 타일
-  addTile: { width: 92 },
-  addInner: {
-    width: 92,
-    aspectRatio: 3 / 4,
-    borderRadius: radius.chip,
-    borderWidth: 1.5,
-    borderColor: 'rgba(27,38,32,.22)',
-    borderStyle: 'dashed',
-    backgroundColor: 'rgba(46,92,68,.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addPlus: { fontSize: 26, color: colors.accentGreen, fontWeight: weight.black, marginBottom: 2 },
-  addLabel: { fontSize: 12.5, fontWeight: weight.black, color: colors.ink },
-  addSub: { fontSize: 9.5, color: colors.textWeak, marginTop: 2 },
-  // 썸네일
-  thumbWrap: { width: 92 },
-  thumb: { width: 92, aspectRatio: 3 / 4, borderRadius: radius.chip, overflow: 'hidden' },
+  strip: { gap: 10, paddingRight: 4 },
+  thumbWrap: { width: 88 },
+  thumb: { width: 88, aspectRatio: 3 / 4, borderRadius: radius.chip, overflow: 'hidden' },
   thumbTag: {
     position: 'absolute',
     top: 6,
@@ -170,18 +146,29 @@ const styles = StyleSheet.create({
   thumbClub: { fontSize: 11.5, fontWeight: weight.black, color: colors.ink, marginTop: 6 },
   thumbDay: { fontSize: 10, color: colors.textWeak, marginTop: 1 },
 
-  toolHint: { fontSize: 11.5, color: colors.textSecondary, marginTop: 4, marginBottom: 10, lineHeight: 16 },
-  toolGroup: {
-    backgroundColor: colors.surface,
+  // 새 스윙 올리기 카드
+  uploadCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    padding: 15,
     borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
+    backgroundColor: 'rgba(46,92,68,.06)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(46,92,68,.2)',
+    borderStyle: 'dashed',
   },
-  toolRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 15 },
-  toolDivider: { borderTopWidth: 1, borderTopColor: colors.border },
-  toolName: { fontSize: 14.5, fontWeight: weight.black, color: colors.ink },
-  toolDesc: { fontSize: 11, color: colors.textSecondary, marginTop: 2, lineHeight: 15 },
+  uploadPlus: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.iconTile,
+    backgroundColor: 'rgba(46,92,68,.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  uploadPlusText: { fontSize: 22, fontWeight: weight.black, color: colors.accentGreen, marginTop: -2 },
+  uploadTitle: { fontSize: 14.5, fontWeight: weight.black, color: colors.ink },
+  uploadDesc: { fontSize: 11, color: colors.textSecondary, marginTop: 2 },
 
   hub2Banner: {
     borderRadius: radius.card,

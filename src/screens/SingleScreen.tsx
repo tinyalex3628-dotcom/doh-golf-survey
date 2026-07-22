@@ -26,7 +26,6 @@ export default function SingleScreen() {
   };
 
   const jumps: { label: string; route: RouteName }[] = [
-    { label: '멀티스크린 비교', route: 'multi' },
     { label: '프로와 비교하기', route: 'hub2' },
     { label: '프로에게 물어보기', route: 'feedback' },
   ];
@@ -56,6 +55,20 @@ export default function SingleScreen() {
           현재 {`P${pIdx + 1}`} 구간이에요. 임팩트 전후로 골반이 먼저 리드되는지 확인해 보세요. (실제 분석 준비 중)
         </Text>
       </Card>
+
+      {/* 과거 내 스윙과 비교 — 강조 CTA */}
+      <Press onPress={() => go('multi')} activeScale={0.99} style={{ marginTop: 12 }}>
+        <View style={styles.compareRow}>
+          <View style={styles.compareIcon}>
+            <Text style={{ fontSize: 18 }}>⚖</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.compareTitle}>과거 내 스윙과 비교하기</Text>
+            <Text style={styles.compareDesc}>갤러리에서 예전 스윙을 골라 나란히 놓고 봐요</Text>
+          </View>
+          <Text style={{ color: colors.gold, fontSize: 17 }}>›</Text>
+        </View>
+      </Press>
 
       <View style={{ gap: 8, marginTop: 12 }}>
         {jumps.map((j) => (
@@ -89,4 +102,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   jumpText: { fontSize: 13.5, fontWeight: weight.black, color: colors.ink },
+  compareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.gold,
+    borderRadius: radius.chip,
+    padding: 15,
+  },
+  compareIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.iconTile,
+    backgroundColor: 'rgba(176,122,46,.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  compareTitle: { fontSize: 14.5, fontWeight: weight.black, color: colors.ink },
+  compareDesc: { fontSize: 11, color: colors.textSecondary, marginTop: 2, lineHeight: 15 },
 });
