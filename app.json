@@ -20,6 +20,23 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "촬영한 스윙 영상을 촬영 날짜별로 정리해 보여드리기 위해 사진·동영상 접근이 필요해요.",
+          "savePhotosPermission": "분석한 스윙 영상을 갤러리에 저장하기 위해 접근이 필요해요.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "분석할 스윙 영상을 갤러리에서 선택하기 위해 접근이 필요해요.",
+          "cameraPermission": "스윙을 바로 촬영하기 위해 카메라 접근이 필요해요."
+        }
+      ]
+    ]
   }
 }

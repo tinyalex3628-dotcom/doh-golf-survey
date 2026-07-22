@@ -7,34 +7,18 @@ import { Press, SectionLabel, t as tt } from '../components/ui';
 import { colors, radius, weight } from '../theme/tokens';
 import { useNav } from '../navigation/useNav';
 import { RootStackParamList } from '../navigation/pages';
-
-const GROUPS = [
-  {
-    date: '7월 · 이번 주',
-    short: '이번 주',
-    items: [
-      { side: '정면', club: '드라이버', tag: '골반 회전' },
-      { side: '측면', club: '드라이버', tag: '템포 좋음' },
-    ],
-  },
-  {
-    date: '6월',
-    short: '6월',
-    items: [
-      { side: '정면', club: '아이언', tag: '숙제 완료' },
-      { side: '측면', club: '드라이버', tag: '피니시' },
-    ],
-  },
-];
+import { useSwings } from '../hooks/useSwings';
+import { formatDayLabel } from '../utils/dateGroup';
+import { Swing } from '../types/swing';
 
 export default function GalleryScreen() {
   const { navigation } = useNav();
   const route = useRoute<RouteProp<RootStackParamList, 'gallery'>>();
   const pickMode = route.params?.mode === 'pickForCompare';
+  const { groups, source } = useSwings();
 
-  const onPick = (label: string, item: { side: string; club: string }) => {
+  const onPick = (label: string, item: Swing) => {
     if (pickMode) {
-      // 비교 화면으로 돌아가며 선택한 과거 스윙을 전달
       navigation.navigate('multi', { pastSwing: { label, club: item.club, side: item.side } });
     } else {
       navigation.navigate('single');
@@ -45,22 +29,28 @@ export default function GalleryScreen() {
     <Screen>
       <Text style={[tt.screenTitle, { fontSize: 20 }]}>{pickMode ? '비교할 과거 스윙 선택' : '내 스윙 갤러리'}</Text>
       <Text style={tt.subtitle}>
-        {pickMode ? '고른 스윙이 비교 화면의 과거 쪽에 들어가요.' : '과거 스윙을 날짜별로 모아뒀어요. 탭하면 분석으로.'}
+        {pickMode ? '고른 스윙이 비교 화면의 과거 쪽에 들어가요.' : '촬영 날짜 기준으로 자동 정리돼요. 탭하면 분석으로.'}
       </Text>
 
       {pickMode ? (
         <View style={styles.pickBanner}>
           <Text style={styles.pickBannerText}>⚖ 비교용 선택 모드 · 스윙을 하나 고르세요</Text>
         </View>
+      ) : source === 'sample' ? (
+        <View style={styles.sampleNote}>
+          <Text style={styles.sampleNoteText}>
+            지금은 샘플이에요. 실제 폰에서는 갤러리 영상의 촬영 날짜로 자동 채워져요.
+          </Text>
+        </View>
       ) : null}
 
       <View style={{ gap: 16, marginTop: 16 }}>
-        {GROUPS.map((g) => (
+        {groups.map((g) => (
           <View key={g.date}>
             <SectionLabel>{g.date}</SectionLabel>
             <View style={styles.grid}>
-              {g.items.map((it, idx) => (
-                <Press key={idx} onPress={() => onPick(`${g.short} · ${it.club}`, it)} style={styles.cell}>
+              {g.items.map((it) => (
+                <Press key={it.id} onPress={() => onPick(`${g.short} · ${it.club}`, it)} style={styles.cell}>
                   <View style={styles.thumbCard}>
                     <LinearGradient
                       colors={[colors.highlightGreen, colors.darkestGreen]}
@@ -71,12 +61,15 @@ export default function GalleryScreen() {
                       <View style={styles.sideTag}>
                         <Text style={styles.sideTagText}>{it.side}</Text>
                       </View>
+                      <View style={styles.dateTag}>
+                        <Text style={styles.dateTagText}>{formatDayLabel(it.createdAt)}</Text>
+                      </View>
                       <View style={styles.playBtn}>
                         <Text style={{ fontSize: 10, color: colors.ink }}>{pickMode ? '＋' : '▶'}</Text>
                       </View>
                     </LinearGradient>
                     <Text style={styles.club}>{it.club}</Text>
-                    <Text style={styles.tag}>{it.tag}</Text>
+                    <Text style={styles.tag}>{it.tag ?? formatDayLabel(it.createdAt)}</Text>
                   </View>
                 </Press>
               ))}
@@ -99,6 +92,14 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(176,122,46,.3)',
   },
   pickBannerText: { fontSize: 12, fontWeight: weight.black, color: colors.gold },
+  sampleNote: {
+    marginTop: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: radius.button,
+    backgroundColor: 'rgba(27,38,32,.04)',
+  },
+  sampleNoteText: { fontSize: 11.5, color: colors.textSecondary, lineHeight: 16 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 9, marginTop: 8 },
   cell: { width: '48.5%' },
   thumbCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: 'rgba(27,38,32,.09)', borderRadius: radius.button, padding: 8 },
@@ -113,6 +114,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(11,21,16,.72)',
   },
   sideTagText: { color: colors.goldLight, fontSize: 9, fontWeight: weight.black },
+  dateTag: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(11,21,16,.55)',
+  },
+  dateTagText: { color: colors.onDark, fontSize: 9, fontWeight: weight.black },
   playBtn: {
     position: 'absolute',
     bottom: 6,

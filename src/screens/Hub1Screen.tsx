@@ -5,16 +5,15 @@ import { Screen } from '../components/Screen';
 import { Card, DarkCard, IconTile, Press, SectionLabel, t as tt } from '../components/ui';
 import { colors, radius, weight } from '../theme/tokens';
 import { useNav } from '../navigation/useNav';
-
-// 최근 스윙 (더미) — 실제로는 백엔드/갤러리에서 로드
-const RECENT = [
-  { side: '정면', day: '오늘', club: '드라이버' },
-  { side: '측면', day: '오늘', club: '드라이버' },
-  { side: '정면', day: '6/28', club: '아이언' },
-];
+import { useSwings } from '../hooks/useSwings';
+import { formatDayLabel } from '../utils/dateGroup';
 
 export default function Hub1Screen() {
   const { go } = useNav();
+  const { groups } = useSwings();
+  // 촬영일 최신순으로 펼쳐서 최근 몇 개만
+  const recent = groups.flatMap((g) => g.items).slice(0, 6);
+  const totalCount = groups.reduce((n, g) => n + g.items.length, 0);
   return (
     <Screen>
       <View style={{ paddingHorizontal: 2 }}>
@@ -50,12 +49,12 @@ export default function Hub1Screen() {
         <View style={styles.recentHead}>
           <Text style={styles.recentLabel}>최근 내 스윙</Text>
           <Press activeScale={0.96} onPress={() => go('gallery')} hitSlop={8}>
-            <Text style={styles.seeAll}>전체 12개 ›</Text>
+            <Text style={styles.seeAll}>전체 {totalCount}개 ›</Text>
           </Press>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
-          {RECENT.map((s, i) => (
-            <Press key={i} onPress={() => go('single')} style={styles.thumbWrap}>
+          {recent.map((s) => (
+            <Press key={s.id} onPress={() => go('single')} style={styles.thumbWrap}>
               <LinearGradient
                 colors={[colors.highlightGreen, colors.darkestGreen]}
                 start={{ x: 0.1, y: 0 }}
@@ -70,7 +69,7 @@ export default function Hub1Screen() {
                 </View>
               </LinearGradient>
               <Text style={styles.thumbClub}>{s.club}</Text>
-              <Text style={styles.thumbDay}>{s.day}</Text>
+              <Text style={styles.thumbDay}>{formatDayLabel(s.createdAt)}</Text>
             </Press>
           ))}
         </ScrollView>
