@@ -10,12 +10,32 @@
 
 ```bash
 npm install          # 의존성 설치
-npx expo start       # 개발 서버 시작
 ```
 
-- 휴대폰에서 **Expo Go** 앱으로 QR 코드를 스캔하면 실기기에서 바로 확인할 수 있습니다.
-- 시뮬레이터: `npx expo start` 실행 후 터미널에서 `i`(iOS) / `a`(Android).
-- 타입체크: `npx tsc --noEmit`
+### 💻 컴퓨터 브라우저에서 (가장 빠른 확인)
+
+```bash
+npm run web          # 또는: npx expo start --web
+```
+
+브라우저가 열리며 앱이 바로 뜹니다. 코드를 저장하면 자동 새로고침(hot reload)돼서
+컴퓨터에서 보면서 수정해 나가기 좋습니다. 모바일 화면 비율로 보려면 브라우저
+개발자도구(F12)의 **기기 모드**(반응형/아이폰)를 켜세요.
+
+### 📱 휴대폰에서 (실제 기기)
+
+```bash
+npm start            # 또는: npx expo start
+```
+
+- 휴대폰에 **Expo Go** 앱을 깔고 QR 코드를 스캔하면 실기기에서 확인.
+- 시뮬레이터: 실행 후 터미널에서 `i`(iOS) / `a`(Android).
+
+### 검증
+
+```bash
+npx tsc --noEmit     # 타입체크
+```
 
 ## 프로젝트 구조
 
