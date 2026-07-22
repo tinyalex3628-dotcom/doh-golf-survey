@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { RouteProp, useRoute } from '@react-navigation/native';
 import { Screen } from '../components/Screen';
 import { Press } from '../components/ui';
 import { SwingStage } from '../components/SwingStage';
@@ -7,12 +8,26 @@ import { PositionControls, frameToP, pToFrame } from '../components/PositionCont
 import { colors, radius, weight } from '../theme/tokens';
 import { useNav } from '../navigation/useNav';
 import { useToast } from '../components/Toast';
+import { RootStackParamList } from '../navigation/pages';
 
 export default function MultiScreen() {
-  const { go } = useNav();
+  const { navigation, go } = useNav();
   const { showToast } = useToast();
+  const route = useRoute<RouteProp<RootStackParamList, 'multi'>>();
+  const past = route.params?.pastSwing ?? { label: '6월 · 드라이버', club: '드라이버', side: '정면' };
+
   const [pIdx, setPIdx] = useState(3);
   const [frame, setFrame] = useState(38);
+
+  // 갤러리에서 과거 스윙을 새로 골라 돌아왔을 때 안내 토스트
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    if (route.params?.pastSwing) showToast(`과거 스윙을 '${route.params.pastSwing.label}'로 바꿨어요`);
+  }, [route.params?.pastSwing?.label]);
 
   const setFromP = (i: number) => { setPIdx(i); setFrame(pToFrame(i)); };
   const setFromFrame = (v: number) => { setFrame(v); setPIdx(frameToP(v)); };
@@ -31,8 +46,8 @@ export default function MultiScreen() {
       <View style={styles.split}>
         <View style={styles.half}>
           <SwingStage badge="과거" />
-          <Press activeScale={0.97} onPress={() => go('gallery')} style={styles.pickPast}>
-            <Text style={styles.pickPastText}>6월 · 드라이버</Text>
+          <Press activeScale={0.97} onPress={() => navigation.navigate('gallery', { mode: 'pickForCompare' })} style={styles.pickPast}>
+            <Text style={styles.pickPastText}>{past.label}</Text>
             <Text style={styles.pickPastChange}>바꾸기 ›</Text>
           </Press>
         </View>
