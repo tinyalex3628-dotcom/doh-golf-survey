@@ -9,6 +9,9 @@ dist/
 web-build/
 expo-env.d.ts
 
+# 미리보기 링크용 임시 빌드 산출물 (생성 스크립트 없음, 커밋 대상 아님)
+.scratch_build/
+
 # Native
 .kotlin/
 *.orig.*
