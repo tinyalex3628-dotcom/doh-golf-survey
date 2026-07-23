@@ -6,6 +6,8 @@ import { Card, DarkCard, IconTile, Press } from '../components/ui';
 import { colors, radius, weight } from '../theme/tokens';
 import { useNav } from '../navigation/useNav';
 import { RouteName } from '../navigation/pages';
+import { PLANS } from '../data/plans';
+import { TIER_ORDER, useSubscription } from '../state/subscription';
 
 const MENU: { emoji: string; iconBg: string; title: string; sub: string; route: RouteName }[] = [
   { emoji: '📝', iconBg: 'rgba(46,92,68,.1)', title: '이번 주 목표 숙제', sub: '2개 남음 · 마감 7/27', route: 'homework' },
@@ -15,6 +17,8 @@ const MENU: { emoji: string; iconBg: string; title: string; sub: string; route: 
 
 export default function ProfileScreen() {
   const { go } = useNav();
+  const { tier, setTier } = useSubscription();
+  const plan = PLANS.find((p) => p.name === tier);
   return (
     <Screen>
       {/* 유저 헤더 */}
@@ -30,14 +34,32 @@ export default function ProfileScreen() {
 
       {/* MY PLAN */}
       <DarkCard style={styles.planRow}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={styles.planLabel}>MY PLAN</Text>
-          <Text style={styles.planName}>Coaching · 월 2회 피드백</Text>
+          <Text style={styles.planName}>
+            {tier} · {plan?.price}
+          </Text>
         </View>
         <Press onPress={() => go('membership')} activeScale={0.9} style={styles.planBtn}>
           <Text style={styles.planBtnText}>관리</Text>
         </Press>
       </DarkCard>
+
+      {/* 플랜별 화면 미리보기 (데모 전환 · 실제로는 계정 등급) */}
+      <View style={styles.previewBox}>
+        <Text style={styles.previewLabel}>플랜별 화면 미리보기 · 체험</Text>
+        <View style={styles.segment}>
+          {TIER_ORDER.map((tk) => {
+            const on = tk === tier;
+            return (
+              <Press key={tk} activeScale={1} onPress={() => setTier(tk)} style={[styles.segItem, on && styles.segItemOn]}>
+                <Text style={[styles.segText, { color: on ? colors.onDark : colors.textSecondary }]}>{tk}</Text>
+              </Press>
+            );
+          })}
+        </View>
+        <Text style={styles.previewHint}>등급을 바꾸면 목표 숙제 화면 구성이 달라져요.</Text>
+      </View>
 
       {/* 메뉴 */}
       <View style={{ gap: 9, marginTop: 14 }}>
@@ -69,6 +91,13 @@ const styles = StyleSheet.create({
   planName: { fontSize: 16, fontWeight: weight.black, color: colors.onDark, marginTop: 3 },
   planBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: 'rgba(237,217,163,.16)' },
   planBtnText: { fontSize: 11.5, fontWeight: weight.black, color: colors.goldLight },
+  previewBox: { marginTop: 12 },
+  previewLabel: { fontSize: 10.5, fontWeight: weight.black, color: colors.textFaint, letterSpacing: 0.4, marginBottom: 8, paddingHorizontal: 2 },
+  segment: { flexDirection: 'row', gap: 4, backgroundColor: 'rgba(27,38,32,.05)', padding: 4, borderRadius: 12 },
+  segItem: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 9 },
+  segItemOn: { backgroundColor: colors.ink },
+  segText: { fontSize: 12, fontWeight: weight.black },
+  previewHint: { fontSize: 10.5, color: colors.textWeak, marginTop: 7, paddingHorizontal: 2 },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 15, borderRadius: radius.chip },
   menuTitle: { fontSize: 14, fontWeight: weight.black, color: colors.ink },
   menuSub: { fontSize: 11, color: colors.textWeak, marginTop: 1 },

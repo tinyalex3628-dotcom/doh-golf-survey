@@ -10,6 +10,7 @@ import { PAGES, RootStackParamList, RouteName, TAB_ROOT, TabKey } from './src/na
 import { TabBar } from './src/components/TabBar';
 import { ToastProvider } from './src/components/Toast';
 import { ComparisonProvider } from './src/state/comparison';
+import { SubscriptionProvider } from './src/state/subscription';
 
 import HomeScreen from './src/screens/HomeScreen';
 import HomeworkScreen from './src/screens/HomeworkScreen';
@@ -80,7 +81,8 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <ComparisonProvider>
+      <SubscriptionProvider>
+       <ComparisonProvider>
         <ToastProvider>
           <NavigationContainer ref={navRef} onReady={onStateChange} onStateChange={onStateChange}>
             <View style={styles.root}>
@@ -100,7 +102,8 @@ export default function App() {
             </View>
           </NavigationContainer>
         </ToastProvider>
-      </ComparisonProvider>
+       </ComparisonProvider>
+      </SubscriptionProvider>
     </SafeAreaProvider>
   );
 }
