@@ -42,6 +42,8 @@ export function TopBar({
           <View style={styles.backBtn} />
         )}
       </View>
+      {/* 브랜드 시그니처 · 골드 헤어라인 (모든 화면 공통) */}
+      <View style={styles.goldRule} />
     </View>
   );
 }
@@ -82,5 +84,6 @@ const styles = StyleSheet.create({
     color: colors.ink,
     letterSpacing: tracking.wordmark,
   },
+  goldRule: { height: 1, backgroundColor: colors.gold, opacity: 0.4, marginHorizontal: 16 },
   title: { fontSize: 16, fontWeight: weight.semibold, color: colors.ink, letterSpacing: 0.2 },
 });

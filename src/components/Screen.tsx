@@ -27,8 +27,8 @@ export function Screen({
   const body = (
     <>
       <TopBar
-        title={meta?.name}
-        showBrand={isHome}
+        title={isHome ? undefined : meta?.name}
+        showBrand={false}
         showBack={!isHome && navigation.canGoBack()}
         onBack={() => navigation.goBack()}
       />

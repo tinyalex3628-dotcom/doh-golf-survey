@@ -70,8 +70,8 @@ export function DarkCard({
 }) {
   return (
     <LinearGradient
-      colors={[colors.deepGreen, colors.ink]}
-      start={{ x: 0.1, y: 0 }}
+      colors={[colors.heroTop, colors.heroBottom]}
+      start={{ x: 0.15, y: 0 }}
       end={{ x: 0.9, y: 1 }}
       style={[{ borderRadius: radius.cardLg, overflow: 'hidden' }, shadow.emphasis, style]}
     >

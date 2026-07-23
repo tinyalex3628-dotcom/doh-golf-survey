@@ -37,28 +37,32 @@
 원칙: **전체의 ~90% Green, ~10%만 Gold Accent.** 골드는 강조에만(버튼 강조,
 VIP/Premium 배지, 진행률, 활성 인디케이터). 과용하면 저렴해 보인다.
 
-### Green (Primary)
+### Green (Primary) — Living Forest
 | 이름 | Hex | 용도 |
 |---|---|---|
-| Ink (Deep Forest) | `#14342A` | 제목·브랜드·진한 CTA 배경·본문 |
-| Deep Green | `#1C4A38` | 강조 카드 그라디언트 상단 |
-| Darkest Green | `#0C241C` | 딥 배경·영상 배경 |
-| Accent Green | `#2C5A46` | 링크·진행 바·보조 강조 |
-| Highlight Green | `#3B6B54` | 영상 썸네일 그라디언트 |
+| Ink (Living Forest) | `#184D3A` | 제목·브랜드·진한 CTA 배경·본문 |
+| Deep Green | `#1E5C46` | 강조 |
+| Hero Top / Bottom | `#22684E` / `#123A2C` | 히어로 카드 그라디언트(대비) |
+| Darkest Green | `#0F2E24` | 영상 배경 |
+| Accent Green | `#2E6A4F` | 링크·보조 강조 |
+| Highlight Green | `#3F7A5E` | 영상 썸네일 그라디언트 |
 
-### Champagne Gold (Accent · ~10%)
+### Champagne Gold (Accent · ~10%) — 권위 요소에 집중
 | 이름 | Hex | 용도 |
 |---|---|---|
-| Gold | `#B08E52` | 강조·VIP·Premium 배지·라벨 |
-| Gold Light | `#E3D2A6` | 다크 배경 위 옅은 샴페인 텍스트/칩 |
+| Gold | `#BFA05C` | 진행률(핀)·PRO·VIP·버튼·크레스트 |
+| Gold Deep | `#9E823F` | 밝은 배경 위 골드 텍스트(가독) |
+| Gold Light | `#E7D6A8` | 다크 배경 위 옅은 샴페인 텍스트/칩 |
 
-### Ivory / Warm White (Background)
+> 골드는 **PRO·멤버십·진행률(페어웨이 핀)·주요 버튼·크레스트**에만. 바탕엔 쓰지 않는다.
+
+### near-White Ivory (Background) — 탁한 베이지 금지
 | 이름 | Hex | 용도 |
 |---|---|---|
-| App BG | `#E7E1D3` | 캔버스 |
-| Screen BG | `#F5F1E8` | 화면 배경 (아이보리) |
-| Surface | `#FDFBF6` | 카드 (웜 화이트) |
-| Sheet BG | `#F6F2E9` | 바텀시트 |
+| App BG | `#ECEBE4` | 캔버스 |
+| Screen BG | `#F8F8F4` | 화면 배경 (거의 흰 아이보리) |
+| Surface | `#FFFFFF` | 카드 (순백 → 대비로 카드가 산다) |
+| Sheet BG | `#F4F4EF` | 바텀시트 |
 
 ### 뉴트럴 (그린 틴트)
 텍스트/보더는 순수 회색이 아니라 **그린을 살짝 머금은** `rgba(20,52,42,α)` 를 쓴다.
@@ -138,3 +142,18 @@ Basic → Coaching → Elite 로 갈수록 화면에 **기능이 하나씩 더 �
 - **멤버십**: VIP/Premium은 샴페인 골드 포인트로만 구분.
 
 *모든 채널에서 골드는 강조로만, 바탕은 그린·아이보리.*
+
+---
+
+## 10. 브랜드 시그니처 (기억에 남는 강한 요소)
+
+"아, 저 앱이다" 를 만드는 반복 요소:
+
+- **클럽 크레스트** (`ClubCrest`): 골드 깃발 마크 + serif 워드마크 + 골드 룰 사이
+  `GOLF CLUB` + `MEMBER · NO.####`. 프라이빗 회원제 감성의 중심.
+- **골드 헤어라인**: 모든 화면 상단바 하단에 얇은 골드 선(반복 시그니처).
+- **페어웨이 진행바** (`FairwayProgress`): 단순 바 대신 모잉 스트라이프 페어웨이 +
+  흰 공 + **골드 핀(깃발)**. 티(시작)→핀(마감)으로 전진.
+- **코스 컨투어 배경** (`CourseBackdrop`): 헤더 뒤 아주 옅은 등고선(코스 지도 감성).
+- **골프 문맥 카피**: `TODAY'S ROUND / 오늘의 미션`, `티·핀`, `홀 아웃` 등.
+- 아이콘·배지는 **핀(flag)·티·코스·클럽** 모티프를 절제해서 사용.

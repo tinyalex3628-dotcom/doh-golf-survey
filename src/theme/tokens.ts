@@ -8,24 +8,27 @@
 import { Platform } from 'react-native';
 
 export const colors = {
-  // ── Green (Primary, ~90%) ──
-  ink: '#14342A', // 딥 포레스트 — 제목/브랜드/진한 CTA 배경
-  deepGreen: '#1C4A38', // 그라디언트 상단
-  darkestGreen: '#0C241C', // 딥 배경 / 영상 배경
+  // ── Green (Primary, ~90%) ── 살아있는 포레스트 그린
+  ink: '#184D3A', // Living Forest — 제목/브랜드/진한 CTA 배경/본문
+  deepGreen: '#1E5C46', // 그라디언트 상단
+  heroTop: '#22684E', // 히어로 카드 그라디언트 상단(살짝 밝게)
+  heroBottom: '#123A2C', // 히어로 카드 그라디언트 하단(깊게 → 대비)
+  darkestGreen: '#0F2E24', // 딥 배경 / 영상 배경
   bezelBlack: '#0A1712', // 그림자용 최심 그린블랙
-  accentGreen: '#2C5A46', // 링크 / 진행 바 / 보조 강조
-  highlightGreen: '#3B6B54', // 영상 썸네일 그라디언트
+  accentGreen: '#2E6A4F', // 링크 / 보조 강조
+  highlightGreen: '#3F7A5E', // 영상 썸네일 그라디언트
   mint: '#9FD8B4', // "현재" 라벨
 
-  // ── Champagne Gold (Accent, ~10%) ──
-  gold: '#B08E52', // 샴페인 골드 — 강조/VIP/프리미엄 배지 (아껴서)
-  goldLight: '#E3D2A6', // 다크 배경 위 옅은 샴페인 텍스트/칩
+  // ── Champagne Gold (Accent, ~10%) ── 권위 요소에 집중
+  gold: '#BFA05C', // 샴페인 골드 — 진행률/PRO/VIP/버튼 강조
+  goldDeep: '#9E823F', // 밝은 배경 위 골드 텍스트(가독)
+  goldLight: '#E7D6A8', // 다크 배경 위 옅은 샴페인 텍스트/칩
 
-  // ── Ivory / Warm White (Background) ──
-  appBg: '#E7E1D3', // 캔버스 배경
-  screenBg: '#F5F1E8', // 앱 화면 배경 (아이보리)
-  surface: '#FDFBF6', // 카드 표면 (웜 화이트)
-  sheetBg: '#F6F2E9', // 바텀시트
+  // ── Ivory / near-White (Background) ── 탁한 베이지 제거
+  appBg: '#ECEBE4', // 캔버스 배경
+  screenBg: '#F8F8F4', // 앱 화면 배경 (거의 흰 아이보리)
+  surface: '#FFFFFF', // 카드 표면 (순백 → 대비로 카드가 산다)
+  sheetBg: '#F4F4EF', // 바텀시트
 
   // ── 텍스트/보더 (그린 틴트 뉴트럴) ──
   textPrimary: '#14342A',
@@ -121,13 +124,14 @@ export const font = {
   captionSm: 10.5,
 } as const;
 
-// 무게는 전반적으로 한 단계 가볍게 — quiet luxury.
+// 계층을 위해 대비를 크게: display(800) ↔ body(400).
 export const weight = {
-  heavy: '800' as const, // 아주 드물게
-  black: '700' as const, // 제목/강조 (기존 800 → 700로 완화)
-  bold: '700' as const,
-  semibold: '600' as const,
-  medium: '500' as const,
+  heavy: '800' as const, // 히어로/디스플레이
+  black: '800' as const, // 큰 제목 (대비 강화)
+  bold: '700' as const, // 제목
+  semibold: '600' as const, // 서브 제목
+  medium: '500' as const, // 강조 본문
+  regular: '400' as const, // 본문/설명
 };
 
 /** 영문 라벨 트래킹 (프리미엄 느낌의 넓은 자간) */
