@@ -1,13 +1,23 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Screen } from '../components/Screen';
-import { Card, DarkCard, IconTile, Pill, Press, ProgressBar, SectionLabel } from '../components/ui';
+import { Card, DarkCard, IconTile, Pill, Press, SectionLabel } from '../components/ui';
+import { HomeworkProgress } from '../components/HomeworkProgress';
 import { colors, radius, weight } from '../theme/tokens';
 import { useNav } from '../navigation/useNav';
 import { RouteName } from '../navigation/pages';
 
+const DAY = 86_400_000;
+
 export default function HomeScreen() {
   const { go } = useNav();
+
+  // 숙제 기간 (데모: 오늘이 항상 진행 중으로 보이도록 상대 날짜 사용)
+  // 실제로는 프로가 낸 숙제의 배정일·마감일을 그대로 넣으면 됨.
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const assignedAt = todayStart.getTime() - 3 * DAY; // 3일 전 배정
+  const dueAt = todayStart.getTime() + 4 * DAY; // 4일 후 마감 (총 7일)
 
   const shortcuts: {
     route: RouteName;
@@ -41,11 +51,11 @@ export default function HomeScreen() {
           <Text style={styles.homeworkTitle}>
             임팩트에서 골반 먼저 리드하기{'\n'}+ 백스윙 탑 위치 고정
           </Text>
-          <View style={{ marginTop: 12 }}>
-            <ProgressBar value={40} />
+          <View style={{ marginTop: 14 }}>
+            <HomeworkProgress assignedAt={assignedAt} dueAt={dueAt} />
           </View>
-          <View style={[styles.rowBetween, { marginTop: 9 }]}>
-            <Text style={styles.metaText}>이도형 프로 · 마감 7/27</Text>
+          <View style={[styles.rowBetween, { marginTop: 12 }]}>
+            <Text style={styles.metaText}>이도형 프로 · 매일 한 걸음씩</Text>
             <Text style={styles.ctaInline}>확인하기 ›</Text>
           </View>
         </Card>
