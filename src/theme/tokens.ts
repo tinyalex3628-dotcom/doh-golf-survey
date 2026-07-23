@@ -19,10 +19,10 @@ export const colors = {
   highlightGreen: '#3F7A5E', // 영상 썸네일 그라디언트
   mint: '#9FD8B4', // "현재" 라벨
 
-  // ── Champagne Gold (Accent, ~10%) ── 권위 요소에 집중
-  gold: '#BFA05C', // 샴페인 골드 — 진행률/PRO/VIP/버튼 강조
-  goldDeep: '#9E823F', // 밝은 배경 위 골드 텍스트(가독)
-  goldLight: '#E7D6A8', // 다크 배경 위 옅은 샴페인 텍스트/칩
+  // ── Muted Gold (Accent, 아주 드물게) ── 겨자색 탈피, 권위 요소에만
+  gold: '#A8925E', // 뮤트 앤티크 골드 — PRO/멤버십 등 권위 요소에만
+  goldDeep: '#7E6A38', // 밝은 배경 위 골드 텍스트(가독)
+  goldLight: '#D9C9A0', // 다크 배경 위 옅은 샴페인 텍스트/칩
 
   // ── Ivory / near-White (Background) ── 탁한 베이지 제거
   appBg: '#ECEBE4', // 캔버스 배경

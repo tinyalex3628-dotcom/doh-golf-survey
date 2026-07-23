@@ -4,7 +4,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, fontFamily, tracking, weight } from '../theme/tokens';
+import { colors, weight } from '../theme/tokens';
 import { BRAND } from '../brand/brand';
 
 export function TopBar({
@@ -38,12 +38,8 @@ export function TopBar({
           <Pressable onPress={onBack} hitSlop={10} style={styles.backBtn}>
             <Text style={styles.backGlyph}>‹</Text>
           </Pressable>
-        ) : (
-          <View style={styles.backBtn} />
-        )}
+        ) : null}
       </View>
-      {/* 브랜드 시그니처 · 골드 헤어라인 (모든 화면 공통) */}
-      <View style={styles.goldRule} />
     </View>
   );
 }
@@ -78,12 +74,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backGlyph: { fontSize: 22, color: colors.ink, marginTop: -3, fontWeight: weight.bold },
-  brand: {
-    fontFamily: fontFamily.serif,
-    fontSize: 22,
-    color: colors.ink,
-    letterSpacing: tracking.wordmark,
-  },
-  goldRule: { height: 1, backgroundColor: colors.gold, opacity: 0.4, marginHorizontal: 16 },
+  brand: { fontSize: 19, fontWeight: weight.heavy, color: colors.ink, letterSpacing: 1 },
   title: { fontSize: 16, fontWeight: weight.semibold, color: colors.ink, letterSpacing: 0.2 },
 });
