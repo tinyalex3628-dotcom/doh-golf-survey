@@ -1,50 +1,57 @@
 /**
- * DOH Golf — Design Tokens
- * design-reference/flow-prototype/README.md 의 디자인 토큰을 그대로 옮긴 값.
- * 프로토타입(HTML)과 픽셀에 가깝게 재현하기 위한 단일 출처(single source of truth).
+ * Design Tokens — "Private Golf Club" 브랜드 시스템
+ * Augusta National에서 영감받은 딥 포레스트 그린 + 샴페인 골드 + 아이보리.
+ * 원칙: 전체의 ~90%는 Green 계열, ~10%만 Gold Accent(강조·VIP·진행률·프리미엄).
+ *
+ * 이 파일이 앱·웹·유튜브·오프라인 아카데미까지 확장되는 단일 컬러/타이포 출처.
  */
+import { Platform } from 'react-native';
 
 export const colors = {
-  ink: '#17382A', // 제목 / 진한 CTA 배경 / 브랜드
-  deepGreen: '#1B4030', // 강조 카드 그라디언트 시작
-  darkestGreen: '#0F2419', // 폰 스크린 딥 배경, 영상 배경
-  bezelBlack: '#0B1510', // 폰 베젤 / 노치
-  accentGreen: '#2E5C44', // 링크 / 보조 강조 / 진행바
-  highlightGreen: '#3A5E4A', // 영상 썸네일 그라디언트
+  // ── Green (Primary, ~90%) ──
+  ink: '#14342A', // 딥 포레스트 — 제목/브랜드/진한 CTA 배경
+  deepGreen: '#1C4A38', // 그라디언트 상단
+  darkestGreen: '#0C241C', // 딥 배경 / 영상 배경
+  bezelBlack: '#0A1712', // 그림자용 최심 그린블랙
+  accentGreen: '#2C5A46', // 링크 / 진행 바 / 보조 강조
+  highlightGreen: '#3B6B54', // 영상 썸네일 그라디언트
   mint: '#9FD8B4', // "현재" 라벨
-  gold: '#B07A2E', // 태그 / 라벨 / 강조
-  goldLight: '#EDD9A3', // 다크 배경 위 강조 텍스트 / 칩
-  appBg: '#E4E0D6', // 프로토타입 바깥 캔버스
-  screenBg: '#F2EFE8', // 앱 화면 배경
-  surface: '#FFFFFF', // 카드 표면
-  sheetBg: '#F7F4EC', // 바텀시트 / 다크 위 밝은 텍스트
 
-  // 자주 쓰는 투명도 변형
-  textPrimary: '#17382A',
-  textSecondary: 'rgba(27,38,32,.55)',
-  textWeak: 'rgba(27,38,32,.5)',
-  textFaint: 'rgba(27,38,32,.45)',
-  textDisabled: 'rgba(27,38,32,.35)',
-  border: 'rgba(27,38,32,.1)',
-  borderSoft: 'rgba(27,38,32,.12)',
-  onDark: '#F7F4EC',
-  onDarkSecondary: 'rgba(247,244,236,.6)',
-  onDarkFaint: 'rgba(247,244,236,.45)',
+  // ── Champagne Gold (Accent, ~10%) ──
+  gold: '#B08E52', // 샴페인 골드 — 강조/VIP/프리미엄 배지 (아껴서)
+  goldLight: '#E3D2A6', // 다크 배경 위 옅은 샴페인 텍스트/칩
 
-  disabledBg: 'rgba(27,38,32,.08)',
+  // ── Ivory / Warm White (Background) ──
+  appBg: '#E7E1D3', // 캔버스 배경
+  screenBg: '#F5F1E8', // 앱 화면 배경 (아이보리)
+  surface: '#FDFBF6', // 카드 표면 (웜 화이트)
+  sheetBg: '#F6F2E9', // 바텀시트
+
+  // ── 텍스트/보더 (그린 틴트 뉴트럴) ──
+  textPrimary: '#14342A',
+  textSecondary: 'rgba(20,52,42,.62)',
+  textWeak: 'rgba(20,52,42,.50)',
+  textFaint: 'rgba(20,52,42,.42)',
+  textDisabled: 'rgba(20,52,42,.32)',
+  border: 'rgba(20,52,42,.10)',
+  borderSoft: 'rgba(20,52,42,.14)',
+  onDark: '#F5F1E8', // 딥그린 위 아이보리 텍스트
+  onDarkSecondary: 'rgba(245,241,232,.66)',
+  onDarkFaint: 'rgba(245,241,232,.45)',
+
+  disabledBg: 'rgba(20,52,42,.07)',
 } as const;
 
 export const gradients = {
-  // React Native LinearGradient 대용으로 tint 색만 필요할 때 사용.
-  darkCard: [colors.deepGreen, colors.ink] as const, // linear-gradient(160deg,#1B4030,#17382A)
-  videoThumb: [colors.highlightGreen, colors.darkestGreen] as const, // 150deg
-  progress: [colors.accentGreen, colors.ink] as const, // 90deg
+  darkCard: [colors.deepGreen, colors.ink] as const,
+  videoThumb: [colors.highlightGreen, colors.darkestGreen] as const,
+  progress: [colors.accentGreen, colors.ink] as const,
 };
 
 export const radius = {
   phone: 44,
   cardLg: 20,
-  card: 16,
+  card: 18,
   chip: 14,
   button: 13,
   pill: 100,
@@ -60,45 +67,53 @@ export const spacing = {
   lg: 16,
   xl: 20,
   xxl: 24,
-  screenH: 16, // 화면 좌우 패딩
-  tabBarClearance: 92, // 하단 탭바 공간
+  screenH: 18, // 화면 좌우 패딩 (여백↑)
+  tabBarClearance: 94,
 } as const;
 
+// 부드럽고 은은한 그림자 (프리미엄 · 과하지 않게)
 export const shadow = {
   card: {
     shadowColor: colors.bezelBlack,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.24,
-    shadowRadius: 16,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 3,
   },
   emphasis: {
     shadowColor: colors.ink,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.28,
-    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.22,
+    shadowRadius: 26,
     elevation: 8,
   },
   toast: {
     shadowColor: colors.bezelBlack,
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.3,
     shadowRadius: 24,
     elevation: 10,
   },
 } as const;
 
-/** Pretendard 웹폰트. 로드 전 폴백은 시스템 폰트. */
+/** 타이포그래피 — 우아한 헤리티지 감성.
+ *  serif: 브랜드 워드마크·영문 라벨 (헤리티지). 한글 UI는 clean sans(Pretendard/시스템).
+ */
 export const fontFamily = {
   regular: 'Pretendard',
+  serif: Platform.select({
+    ios: 'Georgia',
+    android: 'serif',
+    default: 'Georgia, "Times New Roman", serif',
+  }) as string,
 } as const;
 
 export const font = {
-  // px 값을 그대로 사용 (RN은 dp 이지만 프로토타입 비율 유지)
+  display: 26, // 히어로 제목
+  homeGreeting: 24,
   screenTitle: 22,
-  homeGreeting: 23,
   cardTitle: 18,
-  emphasisTitle: 21,
+  emphasisTitle: 20,
   sectionLabel: 11,
   body: 13,
   bodySm: 12,
@@ -106,8 +121,17 @@ export const font = {
   captionSm: 10.5,
 } as const;
 
+// 무게는 전반적으로 한 단계 가볍게 — quiet luxury.
 export const weight = {
-  black: '800' as const,
+  heavy: '800' as const, // 아주 드물게
+  black: '700' as const, // 제목/강조 (기존 800 → 700로 완화)
   bold: '700' as const,
   semibold: '600' as const,
+  medium: '500' as const,
 };
+
+/** 영문 라벨 트래킹 (프리미엄 느낌의 넓은 자간) */
+export const tracking = {
+  label: 1.5,
+  wordmark: 3,
+} as const;

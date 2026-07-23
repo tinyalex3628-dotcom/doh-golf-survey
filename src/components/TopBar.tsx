@@ -4,7 +4,8 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, weight } from '../theme/tokens';
+import { colors, fontFamily, tracking, weight } from '../theme/tokens';
+import { BRAND } from '../brand/brand';
 
 export function TopBar({
   title,
@@ -32,7 +33,7 @@ export function TopBar({
 
         {/* 좌측: 브랜드 또는 뒤로가기 */}
         {showBrand ? (
-          <Text style={styles.brand}>DOH</Text>
+          <Text style={styles.brand}>{BRAND.wordmark}</Text>
         ) : showBack ? (
           <Pressable onPress={onBack} hitSlop={10} style={styles.backBtn}>
             <Text style={styles.backGlyph}>‹</Text>
@@ -75,6 +76,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backGlyph: { fontSize: 22, color: colors.ink, marginTop: -3, fontWeight: weight.bold },
-  brand: { fontSize: 20, fontWeight: weight.black, color: colors.ink, letterSpacing: 1 },
-  title: { fontSize: 17, fontWeight: weight.black, color: colors.ink, letterSpacing: -0.2 },
+  brand: {
+    fontFamily: fontFamily.serif,
+    fontSize: 22,
+    color: colors.ink,
+    letterSpacing: tracking.wordmark,
+  },
+  title: { fontSize: 16, fontWeight: weight.semibold, color: colors.ink, letterSpacing: 0.2 },
 });
