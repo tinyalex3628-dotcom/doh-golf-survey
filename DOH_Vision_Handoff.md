@@ -178,6 +178,20 @@
 - **검증(목서버+Chromium):** 빈파일→"③ 업로드 거부됨", 폴링 첫2회 503→재시도→"✅ 7단계 완료" PASS. server compile·analyzer2 node --check OK.
 - ⚠️ 실 GPU/사지방 왕복 미검증(이 세션 GPU 없음).
 
+## 5m. Measurement Catalog (M###) — 계산식 레벨 명세 **완료(2026-07-23)** ✅  계약 무변경
+"새 Feature 그만 만들고, M101~M803을 하나씩 계산식으로 확정" 요청 반영. 개발자가 그대로 코드로
+옮길 수 있는 원자적 측정량 명세서를 신설. **`doh.vision.v1` 계약 무영향**(M은 내부 레이어, VF 어댑터만 소비).
+- **문서:** `DOH_Vision_Measurement_Catalog_v1.0.md` — 51개 M-code 전수(+ M102 예약). 각 M마다
+  ①입력 랜드마크(SMPL-24 idx) ②계산식(OP###/PR### 어휘) ③좌표계(CS4/CS5) ④Phase ⑤단위·정규화
+  ⑥Engine(NLF/MediaPipe) ⑦오차 seed ⑧등급 + →VF→Node 매핑.
+- **레이어 정의:** `Landmark → Primitive×Operator → **M(원자값)** → VF(골프의미) → 계약 → Node`.
+  예: `VF020 X-Factor = M201 흉곽회전 − M101 골반회전`. M은 재사용·단위테스트·정직판정의 단위.
+- **등급(정직):** **A 31**(화면-내축·3D세그먼트각, ±3–8°) · **B 16**(깊이Z=DTL+depth_estimated / 축회전·미세관절 ±10–18°) · **C 4**(M304 yaw·M711/712/713 발 = SMPL-24 body 관절 없음→null).
+  - 사용자 초안 A32/B13/C4는 근사치였고 이 표가 정본. **M503(상완축회전)·M703/704(고관절축회전)를 A→B로 하향**(점-스켈레톤 축회전 원리적 약함, 정직성).
+- **구현 정합:** M101/M201/M104/M202/M203/M301/M501/M502/M705/M706은 이미 `wham_golf_rotation.py`·`wham_golf_metrics.py`에 구현됨(§8 표로 매핑). 미구현 A등급부터 코드화 권장.
+- **확인 요청:** M102(골반 시상면 A/P 틸트) 번호 갭 — 채울지 사용자 확인. M403/404(어깨 elevation)는 대응 VF 신설 필요.
+- ⚠️ 문서 산출물(코드 변경 아님). 실측 오차 보정은 GPU 왕복 후.
+
 ## Stage 0 완료 기준 (사용자 확정 — 이거 다 되면 완료)
 **기능(7):** 연결테스트·업로드·Job생성·GPU분석완료·JSON반환·analyzer2 렌더 (7단계 초록).
 **안정성:** 같은 영상 **5회 연속** — 실패0·Job누락0·UI오류0.
@@ -186,9 +200,10 @@
 → 핵심 성공기준: "사용자가 아무 설정 신경 안 쓰고 업로드→분석→결과가 안정 반복." 완료 후 Stage1(Modal PoC) 시작.
 
 ## 6. 다음 할 일 (우선순위)
-1. ~~JSON 계약 고정~~(§5b) · ~~Metrics 1차~~(§5c) · ~~up축+척추각~~(§5d) · ~~집PC 서버+웹UI~~(§5e) · ~~무료 Colab Gradio UI~~(§5f) → **완료.**
+1. ~~JSON 계약 고정~~(§5b) · ~~Metrics 1차~~(§5c) · ~~up축+척추각~~(§5d) · ~~집PC 서버+웹UI~~(§5e) · ~~무료 Colab Gradio UI~~(§5f) · ~~Measurement Catalog M###~~(§5m) → **완료.**
 2. **집 PC 첫 구동·검증**: start.bat → localhost:8000 → 측면영상 분석 → 척추각 55~65°·스웨이 null 확인. `/health` cuda:true.
 3. **엔진 정밀 보정**: X-Factor 스케일(58~73°→클래식~45°), 여러 스윙 실측 대조. 다운스윙 지표(얼리익스텐션 등) 계약에 append.
+   - **M-code 코드화(§5m·§8):** A등급 미구현분(M103/M106/M204/M205/M302/M401·402/M504/M506·507·508/M606/M701·702/M709·710/M801·802)을 metrics.py에 추가 → VF로 방출. M102 갭 확인.
 4. **FastAPI 래핑**: `POST 영상 → doh.vision.v1 JSON`. (rot.py/NLF 그대로 감싸기.) — GPU 서버 생기면 배포.
 5. **프론트**: 웹(analyzer2 진화 or 신규) + 모바일이 같은 API 호출. 지금 `JSON 불러오기`가 그 자리표시자.
 6. **나중**: DOH 진단엔진(Feature→Node→Chain)과 결합. (main 쪽 Feature Dictionary·Node Library + `data/vision_feature_map.csv`.)
