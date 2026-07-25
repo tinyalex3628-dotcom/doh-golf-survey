@@ -206,6 +206,14 @@ export default function RequestPage() {
           <ChevronRight />
         </button>
 
+        <a className="link-row" href="/swing" style={{ marginTop: -14, marginBottom: 26 }}>
+          <div className="link-tile" style={{ background: "var(--blue-light)" }}>📐</div>
+          <div>
+            <div className="link-name">스윙분석 도구 써보기</div>
+            <div className="link-url">내 영상에 선 긋고 · 두 영상 나란히 비교</div>
+          </div>
+        </a>
+
         <div className="section-row">
           <span className="section-label">스윙 영상</span>
           <button className="guide-link" onClick={() => setGuideSheetOpen(true)}>

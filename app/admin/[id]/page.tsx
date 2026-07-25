@@ -261,6 +261,17 @@ export default function AdminDetailPage() {
                   <button className="speed-btn" onClick={addChapterAtCurrentTime}>
                     ⏱ 지금 시점을 구간으로 추가
                   </button>
+                  <button
+                    className="speed-btn"
+                    onClick={() =>
+                      window.open(
+                        `/studio?src=${encodeURIComponent(activeVideo.url)}`,
+                        "_blank"
+                      )
+                    }
+                  >
+                    🎥 스튜디오에서 분석
+                  </button>
                 </div>
               </>
             ) : (
