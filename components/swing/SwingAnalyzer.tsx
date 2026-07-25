@@ -128,8 +128,6 @@ export default function SwingAnalyzer({
 
   // 모바일 구간 편집 모드: 편집 중인 페인 번호 (null = 닫힘)
   const [editorPane, setEditorPane] = useState<number | null>(null);
-  // 모바일 세로/가로 감지 (비교 모드는 가로 전용)
-  const [isPortrait, setIsPortrait] = useState(false);
 
   // 녹화 (프로 전용)
   const [recState, setRecState] = useState<"idle" | "rec">("idle");
@@ -232,15 +230,6 @@ export default function SwingAnalyzer({
 
   const paneIndices = mode === "compare" ? [0, 1] : [0];
   const masterIdx = panes[0].url ? 0 : 1;
-
-  useEffect(() => {
-    if (isPro || typeof window === "undefined") return;
-    const mq = window.matchMedia("(orientation: portrait)");
-    const upd = () => setIsPortrait(mq.matches);
-    upd();
-    mq.addEventListener("change", upd);
-    return () => mq.removeEventListener("change", upd);
-  }, [isPro]);
 
   const trimDur = useCallback((p: PaneData) => Math.max(MIN_TRIM, p.outPt - p.inPt), []);
   const masterDur = trimDur(panes[masterIdx]);
@@ -1315,16 +1304,6 @@ export default function SwingAnalyzer({
               여기서 끝
             </button>
           </div>
-        </div>
-      )}
-
-      {/* ===== 모바일: 비교는 가로 전용 ===== */}
-      {!isPro && mode === "compare" && isPortrait && !editorOpen && (
-        <div className="sw-rotate">
-          <span className="sw-rotate-icon">⟳</span>
-          <b>가로 화면으로 돌려주세요</b>
-          <span>2영상 비교는 가로 모드에서 사용할 수 있습니다</span>
-          <button onClick={() => setMode("single")}>단독 분석으로 전환</button>
         </div>
       )}
 

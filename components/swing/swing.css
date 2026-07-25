@@ -783,56 +783,6 @@
   }
 }
 
-/* ===== 모바일: 가로 모드 안내 ===== */
-.sw-rotate {
-  position: absolute;
-  inset: 0;
-  z-index: 60;
-  background: rgba(6, 6, 8, 0.94);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  text-align: center;
-  padding: 24px;
-}
-.sw-rotate-icon {
-  font-size: 40px;
-  color: var(--sw-text-dim);
-  animation: sw-rotate-spin 2.4s ease-in-out infinite;
-}
-@keyframes sw-rotate-spin {
-  0%,
-  60%,
-  100% {
-    transform: rotate(0deg);
-  }
-  20%,
-  40% {
-    transform: rotate(90deg);
-  }
-}
-.sw-rotate b {
-  font-size: 16px;
-  font-weight: 800;
-}
-.sw-rotate span:not(.sw-rotate-icon) {
-  font-size: 13px;
-  color: var(--sw-text-dim);
-}
-.sw-rotate button {
-  margin-top: 10px;
-  background: var(--sw-panel-2);
-  border: 1px solid var(--sw-border-strong);
-  color: var(--sw-text);
-  font-size: 13px;
-  font-weight: 700;
-  padding: 10px 18px;
-  border-radius: var(--sw-r);
-  cursor: pointer;
-}
-
 /* ===== 바텀시트 / 모달 ===== */
 .sw-sheet-overlay {
   position: fixed;
@@ -919,6 +869,14 @@
   .sw-header {
     padding-left: 10px;
     padding-right: 10px;
+  }
+  /* 세로: 헤더가 두 줄로 감기므로 페인 배지를 그 아래로 내림 */
+  .sw-member .sw-pane-badges {
+    top: 100px;
+  }
+  .sw-member .sw-toolrail,
+  .sw-rail-fab {
+    top: 100px;
   }
   .sw-logo {
     display: none;
