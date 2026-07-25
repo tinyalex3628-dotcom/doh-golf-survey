@@ -5,7 +5,10 @@ import { NextResponse } from "next/server";
 // 동의항목이 없는 앱에서 KOE205 오류가 납니다. 그래서 직접 호출합니다.
 export async function GET(request: Request) {
   const { origin } = new URL(request.url);
-  const redirectUri = `${origin}/auth/kakao/callback`;
+  // Vercel은 배포마다 임시 주소를 만드는데, 카카오에는 고정 주소만 등록돼 있습니다.
+  // 그래서 항상 고정 주소를 사용합니다.
+  const base = process.env.NEXT_PUBLIC_SITE_URL || origin;
+  const redirectUri = `${base}/auth/kakao/callback`;
 
   const params = new URLSearchParams({
     client_id: process.env.KAKAO_REST_API_KEY!,

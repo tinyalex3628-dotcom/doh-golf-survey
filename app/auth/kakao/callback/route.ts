@@ -7,9 +7,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  // 로그인 시작 때와 똑같은 고정 주소를 써야 카카오가 승인해줍니다.
+  const base = process.env.NEXT_PUBLIC_SITE_URL || origin;
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/?login_error=no_code`);
+    return NextResponse.redirect(`${base}/?login_error=no_code`);
   }
 
   try {
@@ -21,13 +23,13 @@ export async function GET(request: Request) {
         grant_type: "authorization_code",
         client_id: process.env.KAKAO_REST_API_KEY!,
         client_secret: process.env.KAKAO_CLIENT_SECRET!,
-        redirect_uri: `${origin}/auth/kakao/callback`,
+        redirect_uri: `${base}/auth/kakao/callback`,
         code,
       }),
     });
     const tokenJson = await tokenRes.json();
     if (!tokenJson.access_token) {
-      return NextResponse.redirect(`${origin}/?login_error=token`);
+      return NextResponse.redirect(`${base}/?login_error=token`);
     }
 
     // 2) 카카오 사용자 정보 조회 (회원번호 + 닉네임)
@@ -36,7 +38,7 @@ export async function GET(request: Request) {
     });
     const me = await meRes.json();
     if (!me.id) {
-      return NextResponse.redirect(`${origin}/?login_error=profile`);
+      return NextResponse.redirect(`${base}/?login_error=profile`);
     }
 
     const kakaoId = String(me.id);
@@ -59,7 +61,7 @@ export async function GET(request: Request) {
     });
     const tokenHash = link?.properties?.hashed_token;
     if (linkErr || !tokenHash) {
-      return NextResponse.redirect(`${origin}/?login_error=link`);
+      return NextResponse.redirect(`${base}/?login_error=link`);
     }
 
     // 5) 그 토큰으로 실제 로그인 (쿠키에 세션 저장)
@@ -69,11 +71,11 @@ export async function GET(request: Request) {
       type: "magiclink",
     });
     if (otpErr) {
-      return NextResponse.redirect(`${origin}/?login_error=session`);
+      return NextResponse.redirect(`${base}/?login_error=session`);
     }
 
-    return NextResponse.redirect(origin);
+    return NextResponse.redirect(base);
   } catch {
-    return NextResponse.redirect(`${origin}/?login_error=unknown`);
+    return NextResponse.redirect(`${base}/?login_error=unknown`);
   }
 }
