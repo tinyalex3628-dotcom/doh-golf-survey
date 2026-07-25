@@ -28,7 +28,8 @@ export type Shape = {
   text?: string;
 };
 
-export const SWING_COLORS = ["#ff3b30", "#34c759", "#ffcc00", "#3182f6", "#ffffff"];
+// 분석선용 기능색 — 노랑(기본)·빨강·초록·흰색·하늘
+export const SWING_COLORS = ["#ffd60a", "#ff453a", "#30d158", "#ffffff", "#64d2ff"];
 
 export function angleDegrees(a: Pt, vertex: Pt, c: Pt): number {
   const v1 = { x: a.x - vertex.x, y: a.y - vertex.y };

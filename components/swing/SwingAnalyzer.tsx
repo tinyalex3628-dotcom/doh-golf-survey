@@ -65,13 +65,13 @@ const SPEEDS = [0.1, 0.25, 0.5, 0.75, 1];
 const MIN_TRIM = 0.05; // IN/OUT 최소 간격(초)
 
 const TOOLS: { id: ToolId; icon: string; label: string; proOnly?: boolean }[] = [
-  { id: "pan", icon: "✋", label: "이동·줌" },
+  { id: "pan", icon: "✥", label: "이동·줌" },
   { id: "line", icon: "╱", label: "직선" },
-  { id: "arrow", icon: "➔", label: "화살표" },
-  { id: "vline", icon: "┃", label: "수직선" },
-  { id: "hline", icon: "━", label: "수평선" },
-  { id: "circle", icon: "◯", label: "원" },
-  { id: "rect", icon: "▭", label: "사각형" },
+  { id: "arrow", icon: "↗", label: "화살표" },
+  { id: "vline", icon: "│", label: "수직선" },
+  { id: "hline", icon: "─", label: "수평선" },
+  { id: "circle", icon: "○", label: "원" },
+  { id: "rect", icon: "▢", label: "사각형" },
   { id: "free", icon: "✎", label: "펜" },
   { id: "angle", icon: "∠", label: "각도" },
   { id: "text", icon: "T", label: "텍스트", proOnly: true },
@@ -119,6 +119,7 @@ export default function SwingAnalyzer({
   const [pendingAngle, setPendingAngle] = useState<{ pane: number; pts: Pt[] } | null>(null);
   const [preview, setPreview] = useState<{ pane: number; shape: Shape } | null>(null);
   const [syncOpen, setSyncOpen] = useState(false);
+  const [trimOpen, setTrimOpen] = useState(true);
   const [railOpen, setRailOpen] = useState(true);
   const [sizeTick, setSizeTick] = useState(0);
   const [toast, setToast] = useState("");
@@ -846,7 +847,7 @@ export default function SwingAnalyzer({
       {/* ===== 상단 바 ===== */}
       <header className="sw-header">
         <div className="sw-header-left">
-          <span className="sw-logo">⛳ 스윙분석{isPro ? " 스튜디오" : ""}</span>
+          {isPro && <span className="sw-logo">SWING STUDIO</span>}
           <div className="sw-mode-toggle">
             <button className={mode === "single" ? "on" : ""} onClick={() => setMode("single")}>
               단독
@@ -858,20 +859,20 @@ export default function SwingAnalyzer({
         </div>
         <div className="sw-header-right">
           <button className="sw-load-btn" onClick={() => fileEls.current[0]?.click()}>
-            📂 영상 A
+            영상 A
           </button>
           {mode === "compare" && (
             <button className="sw-load-btn" onClick={() => fileEls.current[1]?.click()}>
-              📂 영상 B
+              영상 B
             </button>
           )}
           {isPro && (
             <button className="sw-load-btn" onClick={() => loadUrlPrompt(mode === "compare" && panes[0].url ? 1 : 0)}>
-              🔗 URL
+              URL
             </button>
           )}
           <button className={`sw-load-btn ${sound ? "on" : ""}`} onClick={() => setSound((s) => !s)} title="영상 소리 켜기/끄기">
-            {sound ? "🔊" : "🔇"}
+            소리
           </button>
           {isPro && (
             <>
@@ -884,16 +885,16 @@ export default function SwingAnalyzer({
               </button>
               {recState === "idle" ? (
                 <button className="sw-rec-btn" onClick={startRecording} disabled={!anyLoaded}>
-                  ● 녹화 시작
+                  ● REC
                 </button>
               ) : (
                 <button className="sw-rec-btn recording" onClick={stopRecording}>
-                  ■ 녹화 중 {formatTime(recSec)}
+                  ■ {formatTime(recSec)}
                 </button>
               )}
               {recUrl && recState === "idle" && (
                 <button className="sw-load-btn on" onClick={() => setRecModal(true)}>
-                  🎬 녹화본
+                  녹화본
                 </button>
               )}
             </>
@@ -905,7 +906,7 @@ export default function SwingAnalyzer({
         {/* ===== 도구 레일 ===== */}
         {!isPro && !railOpen && (
           <button className="sw-rail-fab" onClick={() => setRailOpen(true)} title="도구 열기">
-            ✏️
+            ✎
           </button>
         )}
         <aside className="sw-toolrail" style={!isPro && !railOpen ? { display: "none" } : undefined}>
@@ -927,15 +928,15 @@ export default function SwingAnalyzer({
           ))}
           <div className="sw-rail-div" />
           <button className="sw-tool" onClick={undo} disabled={history.length === 0} title="되돌리기">
-            <span className="sw-tool-icon">↩</span>
+            <span className="sw-tool-icon">↶</span>
             {isPro && <span className="sw-tool-label">되돌리기</span>}
           </button>
           <button className="sw-tool" onClick={redo} disabled={redoStack.length === 0} title="다시 실행">
-            <span className="sw-tool-icon">↪</span>
+            <span className="sw-tool-icon">↷</span>
             {isPro && <span className="sw-tool-label">다시</span>}
           </button>
           <button className="sw-tool" onClick={clearAll} title="모두 지우기">
-            <span className="sw-tool-icon">🗑</span>
+            <span className="sw-tool-icon">⌧</span>
             {isPro && <span className="sw-tool-label">전체삭제</span>}
           </button>
           <div className="sw-rail-div" />
@@ -1011,7 +1012,7 @@ export default function SwingAnalyzer({
                   </>
                 ) : (
                   <button className="sw-empty" onClick={() => fileEls.current[i]?.click()}>
-                    <span className="sw-empty-icon">🎥</span>
+                    <span className="sw-empty-icon">＋</span>
                     <span>영상 {mode === "compare" ? (i === 0 ? "A" : "B") + " " : ""}불러오기</span>
                     <span className="sw-empty-sub">탭해서 갤러리/파일에서 선택</span>
                   </button>
@@ -1045,47 +1046,67 @@ export default function SwingAnalyzer({
         <div className="sw-ctrl-row">
           <div className="sw-ctrl-group">
             <button className="sw-ctrl-btn" onClick={() => stepFrame(-1)} disabled={!anyLoaded} title="1프레임 뒤로">
-              ◀︎▏
+              ◀|
             </button>
             <button className="sw-play-btn" onClick={togglePlay} disabled={!anyLoaded}>
               {playing ? "❚❚" : "▶"}
             </button>
             <button className="sw-ctrl-btn" onClick={() => stepFrame(1)} disabled={!anyLoaded} title="1프레임 앞으로">
-              ▕▶︎
+              |▶
             </button>
             <button
               className={`sw-ctrl-btn ${loop ? "on" : ""}`}
               onClick={() => setLoop((l) => !l)}
               title="구간 반복"
             >
-              🔁
+              반복
             </button>
             <span className="sw-time">
               {formatTime(masterTime)} <em>/ 구간 {formatTime(masterDur)}</em>
             </span>
           </div>
           <div className="sw-ctrl-group">
-            {SPEEDS.map((s) => (
-              <button key={s} className={`sw-speed ${speed === s ? "on" : ""}`} onClick={() => setSpeed(s)}>
-                {s}x
+            {isPro ? (
+              SPEEDS.map((s) => (
+                <button key={s} className={`sw-speed ${speed === s ? "on" : ""}`} onClick={() => setSpeed(s)}>
+                  {s}x
+                </button>
+              ))
+            ) : (
+              // 모바일: 배속 순환 버튼 하나로 컨트롤 최소화
+              <button
+                className="sw-ctrl-btn"
+                onClick={() => setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length])}
+                title="재생 속도"
+              >
+                {speed}x
               </button>
-            ))}
-            {!isPro && (
+            )}
+            {isPro ? (
+              <button
+                className={`sw-ctrl-btn ${trimOpen ? "on" : ""}`}
+                onClick={() => setTrimOpen((o) => !o)}
+                disabled={!anyLoaded}
+                title="스윙 구간(IN/OUT)·싱크 패널"
+              >
+                구간·싱크
+              </button>
+            ) : (
               <button className="sw-sync-open" onClick={() => setSyncOpen(true)} disabled={!anyLoaded}>
-                ✂️ 구간·싱크
+                구간·싱크
               </button>
             )}
           </div>
         </div>
 
-        {/* 프로: 트림 컨트롤 상시 노출 */}
-        {isPro && anyLoaded && (
+        {/* 프로: 트림 컨트롤 (접이식) */}
+        {isPro && anyLoaded && trimOpen && (
           <div className="sw-trim-panel">
             <TrimRow i={0} />
             {mode === "compare" && <TrimRow i={1} />}
             <p className="sw-trim-hint">
-              스크러버로 이동 → 영상별 -1f/+1f 로 정확한 프레임을 찾고 → 시작점/끝점을 지정하면 두 영상의 스윙 구간이
-              자동으로 맞춰져요. 단축키: Space 재생 · ←/→ 프레임 · Shift+←/→ 10프레임 · I/O 시작·끝점 · Ctrl+Z 되돌리기
+              영상별 −1f/+1f로 프레임을 찾아 시작점·끝점을 지정하면 두 영상의 스윙 구간이 같은 타이밍으로 재생됩니다.
+              Space 재생 · ←/→ 프레임 · I/O 시작·끝점 · Ctrl+Z 되돌리기
             </p>
           </div>
         )}
@@ -1113,11 +1134,11 @@ export default function SwingAnalyzer({
       {isPro && recModal && recUrl && (
         <div className="sw-sheet-overlay" onClick={() => setRecModal(false)}>
           <div className="sw-rec-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="sw-sheet-title">레슨 영상 녹화 완료 🎬</div>
+            <div className="sw-sheet-title">레슨 영상 녹화 완료</div>
             <video src={recUrl} controls playsInline />
             <div className="sw-rec-actions">
               <a className="sw-rec-download" href={recUrl} download={`swing-lesson-${new Date().toISOString().slice(0, 10)}.webm`}>
-                ⬇ 영상 다운로드
+                영상 다운로드
               </a>
               <button className="sw-sheet-close" onClick={() => setRecModal(false)}>
                 닫기
