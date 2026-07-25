@@ -46,9 +46,14 @@ export default function RequestPage() {
   }, []);
 
   async function loginWithKakao() {
+    // 카카오 앱에는 "닉네임"만 동의 항목으로 등록돼 있어서,
+    // 이메일/프로필사진까지 요청하면 카카오가 KOE205 에러로 거부합니다.
     await supabase.auth.signInWithOAuth({
       provider: "kakao",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        scopes: "profile_nickname",
+      },
     });
   }
 
