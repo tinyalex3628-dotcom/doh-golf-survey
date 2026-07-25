@@ -1,0 +1,587 @@
+/* ============================================================
+   디자인 토큰 — 핸드오프 문서 그대로
+   ============================================================ */
+:root {
+  --blue: #3182f6;
+  --blue-light: #e7f0ff;
+  --blue-shadow: rgba(49, 130, 246, 0.6);
+  --text-strong: #191f28;
+  --text: #4e5968;
+  --text-sub: #6b7684;
+  --text-muted: #8b95a1;
+  --text-disabled: #b0b8c1;
+  --surface: #ffffff;
+  --surface-alt: #f9fafb;
+  --fill: #f2f4f6;
+  --track: #f0f2f5;
+  --border: #e5e8eb;
+  --border-light: #f0f2f5;
+  --danger: #f04452;
+  --danger-bg: #fff1f0;
+  --warn-bg: #fffbef;
+  --warn-text: #8a7433;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: "Pretendard", "Pretendard Variable", -apple-system,
+    BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", Roboto, sans-serif;
+  background: #eef1f4;
+  color: var(--text-strong);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 폰 화면처럼 가운데 정렬된 모바일 프레임 */
+.phone {
+  max-width: 430px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  background: var(--surface);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 진행률 바 */
+.progress-wrap {
+  padding: 10px 24px 6px;
+}
+.progress-track {
+  height: 6px;
+  background: var(--track);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--blue);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* 본문 스크롤 영역 */
+.scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 24px 190px;
+}
+
+/* 하단 고정 CTA 바 */
+.bottom-bar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  width: 100%;
+  max-width: 430px;
+  background: #fff;
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.05);
+  padding: 16px 24px 28px;
+  z-index: 10;
+}
+
+/* 타이틀/카피 */
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-strong);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+.subcopy {
+  font-size: 15px;
+  color: var(--text-sub);
+  line-height: 1.5;
+  margin-bottom: 26px;
+}
+
+/* 코치 카드 */
+.coach-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-bottom: 26px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+}
+.coach-badge {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: var(--text-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.coach-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.overline {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.09em;
+}
+.coach-card-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-strong);
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+/* 섹션 헤더 */
+.section-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.section-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.guide-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.guide-badge {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--fill);
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 버튼들 */
+.btn-primary {
+  width: 100%;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 19px 0;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: inherit;
+  box-shadow: 0 6px 16px -6px var(--blue-shadow);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-primary:disabled {
+  background: var(--text-disabled);
+  box-shadow: none;
+  cursor: default;
+}
+.btn-cta {
+  width: 100%;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 18px;
+  font-size: 18px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+}
+.btn-cta:disabled {
+  background: var(--text-disabled);
+  cursor: default;
+}
+.btn-secondary {
+  width: 100%;
+  background: var(--fill);
+  color: var(--text);
+  border: none;
+  border-radius: 16px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* 혜택 3줄 */
+.benefits {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* 고민 칩 */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.chip {
+  background: var(--fill);
+  color: var(--text);
+  border: 1.5px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s ease;
+}
+.chip:active {
+  transform: scale(0.95);
+}
+.chip.on {
+  background: var(--blue-light);
+  color: var(--blue);
+  border-color: var(--blue);
+  font-weight: 700;
+}
+
+/* 자유 입력 */
+.note-area {
+  width: 100%;
+  height: 140px;
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  font-size: 15px;
+  color: var(--text-strong);
+  line-height: 1.6;
+  resize: none;
+  background: #fff;
+  font-family: inherit;
+}
+.note-area::placeholder {
+  color: var(--text-disabled);
+}
+.caption {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+/* 입력 필드 */
+.input {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  font-size: 15px;
+  color: var(--text-strong);
+  background: #fff;
+  font-family: inherit;
+}
+
+/* 업로드된 파일 리스트 */
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-alt);
+  border: 1.5px solid var(--border-light);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+.file-name {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-del {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+/* 카드 (접수 정보 등) */
+.info-card {
+  background: var(--surface-alt);
+  border: 1.5px solid var(--border-light);
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.info-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.info-divider {
+  border: none;
+  border-top: 1px solid #eef1f4;
+  margin: 13px 0;
+}
+
+/* 알림 안내 배너 */
+.notice-banner {
+  background: var(--warn-bg);
+  border-radius: 14px;
+  padding: 14px 15px;
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warn-text);
+  line-height: 1.5;
+}
+
+/* 헤더 (뒤로가기) */
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px 12px;
+}
+.page-header .back {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  padding: 0;
+}
+.page-header .htitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+/* 리스트 로우 (채널 링크 등) */
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface-alt);
+  border: 1.5px solid var(--border-light);
+  border-radius: 14px;
+  padding: 13px 15px;
+  text-decoration: none;
+  color: inherit;
+}
+.link-tile {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.link-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+.link-url {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 240px;
+}
+
+/* 촬영 가이드 시트 */
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.sheet {
+  width: 100%;
+  max-width: 430px;
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  padding: 24px 24px 40px;
+}
+.guide-thumbs {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.guide-thumb {
+  flex: 1;
+  aspect-ratio: 3 / 4;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+/* 피드백 열람 페이지 */
+.fb-video-card {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.fb-video-card video {
+  width: 100%;
+  display: block;
+  background: #191f28;
+  aspect-ratio: 16 / 9;
+}
+.fb-video-caption {
+  padding: 14px 16px;
+}
+.chapter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface-alt);
+  border-radius: 14px;
+  padding: 13px 15px;
+  margin-bottom: 8px;
+}
+.chapter-time {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--blue);
+  flex-shrink: 0;
+}
+.chapter-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.sent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.sent-item {
+  aspect-ratio: 3 / 4;
+  border-radius: 12px;
+  background: var(--fill);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sent-item img,
+.sent-item video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 관리자 화면 */
+.admin-row {
+  display: block;
+  background: var(--surface-alt);
+  border: 1.5px solid var(--border-light);
+  border-radius: 14px;
+  padding: 15px 16px;
+  margin-bottom: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.badge.received {
+  background: var(--blue-light);
+  color: var(--blue);
+}
+.badge.done {
+  background: #e9f7ec;
+  color: #1a8a3c;
+}
+
+/* 카카오 로그인 버튼 */
+.btn-kakao {
+  width: 100%;
+  background: #fee500;
+  color: #191600;
+  border: none;
+  border-radius: 16px;
+  padding: 18px;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.error-text {
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 8px;
+}
