@@ -46,6 +46,7 @@ type Gesture =
   | { type: "pan"; pane: number; startX: number; startY: number; panX0: number; panY0: number }
   | { type: "pinch"; pane: number; startDist: number; zoom0: number; panX0: number; panY0: number; midX: number; midY: number }
   | { type: "draw"; pane: number; tool: ShapeTool; pts: Pt[] }
+  | { type: "scrub"; pane: number; startX: number; t0: number } // 구간 편집: 영상 문질러 탐색
   | null;
 
 const emptyPane = (): PaneData => ({
@@ -118,11 +119,15 @@ export default function SwingAnalyzer({
   const [activePane, setActivePane] = useState(0);
   const [pendingAngle, setPendingAngle] = useState<{ pane: number; pts: Pt[] } | null>(null);
   const [preview, setPreview] = useState<{ pane: number; shape: Shape } | null>(null);
-  const [syncOpen, setSyncOpen] = useState(false);
   const [trimOpen, setTrimOpen] = useState(true);
   const [railOpen, setRailOpen] = useState(true);
   const [sizeTick, setSizeTick] = useState(0);
   const [toast, setToast] = useState("");
+
+  // 모바일 구간 편집 모드: 편집 중인 페인 번호 (null = 닫힘)
+  const [editorPane, setEditorPane] = useState<number | null>(null);
+  // 모바일 세로/가로 감지 (비교 모드는 가로 전용)
+  const [isPortrait, setIsPortrait] = useState(false);
 
   // 녹화 (프로 전용)
   const [recState, setRecState] = useState<"idle" | "rec">("idle");
@@ -151,6 +156,19 @@ export default function SwingAnalyzer({
     audio: null,
   });
   const toastTimer = useRef<any>(null);
+  const editDragRef = useRef<"in" | "out" | "seek" | null>(null);
+
+  // 시킹처럼 state를 안 거치는 변화를 화면에 반영하기 위한 가벼운 틱 (rAF 스로틀)
+  const [, forceTick] = useState(0);
+  const tickPending = useRef(false);
+  const uiTick = useCallback(() => {
+    if (tickPending.current) return;
+    tickPending.current = true;
+    requestAnimationFrame(() => {
+      tickPending.current = false;
+      forceTick((t) => t + 1);
+    });
+  }, []);
 
   useEffect(() => { panesRef.current = panes; }, [panes]);
   useEffect(() => { shapesRef.current = shapes; }, [shapes]);
@@ -159,6 +177,15 @@ export default function SwingAnalyzer({
 
   const paneIndices = mode === "compare" ? [0, 1] : [0];
   const masterIdx = panes[0].url ? 0 : 1;
+
+  useEffect(() => {
+    if (isPro || typeof window === "undefined") return;
+    const mq = window.matchMedia("(orientation: portrait)");
+    const upd = () => setIsPortrait(mq.matches);
+    upd();
+    mq.addEventListener("change", upd);
+    return () => mq.removeEventListener("change", upd);
+  }, [isPro]);
 
   const trimDur = useCallback((p: PaneData) => Math.max(MIN_TRIM, p.outPt - p.inPt), []);
   const masterDur = trimDur(panes[masterIdx]);
@@ -207,7 +234,9 @@ export default function SwingAnalyzer({
     const v = videoEls.current[i];
     if (!v) return;
     if (isFinite(v.duration)) {
-      setPane(i, { duration: v.duration, inPt: 0, outPt: v.duration });
+      // 같은 영상이 다시 마운트된 경우엔 사용자가 지정한 구간을 유지
+      const keep = Math.abs(panesRef.current[i].duration - v.duration) < 0.01;
+      setPane(i, keep ? { duration: v.duration } : { duration: v.duration, inPt: 0, outPt: v.duration });
     } else {
       // 일부 webm(녹화 파일 등)은 duration이 Infinity로 보고됨 →
       // 끝으로 강제 시킹해서 실제 길이를 알아내는 표준 워크어라운드
@@ -341,6 +370,7 @@ export default function SwingAnalyzer({
     const pd = panesRef.current[i];
     if (!v || !pd.url) return;
     v.currentTime = Math.min(pd.duration, Math.max(0, v.currentTime + dir / fps));
+    uiTick();
   }
 
   function markIn(i: number) {
@@ -464,6 +494,15 @@ export default function SwingAnalyzer({
     const p = paneNorm(i, e.clientX, e.clientY);
     const pd = panesRef.current[i];
 
+    // 구간 편집 모드: 영상을 좌우로 문지르면 프레임 탐색
+    if (!isPro && editorPane !== null) {
+      const v = videoEls.current[i];
+      if (!v) return;
+      if (playing) pauseAll();
+      gestureRef.current = { type: "scrub", pane: i, startX: e.clientX, t0: v.currentTime };
+      return;
+    }
+
     if (tool === "pan") {
       const pts = Array.from(pointersRef.current.values());
       if (pts.length >= 2) {
@@ -525,6 +564,17 @@ export default function SwingAnalyzer({
     }
     if (!g) return;
 
+    if (g.type === "scrub") {
+      const v = videoEls.current[g.pane];
+      const pd = panesRef.current[g.pane];
+      if (!v || !pd.duration) return;
+      const w = paneEls.current[g.pane]?.getBoundingClientRect().width || 300;
+      // 화면 전체 폭 스와이프 = 영상 길이의 절반 → 정밀한 프레임 탐색
+      const t = g.t0 + ((e.clientX - g.startX) / w) * pd.duration * 0.5;
+      v.currentTime = Math.min(pd.duration, Math.max(0, t));
+      uiTick();
+      return;
+    }
     if (g.type === "pan") {
       setPane(g.pane, { panX: g.panX0 + (e.clientX - g.startX), panY: g.panY0 + (e.clientY - g.startY) });
       return;
@@ -842,9 +892,82 @@ export default function SwingAnalyzer({
     );
   }
 
+  // ---------- 모바일 구간 편집: 드래그 핸들 트랙 ----------
+  function EditTrack({ i }: { i: number }) {
+    const pd = panes[i];
+    const v = videoEls.current[i];
+    const dur = Math.max(0.01, pd.duration);
+    const cur = v?.currentTime ?? 0;
+
+    function timeAt(clientX: number, el: HTMLElement) {
+      const r = el.getBoundingClientRect();
+      return Math.min(dur, Math.max(0, ((clientX - r.left) / r.width) * dur));
+    }
+    function apply(t: number, target: "in" | "out" | "seek") {
+      const cpd = panesRef.current[i];
+      const vv = videoEls.current[i];
+      if (target === "in") {
+        const nt = Math.min(t, cpd.outPt - MIN_TRIM);
+        setPane(i, { inPt: nt });
+        if (vv) vv.currentTime = nt; // 핸들을 끌면 그 프레임이 바로 보인다
+      } else if (target === "out") {
+        const nt = Math.max(t, cpd.inPt + MIN_TRIM);
+        setPane(i, { outPt: nt });
+        if (vv) vv.currentTime = nt;
+      } else if (vv) {
+        vv.currentTime = t;
+      }
+      uiTick();
+    }
+    return (
+      <div
+        className="sw-edit-track"
+        onPointerDown={(e) => {
+          (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+          const t = timeAt(e.clientX, e.currentTarget);
+          const nearIn = Math.abs(t - pd.inPt) / dur < 0.07;
+          const nearOut = Math.abs(t - pd.outPt) / dur < 0.07;
+          editDragRef.current =
+            nearIn && nearOut
+              ? t < (pd.inPt + pd.outPt) / 2
+                ? "in"
+                : "out"
+              : nearIn
+                ? "in"
+                : nearOut
+                  ? "out"
+                  : "seek";
+          apply(t, editDragRef.current);
+        }}
+        onPointerMove={(e) => {
+          if (editDragRef.current) apply(timeAt(e.clientX, e.currentTarget), editDragRef.current);
+        }}
+        onPointerUp={() => (editDragRef.current = null)}
+        onPointerCancel={() => (editDragRef.current = null)}
+      >
+        <div className="sw-edit-dim" style={{ left: 0, width: `${(pd.inPt / dur) * 100}%` }} />
+        <div className="sw-edit-dim" style={{ left: `${(pd.outPt / dur) * 100}%`, right: 0 }} />
+        <div
+          className="sw-edit-range"
+          style={{ left: `${(pd.inPt / dur) * 100}%`, width: `${((pd.outPt - pd.inPt) / dur) * 100}%` }}
+        />
+        <div className="sw-edit-cursor" style={{ left: `${(cur / dur) * 100}%` }} />
+        <div className="sw-edit-handle in" style={{ left: `${(pd.inPt / dur) * 100}%` }}>
+          <span>시작</span>
+        </div>
+        <div className="sw-edit-handle out" style={{ left: `${(pd.outPt / dur) * 100}%` }}>
+          <span>끝</span>
+        </div>
+      </div>
+    );
+  }
+
+  const editorOpen = !isPro && editorPane !== null;
+
   return (
     <div className={`sw-root ${isPro ? "sw-pro" : "sw-member"}`}>
       {/* ===== 상단 바 ===== */}
+      {!editorOpen && (
       <header className="sw-header">
         <div className="sw-header-left">
           {isPro && <span className="sw-logo">SWING STUDIO</span>}
@@ -901,15 +1024,16 @@ export default function SwingAnalyzer({
           )}
         </div>
       </header>
+      )}
 
       <div className="sw-main">
         {/* ===== 도구 레일 ===== */}
-        {!isPro && !railOpen && (
+        {!isPro && !railOpen && !editorOpen && (
           <button className="sw-rail-fab" onClick={() => setRailOpen(true)} title="도구 열기">
             ✎
           </button>
         )}
-        <aside className="sw-toolrail" style={!isPro && !railOpen ? { display: "none" } : undefined}>
+        <aside className="sw-toolrail" style={!isPro && (!railOpen || editorOpen) ? { display: "none" } : undefined}>
           {!isPro && (
             <button className="sw-tool" onClick={() => setRailOpen(false)} title="도구 접기">
               <span className="sw-tool-icon">✕</span>
@@ -967,10 +1091,12 @@ export default function SwingAnalyzer({
         <div className="sw-stage" ref={stageRef} onPointerMove={onStageMove} onPointerLeave={() => (cursorRef.current.inside = false)}>
           {paneIndices.map((i) => {
             const pd = panes[i];
+            const hiddenPane = editorOpen && editorPane !== i;
             return (
               <div
                 key={i}
-                className={`sw-pane ${mode === "compare" && activePane === i ? "active" : ""}`}
+                className={`sw-pane ${mode === "compare" && activePane === i && !editorOpen ? "active" : ""}`}
+                style={hiddenPane ? { display: "none" } : undefined}
                 ref={(el) => { paneEls.current[i] = el; }}
                 onPointerDown={(e) => onPaneDown(i, e)}
                 onPointerMove={(e) => onPaneMove(i, e)}
@@ -1023,7 +1149,69 @@ export default function SwingAnalyzer({
         </div>
       </div>
 
+      {/* ===== 모바일: 구간 편집 패널 ===== */}
+      {editorOpen && editorPane !== null && (
+        <div className="sw-editor">
+          <div className="sw-editor-top">
+            <span className="sw-editor-title">스윙 구간 맞추기</span>
+            {mode === "compare" && panes[0].url && panes[1].url && (
+              <div className="sw-mode-toggle">
+                <button className={editorPane === 0 ? "on" : ""} onClick={() => setEditorPane(0)}>
+                  영상 A
+                </button>
+                <button className={editorPane === 1 ? "on" : ""} onClick={() => setEditorPane(1)}>
+                  영상 B
+                </button>
+              </div>
+            )}
+            <button
+              className="sw-editor-done"
+              onClick={() => {
+                setEditorPane(null);
+                seekAll(0);
+              }}
+            >
+              완료
+            </button>
+          </div>
+          <p className="sw-editor-hint">
+            영상을 좌우로 문지르면 프레임 단위로 움직여요. 아래 핸들을 끌어 스윙 시작·끝을 지정하세요.
+          </p>
+          <EditTrack i={editorPane} />
+          <div className="sw-editor-times">
+            <span>시작 {formatTime(panes[editorPane].inPt)}</span>
+            <span className="cur">{formatTime(videoEls.current[editorPane]?.currentTime ?? 0)}</span>
+            <span>끝 {formatTime(panes[editorPane].outPt)}</span>
+          </div>
+          <div className="sw-editor-actions">
+            <button className="sw-ctrl-btn" onClick={() => nudgePane(editorPane, -1)}>
+              ◀ 1프레임
+            </button>
+            <button className="sw-ctrl-btn" onClick={() => nudgePane(editorPane, 1)}>
+              1프레임 ▶
+            </button>
+            <button className="sw-ctrl-btn mark" onClick={() => markIn(editorPane)}>
+              여기서 시작
+            </button>
+            <button className="sw-ctrl-btn mark" onClick={() => markOut(editorPane)}>
+              여기서 끝
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ===== 모바일: 비교는 가로 전용 ===== */}
+      {!isPro && mode === "compare" && isPortrait && !editorOpen && (
+        <div className="sw-rotate">
+          <span className="sw-rotate-icon">⟳</span>
+          <b>가로 화면으로 돌려주세요</b>
+          <span>2영상 비교는 가로 모드에서 사용할 수 있습니다</span>
+          <button onClick={() => setMode("single")}>단독 분석으로 전환</button>
+        </div>
+      )}
+
       {/* ===== 하단 컨트롤 ===== */}
+      {!editorOpen && (
       <footer className="sw-footer">
         {toast && <div className="sw-toast">{toast}</div>}
         {tool === "angle" && !pendingAngle && (
@@ -1092,7 +1280,14 @@ export default function SwingAnalyzer({
                 구간·싱크
               </button>
             ) : (
-              <button className="sw-sync-open" onClick={() => setSyncOpen(true)} disabled={!anyLoaded}>
+              <button
+                className="sw-sync-open"
+                onClick={() => {
+                  if (playing) pauseAll();
+                  setEditorPane(panes[activePane].url ? activePane : masterIdx);
+                }}
+                disabled={!anyLoaded}
+              >
                 구간·싱크
               </button>
             )}
@@ -1111,23 +1306,6 @@ export default function SwingAnalyzer({
           </div>
         )}
       </footer>
-
-      {/* ===== 회원용: 구간·싱크 바텀시트 ===== */}
-      {!isPro && syncOpen && (
-        <div className="sw-sheet-overlay" onClick={() => setSyncOpen(false)}>
-          <div className="sw-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="sw-sheet-title">스윙 구간 맞추기</div>
-            <p className="sw-sheet-sub">
-              영상마다 어드레스(시작)와 피니시(끝) 프레임을 지정하면, 비교 재생 시 두 스윙이 같은 타이밍에
-              시작하고 끝나요.
-            </p>
-            <TrimRow i={0} />
-            {mode === "compare" && <TrimRow i={1} />}
-            <button className="sw-sheet-close" onClick={() => setSyncOpen(false)}>
-              완료
-            </button>
-          </div>
-        </div>
       )}
 
       {/* ===== 프로: 녹화 결과 모달 ===== */}
