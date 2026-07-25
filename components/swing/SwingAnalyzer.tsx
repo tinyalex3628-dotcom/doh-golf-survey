@@ -174,6 +174,55 @@ export default function SwingAnalyzer({
     });
   }, []);
 
+  // ---------- 시킹 큐 ----------
+  // 모바일 브라우저의 비디오 시킹은 비동기(seeked로 완료 통지)라서, 드래그 중
+  // currentTime을 매 이벤트마다 대입하면 프레임 갱신을 건너뛴다.
+  // 목표 시각만 갱신해 두고 이전 시킹이 끝난 순간에만 다음 시킹을 발행해서
+  // 기기가 디코딩 가능한 최대 속도로 프레임이 손가락을 따라오게 한다.
+  const seekQRef = useRef<{ seeking: boolean; target: number | null; fast: boolean }[]>([
+    { seeking: false, target: null, fast: false },
+    { seeking: false, target: null, fast: false },
+  ]);
+  const scrubbingRef = useRef(false); // 마스터 슬라이더 드래그 중 여부
+
+  const issueSeek = useCallback((i: number) => {
+    const v = videoEls.current[i];
+    const q = seekQRef.current[i];
+    if (!v || q.target == null) {
+      q.seeking = false;
+      return;
+    }
+    const t = q.target;
+    q.target = null;
+    q.seeking = true;
+    // 드래그 중엔 fastSeek(키프레임 시킹, iOS에서 훨씬 빠름), 지원 없으면 정밀 시킹
+    if (q.fast && typeof (v as any).fastSeek === "function") (v as any).fastSeek(t);
+    else v.currentTime = t;
+  }, []);
+
+  const requestSeek = useCallback(
+    (i: number, t: number, fast = false) => {
+      const v = videoEls.current[i];
+      const pd = panesRef.current[i];
+      if (!v || !pd.url) return;
+      const q = seekQRef.current[i];
+      q.target = Math.min(pd.duration || t, Math.max(0, t));
+      q.fast = fast;
+      if (!q.seeking) issueSeek(i);
+    },
+    [issueSeek]
+  );
+
+  const onSeekedEv = useCallback(
+    (i: number) => {
+      const q = seekQRef.current[i];
+      if (q.target != null) issueSeek(i); // 드래그 중 쌓인 다음 목표를 즉시 발행
+      else q.seeking = false;
+      uiTick();
+    },
+    [issueSeek, uiTick]
+  );
+
   useEffect(() => { panesRef.current = panes; }, [panes]);
   useEffect(() => { playingRef.current = playing; }, [playing]);
   useEffect(() => { shapesRef.current = shapes; }, [shapes]);
@@ -270,16 +319,19 @@ export default function SwingAnalyzer({
   }, [panes[0].url, panes[1].url, sizeTick]);
 
   // ---------- 재생/싱크 엔진 ----------
-  const seekAll = useCallback((p: number) => {
-    setProgress(p);
-    for (const i of [0, 1]) {
-      const v = videoEls.current[i];
-      const pd = panesRef.current[i];
-      if (!v || !pd.url || !pd.duration) continue;
-      const d = Math.max(MIN_TRIM, pd.outPt - pd.inPt);
-      v.currentTime = pd.inPt + p * d;
-    }
-  }, []);
+  const seekAll = useCallback(
+    (p: number) => {
+      setProgress(p);
+      for (const i of [0, 1]) {
+        const pd = panesRef.current[i];
+        if (!pd.url || !pd.duration) continue;
+        const d = Math.max(MIN_TRIM, pd.outPt - pd.inPt);
+        // 드래그 중엔 빠른 시킹으로 프레임이 손가락을 따라오게 한다
+        requestSeek(i, pd.inPt + p * d, scrubbingRef.current);
+      }
+    },
+    [requestSeek]
+  );
 
   const pauseAll = useCallback(() => {
     for (const v of videoEls.current) v?.pause();
@@ -377,7 +429,9 @@ export default function SwingAnalyzer({
     const v = videoEls.current[i];
     const pd = panesRef.current[i];
     if (!v || !pd.url) return;
-    v.currentTime = Math.min(pd.duration, Math.max(0, v.currentTime + dir / fps));
+    // 연타 시 아직 시킹 중인 목표값을 기준으로 누적 (프레임 누락 방지)
+    const base = seekQRef.current[i].target ?? v.currentTime;
+    requestSeek(i, base + dir / fps);
     uiTick();
   }
 
@@ -575,14 +629,12 @@ export default function SwingAnalyzer({
     if (!g) return;
 
     if (g.type === "scrub") {
-      const v = videoEls.current[g.pane];
       const pd = panesRef.current[g.pane];
-      if (!v || !pd.duration) return;
+      if (!pd.duration) return;
       // 화면(스테이지) 전체 폭 스와이프 = 영상 길이의 절반 → 페인 폭과 무관하게 일정한 감도
       const w = stageRef.current?.getBoundingClientRect().width || 300;
       const t = g.t0 + ((e.clientX - g.startX) / w) * pd.duration * 0.5;
-      v.currentTime = Math.min(pd.duration, Math.max(0, t));
-      uiTick();
+      requestSeek(g.pane, t, true);
       return;
     }
     if (g.type === "pan") {
@@ -612,6 +664,11 @@ export default function SwingAnalyzer({
   function onPaneUp(i: number, e: React.PointerEvent<HTMLDivElement>) {
     pointersRef.current.delete(e.pointerId);
     const g = gestureRef.current;
+    // 스와이프 스크럽 종료: 마지막 위치로 정밀 시킹 (fastSeek의 키프레임 오차 보정)
+    if (g && g.type === "scrub" && pointersRef.current.size === 0) {
+      const v = videoEls.current[g.pane];
+      if (v) requestSeek(g.pane, seekQRef.current[g.pane].target ?? v.currentTime, false);
+    }
     // 모바일: 이동·줌 모드에서 움직임 없는 탭 = 재생/일시정지 (더블탭이면 취소하고 뷰 리셋만)
     if (!isPro && editorPane === null && g && g.type === "pan" && pointersRef.current.size === 0) {
       const moved = Math.hypot(e.clientX - g.startX, e.clientY - g.startY);
@@ -933,17 +990,16 @@ export default function SwingAnalyzer({
     }
     function apply(t: number, target: "in" | "out" | "seek") {
       const cpd = panesRef.current[i];
-      const vv = videoEls.current[i];
       if (target === "in") {
         const nt = Math.min(t, cpd.outPt - MIN_TRIM);
         setPane(i, { inPt: nt });
-        if (vv) vv.currentTime = nt; // 핸들을 끌면 그 프레임이 바로 보인다
+        requestSeek(i, nt, true); // 핸들을 끌면 그 프레임이 바로 보인다
       } else if (target === "out") {
         const nt = Math.max(t, cpd.inPt + MIN_TRIM);
         setPane(i, { outPt: nt });
-        if (vv) vv.currentTime = nt;
-      } else if (vv) {
-        vv.currentTime = t;
+        requestSeek(i, nt, true);
+      } else {
+        requestSeek(i, t, true);
       }
       uiTick();
     }
@@ -970,7 +1026,12 @@ export default function SwingAnalyzer({
         onPointerMove={(e) => {
           if (editDragRef.current) apply(timeAt(e.clientX, e.currentTarget), editDragRef.current);
         }}
-        onPointerUp={() => (editDragRef.current = null)}
+        onPointerUp={() => {
+          editDragRef.current = null;
+          // 드래그 종료: 정밀 시킹으로 마무리
+          const vv = videoEls.current[i];
+          if (vv) requestSeek(i, seekQRef.current[i].target ?? vv.currentTime, false);
+        }}
         onPointerCancel={() => (editDragRef.current = null)}
       >
         <div className="sw-edit-dim" style={{ left: 0, width: `${(pd.inPt / dur) * 100}%` }} />
@@ -1171,6 +1232,7 @@ export default function SwingAnalyzer({
                       muted={!sound}
                       preload="auto"
                       onLoadedMetadata={() => onMeta(i)}
+                      onSeeked={() => onSeekedEv(i)}
                       style={{
                         transform: `translate(${pd.panX}px, ${pd.panY}px) scale(${pd.flip ? -pd.zoom : pd.zoom}, ${pd.zoom})`,
                       }}
@@ -1285,7 +1347,18 @@ export default function SwingAnalyzer({
             max={1000}
             style={{ ["--p" as string]: `${progress * 100}%` } as React.CSSProperties}
             value={Math.round(progress * 1000)}
-            onPointerDown={() => playing && pauseAll()}
+            onPointerDown={() => {
+              scrubbingRef.current = true;
+              if (playing) pauseAll();
+            }}
+            onPointerUp={() => {
+              // 드래그 종료: 마지막 위치를 정밀 시킹으로 마무리
+              scrubbingRef.current = false;
+              seekAll(progressRef.current);
+            }}
+            onPointerCancel={() => {
+              scrubbingRef.current = false;
+            }}
             onChange={(e) => seekAll(Number(e.target.value) / 1000)}
             disabled={!anyLoaded}
           />
