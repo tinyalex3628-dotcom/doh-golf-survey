@@ -184,7 +184,6 @@ export default function SwingAnalyzer({
     { seeking: false, target: null, fast: false },
   ]);
   const scrubbingRef = useRef(false); // 마스터 슬라이더 드래그 중 여부
-  const [scrubbing, setScrubbing] = useState(false); // UI용 (드래그 중 ▶ 힌트 숨김)
   const wasPlayingRef = useRef(false); // 드래그 시작 시 재생 중이었으면 놓을 때 이어서 재생
 
   const issueSeek = useCallback((i: number) => {
@@ -1265,10 +1264,6 @@ export default function SwingAnalyzer({
               </div>
             );
           })}
-          {/* 모바일: 일시정지 상태 표시 (탭하면 재생) — 슬라이더 조작 중엔 숨김 */}
-          {!isPro && anyLoaded && !playing && !scrubbing && editorPane === null && tool === "pan" && (
-            <div className="sw-play-hint">▶</div>
-          )}
         </div>
       </div>
 
@@ -1351,14 +1346,12 @@ export default function SwingAnalyzer({
             value={Math.round(progress * 1000)}
             onPointerDown={() => {
               scrubbingRef.current = true;
-              setScrubbing(true);
               wasPlayingRef.current = playingRef.current;
               if (playingRef.current) pauseAll();
             }}
             onPointerUp={() => {
               // 드래그 종료: 마지막 위치를 정밀 시킹으로 마무리
               scrubbingRef.current = false;
-              setScrubbing(false);
               seekAll(progressRef.current);
               // 재생 중에 잡았던 거면 놓는 순간 이어서 재생 (릴스 방식)
               if (wasPlayingRef.current) {
@@ -1368,7 +1361,6 @@ export default function SwingAnalyzer({
             }}
             onPointerCancel={() => {
               scrubbingRef.current = false;
-              setScrubbing(false);
             }}
             onChange={(e) => seekAll(Number(e.target.value) / 1000)}
             disabled={!anyLoaded}

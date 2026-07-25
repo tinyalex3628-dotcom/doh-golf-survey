@@ -117,26 +117,6 @@
   opacity: 0.35;
   cursor: default;
 }
-
-/* 모바일: 일시정지 표시 (릴스식 중앙 아이콘) */
-.sw-play-hint {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.45);
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-left: 4px;
-  pointer-events: none;
-  z-index: 15;
-}
 .sw-rec-btn {
   background: var(--sw-rec);
   border: 1px solid transparent;
