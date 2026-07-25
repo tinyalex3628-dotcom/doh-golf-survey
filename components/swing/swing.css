@@ -113,6 +113,30 @@
   background: var(--sw-active-bg);
   border-color: var(--sw-active-border);
 }
+.sw-load-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* 모바일: 일시정지 표시 (릴스식 중앙 아이콘) */
+.sw-play-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 4px;
+  pointer-events: none;
+  z-index: 15;
+}
 .sw-rec-btn {
   background: var(--sw-rec);
   border: 1px solid transparent;
@@ -400,14 +424,21 @@
   border-top: 1px solid var(--sw-border);
   padding: 6px 12px 8px;
 }
+/* 모바일: 하단은 슬라이딩바 하나만, 화면 끝에서 끝까지 */
 .sw-member .sw-footer {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.72));
-  padding: 26px 12px calc(10px + env(safe-area-inset-bottom));
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.5));
+  padding: 14px 0 calc(4px + env(safe-area-inset-bottom));
   pointer-events: none;
+}
+.sw-member .sw-scrub-row {
+  padding: 0;
+}
+.sw-member .sw-scrubber {
+  height: 30px;
 }
 .sw-member .sw-footer > * {
   pointer-events: auto;

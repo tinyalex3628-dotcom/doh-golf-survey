@@ -159,6 +159,8 @@ export default function SwingAnalyzer({
   });
   const toastTimer = useRef<any>(null);
   const editDragRef = useRef<"in" | "out" | "seek" | null>(null);
+  const tapTimer = useRef<any>(null); // 모바일: 탭=재생/일시정지, 더블탭=뷰 리셋 구분용
+  const playingRef = useRef(false);
 
   // 시킹처럼 state를 안 거치는 변화를 화면에 반영하기 위한 가벼운 틱 (rAF 스로틀)
   const [, forceTick] = useState(0);
@@ -173,6 +175,7 @@ export default function SwingAnalyzer({
   }, []);
 
   useEffect(() => { panesRef.current = panes; }, [panes]);
+  useEffect(() => { playingRef.current = playing; }, [playing]);
   useEffect(() => { shapesRef.current = shapes; }, [shapes]);
   useEffect(() => { loopRef.current = loop; }, [loop]);
   useEffect(() => { progressRef.current = progress; }, [progress]);
@@ -493,6 +496,8 @@ export default function SwingAnalyzer({
   // ---------- 포인터 이벤트 (드로잉 + 팬/줌 제스처) ----------
   function onPaneDown(i: number, e: React.PointerEvent<HTMLDivElement>) {
     if (!panesRef.current[i].url) return;
+    // 페인 위 버튼(줌/반전 등)에서 시작한 터치는 제스처로 취급하지 않는다
+    if ((e.target as HTMLElement).closest("button")) return;
     (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
     setActivePane(i);
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -607,6 +612,22 @@ export default function SwingAnalyzer({
   function onPaneUp(i: number, e: React.PointerEvent<HTMLDivElement>) {
     pointersRef.current.delete(e.pointerId);
     const g = gestureRef.current;
+    // 모바일: 이동·줌 모드에서 움직임 없는 탭 = 재생/일시정지 (더블탭이면 취소하고 뷰 리셋만)
+    if (!isPro && editorPane === null && g && g.type === "pan" && pointersRef.current.size === 0) {
+      const moved = Math.hypot(e.clientX - g.startX, e.clientY - g.startY);
+      if (moved < 6) {
+        if (tapTimer.current) {
+          clearTimeout(tapTimer.current);
+          tapTimer.current = null;
+        } else {
+          tapTimer.current = setTimeout(() => {
+            tapTimer.current = null;
+            if (playingRef.current) pauseAll();
+            else playAll();
+          }, 260);
+        }
+      }
+    }
     if (g && g.type === "draw") {
       const pts = g.pts;
       const moved =
@@ -1004,6 +1025,27 @@ export default function SwingAnalyzer({
           <button className={`sw-load-btn ${sound ? "on" : ""}`} onClick={() => setSound((s) => !s)} title="영상 소리 켜기/끄기">
             소리
           </button>
+          {!isPro && (
+            <>
+              <button
+                className="sw-load-btn"
+                onClick={() => setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length])}
+                title="재생 속도"
+              >
+                {speed}x
+              </button>
+              <button
+                className="sw-load-btn"
+                onClick={() => {
+                  if (playing) pauseAll();
+                  setEditorPane(panes[activePane].url ? activePane : masterIdx);
+                }}
+                disabled={!anyLoaded}
+              >
+                구간·싱크
+              </button>
+            </>
+          )}
           {isPro && (
             <>
               <button
@@ -1159,6 +1201,10 @@ export default function SwingAnalyzer({
               </div>
             );
           })}
+          {/* 모바일: 일시정지 상태 표시 (탭하면 재생) */}
+          {!isPro && anyLoaded && !playing && editorPane === null && tool === "pan" && (
+            <div className="sw-play-hint">▶</div>
+          )}
         </div>
       </div>
 
@@ -1245,46 +1291,36 @@ export default function SwingAnalyzer({
           />
         </div>
 
-        <div className="sw-ctrl-row">
-          <div className="sw-ctrl-group">
-            <button className="sw-ctrl-btn" onClick={() => stepFrame(-1)} disabled={!anyLoaded} title="1프레임 뒤로">
-              ◀|
-            </button>
-            <button className="sw-play-btn" onClick={togglePlay} disabled={!anyLoaded}>
-              {playing ? "❚❚" : "▶"}
-            </button>
-            <button className="sw-ctrl-btn" onClick={() => stepFrame(1)} disabled={!anyLoaded} title="1프레임 앞으로">
-              |▶
-            </button>
-            <button
-              className={`sw-ctrl-btn ${loop ? "on" : ""}`}
-              onClick={() => setLoop((l) => !l)}
-              title="구간 반복"
-            >
-              반복
-            </button>
-            <span className="sw-time">
-              {formatTime(masterTime)} <em>/ 구간 {formatTime(masterDur)}</em>
-            </span>
-          </div>
-          <div className="sw-ctrl-group">
-            {isPro ? (
-              SPEEDS.map((s) => (
+        {/* 모바일은 슬라이딩바만 — 재생/일시정지는 영상 탭으로 */}
+        {isPro && (
+          <div className="sw-ctrl-row">
+            <div className="sw-ctrl-group">
+              <button className="sw-ctrl-btn" onClick={() => stepFrame(-1)} disabled={!anyLoaded} title="1프레임 뒤로">
+                ◀|
+              </button>
+              <button className="sw-play-btn" onClick={togglePlay} disabled={!anyLoaded}>
+                {playing ? "❚❚" : "▶"}
+              </button>
+              <button className="sw-ctrl-btn" onClick={() => stepFrame(1)} disabled={!anyLoaded} title="1프레임 앞으로">
+                |▶
+              </button>
+              <button
+                className={`sw-ctrl-btn ${loop ? "on" : ""}`}
+                onClick={() => setLoop((l) => !l)}
+                title="구간 반복"
+              >
+                반복
+              </button>
+              <span className="sw-time">
+                {formatTime(masterTime)} <em>/ 구간 {formatTime(masterDur)}</em>
+              </span>
+            </div>
+            <div className="sw-ctrl-group">
+              {SPEEDS.map((s) => (
                 <button key={s} className={`sw-speed ${speed === s ? "on" : ""}`} onClick={() => setSpeed(s)}>
                   {s}x
                 </button>
-              ))
-            ) : (
-              // 모바일: 배속 순환 버튼 하나로 컨트롤 최소화
-              <button
-                className="sw-ctrl-btn"
-                onClick={() => setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length])}
-                title="재생 속도"
-              >
-                {speed}x
-              </button>
-            )}
-            {isPro ? (
+              ))}
               <button
                 className={`sw-ctrl-btn ${trimOpen ? "on" : ""}`}
                 onClick={() => setTrimOpen((o) => !o)}
@@ -1293,20 +1329,9 @@ export default function SwingAnalyzer({
               >
                 구간·싱크
               </button>
-            ) : (
-              <button
-                className="sw-sync-open"
-                onClick={() => {
-                  if (playing) pauseAll();
-                  setEditorPane(panes[activePane].url ? activePane : masterIdx);
-                }}
-                disabled={!anyLoaded}
-              >
-                구간·싱크
-              </button>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 프로: 트림 컨트롤 (접이식) */}
         {isPro && anyLoaded && trimOpen && (
