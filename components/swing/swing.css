@@ -47,7 +47,7 @@
   background: var(--sw-panel);
   border-bottom: 1px solid var(--sw-border);
 }
-/* 모바일: 영상 위에 뜨는 반투명 오버레이 */
+/* 모바일: 영상 위에 뜨는 반투명 오버레이 — 배경은 터치를 통과시키고 버튼만 반응 */
 .sw-member .sw-header {
   position: absolute;
   top: 0;
@@ -56,6 +56,10 @@
   background: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
   padding: 10px 12px 22px;
   border: none;
+  pointer-events: none;
+}
+.sw-member .sw-header > * {
+  pointer-events: auto;
 }
 .sw-header-left,
 .sw-header-right {
@@ -275,6 +279,7 @@
   flex: 1;
   min-width: 0;
   display: flex;
+  justify-content: center; /* 영상 비율로 감싼 페인들을 중앙에 붙여 배치 */
   background: #000;
 }
 .sw-pane {
@@ -402,6 +407,13 @@
   bottom: 0;
   background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.72));
   padding: 26px 12px calc(10px + env(safe-area-inset-bottom));
+  pointer-events: none;
+}
+.sw-member .sw-footer > * {
+  pointer-events: auto;
+}
+.sw-member .sw-footer .sw-toast {
+  pointer-events: none;
 }
 .sw-toast {
   position: absolute;
@@ -427,11 +439,12 @@
 .sw-scrub-row {
   padding: 0 0 4px;
 }
+/* 릴스 플레이어식: 얇은 라인 + 진행 채움 + 둥근 노브 */
 .sw-scrubber {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 22px;
+  height: 24px;
   background: transparent;
   cursor: pointer;
   display: block;
@@ -440,28 +453,39 @@
   opacity: 0.3;
 }
 .sw-scrubber::-webkit-slider-runnable-track {
-  height: 3px;
-  background: var(--sw-border-strong);
-  border-radius: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(
+    to right,
+    #ffffff var(--p, 0%),
+    rgba(255, 255, 255, 0.25) var(--p, 0%)
+  );
 }
 .sw-scrubber::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 4px;
-  height: 15px;
-  margin-top: -6px;
-  background: var(--sw-text);
-  border-radius: 1px;
+  width: 12px;
+  height: 12px;
+  margin-top: -5px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
 }
 .sw-scrubber::-moz-range-track {
-  height: 3px;
-  background: var(--sw-border-strong);
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.25);
+}
+.sw-scrubber::-moz-range-progress {
+  height: 2px;
+  border-radius: 1px;
+  background: #ffffff;
 }
 .sw-scrubber::-moz-range-thumb {
-  width: 4px;
-  height: 15px;
-  background: var(--sw-text);
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
   border: none;
-  border-radius: 1px;
+  border-radius: 50%;
 }
 
 .sw-ctrl-row {

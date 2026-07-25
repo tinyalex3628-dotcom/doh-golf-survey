@@ -32,6 +32,7 @@ type PaneData = {
   name: string;
   isLocal: boolean; // ObjectURL 여부 (해제용)
   duration: number;
+  aspect: number; // 영상 가로/세로 비율 — 페인을 영상 크기에 딱 맞게 감싸는 데 사용
   inPt: number;
   outPt: number;
   zoom: number;
@@ -54,6 +55,7 @@ const emptyPane = (): PaneData => ({
   name: "",
   isLocal: false,
   duration: 0,
+  aspect: 0,
   inPt: 0,
   outPt: 0,
   zoom: 1,
@@ -233,6 +235,9 @@ export default function SwingAnalyzer({
   function onMeta(i: number) {
     const v = videoEls.current[i];
     if (!v) return;
+    if (v.videoWidth > 0 && v.videoHeight > 0) {
+      setPane(i, { aspect: v.videoWidth / v.videoHeight });
+    }
     if (isFinite(v.duration)) {
       // 같은 영상이 다시 마운트된 경우엔 사용자가 지정한 구간을 유지
       const keep = Math.abs(panesRef.current[i].duration - v.duration) < 0.01;
@@ -568,8 +573,8 @@ export default function SwingAnalyzer({
       const v = videoEls.current[g.pane];
       const pd = panesRef.current[g.pane];
       if (!v || !pd.duration) return;
-      const w = paneEls.current[g.pane]?.getBoundingClientRect().width || 300;
-      // 화면 전체 폭 스와이프 = 영상 길이의 절반 → 정밀한 프레임 탐색
+      // 화면(스테이지) 전체 폭 스와이프 = 영상 길이의 절반 → 페인 폭과 무관하게 일정한 감도
+      const w = stageRef.current?.getBoundingClientRect().width || 300;
       const t = g.t0 + ((e.clientX - g.startX) / w) * pd.duration * 0.5;
       v.currentTime = Math.min(pd.duration, Math.max(0, t));
       uiTick();
@@ -663,8 +668,10 @@ export default function SwingAnalyzer({
     if (!el || typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(() => setSizeTick((t) => t + 1));
     ro.observe(el);
+    // 페인 폭은 영상 로드/모드 전환에 따라 스테이지와 무관하게 변하므로 함께 관찰
+    for (const p of paneEls.current) if (p) ro.observe(p);
     return () => ro.disconnect();
-  }, []);
+  }, [mode, panes[0].aspect, panes[1].aspect]);
 
   // ---------- 녹화 (프로 전용) ----------
   async function startRecording() {
@@ -1092,11 +1099,17 @@ export default function SwingAnalyzer({
           {paneIndices.map((i) => {
             const pd = panes[i];
             const hiddenPane = editorOpen && editorPane !== i;
+            // 영상이 로드되면 페인이 영상 비율대로 감싸서 두 영상이 중앙에 딱 붙는다
+            const fitStyle: React.CSSProperties | undefined = hiddenPane
+              ? { display: "none" }
+              : pd.url && pd.aspect
+                ? { flex: "0 1 auto", aspectRatio: `${pd.aspect}`, maxWidth: mode === "compare" ? "50%" : "100%" }
+                : undefined;
             return (
               <div
                 key={i}
                 className={`sw-pane ${mode === "compare" && activePane === i && !editorOpen ? "active" : ""}`}
-                style={hiddenPane ? { display: "none" } : undefined}
+                style={fitStyle}
                 ref={(el) => { paneEls.current[i] = el; }}
                 onPointerDown={(e) => onPaneDown(i, e)}
                 onPointerMove={(e) => onPaneMove(i, e)}
@@ -1224,6 +1237,7 @@ export default function SwingAnalyzer({
             type="range"
             min={0}
             max={1000}
+            style={{ ["--p" as string]: `${progress * 100}%` } as React.CSSProperties}
             value={Math.round(progress * 1000)}
             onPointerDown={() => playing && pauseAll()}
             onChange={(e) => seekAll(Number(e.target.value) / 1000)}
