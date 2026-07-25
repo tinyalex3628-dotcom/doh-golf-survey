@@ -7,7 +7,8 @@
 export type Pt = { x: number; y: number };
 
 export type ShapeTool =
-  | "line" // 직선
+  | "line" // 실선
+  | "dline" // 점선
   | "arrow" // 화살표
   | "vline" // 수직 기준선 (플럼 라인)
   | "hline" // 수평 기준선
@@ -95,6 +96,16 @@ export function renderShape(ctx: CanvasRenderingContext2D, s: Shape, w: number, 
       ctx.moveTo(pts[0].x, pts[0].y);
       ctx.lineTo(pts[1].x, pts[1].y);
       ctx.stroke();
+      break;
+    }
+    case "dline": {
+      if (pts.length < 2) return;
+      ctx.setLineDash([10, 8]);
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      ctx.lineTo(pts[1].x, pts[1].y);
+      ctx.stroke();
+      ctx.setLineDash([]);
       break;
     }
     case "arrow": {

@@ -69,7 +69,8 @@ const MIN_TRIM = 0.05; // IN/OUT 최소 간격(초)
 
 const TOOLS: { id: ToolId; icon: string; label: string; proOnly?: boolean }[] = [
   { id: "pan", icon: "✥", label: "이동·줌" },
-  { id: "line", icon: "╱", label: "직선" },
+  { id: "line", icon: "╱", label: "실선" },
+  { id: "dline", icon: "┄", label: "점선" },
   { id: "arrow", icon: "↗", label: "화살표" },
   { id: "vline", icon: "│", label: "수직선" },
   { id: "hline", icon: "─", label: "수평선" },
@@ -80,6 +81,9 @@ const TOOLS: { id: ToolId; icon: string; label: string; proOnly?: boolean }[] = 
   { id: "text", icon: "T", label: "텍스트", proOnly: true },
   { id: "eraser", icon: "⌫", label: "지우개" },
 ];
+
+// 모바일(회원용) 레일에는 핵심 도구만 남긴다 — 이동·줌은 두 손가락 제스처로 항상 가능
+const MEMBER_TOOLS: ToolId[] = ["line", "dline", "free", "circle", "angle"];
 
 let shapeSeq = 1;
 
@@ -107,7 +111,7 @@ export default function SwingAnalyzer({
   const [history, setHistory] = useState<HistEntry[]>([]);
   const [redoStack, setRedoStack] = useState<HistEntry[]>([]);
 
-  const [tool, setTool] = useState<ToolId>("pan");
+  const [tool, setTool] = useState<ToolId>(variant === "pro" ? "pan" : "line");
   const [color, setColor] = useState(SWING_COLORS[0]);
   const [strokeW, setStrokeW] = useState(4);
 
@@ -557,6 +561,23 @@ export default function SwingAnalyzer({
       return;
     }
 
+    // 두 손가락은 어떤 도구에서든 핀치 줌/이동 (그리던 중이면 그리기 취소)
+    if (pointersRef.current.size >= 2) {
+      const pts = Array.from(pointersRef.current.values());
+      gestureRef.current = {
+        type: "pinch",
+        pane: i,
+        startDist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y),
+        zoom0: pd.zoom,
+        panX0: pd.panX,
+        panY0: pd.panY,
+        midX: (pts[0].x + pts[1].x) / 2,
+        midY: (pts[0].y + pts[1].y) / 2,
+      };
+      setPreview(null);
+      return;
+    }
+
     if (tool === "pan") {
       const pts = Array.from(pointersRef.current.values());
       if (pts.length >= 2) {
@@ -659,21 +680,21 @@ export default function SwingAnalyzer({
       const v = videoEls.current[g.pane];
       if (v) requestSeek(g.pane, seekQRef.current[g.pane].target ?? v.currentTime, false);
     }
-    // 모바일: 이동·줌 모드에서 움직임 없는 탭 = 재생/일시정지 (더블탭이면 취소하고 뷰 리셋만)
-    if (!isPro && editorPane === null && g && g.type === "pan" && pointersRef.current.size === 0) {
-      const moved = Math.hypot(e.clientX - g.startX, e.clientY - g.startY);
-      if (moved < 6) {
-        if (tapTimer.current) {
-          clearTimeout(tapTimer.current);
+    // 모바일: 움직임 없는 탭 = 재생/일시정지 (더블탭이면 취소하고 뷰 리셋만)
+    function handleTapPlay() {
+      if (tapTimer.current) {
+        clearTimeout(tapTimer.current);
+        tapTimer.current = null;
+      } else {
+        tapTimer.current = setTimeout(() => {
           tapTimer.current = null;
-        } else {
-          tapTimer.current = setTimeout(() => {
-            tapTimer.current = null;
-            if (playingRef.current) pauseAll();
-            else playAll();
-          }, 260);
-        }
+          if (playingRef.current) pauseAll();
+          else playAll();
+        }, 260);
       }
+    }
+    if (!isPro && editorPane === null && g && g.type === "pan" && pointersRef.current.size === 0) {
+      if (Math.hypot(e.clientX - g.startX, e.clientY - g.startY) < 6) handleTapPlay();
     }
     if (g && g.type === "draw") {
       const pts = g.pts;
@@ -683,6 +704,9 @@ export default function SwingAnalyzer({
       if (g.tool === "vline" || g.tool === "hline" || moved || (g.tool === "free" && pts.length > 2)) {
         const finalPts = g.tool === "vline" || g.tool === "hline" ? [pts[pts.length - 1]] : pts;
         commitShape(g.pane, { id: shapeSeq++, tool: g.tool, color, width: strokeW, points: finalPts });
+      } else if (!isPro && editorPane === null && pointersRef.current.size === 0) {
+        // 드로잉 도구여도 그냥 탭이면 재생/일시정지
+        handleTapPlay();
       }
       setPreview(null);
     }
@@ -923,7 +947,7 @@ export default function SwingAnalyzer({
   const masterTime = masterVideo ? masterVideo.currentTime : 0;
   const anyLoaded = panes[0].url || panes[1].url;
 
-  const visibleTools = TOOLS.filter((t) => isPro || !t.proOnly);
+  const visibleTools = isPro ? TOOLS : TOOLS.filter((t) => MEMBER_TOOLS.includes(t.id));
 
   // ---------- 트림(싱크) 컨트롤 한 벌 ----------
   function TrimRow({ i }: { i: number }) {
@@ -1155,10 +1179,12 @@ export default function SwingAnalyzer({
             <span className="sw-tool-icon">↶</span>
             {isPro && <span className="sw-tool-label">되돌리기</span>}
           </button>
-          <button className="sw-tool" onClick={redo} disabled={redoStack.length === 0} title="다시 실행">
-            <span className="sw-tool-icon">↷</span>
-            {isPro && <span className="sw-tool-label">다시</span>}
-          </button>
+          {isPro && (
+            <button className="sw-tool" onClick={redo} disabled={redoStack.length === 0} title="다시 실행">
+              <span className="sw-tool-icon">↷</span>
+              <span className="sw-tool-label">다시</span>
+            </button>
+          )}
           <button className="sw-tool" onClick={clearAll} title="모두 지우기">
             <span className="sw-tool-icon">⌧</span>
             {isPro && <span className="sw-tool-label">전체삭제</span>}
