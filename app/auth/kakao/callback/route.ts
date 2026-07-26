@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const base = process.env.NEXT_PUBLIC_SITE_URL || origin;
 
   if (!code) {
-    return NextResponse.redirect(`${base}/?login_error=no_code`);
+    return NextResponse.redirect(`${base}/request?login_error=no_code`);
   }
 
   try {
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     });
     const tokenJson = await tokenRes.json();
     if (!tokenJson.access_token) {
-      return NextResponse.redirect(`${base}/?login_error=token`);
+      return NextResponse.redirect(`${base}/request?login_error=token`);
     }
 
     // 2) 카카오 사용자 정보 조회 (회원번호 + 닉네임)
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     });
     const me = await meRes.json();
     if (!me.id) {
-      return NextResponse.redirect(`${base}/?login_error=profile`);
+      return NextResponse.redirect(`${base}/request?login_error=profile`);
     }
 
     const kakaoId = String(me.id);
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
     });
     const tokenHash = link?.properties?.hashed_token;
     if (linkErr || !tokenHash) {
-      return NextResponse.redirect(`${base}/?login_error=link`);
+      return NextResponse.redirect(`${base}/request?login_error=link`);
     }
 
     // 5) 그 토큰으로 실제 로그인 (쿠키에 세션 저장)
@@ -71,11 +71,11 @@ export async function GET(request: Request) {
       type: "magiclink",
     });
     if (otpErr) {
-      return NextResponse.redirect(`${base}/?login_error=session`);
+      return NextResponse.redirect(`${base}/request?login_error=session`);
     }
 
-    return NextResponse.redirect(base);
+    return NextResponse.redirect(`${base}/request`);
   } catch {
-    return NextResponse.redirect(`${base}/?login_error=unknown`);
+    return NextResponse.redirect(`${base}/request?login_error=unknown`);
   }
 }

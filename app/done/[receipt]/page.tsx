@@ -26,7 +26,7 @@ export default async function DonePage({ params }: { params: { receipt: string }
             width: 76,
             height: 76,
             borderRadius: 999,
-            background: "#e7f0ff",
+            background: "var(--blue-light)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -62,7 +62,7 @@ export default async function DonePage({ params }: { params: { receipt: string }
           <hr className="info-divider" />
           <div className="info-row">
             <span className="info-label">예상 도착</span>
-            <span style={{ fontSize: 14, fontWeight: 800, color: "#3182f6" }}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: "var(--blue)" }}>
               {makeEta(request ? new Date(request.created_at) : new Date())}
             </span>
           </div>

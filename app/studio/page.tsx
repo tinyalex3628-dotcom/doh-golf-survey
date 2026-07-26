@@ -9,7 +9,7 @@ import SwingAnalyzer from "@/components/swing/SwingAnalyzer";
 import "@/components/swing/swing.css";
 
 export const metadata = {
-  title: "스윙분석 스튜디오 — NEXT 골프",
+  title: "스윙분석 스튜디오 — NEXT SWING",
 };
 
 export default function StudioPage({

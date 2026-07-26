@@ -67,7 +67,7 @@ export default function CoachPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 28 }}>
           {CAREER.map((c) => (
             <div key={c} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ width: 5, height: 5, borderRadius: 999, background: "#3182f6", flexShrink: 0 }} />
+              <span style={{ width: 5, height: 5, borderRadius: 999, background: "var(--blue)", flexShrink: 0 }} />
               <span style={{ fontSize: 14.5, fontWeight: 600, color: "#4e5968", lineHeight: 1.45 }}>{c}</span>
             </div>
           ))}

@@ -36,7 +36,7 @@ body {
 body {
   font-family: "Pretendard", "Pretendard Variable", -apple-system,
     BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", Roboto, sans-serif;
-  background: #eef1f4;
+  background: #edeae3;
   color: var(--text-strong);
   -webkit-font-smoothing: antialiased;
 }
@@ -1101,4 +1101,33 @@ table.desk-table {
 }
 .desk-table td.nowrap {
   white-space: nowrap;
+}
+
+/* ============================================================
+   NEXT SWING 리테마 — 회원용(모바일 프레임) 화면
+   관리자(.desk)는 기존 블루 유지, 회원 화면만 딥그린+크림 톤.
+   ============================================================ */
+.phone {
+  --blue: #21402f;
+  --blue-light: #e6ede7;
+  --blue-shadow: rgba(33, 64, 47, 0.45);
+  --text-strong: #1d2420;
+  --text: #3d4540;
+  --text-sub: #6e6858;
+  --text-muted: #8a8375;
+  --text-disabled: #bdb6a6;
+  --surface: #fffdf9;
+  --surface-alt: #f3efe8;
+  --fill: #f2ece2;
+  --track: #efe9de;
+  --border: #e4ded2;
+  --border-light: #efe9de;
+  background: var(--surface);
+}
+.phone .bottom-bar,
+.phone .sheet {
+  background: #fffdf9;
+}
+.phone .info-divider {
+  border-top-color: #efe9de;
 }
