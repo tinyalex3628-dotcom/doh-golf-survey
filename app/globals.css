@@ -36,7 +36,7 @@ body {
 body {
   font-family: "Pretendard", "Pretendard Variable", -apple-system,
     BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", Roboto, sans-serif;
-  background: #edeae3;
+  background: #ece4d5;
   color: var(--text-strong);
   -webkit-font-smoothing: antialiased;
 }
@@ -1108,26 +1108,26 @@ table.desk-table {
    관리자(.desk)는 기존 블루 유지, 회원 화면만 딥그린+크림 톤.
    ============================================================ */
 .phone {
-  --blue: #21402f;
-  --blue-light: #e6ede7;
-  --blue-shadow: rgba(33, 64, 47, 0.45);
-  --text-strong: #1d2420;
-  --text: #3d4540;
-  --text-sub: #6e6858;
-  --text-muted: #8a8375;
-  --text-disabled: #bdb6a6;
-  --surface: #fffdf9;
-  --surface-alt: #f3efe8;
-  --fill: #f2ece2;
-  --track: #efe9de;
-  --border: #e4ded2;
-  --border-light: #efe9de;
+  --blue: #8a5a32;
+  --blue-light: #f0e3d2;
+  --blue-shadow: rgba(138, 90, 50, 0.45);
+  --text-strong: #33291d;
+  --text: #4e4335;
+  --text-sub: #776a56;
+  --text-muted: #9a8d76;
+  --text-disabled: #c4b8a3;
+  --surface: #fbf7ef;
+  --surface-alt: #f3ede2;
+  --fill: #f0e8d9;
+  --track: #ece4d5;
+  --border: #ded4c0;
+  --border-light: #e8e0d0;
   background: var(--surface);
 }
 .phone .bottom-bar,
 .phone .sheet {
-  background: #fffdf9;
+  background: #fbf7ef;
 }
 .phone .info-divider {
-  border-top-color: #efe9de;
+  border-top-color: #e8e0d0;
 }

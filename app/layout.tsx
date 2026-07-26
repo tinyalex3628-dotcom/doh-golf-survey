@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NEXT SWING — 프로가 직접 보는 스윙 진단",
+  title: "이도형 골프 — 스윙 피드백 & 레슨",
   description:
-    "KPGA Class A 이도형 프로가 화면 필기와 음성으로 직접 분석하는 스윙 진단. 영상을 올리면 카카오톡으로 피드백 링크를 보내드려요.",
+    "KPGA Class A 이도형 프로. 스윙 영상을 보내주시면 직접 보고 그려가며 답장드려요. 레슨은 서초·판교·양재·용인에서 합니다.",
   openGraph: {
-    title: "NEXT SWING — 프로가 직접 보는 스윙 진단",
+    title: "이도형 골프 — 스윙 피드백 & 레슨",
     description:
-      "AI가 아니라 프로가 직접 피드백합니다. 스윙 영상 업로드부터 분석 도구, 오프라인 레슨까지.",
+      "스윙 영상을 보내주시면 직접 보고 답장드려요. 유튜브와 레슨, 온라인 스윙 피드백.",
     type: "website",
   },
 };
@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@300;400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap"
         />
       </head>
       <body>{children}</body>

@@ -158,7 +158,7 @@ export default function RequestPage() {
       >
         NS
       </span>
-      NEXT SWING 홈으로
+      이도형 골프 홈으로
     </a>
   );
 
@@ -171,7 +171,7 @@ export default function RequestPage() {
           <h1 className="title">
             안녕하세요! 👋
             <br />
-            NEXT SWING입니다.
+            이도형 골프입니다.
           </h1>
           <p className="subcopy">
             AI가 아니라
