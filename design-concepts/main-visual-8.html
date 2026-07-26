@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEXT SWING — 메인 화면 시안 8종</title>
+<!--
+  ============================================================
+  메인 화면(히어로) 디자인 시안 8종 — 아카데미 무드 탐색
+  각 시안은 1440×900 고정 프레임. 브라우저로 열어 비교하세요.
+  A 프레스티지 컨트리클럽  B 에디토리얼 매거진  C 다크 퍼포먼스 랩
+  D 스플릿 캠퍼스          E 클래스 플랫폼      F 스위스 그리드
+  G 헤리티지 골프학교      H 모던 필드 아카데미
+  ============================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Nanum+Myeongjo:wght@400;700;800&family=Gowun+Batang:wght@400;700&family=Song+Myung&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Hahmlet:wght@300;400;500;600;700&display=swap">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#26282a; font-family:"Pretendard",sans-serif; }
+  .frame-label {
+    max-width:1440px; margin:0 auto; padding:34px 20px 12px;
+    color:#9aa0a6; font-size:13px; font-weight:600; letter-spacing:.08em;
+    display:flex; gap:14px; align-items:baseline;
+  }
+  .frame-label b { color:#fff; font-size:15px; }
+  .frame { width:1440px; height:900px; margin:0 auto; position:relative; overflow:hidden; }
+  a { text-decoration:none; color:inherit; }
+  ul { list-style:none; }
+
+  /* ============================================================
+     A. 프레스티지 컨트리클럽 — 딥그린 + 앤티크 골드, 정통 세리프
+     ============================================================ */
+  .cA { background:#0F241A; color:#EDE6D6; font-family:"Noto Serif KR",serif; }
+  .cA::before { content:""; position:absolute; inset:22px; border:1px solid rgba(201,169,106,.35); pointer-events:none; }
+  .cA::after { content:""; position:absolute; inset:28px; border:1px solid rgba(201,169,106,.16); pointer-events:none; }
+  .cA .nav { position:absolute; top:54px; left:0; right:0; display:flex; justify-content:center; gap:44px;
+    font-family:"Pretendard"; font-size:13px; letter-spacing:.34em; color:#C9A96A; font-weight:500; }
+  .cA .crest { position:absolute; top:118px; left:50%; transform:translateX(-50%); text-align:center; }
+  .cA .crest .ring { width:92px; height:92px; margin:0 auto; border-radius:50%;
+    border:1px solid #C9A96A; display:flex; align-items:center; justify-content:center; position:relative; }
+  .cA .crest .ring::before { content:""; position:absolute; inset:7px; border-radius:50%; border:1px solid rgba(201,169,106,.4); }
+  .cA .crest .ring span { font-size:30px; letter-spacing:.08em; color:#C9A96A; font-weight:600; }
+  .cA .crest .est { margin-top:14px; font-family:"Pretendard"; font-size:11px; letter-spacing:.5em; color:rgba(237,230,214,.5); }
+  .cA .hero { position:absolute; top:290px; left:0; right:0; text-align:center; }
+  .cA h1 { font-size:64px; font-weight:600; letter-spacing:.02em; line-height:1.42; }
+  .cA h1 .gold { color:#C9A96A; }
+  .cA .sub { margin-top:30px; font-size:17px; font-weight:300; letter-spacing:.14em; color:rgba(237,230,214,.75); line-height:2; }
+  .cA .rule { width:56px; height:1px; background:#C9A96A; margin:38px auto 0; }
+  .cA .cta-row { margin-top:40px; display:flex; gap:16px; justify-content:center; font-family:"Pretendard"; }
+  .cA .btn-gold { background:#C9A96A; color:#12281C; padding:17px 44px; font-size:14px; font-weight:700; letter-spacing:.22em; }
+  .cA .btn-line { border:1px solid rgba(201,169,106,.6); color:#C9A96A; padding:17px 40px; font-size:14px; font-weight:600; letter-spacing:.22em; }
+  .cA .foot { position:absolute; bottom:64px; left:0; right:0; display:flex; justify-content:center; gap:70px;
+    font-family:"Pretendard"; font-size:12.5px; letter-spacing:.16em; color:rgba(237,230,214,.55); }
+  .cA .foot b { display:block; text-align:center; font-family:"Noto Serif KR"; font-size:24px; letter-spacing:.04em; color:#EDE6D6; margin-bottom:8px; }
+
+  /* ============================================================
+     B. 에디토리얼 매거진 — 표지 같은 첫 화면, 거대한 명조
+     ============================================================ */
+  .cB { background:#F7F4EC; color:#191813; font-family:"Nanum Myeongjo",serif; }
+  .cB .mast { position:absolute; top:0; left:0; right:0; height:78px; border-bottom:1.5px solid #191813;
+    display:flex; align-items:center; justify-content:space-between; padding:0 56px; font-family:"Pretendard"; }
+  .cB .mast .vol { font-size:12.5px; font-weight:600; letter-spacing:.2em; }
+  .cB .mast .word { font-family:"Nanum Myeongjo"; font-size:21px; font-weight:800; letter-spacing:.3em; }
+  .cB .mast .cta { font-size:13px; font-weight:700; border:1.5px solid #191813; padding:10px 22px; letter-spacing:.1em; }
+  .cB .issue { position:absolute; top:118px; left:56px; font-family:"Pretendard"; font-size:12.5px; font-weight:600;
+    letter-spacing:.26em; color:#8d8878; }
+  .cB h1 { position:absolute; top:170px; left:50px; font-size:130px; font-weight:800; line-height:1.18; letter-spacing:-.015em; }
+  .cB h1 em { font-style:normal; -webkit-text-stroke:2px #191813; color:transparent; }
+  .cB .deck { position:absolute; top:660px; left:56px; width:520px; font-size:17px; line-height:2.1; color:#4a463c; }
+  .cB .toc { position:absolute; right:56px; top:170px; width:330px; border-top:1.5px solid #191813; font-family:"Pretendard"; }
+  .cB .toc li { display:flex; gap:16px; align-items:baseline; padding:18px 2px; border-bottom:1px solid #d9d4c6; }
+  .cB .toc .no { font-family:"Nanum Myeongjo"; font-size:15px; font-weight:800; width:28px; }
+  .cB .toc .t { font-size:15px; font-weight:600; flex:1; }
+  .cB .toc .pg { font-size:12px; color:#8d8878; }
+  .cB .stamp { position:absolute; right:56px; bottom:64px; width:150px; height:150px; border-radius:50%;
+    border:1.5px solid #191813; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:6px; transform:rotate(8deg); background:#F7F4EC; }
+  .cB .stamp b { font-size:16px; font-weight:800; }
+  .cB .stamp span { font-family:"Pretendard"; font-size:10.5px; letter-spacing:.14em; color:#8d8878; }
+  .cB .foot { position:absolute; bottom:64px; left:56px; font-family:"Pretendard"; font-size:12.5px;
+    letter-spacing:.12em; color:#8d8878; }
+
+  /* ============================================================
+     C. 다크 퍼포먼스 랩 — 그래파이트 + 라임 시그널, 데이터 무드
+     ============================================================ */
+  .cC { background:#101214; color:#F2F4F1; font-family:"IBM Plex Sans KR",sans-serif; }
+  .cC .nav { position:absolute; top:0; left:0; right:0; height:72px; display:flex; align-items:center;
+    justify-content:space-between; padding:0 48px; border-bottom:1px solid #23272a; }
+  .cC .brand { display:flex; align-items:center; gap:12px; font-weight:700; letter-spacing:.18em; font-size:15px; }
+  .cC .brand i { width:10px; height:10px; background:#D8F34E; display:inline-block; }
+  .cC .nav ul { display:flex; gap:34px; font-size:13.5px; font-weight:500; color:#9aa39b; }
+  .cC .nav .cta { background:#D8F34E; color:#101214; font-weight:700; font-size:13.5px; padding:12px 24px; }
+  .cC .kicker { position:absolute; top:130px; left:48px; color:#D8F34E; font-size:13px; font-weight:600; letter-spacing:.3em; }
+  .cC h1 { position:absolute; top:168px; left:42px; font-family:"Black Han Sans",sans-serif; font-weight:400;
+    font-size:118px; line-height:1.06; letter-spacing:.01em; }
+  .cC h1 span { color:#3c4238; -webkit-text-stroke:1.5px #6b7562; color:transparent; }
+  .cC .sub { position:absolute; top:560px; left:48px; width:440px; font-size:16px; font-weight:300; line-height:1.9; color:#aab3aa; }
+  .cC .cta2 { position:absolute; top:700px; left:48px; display:flex; gap:12px; }
+  .cC .cta2 .b1 { background:#D8F34E; color:#101214; font-weight:700; font-size:15px; padding:18px 36px; }
+  .cC .cta2 .b2 { border:1px solid #3a4038; color:#F2F4F1; font-weight:500; font-size:15px; padding:18px 32px; }
+  .cC .panel { position:absolute; right:48px; top:130px; width:560px; height:640px; background:#16191b;
+    border:1px solid #262b28; }
+  .cC .panel .vh { height:352px; background:linear-gradient(140deg,#1d221e,#0c0e0c); position:relative; border-bottom:1px solid #262b28; }
+  .cC .panel .vh .tag { position:absolute; top:16px; left:16px; font-size:11px; font-weight:600; letter-spacing:.12em;
+    color:#D8F34E; border:1px solid rgba(216,243,78,.4); padding:6px 10px; }
+  .cC .panel .vh svg { position:absolute; inset:0; width:100%; height:100%; }
+  .cC .panel .vh .fps { position:absolute; right:16px; bottom:12px; font-size:11px; color:#788077; font-variant-numeric:tabular-nums; }
+  .cC .prow { display:flex; border-bottom:1px solid #262b28; }
+  .cC .prow span { flex:1; text-align:center; padding:14px 0 12px; font-size:12px; font-weight:600; color:#788077; border-right:1px solid #1e2320; }
+  .cC .prow span.on { color:#101214; background:#D8F34E; }
+  .cC .stats { display:grid; grid-template-columns:1fr 1fr 1fr; }
+  .cC .stats div { padding:22px 20px; border-right:1px solid #262b28; }
+  .cC .stats b { display:block; font-size:30px; font-weight:600; color:#F2F4F1; font-variant-numeric:tabular-nums; }
+  .cC .stats i { font-style:normal; font-size:15px; color:#788077; }
+  .cC .stats span { display:block; margin-top:6px; font-size:12px; color:#788077; letter-spacing:.06em; }
+
+  /* ============================================================
+     D. 스플릿 캠퍼스 — 절반 텍스트 · 절반 비주얼, 시간표 카드
+     ============================================================ */
+  .cD { background:#FBF8F1; color:#20241f; font-family:"Hahmlet",serif; display:flex; }
+  .cD .left { width:47%; padding:0 64px; position:relative; }
+  .cD .lnav { display:flex; align-items:center; gap:26px; height:88px; font-family:"Pretendard"; font-size:13.5px; font-weight:600; color:#6d6f63; }
+  .cD .lnav .word { font-family:"Hahmlet"; font-size:18px; font-weight:600; letter-spacing:.1em; color:#20241f; margin-right:auto; }
+  .cD .badge { display:inline-flex; align-items:center; gap:8px; border:1px solid #d8d3c2; border-radius:999px;
+    padding:8px 16px; font-family:"Pretendard"; font-size:12.5px; font-weight:600; color:#6d6f63; margin-top:52px; }
+  .cD .badge i { width:7px; height:7px; border-radius:50%; background:#2E5339; }
+  .cD h1 { margin-top:26px; font-size:56px; font-weight:600; line-height:1.38; letter-spacing:-.01em; }
+  .cD h1 u { text-decoration:none; box-shadow:inset 0 -16px 0 #E4EDD9; }
+  .cD .sub { margin-top:24px; font-family:"Pretendard"; font-size:16px; line-height:1.85; color:#6d6f63; width:30rem; }
+  .cD .cta { margin-top:36px; display:flex; gap:12px; font-family:"Pretendard"; }
+  .cD .cta .b1 { background:#2E5339; color:#fff; border-radius:2px; padding:17px 34px; font-size:15px; font-weight:700; }
+  .cD .cta .b2 { border:1px solid #c9c4b2; border-radius:2px; padding:17px 30px; font-size:15px; font-weight:600; color:#20241f; }
+  .cD .sched { position:absolute; bottom:56px; left:64px; right:64px; background:#fff; border:1px solid #e5e0d1;
+    font-family:"Pretendard"; }
+  .cD .sched .h { display:flex; justify-content:space-between; padding:14px 18px; border-bottom:1px solid #efeade;
+    font-size:12.5px; font-weight:700; letter-spacing:.08em; color:#6d6f63; }
+  .cD .sched .r { display:flex; justify-content:space-between; align-items:center; padding:13px 18px; border-bottom:1px solid #f4f0e5; font-size:14px; }
+  .cD .sched .r:last-child { border-bottom:none; }
+  .cD .sched .r b { font-weight:700; }
+  .cD .sched .r .st { font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; background:#E4EDD9; color:#2E5339; }
+  .cD .sched .r .st.full { background:#f1efe8; color:#a09b8a; }
+  .cD .right { width:53%; background:linear-gradient(160deg,#2E5339 0%, #1B3323 70%); position:relative; }
+  .cD .right svg.arc { position:absolute; inset:0; width:100%; height:100%; }
+  .cD .photo-note { position:absolute; top:32px; right:32px; font-family:"Pretendard"; font-size:11px; letter-spacing:.2em;
+    color:rgba(255,255,255,.55); border:1px dashed rgba(255,255,255,.35); padding:8px 12px; }
+  .cD .quote { position:absolute; left:52px; bottom:120px; color:#F3F0E4; width:380px; }
+  .cD .quote p { font-size:24px; line-height:1.65; font-weight:500; }
+  .cD .quote span { display:block; margin-top:16px; font-family:"Pretendard"; font-size:13px; color:rgba(255,255,255,.6); }
+  .cD .chip-row { position:absolute; left:52px; bottom:48px; display:flex; gap:8px; font-family:"Pretendard"; }
+  .cD .chip-row span { font-size:12.5px; font-weight:600; color:#F3F0E4; border:1px solid rgba(255,255,255,.35); border-radius:999px; padding:8px 14px; }
+
+  /* ============================================================
+     E. 클래스 플랫폼 — 교육 서비스형, 코스 카드와 신청 흐름
+     ============================================================ */
+  .cE { background:#fff; color:#1a1c1e; font-family:"Pretendard",sans-serif; }
+  .cE .nav { height:74px; display:flex; align-items:center; gap:30px; padding:0 56px; border-bottom:1px solid #eef0f2; }
+  .cE .word { font-weight:800; font-size:19px; letter-spacing:-.02em; margin-right:8px; }
+  .cE .word i { color:#1C7C54; font-style:normal; }
+  .cE .nav ul { display:flex; gap:26px; font-size:14.5px; font-weight:600; color:#5b6166; }
+  .cE .nav .right { margin-left:auto; display:flex; gap:10px; align-items:center; }
+  .cE .nav .login { font-size:14px; font-weight:600; color:#5b6166; padding:10px 6px; }
+  .cE .nav .cta { background:#1C7C54; color:#fff; border-radius:10px; padding:11px 20px; font-size:14px; font-weight:700; }
+  .cE .hero { padding:64px 56px 0; display:flex; gap:48px; align-items:flex-start; }
+  .cE .hcopy { width:560px; flex:none; padding-top:26px; }
+  .cE .tagline { display:inline-block; background:#EAF6F0; color:#1C7C54; font-size:13px; font-weight:700;
+    border-radius:8px; padding:8px 14px; }
+  .cE h1 { margin-top:20px; font-size:46px; font-weight:800; letter-spacing:-.03em; line-height:1.35; }
+  .cE .sub { margin-top:18px; font-size:16.5px; line-height:1.75; color:#5b6166; }
+  .cE .search { margin-top:30px; display:flex; border:2px solid #1C7C54; border-radius:14px; overflow:hidden; }
+  .cE .search input { flex:1; border:none; outline:none; padding:17px 20px; font-size:15.5px; font-family:inherit; color:#1a1c1e; }
+  .cE .search button { background:#1C7C54; color:#fff; border:none; padding:0 28px; font-size:15px; font-weight:700; font-family:inherit; }
+  .cE .kw { margin-top:14px; font-size:13.5px; color:#8a9096; }
+  .cE .kw b { color:#5b6166; font-weight:600; }
+  .cE .cards { flex:1; display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .cE .card { border:1px solid #e8ebee; border-radius:16px; overflow:hidden; background:#fff;
+    box-shadow:0 10px 26px -18px rgba(20,40,30,.25); }
+  .cE .thumb { height:120px; position:relative; }
+  .cE .thumb.t1 { background:linear-gradient(135deg,#245c40,#153824); }
+  .cE .thumb.t2 { background:linear-gradient(135deg,#37613f,#1d3a26); }
+  .cE .thumb.t3 { background:linear-gradient(135deg,#4d6b3a,#2a4020); }
+  .cE .thumb.t4 { background:linear-gradient(135deg,#1f4f4a,#0f2c29); }
+  .cE .thumb .lv { position:absolute; top:12px; left:12px; background:rgba(255,255,255,.92); border-radius:7px;
+    font-size:11.5px; font-weight:800; padding:5px 9px; color:#1a1c1e; }
+  .cE .cbody { padding:14px 16px 16px; }
+  .cE .cbody b { font-size:15.5px; font-weight:700; letter-spacing:-.01em; }
+  .cE .meta { margin-top:8px; font-size:12.5px; color:#8a9096; }
+  .cE .price { margin-top:10px; display:flex; align-items:baseline; gap:6px; }
+  .cE .price b { font-size:17px; font-weight:800; }
+  .cE .price span { font-size:12px; color:#8a9096; }
+  .cE .strip { position:absolute; bottom:0; left:0; right:0; background:#F7F9F8; border-top:1px solid #eef0f2;
+    display:flex; justify-content:center; gap:64px; padding:22px 0; font-size:14px; color:#5b6166; }
+  .cE .strip b { color:#1a1c1e; font-weight:800; }
+
+  /* ============================================================
+     F. 스위스 그리드 — 노출 그리드, 정보 설계 중심, 인쇄물 감성
+     ============================================================ */
+  .cF { background:#EFEDE6; color:#111310; font-family:"IBM Plex Sans KR",sans-serif; }
+  .cF .grid-lines { position:absolute; inset:0; display:flex; pointer-events:none; }
+  .cF .grid-lines i { flex:1; border-right:1px solid rgba(17,19,16,.09); }
+  .cF .nav { position:absolute; top:0; left:0; right:0; display:flex; height:64px; border-bottom:1px solid #111310; }
+  .cF .nav > * { display:flex; align-items:center; padding:0 24px; font-size:13px; font-weight:600; letter-spacing:.05em; border-right:1px solid #111310; }
+  .cF .nav .word { font-weight:800; letter-spacing:.2em; }
+  .cF .nav .sp { flex:1; border-right:none; }
+  .cF .nav .cta { background:#111310; color:#EFEDE6; border-right:none; }
+  .cF .idx { position:absolute; top:96px; left:24px; font-size:12px; letter-spacing:.18em; color:#6e7069; }
+  .cF h1 { position:absolute; top:150px; left:18px; right:0; font-size:150px; font-weight:700; letter-spacing:-.05em; line-height:.98; }
+  .cF h1 small { display:block; font-size:150px; letter-spacing:-.05em; color:transparent; -webkit-text-stroke:1.5px #111310; }
+  .cF .desc { position:absolute; top:560px; left:24px; width:420px; font-size:15.5px; font-weight:400; line-height:1.85; color:#3b3d38; }
+  .cF .desc b { font-weight:700; color:#111310; }
+  .cF table { position:absolute; right:0; top:560px; width:560px; border-collapse:collapse; font-size:13.5px; }
+  .cF th { text-align:left; font-size:11px; letter-spacing:.16em; color:#6e7069; font-weight:600; padding:10px 24px; border-top:1px solid #111310; border-bottom:1px solid #111310; }
+  .cF td { padding:14px 24px; border-bottom:1px solid rgba(17,19,16,.25); font-weight:500; }
+  .cF td.num { font-variant-numeric:tabular-nums; font-weight:700; }
+  .cF .apply { position:absolute; bottom:0; left:0; right:0; height:76px; background:#111310; color:#EFEDE6;
+    display:flex; align-items:center; justify-content:space-between; padding:0 24px; font-size:14px; letter-spacing:.06em; }
+  .cF .apply b { font-size:16px; letter-spacing:.1em; }
+  .cF .apply .arr { font-size:22px; }
+
+  /* ============================================================
+     G. 헤리티지 골프학교 — 교장실 명패 무드, 바탕체, 3원칙
+     ============================================================ */
+  .cG { background:#F4EBDD; color:#2A2118; font-family:"Gowun Batang",serif; }
+  .cG::before { content:""; position:absolute; inset:0;
+    background:repeating-linear-gradient(0deg, rgba(42,33,24,.028) 0 1px, transparent 1px 5px); pointer-events:none; }
+  .cG .nav { position:absolute; top:0; left:0; right:0; height:86px; display:flex; align-items:center;
+    justify-content:space-between; padding:0 60px; border-bottom:1px solid rgba(42,33,24,.25); }
+  .cG .word { display:flex; align-items:center; gap:14px; }
+  .cG .word .seal { width:44px; height:44px; background:#8C2F1B; color:#F4EBDD; display:flex; align-items:center;
+    justify-content:center; font-size:15px; font-weight:700; border-radius:4px; }
+  .cG .word b { font-size:21px; font-weight:700; letter-spacing:.14em; }
+  .cG .nav ul { display:flex; gap:36px; font-size:14.5px; font-weight:400; letter-spacing:.1em; color:#5c5142; }
+  .cG .hero { position:absolute; top:150px; left:60px; width:660px; }
+  .cG .since { font-size:13px; letter-spacing:.4em; color:#8C2F1B; font-weight:700; }
+  .cG h1 { margin-top:24px; font-size:58px; font-weight:700; line-height:1.55; letter-spacing:.01em; }
+  .cG h1 .br { position:relative; }
+  .cG h1 .br::after { content:""; position:absolute; left:0; right:0; bottom:6px; height:14px; background:rgba(140,47,27,.18); z-index:-1; }
+  .cG .sub { margin-top:26px; font-size:17px; line-height:2.05; color:#5c5142; width:36rem; }
+  .cG .cta { margin-top:38px; display:flex; gap:14px; align-items:center; }
+  .cG .b1 { background:#2A2118; color:#F4EBDD; padding:18px 40px; font-size:15px; letter-spacing:.2em; font-weight:700; }
+  .cG .b2 { font-size:15px; letter-spacing:.1em; color:#8C2F1B; font-weight:700; border-bottom:1.5px solid #8C2F1B; padding-bottom:4px; }
+  .cG .rules { position:absolute; right:60px; top:150px; width:400px; background:#FBF6EC;
+    border:1px solid rgba(42,33,24,.3); box-shadow:8px 8px 0 rgba(42,33,24,.12); padding:36px 38px; }
+  .cG .rules .t { text-align:center; font-size:14px; letter-spacing:.5em; color:#8C2F1B; font-weight:700; }
+  .cG .rules ol { list-style:none; margin-top:26px; counter-reset:r; }
+  .cG .rules li { counter-increment:r; display:flex; gap:18px; padding:20px 0; border-bottom:1px dashed rgba(42,33,24,.3); }
+  .cG .rules li:last-child { border-bottom:none; }
+  .cG .rules li::before { content:counter(r,hangul) "."; font-size:18px; font-weight:700; color:#8C2F1B; flex:none; }
+  .cG .rules li div b { display:block; font-size:18px; font-weight:700; }
+  .cG .rules li div span { display:block; margin-top:6px; font-size:13.5px; line-height:1.7; color:#5c5142; }
+  .cG .foot { position:absolute; bottom:0; left:0; right:0; border-top:1px solid rgba(42,33,24,.25);
+    display:flex; padding:0 60px; height:88px; align-items:center; gap:56px; font-size:14px; color:#5c5142; }
+  .cG .foot b { font-size:19px; color:#2A2118; margin-right:10px; }
+
+  /* ============================================================
+     H. 모던 필드 아카데미 — 밝은 필드 그린, 라운드 포토 프레임
+     ============================================================ */
+  .cH { background:#F2F5EE; color:#17251b; font-family:"Pretendard",sans-serif; }
+  .cH .nav { height:80px; display:flex; align-items:center; padding:0 56px; gap:36px; }
+  .cH .word { font-family:"Hahmlet",serif; font-weight:600; font-size:19px; letter-spacing:.08em; margin-right:auto; display:flex; align-items:center; gap:10px; }
+  .cH .word i { width:30px; height:30px; border-radius:50%; background:#245B36; color:#fff; font-family:"Pretendard"; font-style:normal; font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+  .cH .nav ul { display:flex; gap:28px; font-size:14.5px; font-weight:600; color:#4c5a4f; }
+  .cH .nav .cta { background:#245B36; color:#fff; border-radius:999px; padding:13px 26px; font-size:14px; font-weight:700; }
+  .cH .stage { position:relative; margin:26px 56px 0; height:700px; border-radius:36px; overflow:hidden;
+    background:linear-gradient(115deg,#2F6B41 0%,#1B4227 55%,#12301B 100%); }
+  .cH .stage svg.slope { position:absolute; inset:0; width:100%; height:100%; }
+  .cH .stage .inner { position:absolute; inset:0; padding:74px 80px; color:#F4F8F0; }
+  .cH .pill { display:inline-flex; align-items:center; gap:9px; background:rgba(255,255,255,.14);
+    border:1px solid rgba(255,255,255,.25); backdrop-filter:blur(4px); border-radius:999px; padding:9px 18px;
+    font-size:13px; font-weight:600; }
+  .cH .pill i { width:7px; height:7px; border-radius:50%; background:#B9E88B; }
+  .cH h1 { margin-top:28px; font-family:"Hahmlet",serif; font-size:62px; font-weight:500; line-height:1.35; letter-spacing:-.01em; }
+  .cH h1 em { font-style:normal; color:#B9E88B; }
+  .cH .sub { margin-top:22px; font-size:16.5px; line-height:1.8; color:rgba(244,248,240,.82); width:34rem; }
+  .cH .cta2 { margin-top:36px; display:flex; gap:12px; }
+  .cH .cta2 .b1 { background:#F4F8F0; color:#17251b; border-radius:999px; padding:17px 34px; font-size:15px; font-weight:700; }
+  .cH .cta2 .b2 { border:1px solid rgba(255,255,255,.45); color:#F4F8F0; border-radius:999px; padding:17px 30px; font-size:15px; font-weight:600; }
+  .cH .float { position:absolute; right:80px; top:74px; width:290px; display:flex; flex-direction:column; gap:14px; }
+  .cH .fcard { background:rgba(255,255,255,.95); color:#17251b; border-radius:18px; padding:18px 20px; box-shadow:0 20px 44px -24px rgba(0,0,0,.5); }
+  .cH .fcard .l { font-size:11.5px; font-weight:700; letter-spacing:.1em; color:#6a7a6d; }
+  .cH .fcard .v { margin-top:8px; font-size:15.5px; font-weight:700; line-height:1.5; }
+  .cH .fcard .bar { margin-top:12px; height:6px; border-radius:999px; background:#E4EDE2; overflow:hidden; }
+  .cH .fcard .bar i { display:block; height:100%; width:72%; background:#245B36; border-radius:999px; }
+  .cH .fcard.dark { background:#17251b; color:#F4F8F0; }
+  .cH .fcard.dark .l { color:#93a695; }
+  .cH .ticker { position:absolute; left:80px; bottom:56px; right:80px; display:flex; gap:44px; border-top:1px solid rgba(255,255,255,.22); padding-top:24px; }
+  .cH .ticker div b { font-size:24px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .cH .ticker div span { display:block; margin-top:5px; font-size:12.5px; color:rgba(244,248,240,.66); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ A ═══════════════ -->
+<div class="frame-label"><b>A · 프레스티지 컨트리클럽</b> 벤치마킹 — 명문 CC · 럭셔리 멤버십 사이트 (딥그린+골드, 정통 세리프, 문장 엠블럼)</div>
+<section class="frame cA" id="cA">
+  <nav class="nav"><span>ACADEMY</span><span>PROGRAM</span><span>PRO</span><span>MEMBERSHIP</span><span>CONTACT</span></nav>
+  <div class="crest">
+    <div class="ring"><span>NS</span></div>
+    <div class="est">SINCE 2015 · SEOUL</div>
+  </div>
+  <div class="hero">
+    <h1>스윙에도 <span class="gold">품격</span>이 있습니다</h1>
+    <p class="sub">KPGA Class A 이도형 프로가 직접 지도하는 프라이빗 골프 아카데미<br>온라인 진단부터 오프라인 원포인트까지, 소수 정예로 관리합니다</p>
+    <div class="rule"></div>
+    <div class="cta-row">
+      <a class="btn-gold" href="#">입학 상담 신청</a>
+      <a class="btn-line" href="#">아카데미 소개</a>
+    </div>
+  </div>
+  <div class="foot">
+    <div><b>11년</b>레슨 경력</div>
+    <div><b>2,300</b>누적 피드백</div>
+    <div><b>5</b>레슨 지점</div>
+    <div><b>Class A</b>KPGA 전문교습가</div>
+  </div>
+</section>
+
+<!-- ═══════════════ B ═══════════════ -->
+<div class="frame-label"><b>B · 에디토리얼 매거진</b> 벤치마킹 — 매거진 B · Kinfolk (표지형 레이아웃, 거대 명조 타이틀, 목차형 내비게이션)</div>
+<section class="frame cB" id="cB">
+  <div class="mast">
+    <span class="vol">VOL. 07 — 2026 SUMMER</span>
+    <span class="word">NEXT SWING</span>
+    <a class="cta" href="#">진단 신청</a>
+  </div>
+  <div class="issue">이번 호 주제 · 스윙의 기본기</div>
+  <h1>스윙은<br>읽는 것이<em>다</em></h1>
+  <p class="deck">영상 한 편을 올리면, 이도형 프로가 당신의 스윙을 한 문장씩 읽어 내려갑니다. 백스윙의 첫 30cm부터 피니시의 균형까지 — 감이 아니라 문장으로 남는 레슨.</p>
+  <ul class="toc">
+    <li><span class="no">01</span><span class="t">스윙 진단 신청하기</span><span class="pg">3분</span></li>
+    <li><span class="no">02</span><span class="t">프로의 화면 필기 피드백</span><span class="pg">12:24</span></li>
+    <li><span class="no">03</span><span class="t">브라우저 스윙 분석 도구</span><span class="pg">무료</span></li>
+    <li><span class="no">04</span><span class="t">오프라인 레슨 5개 지점</span><span class="pg">예약</span></li>
+    <li><span class="no">05</span><span class="t">월간 코칭 멤버십</span><span class="pg">구독</span></li>
+  </ul>
+  <div class="stamp"><b>이도형 프로</b><span>KPGA CLASS A</span><span>직접 씁니다</span></div>
+  <div class="foot">누적 피드백 2,300건 · 레슨 경력 11년 · 서울 · 판교 · 용인</div>
+</section>
+
+<!-- ═══════════════ C ═══════════════ -->
+<div class="frame-label"><b>C · 다크 퍼포먼스 랩</b> 벤치마킹 — Nike Training · Whoop (그래파이트+라임 시그널, 헤비 타이포, 데이터 패널)</div>
+<section class="frame cC" id="cC">
+  <nav class="nav">
+    <span class="brand"><i></i>NEXT SWING LAB</span>
+    <ul><li>진단</li><li>분석 도구</li><li>프로그램</li><li>지점</li></ul>
+    <a class="cta" href="#">스윙 진단 시작</a>
+  </nav>
+  <div class="kicker">SWING DIAGNOSTICS BY KPGA CLASS A</div>
+  <h1>당신의 스윙을<br><span>해부</span>합니다</h1>
+  <p class="sub">프레임 단위 분석, P1–P10 구간 진단, 화면 필기 + 음성 피드백. 감각이 아니라 데이터와 프로의 눈으로 스윙을 다시 설계하세요.</p>
+  <div class="cta2">
+    <a class="b1" href="#">무료 진단 신청</a>
+    <a class="b2" href="#">분석 도구 열기</a>
+  </div>
+  <div class="panel">
+    <div class="vh">
+      <span class="tag">P4 · TOP</span>
+      <svg viewBox="0 0 560 352" preserveAspectRatio="none">
+        <line x1="150" y1="330" x2="330" y2="30" stroke="#D8F34E" stroke-width="2"/>
+        <line x1="150" y1="330" x2="452" y2="180" stroke="#5d6b52" stroke-width="2" stroke-dasharray="8 7"/>
+        <path d="M212 226 A 96 96 0 0 1 322 262" stroke="#D8F34E" stroke-width="1.5" fill="none"/>
+        <circle cx="150" cy="330" r="5" fill="#D8F34E"/>
+        <circle cx="330" cy="30" r="4" fill="none" stroke="#D8F34E" stroke-width="1.5"/>
+        <text x="336" y="238" fill="#D8F34E" font-size="14" font-family="IBM Plex Sans KR">96°</text>
+      </svg>
+      <span class="fps">240fps · 0:02.41</span>
+    </div>
+    <div class="prow"><span>P1</span><span>P2</span><span>P3</span><span class="on">P4</span><span>P5</span><span>P6</span><span>P7</span><span>P8</span></div>
+    <div class="stats">
+      <div><b>96<i>°</i></b><span>어깨 회전</span></div>
+      <div><b>42<i>°</i></b><span>골반 회전</span></div>
+      <div><b>0.82<i>s</i></b><span>템포 비율 3:1</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ D ═══════════════ -->
+<div class="frame-label"><b>D · 스플릿 캠퍼스</b> 벤치마킹 — 부티크 발레/필라테스 스튜디오 (반반 분할, 이번 주 시간표, 클래스 배지)</div>
+<section class="frame cD" id="cD">
+  <div class="left">
+    <nav class="lnav"><span class="word">NEXT SWING</span><span>클래스</span><span>프로 소개</span><span>지점</span><span>문의</span></nav>
+    <span class="badge"><i></i>7월 신규반 접수 중</span>
+    <h1>매주 화요일,<br><u>스윙이 바뀌는</u> 수업</h1>
+    <p class="sub">이도형 프로의 소수 정예 클래스. 온라인 영상 진단으로 시작해, 매주 연습 목표와 코멘트를 받고, 지점에서 원포인트로 완성합니다.</p>
+    <div class="cta">
+      <a class="b1" href="#">이번 달 클래스 신청</a>
+      <a class="b2" href="#">온라인 진단 먼저 받기</a>
+    </div>
+    <div class="sched">
+      <div class="h"><span>이번 주 클래스</span><span>7월 4주차</span></div>
+      <div class="r"><b>화 19:30 · 교정반</b><span>서초 TPZ</span><span class="st">2자리 남음</span></div>
+      <div class="r"><b>목 20:00 · 입문반</b><span>판교 TPZ</span><span class="st">4자리 남음</span></div>
+      <div class="r"><b>토 10:00 · 숏게임반</b><span>숏게임힐스</span><span class="st full">마감</span></div>
+    </div>
+  </div>
+  <div class="right">
+    <svg class="arc" viewBox="0 0 760 900" preserveAspectRatio="none">
+      <path d="M120 800 C 240 420, 480 260, 700 210" stroke="rgba(243,240,228,.5)" stroke-width="2" fill="none"/>
+      <path d="M120 800 C 300 640, 560 560, 720 540" stroke="rgba(243,240,228,.22)" stroke-width="2" stroke-dasharray="6 8" fill="none"/>
+      <circle cx="120" cy="800" r="6" fill="#F3F0E4"/>
+      <circle cx="700" cy="210" r="5" fill="none" stroke="#F3F0E4" stroke-width="2"/>
+    </svg>
+    <span class="photo-note">PRO SWING PHOTO / VIDEO</span>
+    <div class="quote">
+      <p>“스윙은 고치는 게 아니라,<br>몸에 맞게 다시 배우는 겁니다.”</p>
+      <span>이도형 프로 · KPGA Class A 전문교습가</span>
+    </div>
+    <div class="chip-row"><span>입문반</span><span>교정반</span><span>스코어반</span><span>주니어반</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════ E ═══════════════ -->
+<div class="frame-label"><b>E · 클래스 플랫폼</b> 벤치마킹 — 클래스101 · 인프런 (검색창 히어로, 코스 카드, 수강 신청 UX)</div>
+<section class="frame cE" id="cE">
+  <nav class="nav">
+    <span class="word">NEXT<i>SWING</i> 아카데미</span>
+    <ul><li>전체 클래스</li><li>온라인 진단</li><li>분석 도구</li><li>지점 안내</li></ul>
+    <div class="right"><a class="login" href="#">로그인</a><a class="cta" href="#">무료 진단 받기</a></div>
+  </nav>
+  <div class="hero">
+    <div class="hcopy">
+      <span class="tagline">🏌️ 프로가 1:1로 봐주는 골프 클래스</span>
+      <h1>오늘 등록하면,<br>다음 라운드가 달라져요</h1>
+      <p class="sub">영상만 올리면 이도형 프로(KPGA Class A)가 직접 진단해 드려요. 내 수준에 맞는 클래스로 시작하세요.</p>
+      <div class="search">
+        <input placeholder="어떤 고민이 있으세요? 예) 슬라이스, 비거리, 뒤땅">
+        <button>클래스 찾기</button>
+      </div>
+      <p class="kw">인기 검색어 · <b>슬라이스 교정</b> · <b>비거리 +20m</b> · <b>100타 깨기</b> · <b>주니어</b></p>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="thumb t1"><span class="lv">입문</span></div><div class="cbody"><b>4주 완성 · 스윙 기본기 클래스</b><p class="meta">온라인 진단 2회 + 주간 목표 · 정원 8명</p><div class="price"><b>월 39,000원</b><span>Coaching 플랜</span></div></div></div>
+      <div class="card"><div class="thumb t2"><span class="lv">교정</span></div><div class="cbody"><b>슬라이스 집중 교정 클래스</b><p class="meta">화면 필기 피드백 4회 · 원포인트 1회</p><div class="price"><b>월 99,000원</b><span>Elite 플랜</span></div></div></div>
+      <div class="card"><div class="thumb t3"><span class="lv">무료</span></div><div class="cbody"><b>내 스윙 셀프 분석 도구</b><p class="meta">선 긋기 · 프레임 이동 · 프로와 비교</p><div class="price"><b>0원</b><span>회원가입 없이</span></div></div></div>
+      <div class="card"><div class="thumb t4"><span class="lv">오프라인</span></div><div class="cbody"><b>원포인트 레슨 (5개 지점)</b><p class="meta">서초 · 판교 · 양재 · 용인 · 숏게임힐스</p><div class="price"><b>예약제</b><span>구독자 할인</span></div></div></div>
+    </div>
+  </div>
+  <div class="strip">
+    <span>누적 피드백 <b>2,300건</b></span><span>수강생 만족도 <b>4.9 / 5.0</b></span><span>평균 회신 <b>24시간 이내</b></span><span>레슨 경력 <b>11년</b></span>
+  </div>
+</section>
+
+<!-- ═══════════════ F ═══════════════ -->
+<div class="frame-label"><b>F · 스위스 그리드</b> 벤치마킹 — 스위스 타이포그래피 포스터 · 디자인 스튜디오 사이트 (노출 그리드, 표 기반 정보, 인쇄물 감성)</div>
+<section class="frame cF" id="cF">
+  <div class="grid-lines"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <nav class="nav">
+    <span class="word">NEXT SWING</span>
+    <span>아카데미</span><span>진단</span><span>분석 도구</span><span>지점</span>
+    <span class="sp"></span>
+    <a class="cta" href="#">입학 신청 →</a>
+  </nav>
+  <div class="idx">GOLF ACADEMY — SEOUL / PANGYO / YONGIN</div>
+  <h1>스윙<small>아카데미</small></h1>
+  <p class="desc"><b>이도형 프로(KPGA Class A)</b>가 설계한 진단 중심 커리큘럼. 영상 진단 → 주간 목표 → 원포인트의 3단 구조로, 스윙을 P1부터 P10까지 순서대로 정리합니다.</p>
+  <table>
+    <tr><th>과정</th><th>구성</th><th>기간</th><th>수강료</th></tr>
+    <tr><td>진단 1회</td><td>화면 필기 + 음성 피드백</td><td>48시간</td><td class="num">무료 체험</td></tr>
+    <tr><td>Coaching</td><td>월 4회 코멘트 · 주간 목표</td><td>월 단위</td><td class="num">39,000원</td></tr>
+    <tr><td>Elite</td><td>맞춤 영상레슨 · 월 8회 코멘트</td><td>월 단위</td><td class="num">99,000원</td></tr>
+  </table>
+  <div class="apply"><b>2026 여름학기 접수 중</b><span>온라인 진단으로 수준 확인 후 배정합니다</span><span class="arr">→</span></div>
+</section>
+
+<!-- ═══════════════ G ═══════════════ -->
+<div class="frame-label"><b>G · 헤리티지 골프학교</b> 벤치마킹 — 일본 사설 아카데미 · 서원(書院) 브랜딩 (바탕체, 낙관 도장, 교훈 3원칙 액자)</div>
+<section class="frame cG" id="cG">
+  <nav class="nav">
+    <span class="word"><span class="seal">道</span><b>이도형 골프학교</b></span>
+    <ul><li>학교 소개</li><li>교육 과정</li><li>입학 안내</li><li>지점</li><li>문의</li></ul>
+  </nav>
+  <div class="hero">
+    <div class="since">스윙을 바르게 · 2015년 개교</div>
+    <h1>기본기를 가르치는<br><span class="br">골프학교</span>입니다</h1>
+    <p class="sub">유행하는 스윙이 아니라, 당신 몸에 맞는 바른 스윙을 가르칩니다. 영상 진단으로 입학하고, 매주 과제를 받고, 지점에서 검사받는 — 학교식 커리큘럼.</p>
+    <div class="cta">
+      <a class="b1" href="#">입학 진단 신청</a>
+      <a class="b2" href="#">교육 과정 살펴보기</a>
+    </div>
+  </div>
+  <div class="rules">
+    <div class="t">교훈 · 세 가지 약속</div>
+    <ol>
+      <li><div><b>몸에 맞게 가르친다</b><span>체형과 유연성이 다르면 좋은 스윙도 다릅니다.</span></div></li>
+      <li><div><b>한 사람이 끝까지 본다</b><span>입학부터 졸업까지 이도형 프로가 직접 지도합니다.</span></div></li>
+      <li><div><b>기록으로 남긴다</b><span>모든 피드백은 영상과 문장으로 남아 복습할 수 있습니다.</span></div></li>
+    </ol>
+  </div>
+  <div class="foot">
+    <span><b>11년</b>지도 경력</span>
+    <span><b>2,300건</b>누적 첨삭</span>
+    <span><b>5개</b>레슨 지점</span>
+    <span><b>KPGA</b>Class A 전문교습가</span>
+  </div>
+</section>
+
+<!-- ═══════════════ H ═══════════════ -->
+<div class="frame-label"><b>H · 모던 필드 아카데미</b> 벤치마킹 — 프리미엄 피트니스 앱 웹 · 골프존 계열 현대화 (라운드 스테이지, 플로팅 리포트 카드)</div>
+<section class="frame cH" id="cH">
+  <nav class="nav">
+    <span class="word"><i>NS</i>NEXT SWING</span>
+    <ul><li>아카데미</li><li>온라인 진단</li><li>분석 도구</li><li>지점</li><li>멤버십</li></ul>
+    <a class="cta" href="#">진단 신청하기</a>
+  </nav>
+  <div class="stage">
+    <svg class="slope" viewBox="0 0 1328 700" preserveAspectRatio="none">
+      <path d="M0 560 C 300 480, 620 640, 1328 470 L1328 700 L0 700 Z" fill="rgba(185,232,139,.10)"/>
+      <path d="M0 640 C 380 570, 760 690, 1328 590 L1328 700 L0 700 Z" fill="rgba(0,0,0,.18)"/>
+      <circle cx="1090" cy="330" r="150" fill="none" stroke="rgba(244,248,240,.14)" stroke-width="1.5"/>
+      <circle cx="1090" cy="330" r="102" fill="none" stroke="rgba(244,248,240,.1)" stroke-width="1.5"/>
+    </svg>
+    <div class="inner">
+      <span class="pill"><i></i>KPGA Class A 이도형 프로 · 1:1 전담제</span>
+      <h1>연습만 하지 말고,<br><em>배우면서</em> 치세요</h1>
+      <p class="sub">영상 진단 → 주간 목표 → 원포인트 레슨까지. 아카데미 커리큘럼을 온라인과 5개 지점에서 이어서 받으세요.</p>
+      <div class="cta2">
+        <a class="b1" href="#">아카데미 등록하기</a>
+        <a class="b2" href="#">무료 스윙 진단</a>
+      </div>
+      <div class="float">
+        <div class="fcard">
+          <div class="l">이번 주 나의 과제</div>
+          <div class="v">하체 리드 · 8할 스윙 20구</div>
+          <div class="bar"><i></i></div>
+        </div>
+        <div class="fcard dark">
+          <div class="l">프로 코멘트 도착</div>
+          <div class="v">“톱에서 왼팔 각이 좋아졌어요. 이번 주는 템포만.”</div>
+        </div>
+      </div>
+      <div class="ticker">
+        <div><b>2,300+</b><span>누적 진단 피드백</span></div>
+        <div><b>11년</b><span>레슨 경력</span></div>
+        <div><b>5개 지점</b><span>서초 · 판교 · 양재 · 용인</span></div>
+        <div><b>24시간</b><span>평균 피드백 회신</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
