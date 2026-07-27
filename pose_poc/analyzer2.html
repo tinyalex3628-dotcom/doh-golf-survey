@@ -80,9 +80,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v31</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v32</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v31"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v32"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
   <br><b style="color:#4ea1ff">v27(안정화):</b> fetch 타임아웃 · 폴링 <b>일시실패 자동 재시도</b>(터널 흔들림 대비) · 업로드 거부/Job 만료 메시지 개선. Stage 0 5회 연속 검증용. (계약 <code>/v1/*·doh.vision.v1</code>는 동결 — 내부만 하드닝)</p>
 </header>
 
@@ -803,95 +803,112 @@ function v1card(f){
     if(n.flags) body+=`<div style="margin-top:6px;font-size:11px;color:#ffb648">${n.flags}</div>`; }
   return `<div class="mcard" style="padding:12px"><div style="font-size:12px;color:#8b97a5;min-height:28px;line-height:1.3">${meta[0]}</div>${body}</div>`;
 }
-// ── 스윙 문제 판정 규칙 (v28) ─────────────────────────────────────────────
-// 문제 = 측정값(VF) + 임계값(seed). ⚠️ 임계값은 초기 추정치 — 실측 검수로 보정한다.
-// DOH_REVIEW_MODE=true 면 각 판정의 근거(측정값 vs 임계값)를 펼쳐 보여준다(검수용).
-// 상업 배포 시 false 로만 바꾸면 근거 UI가 숨는다. 판정 로직은 동일.
+// ── 스윙 문제 판정 규칙 (v32: 4단계 구간 판정) ────────────────────────────
+// 이분법(넘으면 문제) 폐기 → 정상🟢/주의🟡/과다🟠/심함🔴 구간(band).
+// 검수 피드백(2026-07-24, GPT 협의): 단일 컷오프는 코칭·UX 모두 부적합.
+// ⚠️ 구간값은 여전히 seed — 근거 등급은 기준치 엑셀(DOH_기준치_설계) 참조. 실측 누적으로 보정.
+// DOH_REVIEW_MODE=false 로만 바꾸면 근거 UI 숨김(판정 로직 동일).
 const DOH_REVIEW_MODE=true;
-// use: [VF, 라벨, 연산, 임계값...] — ">" "<" "abs>" "abs<" "out"(범위밖) / any:true = OR
+// check: {vf, lab, t, B:[b1,b2,b3], side?}  — t(변환): high=값 클수록 나쁨 / low=작을수록 /
+//   abs=|값| 클수록 / low_abs=|값| 작을수록.  변환값 tv<b1→정상, <b2→주의, <b3→과다, ≥b3→심함.
+const INF=1e9;
 const DOH_RULES=[
- {id:"sway",nm:"스웨이 (백스윙 좌우 밀림)",tier:1,any:true,
-  use:[["VF031","머리 좌우이동 P1→P4",">",0.15],["VF034","골반 좌우이동 P1→P4",">",0.12]],
-  why:"백스윙에서 머리/골반이 트레일쪽(+)으로 과하게 밀림"},
+ {id:"sway",nm:"스웨이 (백스윙 좌우 밀림)",tier:1,
+  checks:[{vf:"VF031",lab:"머리 좌우이동 P1→P4",t:"high",B:[0.12,0.18,0.30]},
+          {vf:"VF034",lab:"골반 좌우이동 P1→P4",t:"high",B:[0.10,0.15,0.25]}],
+  why:"백스윙에서 머리/골반이 트레일쪽(+)으로 밀림 (스탠스폭 비율)"},
  {id:"reverse_pivot",nm:"리버스 피벗",tier:1,
-  use:[["VF034","골반 좌우이동 P1→P4","<",-0.06]],
+  checks:[{vf:"VF034",lab:"골반 좌우이동 P1→P4",t:"low",B:[0.06,0.10,0.18]}],
   why:"탑에서 체중(골반)이 오히려 리드쪽(−)에 있음"},
  {id:"reverse_spine",nm:"리버스 스파인 (탑)",tier:1,
-  use:[["VF036","척추 좌우기울기 @P4","<",-5]],
+  checks:[{vf:"VF036",lab:"척추 좌우기울기 @P4",t:"low",B:[5,10,18]}],
   why:"탑에서 척추가 타깃(리드)쪽으로 역기울어짐(−)"},
  {id:"hip_slide",nm:"힙 슬라이드 과다 (다운스윙)",tier:1,
-  use:[["VF091","골반 좌우이동 P4→P7","<",-0.35]],
+  checks:[{vf:"VF091",lab:"골반 좌우이동 P4→P7",t:"low",B:[0.35,0.45,0.60]}],
   why:"다운스윙에서 골반이 리드쪽(−)으로 과하게 밀림(회전 대신 슬라이드)"},
  {id:"hanging_back",nm:"행잉백 (임팩트 체중 잔류)",tier:1,
-  use:[["VF085","골반 위치 @P7 (P1대비)",">",0.06]],
+  checks:[{vf:"VF085",lab:"골반 위치 @P7 (P1대비)",t:"high",B:[0.06,0.12,0.20]}],
   why:"임팩트에서 체중이 아직 트레일쪽(+)에 남아있음"},
  {id:"loss_posture",nm:"자세 무너짐 (백스윙)",tier:1,
-  use:[["VF038","척추각 변화 P1→P4","abs>",8]],
+  checks:[{vf:"VF038",lab:"척추각 변화 P1→P4",t:"abs",B:[8,12,18]}],
   why:"백스윙 중 어드레스 척추각이 크게 변함(들리거나 숙여짐)"},
  {id:"standing_up",nm:"일어남 (임팩트)",tier:1,
-  use:[["VF076","척추각 변화 P1→P7",">",8]],
+  checks:[{vf:"VF076",lab:"척추각 변화 P1→P7",t:"high",B:[8,12,18]}],
   why:"임팩트에서 상체가 어드레스보다 일어섬(+)"},
  {id:"chicken_wing",nm:"치킨윙 (임팩트 리드팔)",tier:1,
-  use:[["VF087","리드팔 굽음 @P7",">",25]],
-  why:"임팩트에서 리드 팔꿈치가 과하게 굽음"},
+  checks:[{vf:"VF087",lab:"리드팔 굽음 @P7",t:"high",B:[25,32,40]}],
+  why:"임팩트 리드팔 굽음. 엘리트 5~20° · 아마추어 15~35° 흔함 — 30°대부터 과다로 봄"},
  {id:"flying_elbow",nm:"플라잉 엘보 (탑)",tier:1,
-  use:[["VF026","트레일 팔꿈치 높이 @P4",">",0.10]],
-  why:"탑에서 트레일 팔꿈치가 어깨보다 위로 뜸(+)"},
+  checks:[{vf:"VF026",lab:"트레일 팔꿈치 높이 @P4",t:"high",B:[0.15,0.25,0.40]}],
+  why:"탑에서 트레일 팔꿈치가 어깨 위로 뜸. 단위=상완길이 비율(0.3=상완의 30%만큼 위)"},
  {id:"overswing",nm:"오버스윙 (탑)",tier:1,
-  use:[["VF123","리드팔-수직 각 @P4","<",35]],
+  checks:[{vf:"VF123",lab:"리드팔-수직 각 @P4",t:"low",B:[-40,-30,-20]}],
   why:"탑에서 리드팔이 수직에 지나치게 가까움(팔이 너무 넘어감)"},
  {id:"under_rotation",nm:"회전 부족 (탑)",tier:1,scale:true,
-  use:[["VF015","어깨 회전 @P4","abs<",75]],
+  checks:[{vf:"VF015",lab:"어깨 회전 @P4",t:"low_abs",B:[-80,-70,-60]}],
   why:"백스윙탑 어깨 회전량 부족 · ⚠️ 절대각 스케일 보정 전(참고)"},
- {id:"xfactor_over",nm:"X-Factor 과대",tier:1,scale:true,
-  use:[["VF020","X-Factor @P4","abs>",60]],
-  why:"어깨-골반 분리각 과대 · ⚠️ 절대각 스케일 보정 전(참고)"},
+ {id:"xfactor",nm:"X-Factor 이상",tier:1,scale:true,
+  checks:[{vf:"VF020",lab:"X-Factor @P4",t:"abs",B:[50,60,INF],side:"과대"},
+          {vf:"VF020",lab:"X-Factor @P4",t:"low_abs",B:[-25,-INF,-INF],side:"부족"}],
+  why:"어깨-골반 분리각. 통상 30~50° 정상, 50~60° 큼, 60°↑ 과대 · ⚠️ 스케일 보정 전"},
  {id:"trail_knee",nm:"트레일 무릎 펴짐 (탑)",tier:1,
-  use:[["VF040","트레일 무릎 굽힘 @P4","<",8]],
-  why:"탑에서 트레일 무릎이 거의 펴짐(굽힘 유지 실패)"},
+  checks:[{vf:"VF040",lab:"트레일 무릎 굽힘 @P4",t:"low",B:[-12,-8,-4]}],
+  why:"탑에서 트레일 무릎 굽힘 소실(12° 이상 유지가 이상적)"},
  {id:"head_dip",nm:"머리 상하 출렁 (백스윙)",tier:1,
-  use:[["VF033","머리 상하이동 P1→P4","abs>",0.12]],
-  why:"백스윙 중 머리가 위아래로 과하게 움직임"},
+  checks:[{vf:"VF033",lab:"머리 상하이동 P1→P4",t:"abs",B:[0.12,0.18,0.28]}],
+  why:"백스윙 중 머리가 위아래로 과하게 움직임 (스탠스폭 비율)"},
  {id:"tempo",nm:"템포 이상",tier:1,
-  use:[["VF111","템포 비율(백:다운)","out",2.0,4.0]],
-  why:"백스윙:다운스윙 시간비가 통상범위(2:1~4:1) 밖"},
+  checks:[{vf:"VF111",lab:"템포 비율(백:다운)",t:"high",B:[3.6,4.2,5.0],side:"느림"},
+          {vf:"VF111",lab:"템포 비율(백:다운)",t:"low",B:[-2.2,-1.8,-1.4],side:"빠름"}],
+  why:"백:다운 시간비. 통상 2.2~3.6(3:1 근방)이 정상권"},
  {id:"early_ext",nm:"얼리 익스텐션",tier:2,
-  use:[["VF067","골반 볼쪽 이동 P5→P7",">",0.10]],
+  checks:[{vf:"VF067",lab:"골반 볼쪽 이동 P5→P7",t:"high",B:[0.10,0.15,0.25]}],
   why:"다운스윙 후반 골반이 볼쪽(+)으로 돌진 · 깊이추정(측면 전용)"},
  {id:"ott",nm:"오버더톱 경향",tier:2,
-  use:[["VF059","손 깊이변화 P4→P6",">",0.20]],
+  checks:[{vf:"VF059",lab:"손 깊이변화 P4→P6",t:"high",B:[0.20,0.30,0.45]}],
   why:"전환에서 손이 볼쪽(+)으로 던져짐 · 깊이추정(측면 전용)"},
 ];
-function dohCrit(fd,u){ // 한 판정기준 평가 → {ok,hit,txt,f}
-  const [vf,lab,op,a,b]=u, f=fd[vf];
-  if(!f) return {ok:false,lab,vf,txt:"측정 없음"};
-  if(f.value==null) return {ok:false,lab,vf,f,txt:(f.error_flags||[]).includes("view_mismatch")?"이 촬영각도에선 측정 불가":"측정 실패"};
-  const v=f.value; let hit=false,thr="";
-  if(op===">"){hit=v>a;thr=`> ${a}`;} else if(op==="<"){hit=v<a;thr=`< ${a}`;}
-  else if(op==="abs>"){hit=Math.abs(v)>a;thr=`|값| > ${a}`;} else if(op==="abs<"){hit=Math.abs(v)<a;thr=`|값| < ${a}`;}
-  else if(op==="out"){hit=v<a||v>b;thr=`${a}~${b} 범위 밖`;}
-  return {ok:true,hit,lab,vf,f,v,thr};
+const LVL_NM=["정상","주의","과다","심함"], LVL_COL=["#3ecf8e","#ffd166","#ff9f43","#ff6b6b"];
+function bandText(t,B){ // B(변환공간) → 사람이 읽는 구간 문자열
+  const fin=x=>Math.abs(x)<INF/2;
+  const fmt=x=>{const a=Math.abs(x);return a<1?a.toFixed(2).replace(/0$/,""):String(Math.round(a*10)/10);};
+  if(t==="high"||t==="abs"){const p=t==="abs"?"|값| ":"";
+    let s=`정상 ≤${fmt(B[0])}`; if(fin(B[1]))s+=` · 주의 ~${fmt(B[1])}`; if(fin(B[2]))s+=` · 과다 ~${fmt(B[2])} · 심함 ≥${fmt(B[2])}`; else s+=` · 과다 ≥${fmt(B[1])}`;
+    return p+s;}
+  if(t==="low"){let s=`정상 ≥${fmt(B[0])}`; if(fin(B[1]))s+=` · 주의 ~${fmt(B[1])}`; if(fin(B[2]))s+=` · 과다 ~${fmt(B[2])} · 심함 ≤${fmt(B[2])}`; else s+=` · 과다 ≤${fmt(B[1])}`;
+    return s;}
+  if(t==="low_abs"){let s=`|값| ≥${fmt(B[0])} 정상`; if(fin(B[1]))s+=` · ~${fmt(B[1])} 주의`; if(fin(B[2]))s+=` · ~${fmt(B[2])} 과다 · 미만 심함`; else s+=` · 미만 주의`;
+    return s;}
+  return "";
+}
+function dohCheck(fd,c){ // 한 구간판정 → {ok, lvl 0~3, f, tv, ...}
+  const f=fd[c.vf];
+  if(!f) return {ok:false,c,txt:"측정 없음"};
+  if(f.value==null) return {ok:false,c,f,txt:(f.error_flags||[]).includes("view_mismatch")?"이 촬영각도에선 측정 불가":"측정 실패"};
+  const v=f.value;
+  const tv=c.t==="high"?v: c.t==="low"?-v: c.t==="abs"?Math.abs(v): -Math.abs(v); // low_abs
+  const lvl=tv<c.B[0]?0: tv<c.B[1]?1: tv<c.B[2]?2:3;
+  return {ok:true,c,f,v,lvl};
 }
 function runDohRules(fd){
   return DOH_RULES.map(r=>{
-    const crits=r.use.map(u=>dohCrit(fd,u));
-    const avail=crits.filter(c=>c.ok);
-    let verdict;               // hit / clear / na
-    if(!avail.length) verdict="na";
-    else verdict=(r.any?avail.some(c=>c.hit):avail.every(c=>c.hit))?"hit":"clear";
-    const conf=avail.length?Math.max(...avail.map(c=>(c.f.confidence||0))):0;
-    return {r,crits,verdict,low:verdict==="hit"&&conf<0.5,conf};
+    const checks=r.checks.map(c=>dohCheck(fd,c));
+    const avail=checks.filter(x=>x.ok);
+    const lvl=avail.length?Math.max(...avail.map(x=>x.lvl)):null;   // null=판정불가
+    const conf=avail.length?Math.max(...avail.map(x=>(x.f.confidence||0))):0;
+    return {r,checks,lvl,conf,low:lvl!=null&&lvl>=2&&conf<0.5};
   });
 }
 function dohProblemsHtml(fd){
   const res=runDohRules(fd);
-  const hits=res.filter(x=>x.verdict==="hit"), clears=res.filter(x=>x.verdict==="clear"), nas=res.filter(x=>x.verdict==="na");
-  let h=`<h2 style="color:#ff7eb6">스윙 문제 진단 <span class="badge" style="color:#ff7eb6">${hits.length}건 감지</span> <span class="badge" style="color:#8b97a5">정상 ${clears.length} · 판정불가 ${nas.length}</span></h2>`;
-  if(DOH_REVIEW_MODE) h+=`<div class="note" style="margin-bottom:8px">⚠️ <b>임계값은 초기 추정치(seed)</b> — 각 판정의 [근거]를 펼쳐 실제 스윙과 맞는지 검수하고, 어긋나면 임계값을 보정합니다. 정상 항목은 아래 <b>측정 상태판</b>에서 초록 타일로 확인하세요.</div>`;
+  const probs=res.filter(x=>x.lvl>=2), cauts=res.filter(x=>x.lvl===1),
+        clears=res.filter(x=>x.lvl===0), nas=res.filter(x=>x.lvl==null);
+  let h=`<h2 style="color:#ff7eb6">스윙 문제 진단 <span class="badge" style="color:#ff7eb6">문제 ${probs.length}</span> <span class="badge" style="color:#ffd166">주의 ${cauts.length}</span> <span class="badge" style="color:#8b97a5">정상 ${clears.length} · 판정불가 ${nas.length}</span></h2>`;
+  if(DOH_REVIEW_MODE) h+=`<div class="note" style="margin-bottom:8px">판정은 <b>4단계 구간</b>(정상🟢·주의🟡·과다🟠·심함🔴) — 조금 넘었는지 많이 넘었는지 구분합니다. ⚠️ 구간값은 seed(검수 중) — [근거]에서 값이 구간 어디쯤인지 보고, 어긋나면 구간을 보정합니다.</div>`;
   const row=x=>{
-    const {r,crits,verdict,low}=x;
-    const col=verdict==="hit"?(low?"#ffb648":"#ff6b6b"):verdict==="clear"?"#3ecf8e":"#6b7684";
-    const tag=verdict==="hit"?(low?"감지·저신뢰":"감지"):verdict==="clear"?"정상":"판정불가";
+    const {r,checks,lvl,low}=x;
+    const col=lvl==null?"#6b7684":LVL_COL[lvl];
+    const tag=lvl==null?"판정불가":LVL_NM[lvl]+(low?"·저신뢰":"");
     const t2=r.tier===2?` <span style="color:#ffb648;font-size:11px">[2군·깊이추정]</span>`:"";
     const sc=r.scale?` <span style="color:#ffb648;font-size:11px">[스케일 보정전]</span>`:"";
     let ev="";
@@ -899,25 +916,30 @@ function dohProblemsHtml(fd){
       ev=`<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:#8b97a5">근거 보기 (검수)</summary>
       <div style="font-size:12px;margin:6px 0 2px;color:#aab4c0">${r.why}</div>
       <table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:4px">
-      <tr style="color:#8b97a5"><td>측정</td><td>값</td><td>판정 기준</td><td>결과</td><td>신뢰도</td></tr>
-      ${crits.map(c=>{
-        if(!c.ok) return `<tr><td>${c.vf} ${c.lab}</td><td colspan="3" style="color:#6b7684">${c.txt}</td><td>—</td></tr>`;
-        const fl=(c.f.error_flags||[]).length?` <span style="color:#ffb648">${c.f.error_flags.join(",")}</span>`:"";
-        return `<tr><td>${c.vf} ${c.lab}</td><td><b>${c.v}</b></td><td>${c.thr}</td>
-          <td style="color:${c.hit?"#ff6b6b":"#3ecf8e"}">${c.hit?"기준 넘음":"기준 이내"}</td>
-          <td>${Math.round((c.f.confidence||0)*100)}%${fl}</td></tr>`;
+      <tr style="color:#8b97a5"><td>측정</td><td>값</td><td>구간(seed)</td><td>판정</td><td>신뢰도</td></tr>
+      ${checks.map(x2=>{
+        const c=x2.c, sd=c.side?` <span style="color:#8b97a5">[${c.side}]</span>`:"";
+        if(!x2.ok) return `<tr><td>${c.vf} ${c.lab}${sd}</td><td colspan="3" style="color:#6b7684">${x2.txt}</td><td>—</td></tr>`;
+        const fl=(x2.f.error_flags||[]).length?` <span style="color:#ffb648">${x2.f.error_flags.join(",")}</span>`:"";
+        return `<tr><td>${c.vf} ${c.lab}${sd}</td><td><b>${x2.v}</b></td><td style="color:#8b97a5">${bandText(c.t,c.B)}</td>
+          <td style="color:${LVL_COL[x2.lvl]};font-weight:700">${LVL_NM[x2.lvl]}</td>
+          <td>${Math.round((x2.f.confidence||0)*100)}%${fl}</td></tr>`;
       }).join("")}</table></details>`;
     }
     return `<div style="border:1px solid #2a323d;border-radius:8px;padding:8px 10px;margin-bottom:6px">
       <span style="color:${col};font-weight:700">● ${tag}</span> <b>${r.nm}</b>${t2}${sc}${ev}</div>`;
   };
-  // 세로 정렬: 1군(신뢰 높은 측정) 감지 먼저, 2군(깊이추정) 감지는 아래로
-  const h1=hits.filter(x=>x.r.tier!==2), h2=hits.filter(x=>x.r.tier===2);
-  h1.forEach(x=>h+=row(x));
-  if(h2.length) h+=`<div style="font-size:12px;color:#ffb648;margin:9px 0 5px;font-weight:700">아래는 2군 — 앞뒤 깊이 추정이라 오차가 큽니다 (참고용)</div>`;
-  h2.forEach(x=>h+=row(x));
-  if(!hits.length) h+=`<div class="note" style="border-color:#2f6b52;color:#3ecf8e">✓ 감지된 문제 없음 (측정 가능한 범위 내에서)</div>`;
-  // 정상 항목은 아래 '측정 상태판'에 초록 타일로 나오므로 여기선 생략(중복 제거).
+  // 세로: 심함→과다, 각 안에서 1군 먼저 → 2군(깊이) 아래
+  const ord=a=>a.sort((p,q)=>(q.lvl-p.lvl)||((p.r.tier===2)-(q.r.tier===2)));
+  const p1=ord(probs.filter(x=>x.r.tier!==2)), p2=ord(probs.filter(x=>x.r.tier===2));
+  p1.forEach(x=>h+=row(x));
+  if(p2.length) h+=`<div style="font-size:12px;color:#ffb648;margin:9px 0 5px;font-weight:700">아래는 2군 — 앞뒤 깊이 추정이라 오차가 큽니다 (참고용)</div>`;
+  p2.forEach(x=>h+=row(x));
+  if(!probs.length) h+=`<div class="note" style="border-color:#2f6b52;color:#3ecf8e">✓ 과다/심함 수준 문제 없음 (측정 가능한 범위 내에서)</div>`;
+  if(cauts.length){
+    h+=`<div style="font-size:12px;color:#ffd166;margin:9px 0 5px;font-weight:700">🟡 주의 (경미 — 기준을 조금 넘음)</div>`;
+    ord(cauts).forEach(x=>h+=row(x));
+  }
   if(DOH_REVIEW_MODE&&nas.length) h+=`<details style="margin-top:2px"><summary style="cursor:pointer;font-size:12.5px;color:#6b7684">판정불가 ${nas.length}건 보기 (검수)</summary><div style="margin-top:6px">${nas.map(row).join("")}</div></details>`;
   return h;
 }
@@ -967,17 +989,21 @@ const M_GRID=[
  ["무게중심","M803","무게중심 깊이",2,[]],
  ["시간","—","템포 (백:다운)",1,["VF111"]],
 ];
-const T_ST={bad:["▲","문제"],warn:["▲","문제·저신뢰"],ok:["✓","정상"],
+const T_ST={bad:["▲","문제"],warn:["⚠","주의"],ok:["✓","정상"],
             meas:["•","측정됨"],na:["—","측정 불가"],todo:["·","미구현"]};
 function mTileState(vfs,fd,res){
   const fs=vfs.map(v=>fd[v]).filter(Boolean);
   if(!fs.length) return {k:"todo"};
   const val=fs.filter(f=>f.value!=null);
   if(!val.length) return {k:"na",f:fs[0]};
-  const rules=res.filter(x=>x.r.use.some(u=>vfs.indexOf(u[0])>=0));
-  const hit=rules.filter(x=>x.verdict==="hit");
-  if(hit.length) return {k:hit.some(x=>!x.low)?"bad":"warn",f:val[0],why:hit.map(x=>x.r.nm).join(" · ")};
-  if(rules.some(x=>x.verdict==="clear")) return {k:"ok",f:val[0],why:"기준 이내"};
+  const rules=res.filter(x=>x.lvl!=null&&x.r.checks.some(c=>vfs.indexOf(c.vf)>=0));
+  if(rules.length){
+    const worst=Math.max(...rules.map(x=>x.lvl));
+    const wr=rules.filter(x=>x.lvl===worst);
+    if(worst>=2) return {k:"bad",f:val[0],why:wr.map(x=>`${x.r.nm}(${LVL_NM[x.lvl]})`).join(" · ")};
+    if(worst===1) return {k:"warn",f:val[0],why:wr.map(x=>x.r.nm).join(" · ")+" — 조금 넘음"};
+    return {k:"ok",f:val[0],why:"구간 내(정상)"};
+  }
   return {k:"meas",f:val[0],why:"측정값만 (판정 기준 없음)"};
 }
 function dohTilesHtml(fd){
@@ -995,22 +1021,25 @@ function dohTilesHtml(fd){
       <div class="tn">${nm}</div><div class="tv">${v}</div>
       <div class="ts">${ic} ${lab}</div></div>`};
   });
-  // 세로 정렬: 신뢰 높은 1군 문제 → 2군 문제 → 정상/측정됨 → 측정불가·미구현(하단 분리)
-  const prob=x=>x.k==="bad"||x.k==="warn", fine=x=>x.k==="ok"||x.k==="meas", none=x=>x.k==="na"||x.k==="todo";
-  const p1=items.filter(x=>prob(x)&&x.tier===1), p2=items.filter(x=>prob(x)&&x.tier===2);
+  // 세로 정렬: 문제(과다·심함, 1군→2군) → 주의 → 정상/측정됨 → 측정불가·미구현(하단 분리)
+  const fine=x=>x.k==="ok"||x.k==="meas", none=x=>x.k==="na"||x.k==="todo";
+  const p1=items.filter(x=>x.k==="bad"&&x.tier===1), p2=items.filter(x=>x.k==="bad"&&x.tier===2);
+  const cz=items.filter(x=>x.k==="warn");
   const okz=items.filter(fine), nz=items.filter(none);
   const grid=a=>`<div class="tgrid">`+a.map(x=>x.html).join("")+`</div>`;
   const sec=(t,c,d)=>`<div style="font-size:12.5px;font-weight:700;color:${c};margin:11px 0 5px">${t}`
     +(d?`<span style="font-weight:400;color:#6b7684;font-size:11.5px"> — ${d}</span>`:"")+`</div>`;
   let h=`<h2>측정 상태판 <span class="badge">42개 전체</span></h2>`;
   h+=`<div class="tlegend">
-    <span style="color:#ff6b6b"><b>▲ 문제</b> ${ct.bad+ct.warn}</span>
+    <span style="color:#ff6b6b"><b>▲ 문제</b> ${ct.bad}</span>
+    <span style="color:#ffd166"><b>⚠ 주의</b> ${ct.warn}</span>
     <span style="color:#3ecf8e"><b>✓ 정상</b> ${ct.ok}</span>
     <span style="color:#4ea1ff"><b>• 측정됨</b> ${ct.meas}</span>
     <span><b>— 측정 불가</b> ${ct.na}</span>
     <span><b>· 미구현</b> ${ct.todo}</span></div>`;
-  if(p1.length) h+=sec(`▲ 문제 — 1군 (신뢰 높음) ${p1.length}`,"#ff6b6b","단일 카메라로 잘 잡히는 측정")+grid(p1);
+  if(p1.length) h+=sec(`▲ 문제 — 1군 (신뢰 높음) ${p1.length}`,"#ff6b6b","과다·심함 수준")+grid(p1);
   if(p2.length) h+=sec(`▲ 문제 — 2군 (깊이추정·참고) ${p2.length}`,"#ffb648","앞뒤 깊이라 오차 큼 — 보수적으로 볼 것")+grid(p2);
+  if(cz.length) h+=sec(`⚠ 주의 ${cz.length}`,"#ffd166","기준을 조금 넘음(경미)")+grid(cz);
   if(okz.length) h+=sec(`✓ 정상 · 측정됨 ${okz.length}`,"#3ecf8e")+grid(okz);
   if(nz.length) h+=`<details style="margin-top:12px;border-top:1px solid #2a323d;padding-top:8px">
     <summary style="cursor:pointer;font-size:12.5px;color:#6b7684;font-weight:700">측정 안 된 항목 ${nz.length}개 보기 <span style="font-weight:400">(각도 불일치 ${ct.na} · 엔진 미구현 ${ct.todo})</span></summary>
