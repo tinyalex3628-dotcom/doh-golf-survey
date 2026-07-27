@@ -80,9 +80,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v29</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v30</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v29"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v30"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
   <br><b style="color:#4ea1ff">v27(안정화):</b> fetch 타임아웃 · 폴링 <b>일시실패 자동 재시도</b>(터널 흔들림 대비) · 업로드 거부/Job 만료 메시지 개선. Stage 0 5회 연속 검증용. (계약 <code>/v1/*·doh.vision.v1</code>는 동결 — 내부만 하드닝)</p>
 </header>
 
@@ -886,8 +886,8 @@ function runDohRules(fd){
 function dohProblemsHtml(fd){
   const res=runDohRules(fd);
   const hits=res.filter(x=>x.verdict==="hit"), clears=res.filter(x=>x.verdict==="clear"), nas=res.filter(x=>x.verdict==="na");
-  let h=`<h2 style="color:#ff7eb6">스윙 문제 진단 <span class="badge" style="color:#ff7eb6">${hits.length}건 감지 · ${clears.length} 정상 · ${nas.length} 판정불가</span></h2>`;
-  h+=`<div class="note" style="margin-bottom:8px">⚠️ <b>임계값은 초기 추정치(seed)</b> — 각 판정의 [근거]를 펼쳐 실제 스윙과 맞는지 검수하고, 어긋나면 임계값을 보정합니다. (검수모드 ${DOH_REVIEW_MODE?"ON":"OFF"})</div>`;
+  let h=`<h2 style="color:#ff7eb6">스윙 문제 진단 <span class="badge" style="color:#ff7eb6">${hits.length}건 감지</span> <span class="badge" style="color:#8b97a5">정상 ${clears.length} · 판정불가 ${nas.length}</span></h2>`;
+  if(DOH_REVIEW_MODE) h+=`<div class="note" style="margin-bottom:8px">⚠️ <b>임계값은 초기 추정치(seed)</b> — 각 판정의 [근거]를 펼쳐 실제 스윙과 맞는지 검수하고, 어긋나면 임계값을 보정합니다. 정상 항목은 아래 <b>측정 상태판</b>에서 초록 타일로 확인하세요.</div>`;
   const row=x=>{
     const {r,crits,verdict,low}=x;
     const col=verdict==="hit"?(low?"#ffb648":"#ff6b6b"):verdict==="clear"?"#3ecf8e":"#6b7684";
@@ -912,8 +912,9 @@ function dohProblemsHtml(fd){
       <span style="color:${col};font-weight:700">● ${tag}</span> <b>${r.nm}</b>${t2}${sc}${ev}</div>`;
   };
   hits.forEach(x=>h+=row(x));
-  if(DOH_REVIEW_MODE){ clears.forEach(x=>h+=row(x)); nas.forEach(x=>h+=row(x)); }
-  else if(!hits.length) h+=`<div class="note">감지된 문제 없음 (측정 가능 범위 내)</div>`;
+  if(!hits.length) h+=`<div class="note" style="border-color:#2f6b52;color:#3ecf8e">✓ 감지된 문제 없음 (측정 가능한 범위 내에서)</div>`;
+  // 정상 항목은 아래 '측정 상태판'에 초록 타일로 나오므로 여기선 생략(중복 제거).
+  if(DOH_REVIEW_MODE&&nas.length) h+=`<details style="margin-top:2px"><summary style="cursor:pointer;font-size:12.5px;color:#6b7684">판정불가 ${nas.length}건 보기 (검수)</summary><div style="margin-top:6px">${nas.map(row).join("")}</div></details>`;
   return h;
 }
 // ── 측정 커버리지 타일 42개 (1군 29 + 2군 12 + 템포) ────────────────────────
@@ -1018,8 +1019,10 @@ function renderV1(d){
    ["각도",q.view_match?"✅ 적합":"⚠️ 부적합"],["프레임",src.duration_frames||"?"]]
    .forEach(([l,v])=>{h+=`<span class="ev"><b style="color:#4ea1ff">${l}</b> ${v}</span>`;});
   h+=`</div>`;
-  // 스윙 문제 진단 (규칙엔진 · v28) — 측정값+임계값 판정, 검수모드면 근거 노출
+  // 스윙 문제 진단 (규칙엔진) — 감지된 것만. 정상은 아래 상태판 초록타일로.
   h+=dohProblemsHtml(fd);
+  // 측정 상태판 42타일 — 문제 바로 아래에서 전체 상태를 한눈에
+  h+=dohTilesHtml(fd);
   // 스윙 P구간 (P1~P10)
   h+=`<h2>스윙 P구간 (P1~P10, 3D 자동검출)</h2><div style="display:flex;flex-wrap:wrap;gap:5px">`;
   V1PORD.forEach(p=>{
@@ -1041,8 +1044,6 @@ function renderV1(d){
     h+=`<div style="font-size:13px;font-weight:700;margin:8px 0 6px">${g}</div>`
       +`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:4px">`
       +byg[g].map(v1card).join("")+`</div>`; });
-  // 측정 상태판 42타일 (페이지 하단) — 전체 커버리지를 한눈에
-  h+=dohTilesHtml(fd);
   const warns=(q.warnings||[]).filter(w=>w.indexOf("joints=")!==0&&w.indexOf("object_engine")!==0);
   if(warns.length) h+=`<div class="note">참고: ${warns.join(" · ")}</div>`;
   h+=`<div class="note" style="border-top:1px solid #2a323d;margin-top:12px;padding-top:8px">아래 <b>①~⑤</b>는 브라우저(MediaPipe) 근사 분석 — 영상 오버레이·수동보정용 참고. 정밀값은 위 3D 결과를 보세요.</div>`;
