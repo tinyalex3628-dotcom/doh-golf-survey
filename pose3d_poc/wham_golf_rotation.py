@@ -300,6 +300,41 @@ def emit_vision_v1(sh_turn, hp_turn, xfactor, p1, p4, p7, T, skeleton,
 
     SH = ["LEAD_SHOULDER", "TRAIL_SHOULDER"]
     HP = ["LEAD_HIP", "TRAIL_HIP"]
+
+    # ── A작업(2026-07-25): 회전은 전 프레임 시계열인데 P4만 읽고 있었다.
+    # 검출된 다른 P시점(P3/P5/P7/P10)도 방출 → KB 인과그래프의 P3·P5·P7·P10 노드가 살아남.
+    # P2/P6/P8은 샤프트 평행이라 클럽검출 필요 → 여전히 미검출(정직하게 생략).
+    pev = p_events or {}
+    def pf(p):                      # 검출된 P시점 프레임 (없으면 None)
+        v = pev.get(p)
+        return int(v[0]) if v and v[0] is not None else None
+    def itp(p):                     # 보간 이벤트면 flag
+        v = pev.get(p)
+        return ["interpolated_event"] if (v and v[1] == "interpolated") else []
+    phase_feats = []
+    def addp(fid, name, fr, arr, phase, op, prims, dc, lms, flags=None):
+        if fr is None:
+            return
+        f = feat(fid, name, val(fr, arr), phase, op, prims, c - dc, lms)
+        fl = list(flags or [])
+        if fl:
+            f["error_flags"] = fl
+            f["confidence"] = round(max(0.1, f["confidence"] - 0.1), 2)
+        phase_feats.append(f)
+    p3, p5, p10 = pf("P3"), pf("P5"), pf("P10")
+    addp("VF014", "Shoulder Turn @P3", p3, sh_turn, "P3", "OP006", ["SHOULDER_LINE_TRACK"], 0.05, SH + HP, itp("P3"))
+    addp("VF017", "Hip Turn @P3", p3, hp_turn, "P3", "OP006", ["HIP_LINE_TRACK"], 0.05, HP, itp("P3"))
+    addp("VF019", "X-Factor @P3", p3, xfactor, "P3", "OP002",
+         ["SHOULDER_LINE", "HIP_LINE", "GROUND_NORMAL"], 0.09, SH + HP, itp("P3"))
+    addp("VF047", "Shoulder-Hip Separation @P5", p5, xfactor, "P5", "OP002",
+         ["SHOULDER_LINE", "HIP_LINE", "GROUND_NORMAL"], 0.09, SH + HP, itp("P5"))
+    # 임팩트 흉곽 회전 — KB의 Thorax Open/Closed (P7) 판정 재료 (골반쪽은 VF075가 이미 담당)
+    addp("VF151", "Thorax Turn @P7 (+ = open/target-side)", int(p7), sh_turn, "P7", "OP006",
+         ["SHOULDER_LINE_TRACK"], 0.05, SH + HP)
+    addp("VF103", "Full Rotation @Finish", p10, sh_turn, "P1->P10", "OP006",
+         ["SHOULDER_LINE_TRACK"], 0.08, SH + HP, itp("P10"))
+    addp("VF104", "Hip Rotation @Finish", p10, hp_turn, "P1->P10", "OP006",
+         ["HIP_LINE_TRACK"], 0.08, HP, itp("P10"))
     return {
         "schema": "doh.vision.v1",
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -328,7 +363,7 @@ def emit_vision_v1(sh_turn, hp_turn, xfactor, p1, p4, p7, T, skeleton,
                  ["SHOULDER_LINE", "HIP_LINE", "GROUND_NORMAL"], c - 0.04, SH + HP),
             feat("VF075", "Hip Clear Amount", val(p7, hp_turn), "P1->P7", "OP006",
                  ["HIP_LINE_TRACK"], c - 0.05, HP),
-        ],
+        ] + phase_feats,
         "quality": {
             "overall_confidence": round(c, 2),
             "mean_visibility": None,

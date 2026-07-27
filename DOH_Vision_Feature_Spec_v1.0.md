@@ -219,6 +219,21 @@
 
 ---
 
+## 7b. Phase 확장 (v1.1 append, 2026-07-25) — 회전 시계열의 미사용 시점
+
+> 회전(SHOULDER/HIP_LINE_TRACK)은 전 프레임 시계열인데 P4만 소비하고 있었다.
+> 검출되는 다른 P시점을 append. **P2/P6/P8은 샤프트 평행이라 클럽검출 필요 → 계속 미검출.**
+
+| VF | name | OP | Prim | @P | CS | unit | view | →Node |
+|---|---|---|---|---|---|---|---|---|
+| VF151 | Thorax Turn @P7 (+=open) | OP006 | SHOULDER_LINE_TRACK | P7 | BODY | deg | F/D | MOT-018, OBS-016 |
+
+- VF014/017/019(@P3) · VF047(@P5) · VF103/104(@P10)은 §2·§3·§6에 이미 정의됨 — 방출만 추가.
+- **VF151 신설 사유:** 임팩트 흉곽 회전량을 담는 ID가 §5에 없었음(골반은 VF075가 담당).
+  KB의 `Thorax Open/Closed (P7)` 판정 재료. append-only 규칙 준수(기존 ID 의미 불변).
+
+---
+
 ## 8. Structure-inferred (약신뢰, 참고용) — 구조 추정 [10]
 
 > ⚠️ STR-* Node는 원래 **신체검사(가동성/근력) 영역**이라 단일 스윙 영상으로 직접
