@@ -348,9 +348,11 @@ def compute_metrics(J, p1, p4, p7, T, fps=None, hand="right", view="unknown", sk
         hand1 = tuple((J_(p1, L_WR)[i] + J_(p1, T_WR)[i]) / 2 for i in range(3))
         if _dot(_sub(hand1, J_(p1, "pelvis")), d_axis) < 0:
             d_axis = (-d_axis[0], -d_axis[1], -d_axis[2])
-        # 계약 v1 flag 폐집합 준수: 깊이추정 = depth_unreliable (upflags와 중복 제거)
-        dflags = sorted(set(upflags) | {"depth_unreliable", "interpolated_event"})
-        cdep = round(max(0.15, 0.45 * upq), 2)
+        # 검수 3차(2026-07-24): 측면(DTL)에서 '볼쪽' 축은 화면 안(in-plane) — tush line의
+        # 3D판이라 깊이축이 아님(깊이축=타깃선). 저신뢰 강등은 과잉보수였음 → 승격.
+        # 남는 주의점은 P5/P6 보간뿐 → interpolated_event만 유지.
+        dflags = sorted(set(upflags) | {"interpolated_event"})
+        cdep = round(max(0.2, 0.62 * max(0.3, upq)), 2)
         # VF067 얼리 익스텐션: 다운스윙 후반 골반이 볼쪽(+)으로 나온 양 (P5는 P4·P7 중점 보간)
         p5i = (int(p4) + int(p7)) // 2
         add("VF067", "Pelvis toward ball P5→P7 (stance-normalized, + = early extension)",
@@ -364,5 +366,12 @@ def compute_metrics(J, p1, p4, p7, T, fps=None, hand="right", view="unknown", sk
         add("VF059", "Hand depth change P4→P6 (stance-normalized, + = toward ball/OTT)",
             _dot(_sub(hand6, hand4), d_axis) / width, "ratio", "P4->P6", "GROUND",
             "OP007", ["HAND_MID_TRACK"], ["LEAD_WRIST", "TRAIL_WRIST"], cdep, dflags, SIDE)
+        # VF121 골반 상승 P5→P7 (M106) — "벨트버클이 위로 뜬다" = 얼리익스텐션의 수직 성분.
+        # 수직축은 두 뷰 모두 화면 안 → 정면에서도 유효(정면은 볼쪽 돌진을 못 보므로 이걸로 부분 포착).
+        add("VF121", "Pelvis lift P5→P7 (leg-normalized, + = standing up / belt buckle rises)",
+            _dot(_sub(J_(p7, "pelvis"), J_(p5i, "pelvis")), up)
+            / (_norm(_sub(J_(p1, "pelvis"), J_(p1, L_AN))) + 1e-9),
+            "ratio", "P5->P7", "GROUND",
+            "OP007", ["PELVIS_TRACK"], ["LEAD_HIP", "TRAIL_HIP"], cpos, upflags, BOTH)
 
     return feats

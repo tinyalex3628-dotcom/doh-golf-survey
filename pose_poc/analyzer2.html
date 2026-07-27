@@ -80,9 +80,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v33</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v34</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v33"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v34"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
   <br><b style="color:#4ea1ff">v27(안정화):</b> fetch 타임아웃 · 폴링 <b>일시실패 자동 재시도</b>(터널 흔들림 대비) · 업로드 거부/Job 만료 메시지 개선. Stage 0 5회 연속 검증용. (계약 <code>/v1/*·doh.vision.v1</code>는 동결 — 내부만 하드닝)</p>
 </header>
 
@@ -861,9 +861,10 @@ const DOH_RULES=[
   checks:[{vf:"VF111",lab:"템포 비율(백:다운)",t:"high",B:[3.6,4.2,5.0],side:"느림"},
           {vf:"VF111",lab:"템포 비율(백:다운)",t:"low",B:[-2.2,-1.8,-1.4],side:"빠름"}],
   why:"백:다운 시간비. 통상 2.2~3.6(3:1 근방)이 정상권"},
- {id:"early_ext",nm:"얼리 익스텐션",tier:2,
-  checks:[{vf:"VF067",lab:"골반 볼쪽 이동 P5→P7",t:"high",B:[0.10,0.15,0.25]}],
-  why:"다운스윙 후반 골반이 볼쪽(+)으로 돌진 · 깊이추정(측면 전용)"},
+ {id:"early_ext",nm:"얼리 익스텐션",tier:1,
+  checks:[{vf:"VF067",lab:"골반 볼쪽 이동 P5→P7 (tush line 이탈)",t:"high",B:[0.10,0.15,0.25],side:"돌진·측면"},
+          {vf:"VF121",lab:"골반 상승 P5→P7 (벨트버클 뜸)",t:"high",B:[0.06,0.10,0.16],side:"상승·양쪽뷰"}],
+  why:"다운스윙 후반 골반이 볼쪽으로 돌진(측면=tush line 이탈, 화면 안 축이라 측정 가능) + 위로 상승(벨트버클 뜸, 수직이라 정면에서도 보임)"},
  {id:"ott",nm:"오버더톱 경향",tier:2,
   checks:[{vf:"VF059",lab:"손 깊이변화 P4→P6",t:"high",B:[0.20,0.30,0.45]}],
   why:"전환에서 손이 볼쪽(+)으로 던져짐 · 깊이추정(측면 전용)"},
@@ -958,7 +959,7 @@ const M_GRID=[
  ["골반","M101","골반 회전",1,["VF018","VF075"]],
  ["골반","M103","골반 좌우기울기",1,[]],
  ["골반","M104","골반 좌우이동",1,["VF034","VF085","VF091"]],
- ["골반","M106","골반 높이",1,[]],
+ ["골반","M106","골반 높이(상승)",1,["VF121"]],
  ["골반","M102","골반 앞뒤기울기",2,[]],
  ["골반","M105","골반 앞뒤이동(볼쪽)",2,["VF067"]],
  ["몸통","M201","흉곽(어깨) 회전",1,["VF015","VF020"]],
