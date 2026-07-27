@@ -60,13 +60,29 @@
   .pcell.mid{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
   .pcell .pk{font-size:11px;color:var(--sub);margin-bottom:3px;} .pcell .pv{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.15;}
   .pcell .pd{font-size:11px;color:#3ecf8e;margin-top:2px;min-height:14px;}
+  /* 측정 커버리지 타일 (42) — 상태는 색+아이콘+글자 3중표기(색만으로 구분 금지) */
+  .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:7px;margin-bottom:4px;}
+  .tile{border:1px solid #2a323d;border-radius:9px;padding:8px 9px;background:#141a21;}
+  .tile .tc{font-size:10px;color:#6b7684;font-weight:700;letter-spacing:.04em;}
+  .tile .tn{font-size:11.5px;color:#c3ccd6;line-height:1.32;margin:2px 0 5px;min-height:30px;}
+  .tile .tv{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.2;}
+  .tile .ts{font-size:10.5px;margin-top:3px;font-weight:700;}
+  .tile .t2{font-size:9.5px;color:#ffb648;border:1px solid #4a3a1c;border-radius:4px;padding:0 3px;margin-left:3px;}
+  .tile.bad{border-color:#ff6b6b;background:#1d1416;} .tile.bad .ts{color:#ff6b6b;}
+  .tile.warn{border-color:#ffb648;background:#1d1913;} .tile.warn .ts{color:#ffb648;}
+  .tile.ok{border-color:#2f6b52;background:#111b17;} .tile.ok .ts{color:#3ecf8e;}
+  .tile.meas{border-color:#2f4a6b;} .tile.meas .ts{color:#4ea1ff;}
+  .tile.na{opacity:.6;} .tile.na .ts{color:#8b97a5;}
+  .tile.todo{border-style:dashed;opacity:.4;} .tile.todo .ts{color:#8b97a5;}
+  .tlegend{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--sub);margin:6px 0 8px;}
+  .tlegend span b{font-weight:700;}
 </style>
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v28</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v29</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v28"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v29"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
   <br><b style="color:#4ea1ff">v27(안정화):</b> fetch 타임아웃 · 폴링 <b>일시실패 자동 재시도</b>(터널 흔들림 대비) · 업로드 거부/Job 만료 메시지 개선. Stage 0 5회 연속 검증용. (계약 <code>/v1/*·doh.vision.v1</code>는 동결 — 내부만 하드닝)</p>
 </header>
 
@@ -900,6 +916,95 @@ function dohProblemsHtml(fd){
   else if(!hits.length) h+=`<div class="note">감지된 문제 없음 (측정 가능 범위 내)</div>`;
   return h;
 }
+// ── 측정 커버리지 타일 42개 (1군 29 + 2군 12 + 템포) ────────────────────────
+// [부위, M코드, 이름, 군(1|2), 이 M을 담는 VF들]  — Measurement Catalog v1.0 기준
+const M_GRID=[
+ ["골반","M101","골반 회전",1,["VF018","VF075"]],
+ ["골반","M103","골반 좌우기울기",1,[]],
+ ["골반","M104","골반 좌우이동",1,["VF034","VF085","VF091"]],
+ ["골반","M106","골반 높이",1,[]],
+ ["골반","M102","골반 앞뒤기울기",2,[]],
+ ["골반","M105","골반 앞뒤이동(볼쪽)",2,["VF067"]],
+ ["몸통","M201","흉곽(어깨) 회전",1,["VF015","VF020"]],
+ ["몸통","M202","척추 앞숙임",1,["VF002","VF038","VF076"]],
+ ["몸통","M203","척추 좌우기울기",1,["VF001","VF036"]],
+ ["몸통","M204","상체중심 좌우이동",1,[]],
+ ["몸통","M205","상체중심 높이",1,[]],
+ ["몸통","M206","상체 깊이",2,[]],
+ ["머리","M301","머리 좌우이동",1,["VF031"]],
+ ["머리","M302","머리 상하이동",1,["VF033"]],
+ ["머리","M303","머리 깊이",2,[]],
+ ["어깨","M401","양 어깨 높이차",1,[]],
+ ["어깨","M402","어깨선 기울기",1,["VF022"]],
+ ["어깨","M403","리드 어깨 들림",2,[]],
+ ["어깨","M404","트레일 어깨 들림",2,[]],
+ ["팔","M501","리드 팔꿈치 굽힘",1,["VF011","VF087"]],
+ ["팔","M502","트레일 팔꿈치 굽힘",1,["VF012","VF027"]],
+ ["팔","M504","리드팔 플레인 각",1,[]],
+ ["팔","M506","트레일 팔꿈치 높이",1,["VF026"]],
+ ["팔","M507","리드팔–몸통 간격",1,[]],
+ ["팔","M508","트레일팔–몸통 간격",1,[]],
+ ["팔","M505","트레일 팔꿈치 깊이",2,[]],
+ ["손","M604","손 높이",1,["VF123"]],
+ ["손","M606","손 좌우(볼 대비)",1,[]],
+ ["손","M605","손 깊이",2,["VF059"]],
+ ["손","M607","손–몸통 거리",2,[]],
+ ["하체","M701","리드 고관절 굽힘",1,[]],
+ ["하체","M702","트레일 고관절 굽힘",1,[]],
+ ["하체","M705","리드 무릎 굽힘",1,["VF039","VF088"]],
+ ["하체","M706","트레일 무릎 굽힘",1,["VF040"]],
+ ["하체","M709","리드 무릎 좌우이동",1,[]],
+ ["하체","M710","트레일 무릎 좌우이동",1,[]],
+ ["하체","M707","리드 무릎 안팎",2,[]],
+ ["하체","M708","트레일 무릎 안팎",2,[]],
+ ["무게중심","M801","무게중심 좌우",1,[]],
+ ["무게중심","M802","무게중심 상하",1,[]],
+ ["무게중심","M803","무게중심 깊이",2,[]],
+ ["시간","—","템포 (백:다운)",1,["VF111"]],
+];
+const T_ST={bad:["▲","문제"],warn:["▲","문제·저신뢰"],ok:["✓","정상"],
+            meas:["•","측정됨"],na:["—","측정 불가"],todo:["·","미구현"]};
+function mTileState(vfs,fd,res){
+  const fs=vfs.map(v=>fd[v]).filter(Boolean);
+  if(!fs.length) return {k:"todo"};
+  const val=fs.filter(f=>f.value!=null);
+  if(!val.length) return {k:"na",f:fs[0]};
+  const rules=res.filter(x=>x.r.use.some(u=>vfs.indexOf(u[0])>=0));
+  const hit=rules.filter(x=>x.verdict==="hit");
+  if(hit.length) return {k:hit.some(x=>!x.low)?"bad":"warn",f:val[0],why:hit.map(x=>x.r.nm).join(" · ")};
+  if(rules.some(x=>x.verdict==="clear")) return {k:"ok",f:val[0],why:"기준 이내"};
+  return {k:"meas",f:val[0],why:"측정값만 (판정 기준 없음)"};
+}
+function dohTilesHtml(fd){
+  const res=runDohRules(fd), ct={bad:0,warn:0,ok:0,meas:0,na:0,todo:0};
+  const rows=M_GRID.map(([reg,m,nm,tier,vfs])=>{
+    const st=mTileState(vfs,fd,res); ct[st.k]++;
+    const [ic,lab]=T_ST[st.k];
+    let v="—";
+    if(st.f&&st.f.value!=null){ const n=v1num(st.f); v=n.v; }
+    else if(st.k==="na") v='<span style="font-size:11px;color:#8b97a5">각도 불일치</span>';
+    else if(st.k==="todo") v='<span style="font-size:11px;color:#8b97a5">준비 중</span>';
+    const tip=(st.why?st.why+" · ":"")+(st.f?`신뢰도 ${Math.round((st.f.confidence||0)*100)}%`:"엔진 미구현");
+    return {reg,html:`<div class="tile ${st.k}" title="${m} ${nm} — ${tip}">
+      <div class="tc">${m}${tier===2?'<span class="t2">2군</span>':''}</div>
+      <div class="tn">${nm}</div><div class="tv">${v}</div>
+      <div class="ts">${ic} ${lab}</div></div>`};
+  });
+  let h=`<h2>측정 상태판 <span class="badge">42개 전체</span></h2>`;
+  h+=`<div class="tlegend">
+    <span style="color:#ff6b6b"><b>▲ 문제</b> ${ct.bad+ct.warn}</span>
+    <span style="color:#3ecf8e"><b>✓ 정상</b> ${ct.ok}</span>
+    <span style="color:#4ea1ff"><b>• 측정됨</b> ${ct.meas}</span>
+    <span><b>— 측정 불가</b> ${ct.na}</span>
+    <span><b>· 미구현</b> ${ct.todo}</span></div>`;
+  const regs=[]; rows.forEach(r=>{ if(regs.indexOf(r.reg)<0) regs.push(r.reg); });
+  regs.forEach(reg=>{
+    h+=`<div style="font-size:12.5px;font-weight:700;color:#8b97a5;margin:9px 0 5px">${reg}</div>`
+      +`<div class="tgrid">`+rows.filter(r=>r.reg===reg).map(r=>r.html).join("")+`</div>`;
+  });
+  h+=`<div class="note">타일에 마우스를 올리면 판정 근거·신뢰도가 뜹니다. <b>측정됨</b>=값은 나왔지만 아직 정상/문제를 가를 기준(임계값)이 없는 항목 · <b>미구현</b>=엔진에 아직 없는 측정(추가 예정).</div>`;
+  return h;
+}
 function renderV1(d){
   const fd={}; (d.features||[]).forEach(f=>fd[f.feature_id]=f);
   const ev={},evm={}; (d.swing_events||[]).forEach(e=>{ev[e.p]=e.frame;evm[e.p]=e.method;});
@@ -936,6 +1041,8 @@ function renderV1(d){
     h+=`<div style="font-size:13px;font-weight:700;margin:8px 0 6px">${g}</div>`
       +`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:4px">`
       +byg[g].map(v1card).join("")+`</div>`; });
+  // 측정 상태판 42타일 (페이지 하단) — 전체 커버리지를 한눈에
+  h+=dohTilesHtml(fd);
   const warns=(q.warnings||[]).filter(w=>w.indexOf("joints=")!==0&&w.indexOf("object_engine")!==0);
   if(warns.length) h+=`<div class="note">참고: ${warns.join(" · ")}</div>`;
   h+=`<div class="note" style="border-top:1px solid #2a323d;margin-top:12px;padding-top:8px">아래 <b>①~⑤</b>는 브라우저(MediaPipe) 근사 분석 — 영상 오버레이·수동보정용 참고. 정밀값은 위 3D 결과를 보세요.</div>`;
