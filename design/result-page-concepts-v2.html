@@ -1,0 +1,931 @@
+<title>결과지 시안 v2 — 세로 1축 구조</title>
+<style>
+/* ============================================================
+   DECK — 모바일 우선. 단일 컬럼, 가로 스크롤 0.
+   ============================================================ */
+:root{
+  --wall:#E9E5DB;
+  --panel:#F7F5F0;
+  --ink:#1B1916;
+  --ink-2:#5E594F;
+  --ink-3:#948D7F;
+  --line:#D8D2C4;
+  --forest:#1E3A2B;
+  --sage:#4C7A5E;
+  --clay:#A8552F;
+  --tag-fg:#F7F5F0;
+  --shadow:0 18px 40px -24px rgba(40,34,22,.5);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --wall:#17160F;--panel:#201E17;--ink:#EFEBE0;--ink-2:#A9A294;--ink-3:#7C7566;
+    --line:#343126;--forest:#8FC0A2;--sage:#8FC0A2;--clay:#D89468;--tag-fg:#17160F;
+    --shadow:0 18px 46px -22px rgba(0,0,0,.85);
+  }
+}
+:root[data-theme="dark"]{
+  --wall:#17160F;--panel:#201E17;--ink:#EFEBE0;--ink-2:#A9A294;--ink-3:#7C7566;
+  --line:#343126;--forest:#8FC0A2;--sage:#8FC0A2;--clay:#D89468;--tag-fg:#17160F;
+  --shadow:0 18px 46px -22px rgba(0,0,0,.85);
+}
+:root[data-theme="light"]{
+  --wall:#E9E5DB;--panel:#F7F5F0;--ink:#1B1916;--ink-2:#5E594F;--ink-3:#948D7F;
+  --line:#D8D2C4;--forest:#1E3A2B;--sage:#4C7A5E;--clay:#A8552F;--tag-fg:#F7F5F0;
+  --shadow:0 18px 40px -24px rgba(40,34,22,.5);
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;background:var(--wall);color:var(--ink);
+  font-family:"Pretendard Variable","Pretendard",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;line-height:1.65;
+  overflow-x:hidden;
+}
+.wrap{max-width:520px;margin:0 auto;padding:40px 18px 80px;}
+
+.eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin:0;}
+h1{font-size:clamp(26px,7vw,34px);font-weight:800;letter-spacing:-.035em;line-height:1.24;margin:10px 0 0;text-wrap:balance;}
+.lede{margin:16px 0 0;font-size:15px;color:var(--ink-2);line-height:1.78;}
+.lede strong{color:var(--ink);font-weight:700;}
+
+.callout{
+  margin-top:22px;background:var(--panel);border:1px solid var(--line);
+  border-radius:13px;padding:16px 17px;
+}
+.callout p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.7;}
+.callout p + p{margin-top:9px;}
+.callout b{color:var(--ink);font-weight:700;}
+
+.sec{margin-top:56px;}
+.sec-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.tag{
+  font-size:10.5px;font-weight:800;letter-spacing:.08em;
+  background:var(--forest);color:var(--tag-fg);padding:4px 9px;border-radius:5px;
+}
+.tag.alt{background:transparent;color:var(--sage);border:1px solid var(--line);}
+.sec-title{font-size:19px;font-weight:800;letter-spacing:-.03em;}
+.sec-desc{font-size:14px;color:var(--ink-2);margin-top:11px;line-height:1.75;}
+.sec-desc b{color:var(--ink);font-weight:700;}
+
+.note{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 17px 18px;margin-top:16px;}
+.note dl{margin:0;display:grid;gap:13px;}
+.note dt{font-size:10px;font-weight:800;letter-spacing:.13em;color:var(--ink-3);margin-bottom:5px;}
+.note dd{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.7;}
+.note dd b{color:var(--ink);font-weight:700;}
+.note .risk dd{color:var(--clay);}
+
+.pick{margin-top:26px;border:1px solid var(--line);border-radius:13px;padding:18px 18px 20px;}
+.pick h3{margin:0;font-size:16px;font-weight:800;letter-spacing:-.02em;}
+.pick ul{margin:13px 0 0;padding:0;list-style:none;display:grid;gap:11px;}
+.pick li{font-size:13.5px;color:var(--ink-2);line-height:1.7;padding-left:15px;position:relative;}
+.pick li::before{content:"";position:absolute;left:0;top:9px;width:5px;height:5px;border-radius:50%;background:var(--sage);}
+.pick li b{color:var(--ink);font-weight:700;}
+
+.foot{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3);line-height:1.7;}
+
+/* ============================================================
+   PHONE — 높이 고정 없음. 화면 전체를 펼쳐서 보여준다.
+   (데크 안에서 중첩 스크롤이 생기지 않도록)
+   ============================================================ */
+.phone{
+  margin:22px 0 0;border-radius:26px;overflow:hidden;
+  box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.08);
+}
+.m{
+  --paper:#EFEBE3;--card:#FDFCF9;--mink:#1C1A17;--mink2:#6E6960;--mink3:#A29B8E;
+  --mline:#E3DED2;--mforest:#1E3A2B;--stage:#191815;--msage:#4C7A5E;--mclay:#B4643C;--mgold:#B99247;
+  background:var(--paper);color:var(--mink);font-size:14px;
+  display:flex;flex-direction:column;position:relative;
+}
+.m *{box-sizing:border-box;}
+
+.m-status{display:flex;justify-content:space-between;align-items:center;padding:12px 18px 4px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;}
+.m-batt{width:22px;height:11px;border:1.4px solid var(--mink);border-radius:3px;position:relative;opacity:.7;}
+.m-batt::after{content:"";position:absolute;inset:1.5px;right:7px;background:var(--mink);border-radius:1px;}
+
+.m-nav{display:flex;align-items:center;padding:8px 16px 10px;}
+.m-back{width:26px;display:grid;place-items:center;color:var(--mink);}
+.m-navtitle{flex:1;text-align:center;font-size:14px;font-weight:800;letter-spacing:-.02em;margin-right:26px;}
+
+.m-pad{padding:0 16px;}
+.m-foot{padding:14px 16px 22px;}
+.m-cta{
+  width:100%;border:0;border-radius:14px;padding:16px;background:var(--mforest);color:#F3F0E7;
+  font-size:15px;font-weight:800;letter-spacing:-.02em;font-family:inherit;cursor:pointer;display:block;
+}
+.m-cta-ghost{
+  width:100%;border:1.5px solid var(--mline);border-radius:14px;padding:14px;background:var(--card);
+  color:var(--mink);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:8px;
+}
+.m-stack{display:flex;flex-direction:column;gap:12px;}
+.m-meta{font-size:11.5px;font-weight:700;color:var(--mink3);letter-spacing:-.01em;}
+.m-h1{font-size:23px;font-weight:800;letter-spacing:-.035em;line-height:1.34;margin:8px 0 0;text-wrap:balance;}
+.m-card{background:var(--card);border:1px solid var(--mline);border-radius:15px;padding:15px 16px;}
+.m-label{font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--mink3);}
+.m-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.m-num{font-variant-numeric:tabular-nums;}
+.m-divider{height:1px;background:var(--mline);margin:4px 0;}
+
+/* 영상 스테이지 */
+.m-stage{
+  position:relative;overflow:hidden;border-radius:14px;
+  background:radial-gradient(120% 90% at 62% 34%,#34322B 0%,#201F1B 46%,#131210 100%);
+  aspect-ratio:16/10;
+}
+.m-stage.sq{aspect-ratio:4/3;}
+.m-stage.flat{border-radius:0;}
+.m-golfer{position:absolute;left:50%;bottom:13%;transform:translateX(-50%);width:30%;opacity:.5;}
+.m-stage-tag{
+  position:absolute;top:10px;left:10px;background:rgba(15,14,12,.72);color:#EDE8DC;
+  font-size:10px;font-weight:700;padding:5px 8px;border-radius:6px;
+}
+.m-stage-tag.warn{background:rgba(180,100,60,.9);}
+.m-play{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:48px;height:48px;border-radius:50%;background:rgba(247,244,236,.92);
+  display:grid;place-items:center;color:#1C1A17;
+}
+.m-play.sm{width:36px;height:36px;}
+.m-scrub{
+  position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:9px;
+  padding:9px 11px;color:#DDD7C9;font-size:10px;font-weight:700;
+  background:linear-gradient(to top,rgba(10,9,8,.82),transparent);font-variant-numeric:tabular-nums;
+}
+.m-track{flex:1;height:3px;border-radius:99px;background:rgba(237,232,220,.28);position:relative;}
+.m-track i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:#EDE8DC;}
+.m-track .mark{position:absolute;top:-3px;width:9px;height:9px;border-radius:50%;background:var(--mclay);border:2px solid #191815;}
+
+.m-avatar{
+  width:32px;height:32px;border-radius:10px;flex:none;background:var(--stage);color:#E9E3D4;
+  display:grid;place-items:center;font-size:10.5px;font-weight:800;letter-spacing:-.02em;
+}
+
+/* ============================================================
+   A-1 (점수 표기 제거 확정안)
+   ============================================================ */
+.a1-line{border-left:2.5px solid var(--mforest);padding-left:12px;}
+.a1-line.keep{border-left-color:var(--mline);}
+.a1-line .k{font-size:11.5px;font-weight:800;color:var(--mink2);}
+.a1-line.keep .k{color:var(--mink3);}
+.a1-line .v{font-size:14px;font-weight:600;line-height:1.62;margin-top:4px;letter-spacing:-.02em;}
+.a1-loop{
+  display:flex;align-items:center;gap:7px;background:#EAE5D9;border-radius:10px;padding:9px 12px;
+  font-size:12.5px;font-weight:700;color:var(--mink2);letter-spacing:-.02em;
+}
+.a1-upsell{background:#EAE6DB;border:1px solid var(--mline);border-radius:14px;padding:14px;}
+.a1-upsell p{margin:0;font-size:12.5px;color:var(--mink2);line-height:1.62;letter-spacing:-.02em;}
+.a1-upsell .go{display:flex;align-items:center;gap:9px;margin-top:12px;padding-top:12px;border-top:1px solid #DDD7C8;}
+.a1-badge{font-size:9px;font-weight:800;background:var(--mgold);color:#241D0C;padding:3px 6px;border-radius:4px;}
+.reveal{animation:rise .5s cubic-bezier(.2,.7,.3,1) both;}
+@keyframes rise{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion:reduce){.reveal{animation:none;}}
+
+/* ============================================================
+   B3-a · 스티키 플레이어 + 세로 아코디언
+   ============================================================ */
+.ba-mini{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--stage);color:#E9E3D4;
+}
+.ba-mini .thumb{width:42px;height:26px;border-radius:5px;flex:none;background:linear-gradient(140deg,#3A382F,#17160F);}
+.ba-mini .tx{flex:1;min-width:0;}
+.ba-mini .tt{font-size:11.5px;font-weight:800;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ba-mini .ts{font-size:10px;font-weight:700;opacity:.6;font-variant-numeric:tabular-nums;}
+.ba-stickynote{
+  display:flex;align-items:center;gap:6px;justify-content:center;
+  padding:6px 10px;background:#E0DACB;color:var(--mink2);
+  font-size:10.5px;font-weight:700;letter-spacing:-.01em;
+}
+.ba-prog{
+  display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--mline);
+  border-radius:13px;padding:12px 14px;
+}
+.ba-prog .g{flex:1;height:5px;border-radius:99px;background:#E2DCCD;overflow:hidden;}
+.ba-prog .g i{display:block;height:100%;background:var(--mforest);border-radius:99px;transition:width .3s ease;}
+.ba-prog b{font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+
+.ba-ch{border:1px solid var(--mline);border-radius:14px;background:var(--card);overflow:hidden;}
+.ba-ch.open{border-color:var(--mforest);}
+.ba-ch.problem{border-left:3px solid var(--mclay);}
+.ba-head{
+  display:flex;align-items:center;gap:11px;width:100%;padding:14px 15px;
+  background:none;border:0;font-family:inherit;cursor:pointer;color:inherit;text-align:left;
+}
+.ba-dot{
+  width:20px;height:20px;border-radius:50%;flex:none;border:1.8px solid #CFC8B7;
+  display:grid;place-items:center;color:transparent;
+}
+.ba-ch.seen .ba-dot{background:var(--mforest);border-color:var(--mforest);color:#F2EEE4;}
+.ba-head .tx{flex:1;min-width:0;}
+.ba-head .tt{font-size:14px;font-weight:800;letter-spacing:-.025em;line-height:1.4;}
+.ba-head .ts{font-size:11px;font-weight:800;color:var(--mink3);font-variant-numeric:tabular-nums;margin-top:2px;}
+.ba-ch.problem .ts{color:var(--mclay);}
+.ba-caret{flex:none;color:var(--mink3);transition:transform .22s ease;}
+.ba-ch.open .ba-caret{transform:rotate(180deg);}
+.ba-body{display:none;padding:0 15px 15px;}
+.ba-ch.open .ba-body{display:block;animation:rise .28s ease both;}
+.ba-body p{margin:0;font-size:13.5px;color:var(--mink2);line-height:1.72;letter-spacing:-.02em;}
+.ba-act{display:flex;flex-direction:column;gap:7px;margin-top:12px;}
+.ba-btn{
+  display:flex;align-items:center;gap:9px;width:100%;padding:11px 13px;border-radius:11px;
+  border:1px solid var(--mline);background:var(--paper);font-family:inherit;cursor:pointer;
+  font-size:12.5px;font-weight:700;color:var(--mink);letter-spacing:-.02em;text-align:left;
+}
+.ba-btn .ic{width:26px;height:26px;border-radius:8px;flex:none;background:#E8EDE7;display:grid;place-items:center;color:var(--mforest);}
+.ba-btn .arrow{margin-left:auto;font-size:11px;font-weight:800;color:var(--msage);}
+
+.ba-past{
+  display:flex;align-items:center;gap:11px;width:100%;padding:13px 15px;
+  background:var(--card);border:1px solid var(--mline);border-radius:13px;
+  font-family:inherit;text-align:left;color:inherit;
+}
+.ba-past .no{
+  font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--mink3);
+  border:1px solid var(--mline);border-radius:6px;padding:4px 7px;flex:none;
+}
+.ba-past .tx{flex:1;min-width:0;}
+.ba-past .tt{font-size:13px;font-weight:700;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ba-past .ts{font-size:11px;font-weight:600;color:var(--mink3);margin-top:2px;}
+
+/* ============================================================
+   B3-b · 구간 클립 피드
+   ============================================================ */
+.bb-hero{padding:0 16px;}
+.bb-count{
+  display:inline-flex;align-items:center;gap:6px;background:#EAE5D9;border-radius:99px;
+  padding:5px 11px;font-size:11px;font-weight:800;color:var(--mink2);letter-spacing:-.01em;
+}
+.bb-clip{background:var(--card);border:1px solid var(--mline);border-radius:16px;overflow:hidden;}
+.bb-clip.problem{border-color:#E2C7B4;}
+.bb-clipnum{
+  position:absolute;top:10px;right:10px;background:rgba(15,14,12,.7);color:#EDE8DC;
+  font-size:10px;font-weight:800;padding:4px 8px;border-radius:6px;font-variant-numeric:tabular-nums;
+}
+.bb-txt{padding:14px 15px 15px;}
+.bb-txt .tt{font-size:15.5px;font-weight:800;letter-spacing:-.03em;line-height:1.4;}
+.bb-txt .pp{font-size:13px;color:var(--mink2);line-height:1.7;margin:8px 0 0;letter-spacing:-.02em;}
+.bb-tagrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;}
+.bb-t{font-size:10.5px;font-weight:800;padding:4px 9px;border-radius:6px;background:#EDE8DB;color:var(--mink2);}
+.bb-t.warn{background:#F2E1D5;color:var(--mclay);}
+.bb-t.good{background:#E6EDE7;color:var(--msage);}
+.bb-add{
+  display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--mline);
+  font-size:12.5px;font-weight:800;color:var(--mforest);letter-spacing:-.02em;
+}
+.bb-sep{display:flex;align-items:center;gap:10px;color:var(--mink3);}
+.bb-sep i{flex:1;height:1px;background:var(--mline);}
+.bb-sep span{font-size:10px;font-weight:800;letter-spacing:.12em;}
+
+/* ============================================================
+   B3-c · 세로 타임라인 + 하단 미니바
+   ============================================================ */
+.bc-tl{position:relative;padding-left:26px;}
+.bc-tl::before{
+  content:"";position:absolute;left:6px;top:6px;bottom:14px;width:2px;background:var(--mline);
+}
+.bc-tl .fillline{
+  content:"";position:absolute;left:6px;top:6px;width:2px;height:36%;background:var(--mforest);
+}
+.bc-item{position:relative;margin-bottom:12px;}
+.bc-item:last-child{margin-bottom:0;}
+.bc-node{
+  position:absolute;left:-26px;top:14px;width:14px;height:14px;border-radius:50%;
+  background:var(--paper);border:2.5px solid var(--mline);
+}
+.bc-item.done .bc-node{border-color:var(--mforest);background:var(--mforest);}
+.bc-item.now .bc-node{border-color:var(--mclay);background:var(--mclay);box-shadow:0 0 0 4px rgba(180,100,60,.16);}
+.bc-t{font-size:11px;font-weight:800;color:var(--mink3);font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+.bc-card{background:var(--card);border:1px solid var(--mline);border-radius:14px;padding:13px 15px;margin-top:5px;}
+.bc-item.now .bc-card{border-color:var(--mclay);}
+.bc-card .tt{font-size:14.5px;font-weight:800;letter-spacing:-.03em;line-height:1.4;}
+.bc-card .pp{font-size:13px;color:var(--mink2);line-height:1.7;margin:7px 0 0;letter-spacing:-.02em;}
+.bc-mini{
+  display:flex;align-items:center;gap:11px;padding:11px 14px;background:var(--stage);color:#E9E3D4;
+  border-radius:14px;margin:0 16px;
+}
+.bc-mini .pl{width:32px;height:32px;border-radius:50%;flex:none;background:rgba(233,227,212,.14);display:grid;place-items:center;}
+.bc-mini .tx{flex:1;min-width:0;}
+.bc-mini .tt{font-size:12.5px;font-weight:800;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bc-mini .ts{font-size:10.5px;font-weight:700;opacity:.6;font-variant-numeric:tabular-nums;margin-top:1px;}
+.bc-minibar{height:2px;border-radius:99px;background:rgba(233,227,212,.24);margin-top:6px;position:relative;}
+.bc-minibar i{position:absolute;left:0;top:0;bottom:0;width:29%;border-radius:99px;background:#E9E3D4;}
+.bc-float{
+  display:flex;align-items:center;gap:6px;justify-content:center;padding:7px 10px;
+  font-size:10.5px;font-weight:700;color:var(--mink3);letter-spacing:-.01em;
+}
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">DOH GOLF · 결과지 시안 v2</p>
+  <h1>세로로만 움직이는 결과지</h1>
+  <p class="lede">
+    A-1은 <strong>점수 표기를 걷어낸 확정안</strong>으로 다시 그렸고,
+    B-3은 <strong>가로 스크롤을 전부 없앤 세 가지 구조</strong>로 다시 짰습니다.
+  </p>
+
+  <div class="callout">
+    <p><b>무엇을 고쳤나</b></p>
+    <p>이전 B-3에는 가로 스크롤이 두 군데 있었습니다 — 챕터 칩 줄과 지난 레슨 레일. 모바일에서 가로 스크롤은 <b>거기 뭐가 더 있는지 보이지 않아서 존재 자체를 놓치고</b>, 세로 스크롤과 손가락 방향이 충돌해 오작동합니다. 세 시안 모두 <b>가로 스크롤 0개</b>, 손가락은 위아래로만 움직입니다.</p>
+    <p>이 시안 페이지도 1열로 다시 짰고, 목업은 화면 전체를 펼쳐 담았습니다. 폰 안에서 또 스크롤하는 불편이 없도록요.</p>
+  </div>
+
+  <!-- ==========================================================
+       A-1 확정안
+       ========================================================== -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="tag">A-1 확정</span>
+      <span class="sec-title">AI 분석 결과지 · 점수 없이</span>
+    </div>
+    <p class="sec-desc">
+      숫자를 다 뺐습니다. 스윙 스코어, 지난주 대비 증감, 회차 표기까지.
+      대신 그 자리를 <b>"3주째"처럼 세는 것만으로 말할 수 있는 사실</b>로 채웠습니다.
+      나중에 지표가 정확해지면 헤드라인 위에 점수 블록만 얹으면 되도록 자리를 비워뒀습니다.
+    </p>
+
+    <div class="phone">
+      <div class="m">
+        <div class="m-status"><span>9:41</span><span class="m-batt"></span></div>
+        <div class="m-nav">
+          <span class="m-back"><svg width="9" height="16" viewBox="0 0 9 16" fill="none"><path d="M8 1 1 8l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="m-navtitle">분석 결과</span>
+        </div>
+        <div class="m-pad">
+          <div class="m-stack">
+            <div class="reveal" style="animation-delay:.05s">
+              <div class="m-meta">7월 25일 · 드라이버</div>
+              <h2 class="m-h1">임팩트에서<br>골반이 늦게 돌아요</h2>
+            </div>
+
+            <div class="m-stage reveal" style="animation-delay:.25s">
+              <div class="m-stage-tag">문제 구간 · 임팩트 P4</div>
+              <svg class="m-golfer" viewBox="0 0 60 120" fill="none" aria-hidden="true">
+                <circle cx="30" cy="14" r="8" fill="#EDE8DC"/>
+                <path d="M30 22v38M30 34l-16 12M30 34l17 9M30 60l-9 34M30 60l11 34" stroke="#EDE8DC" stroke-width="5" stroke-linecap="round"/>
+                <path d="M47 43 58 74" stroke="#B4643C" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+              <div class="m-scrub">
+                <span>0:00</span>
+                <span class="m-track"><i style="width:34%"></i><span class="mark" style="left:34%"></span></span>
+                <span>0:02</span>
+              </div>
+            </div>
+
+            <div class="a1-loop reveal" style="animation-delay:.4s">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7a5 5 0 1 1 1.6 3.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M2 4.2V7h2.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              이 구간만 0.25배속으로 반복 재생 중
+            </div>
+
+            <div class="a1-line reveal" style="animation-delay:.55s">
+              <div class="k">먼저 고칠 것</div>
+              <div class="v">어깨보다 하체가 먼저 리드되도록 연습해보세요.</div>
+            </div>
+
+            <div class="a1-line keep reveal" style="animation-delay:.7s">
+              <div class="k">유지할 것</div>
+              <div class="v">백스윙 템포가 안정적이에요. 3주째 흔들림 없이 같은 리듬입니다.</div>
+            </div>
+
+            <div class="a1-upsell reveal" style="animation-delay:.85s">
+              <p>AI는 영상 각도만 보고 판단해요. 골반이 늦은 게 <b style="color:var(--mink)">유연성 때문인지 습관 때문인지</b>는 사람이 봐야 압니다.</p>
+              <div class="go">
+                <span class="a1-badge">PRO</span>
+                <span style="flex:1;font-size:13.5px;font-weight:800;letter-spacing:-.02em">이도형 프로에게 이 영상 보내기</span>
+                <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="m1 1 5 5-5 5" stroke="#A29B8E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="m-foot">
+          <button class="m-cta">내일 이 드릴 하고 다시 찍기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <dl>
+        <div><dt>바뀐 점</dt><dd>스윙 스코어 68, ▲4, 3회차 표기 <b>전부 삭제</b>. "지난주보다 좋아졌어요" 같은 <b>비교 문구도 뺐습니다</b> — 점수 없이 비교를 말하면 근거를 요구받게 됩니다.</dd></div>
+        <div><dt>대신 남긴 것</dt><dd>"3주째 흔들림 없이 같은 리듬" — 이건 <b>점수가 아니라 횟수</b>라 지금 데이터로도 정확합니다. 유지할 것 자리에서 성장감을 대신 담당합니다.</dd></div>
+        <div><dt>나중에 점수를 붙일 때</dt><dd>날짜 줄과 헤드라인 사이가 비어 있습니다. 그 자리에 점수 블록만 삽입하면 나머지는 그대로 둘 수 있습니다.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       B3-a
+       ========================================================== -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="tag">B3-a</span>
+      <span class="sec-title">스티키 플레이어 + 세로 아코디언</span>
+    </div>
+    <p class="sec-desc">
+      챕터 칩 줄을 <b>세로 리스트</b>로 바꿨습니다. 항목을 누르면 그 자리에서 코멘트가 펼쳐지고 영상은 해당 구간으로 점프합니다.
+      화면 밖으로 나가는 정보가 없으니 <b>4개가 전부라는 게 한눈에 보입니다.</b>
+    </p>
+
+    <div class="phone">
+      <div class="m">
+        <div class="m-status"><span>9:41</span><span class="m-batt"></span></div>
+
+        <div class="m-stage flat" style="aspect-ratio:16/10">
+          <div style="position:absolute;top:12px;left:14px;right:14px;display:flex;align-items:center;color:#EDE8DC">
+            <svg width="9" height="16" viewBox="0 0 9 16" fill="none"><path d="M8 1 1 8l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span style="margin-left:auto;font-size:10.5px;font-weight:800;letter-spacing:.08em;opacity:.75">NO.06 · 6월</span>
+          </div>
+          <svg class="m-golfer" viewBox="0 0 60 120" fill="none" aria-hidden="true">
+            <circle cx="30" cy="14" r="8" fill="#EDE8DC"/>
+            <path d="M30 22v38M30 34l-16 12M30 34l17 9M30 60l-9 34M30 60l11 34" stroke="#EDE8DC" stroke-width="5" stroke-linecap="round"/>
+            <path d="M47 43 58 74" stroke="#B99247" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+          <div class="m-play"><svg width="15" height="17" viewBox="0 0 15 17" fill="none"><path d="M2 1.5 14 8.5 2 15.5z" fill="currentColor"/></svg></div>
+          <div class="m-scrub">
+            <span>3:41</span>
+            <span class="m-track"><i style="width:29%"></i><span class="mark" style="left:29%;background:#B99247"></span></span>
+            <span>12:24</span>
+          </div>
+        </div>
+
+        <div class="ba-stickynote">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 9V2M2.5 5 5.5 2l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          스크롤하면 이 영상이 위에 작게 붙어서 계속 재생돼요
+        </div>
+        <div class="ba-mini">
+          <span class="thumb"></span>
+          <span class="tx">
+            <span class="tt">톱에서 왼팔 각 잡기</span>
+            <span class="ts">3:41 / 12:24 · 재생 중</span>
+          </span>
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style="opacity:.7"><rect x="2.5" y="2" width="3" height="9" rx="1" fill="currentColor"/><rect x="7.5" y="2" width="3" height="9" rx="1" fill="currentColor"/></svg>
+        </div>
+
+        <div class="m-pad" style="padding-top:16px">
+          <div class="m-stack">
+            <div>
+              <div class="m-meta">이도형 프로 · 6월 27일 받음</div>
+              <h2 class="m-h1">톱에서 왼팔 각 잡기</h2>
+            </div>
+
+            <div class="ba-prog">
+              <span style="font-size:12px;font-weight:800;letter-spacing:-.02em">본 구간</span>
+              <span class="g"><i id="bafill" style="width:25%"></i></span>
+              <b id="bacount">1/4</b>
+            </div>
+
+            <div class="m-stack" style="gap:9px" id="balist">
+              <div class="ba-ch seen">
+                <button class="ba-head" type="button">
+                  <span class="ba-dot"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="m1 4 2.6 2.6L9 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                  <span class="tx"><span class="tt">이번 달 총평</span><span class="ts">00:00 · 1분 12초</span></span>
+                  <span class="ba-caret"><svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="m1 1.5 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                </button>
+                <div class="ba-body">
+                  <p>5개월 중 가장 큰 변화입니다. 3월엔 상체가 먼저 열렸는데 이번엔 골반이 확실히 먼저 나가요.</p>
+                  <div class="ba-act">
+                    <button class="ba-btn" type="button">
+                      <span class="ic"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3.5 2 11 6.5 3.5 11z" fill="currentColor"/></svg></span>
+                      이 구간부터 보기
+                      <span class="arrow">00:00</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ba-ch problem open">
+                <button class="ba-head" type="button">
+                  <span class="ba-dot"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="m1 4 2.6 2.6L9 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                  <span class="tx"><span class="tt">톱에서 왼팔 각이 무너져요</span><span class="ts">03:41 · 이번 달 핵심</span></span>
+                  <span class="ba-caret"><svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="m1 1.5 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                </button>
+                <div class="ba-body">
+                  <p>톱 지점에서 왼팔이 살짝 접히면서 클럽이 안쪽으로 들어옵니다. 이게 임팩트에서 방향이 갈리는 원인이에요. 다음 달은 이것만 봅시다.</p>
+                  <div class="ba-act">
+                    <button class="ba-btn" type="button">
+                      <span class="ic"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3.5 2 11 6.5 3.5 11z" fill="currentColor"/></svg></span>
+                      이 구간부터 보기
+                      <span class="arrow">03:41</span>
+                    </button>
+                    <button class="ba-btn" type="button">
+                      <span class="ic"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v9M2 6.5h9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+                      톱에서 3초 멈추기 15회
+                      <span class="arrow">담기</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ba-ch">
+                <button class="ba-head" type="button">
+                  <span class="ba-dot"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="m1 4 2.6 2.6L9 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                  <span class="tx"><span class="tt">체중 이동은 지금 이대로</span><span class="ts">07:15 · 2분 47초</span></span>
+                  <span class="ba-caret"><svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="m1 1.5 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                </button>
+                <div class="ba-body">
+                  <p>슬로우로 봤어요. 왼발로 넘어가는 타이밍이 정확합니다. 여기는 손대지 맙시다 — 잘 되는 걸 고치면 오히려 무너져요.</p>
+                  <div class="ba-act">
+                    <button class="ba-btn" type="button">
+                      <span class="ic"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3.5 2 11 6.5 3.5 11z" fill="currentColor"/></svg></span>
+                      이 구간부터 보기
+                      <span class="arrow">07:15</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ba-ch">
+                <button class="ba-head" type="button">
+                  <span class="ba-dot"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="m1 4 2.6 2.6L9 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                  <span class="tx"><span class="tt">다음 달까지 이것만</span><span class="ts">10:02 · 2분 22초</span></span>
+                  <span class="ba-caret"><svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="m1 1.5 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                </button>
+                <div class="ba-body">
+                  <p>톱에서 3초 멈추기 15회, 거울 앞 톱 자세 사진. 두 개만 하고 7월 말에 정면·측면으로 다시 찍어서 올려주세요.</p>
+                  <div class="ba-act">
+                    <button class="ba-btn" type="button">
+                      <span class="ic"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1.8" y="3.5" width="9.4" height="7" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4.2 3.5V2.2h4.6v1.3" stroke="currentColor" stroke-width="1.5"/></svg></span>
+                      7월 27일 촬영 알림 받기
+                      <span class="arrow">설정</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="m-divider"></div>
+
+            <div class="m-row">
+              <span class="m-label">지난 레슨</span>
+              <span style="font-size:11.5px;font-weight:800;color:var(--msage)">전체 5개</span>
+            </div>
+            <div class="m-stack" style="gap:8px">
+              <div class="ba-past">
+                <span class="no">No.05</span>
+                <span class="tx"><span class="tt">하체 리드 만들기</span><span class="ts">5월 27일 · 10분 48초</span></span>
+                <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="m1 1 5 5-5 5" stroke="#A29B8E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="ba-past">
+                <span class="no">No.04</span>
+                <span class="tx"><span class="tt">체중 이동 타이밍</span><span class="ts">4월 26일 · 13분 02초</span></span>
+                <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="m1 1 5 5-5 5" stroke="#A29B8E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="m-foot">
+          <button class="m-cta">스윙 올리고 확인받기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <dl>
+        <div><dt>가로 스크롤</dt><dd><b>0개.</b> 챕터도 지난 레슨도 세로 리스트입니다. 지난 레슨은 2개만 보이고 나머지는 "전체 5개"로 넘깁니다 — 숨기는 게 아니라 <b>세는 게 보이게</b> 했습니다.</dd></div>
+        <div><dt>핵심 장치</dt><dd>"본 구간 1/4" 진행 바. 안 본 챕터 3개가 계속 남아 있어서 <b>나갔다가 다시 들어올 이유</b>가 됩니다. 다 보면 채워지고요.</dd></div>
+        <div><dt>스티키 플레이어</dt><dd>스크롤을 내려도 영상이 상단에 축소되어 붙습니다. 유튜브 앱과 같은 문법이라 설명이 필요 없고, <b>코멘트를 읽으면서 영상을 계속 들을 수 있습니다.</b></dd></div>
+        <div><dt>구현 메모</dt><dd>기존 챕터 입력에 <b>코멘트 필드 하나만 추가</b>하면 됩니다. 세 안 중 작업량이 가장 적습니다.</dd></div>
+        <div class="risk"><dt>주의</dt><dd>아코디언이 접혀 있으면 코멘트를 아예 안 읽고 나갈 수 있습니다. <b>이번 달 핵심 챕터 하나는 처음부터 펼친 상태</b>로 두세요(위 목업이 그 상태입니다).</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       B3-b
+       ========================================================== -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="tag">B3-b</span>
+      <span class="sec-title">구간 클립 피드</span>
+    </div>
+    <p class="sec-desc">
+      긴 영상 하나를 <b>구간별 짧은 클립 4개로 쪼개서</b> 세로로 쌓습니다.
+      챕터를 고르는 행위 자체가 사라지고, 엄지로 내리기만 하면 순서대로 소비됩니다.
+      한 손으로 보기에 가장 편한 구조입니다.
+    </p>
+
+    <div class="phone">
+      <div class="m">
+        <div class="m-status"><span>9:41</span><span class="m-batt"></span></div>
+        <div class="m-nav">
+          <span class="m-back"><svg width="9" height="16" viewBox="0 0 9 16" fill="none"><path d="M8 1 1 8l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="m-navtitle">No.06 · 6월 레슨</span>
+        </div>
+
+        <div class="bb-hero">
+          <div class="m-stack">
+            <div>
+              <div style="display:flex;align-items:center;gap:9px">
+                <span class="m-avatar">이도형</span>
+                <div style="flex:1">
+                  <div style="font-size:12.5px;font-weight:800;letter-spacing:-.02em">이도형 프로</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--mink3)">6월 27일 · 담당 5개월</div>
+                </div>
+              </div>
+              <h2 class="m-h1">톱에서 왼팔 각 잡기</h2>
+            </div>
+            <div><span class="bb-count">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1.5" y="1.5" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 4.2h8" stroke="currentColor" stroke-width="1.4"/></svg>
+              4개 구간 · 전체 12분 24초
+            </span></div>
+          </div>
+        </div>
+
+        <div class="m-pad" style="padding-top:16px">
+          <div class="m-stack" style="gap:14px">
+
+            <div class="bb-clip">
+              <div class="m-stage sq flat" style="position:relative">
+                <span class="bb-clipnum">1 / 4</span>
+                <div class="m-stage-tag">00:00 · 1분 12초</div>
+                <svg class="m-golfer" viewBox="0 0 60 120" fill="none" aria-hidden="true">
+                  <circle cx="30" cy="14" r="8" fill="#EDE8DC"/>
+                  <path d="M30 22v38M30 34l-16 12M30 34l17 9M30 60l-9 34M30 60l11 34" stroke="#EDE8DC" stroke-width="5" stroke-linecap="round"/>
+                </svg>
+                <div class="m-play sm"><svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M2 1.2 11 7 2 12.8z" fill="currentColor"/></svg></div>
+              </div>
+              <div class="bb-txt">
+                <div class="tt">하체 리드가 자리 잡았어요</div>
+                <p class="pp">5개월 중 가장 큰 변화입니다. 3월엔 상체가 먼저 열렸는데 이번엔 골반이 확실히 먼저 나가요.</p>
+                <div class="bb-tagrow"><span class="bb-t good">잘된 부분</span><span class="bb-t">이번 달 총평</span></div>
+              </div>
+            </div>
+
+            <div class="bb-clip problem">
+              <div class="m-stage sq flat" style="position:relative">
+                <span class="bb-clipnum">2 / 4</span>
+                <div class="m-stage-tag warn">03:41 · 이번 달 핵심</div>
+                <svg class="m-golfer" viewBox="0 0 60 120" fill="none" aria-hidden="true">
+                  <circle cx="30" cy="14" r="8" fill="#EDE8DC"/>
+                  <path d="M30 22v38M30 34l-15 13M30 34l17 5M30 60l-9 34M30 60l11 34" stroke="#EDE8DC" stroke-width="5" stroke-linecap="round"/>
+                  <path d="M47 39 57 68" stroke="#B4643C" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+                <div class="m-play sm"><svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M2 1.2 11 7 2 12.8z" fill="currentColor"/></svg></div>
+              </div>
+              <div class="bb-txt">
+                <div class="tt">톱에서 왼팔 각이 무너져요</div>
+                <p class="pp">톱 지점에서 왼팔이 살짝 접히면서 클럽이 안쪽으로 들어옵니다. 이게 임팩트에서 방향이 갈리는 원인이에요. 다음 달은 이것만 봅시다.</p>
+                <div class="bb-tagrow"><span class="bb-t warn">고칠 부분</span><span class="bb-t">톱 P2</span></div>
+                <div class="bb-add">
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v9M2 6.5h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  톱에서 3초 멈추기 15회 · 숙제에 담기
+                </div>
+              </div>
+            </div>
+
+            <div class="bb-sep"><i></i><span>남은 구간 2개</span><i></i></div>
+
+            <div class="bb-clip">
+              <div class="m-stage sq flat" style="position:relative">
+                <span class="bb-clipnum">3 / 4</span>
+                <div class="m-stage-tag">07:15 · 2분 47초</div>
+                <svg class="m-golfer" viewBox="0 0 60 120" fill="none" aria-hidden="true">
+                  <circle cx="30" cy="14" r="8" fill="#EDE8DC"/>
+                  <path d="M30 22v38M30 34l-16 12M30 34l17 9M30 60l-12 32M30 60l13 32" stroke="#EDE8DC" stroke-width="5" stroke-linecap="round"/>
+                </svg>
+                <div class="m-play sm"><svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M2 1.2 11 7 2 12.8z" fill="currentColor"/></svg></div>
+              </div>
+              <div class="bb-txt">
+                <div class="tt">체중 이동은 지금 이대로</div>
+                <p class="pp">슬로우로 봤어요. 왼발로 넘어가는 타이밍이 정확합니다. 여기는 손대지 맙시다 — 잘 되는 걸 고치면 오히려 무너져요.</p>
+                <div class="bb-tagrow"><span class="bb-t good">유지할 부분</span></div>
+              </div>
+            </div>
+
+            <div class="bb-clip">
+              <div class="m-stage sq flat" style="position:relative">
+                <span class="bb-clipnum">4 / 4</span>
+                <div class="m-stage-tag">10:02 · 2분 22초</div>
+                <svg class="m-golfer" viewBox="0 0 60 120" fill="none" aria-hidden="true">
+                  <circle cx="30" cy="14" r="8" fill="#EDE8DC"/>
+                  <path d="M30 22v38M30 34l-16 12M30 34l17 9M30 60l-9 34M30 60l11 34" stroke="#EDE8DC" stroke-width="5" stroke-linecap="round"/>
+                </svg>
+                <div class="m-play sm"><svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M2 1.2 11 7 2 12.8z" fill="currentColor"/></svg></div>
+              </div>
+              <div class="bb-txt">
+                <div class="tt">다음 달까지 이것만</div>
+                <p class="pp">톱에서 3초 멈추기 15회, 거울 앞 톱 자세 사진. 두 개만 하고 7월 말에 정면·측면으로 다시 찍어서 올려주세요.</p>
+                <div class="bb-add">
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1.8" y="3.5" width="9.4" height="7" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4.2 3.5V2.2h4.6v1.3" stroke="currentColor" stroke-width="1.5"/></svg>
+                  7월 27일 촬영 알림 받기
+                </div>
+              </div>
+            </div>
+
+            <div class="m-divider"></div>
+            <div class="m-row">
+              <span class="m-label">지난 레슨</span>
+              <span style="font-size:11.5px;font-weight:800;color:var(--msage)">전체 5개</span>
+            </div>
+            <div class="ba-past">
+              <span class="no">No.05</span>
+              <span class="tx"><span class="tt">하체 리드 만들기</span><span class="ts">5월 27일 · 4개 구간</span></span>
+              <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="m1 1 5 5-5 5" stroke="#A29B8E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="m-foot">
+          <button class="m-cta">스윙 올리고 확인받기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <dl>
+        <div><dt>가로 스크롤</dt><dd><b>0개.</b> 탭도 칩도 없습니다. 구조가 세로 피드 하나뿐이라 <b>배울 게 아무것도 없는 화면</b>입니다.</dd></div>
+        <div><dt>핵심 장치</dt><dd>"1/4 · 2/4" 표기와 중간의 <b>"남은 구간 2개"</b> 구분선. 끝이 보이니까 계속 내리게 되고, 클립마다 완결된 메시지라 중간에 멈춰도 손해가 없습니다.</dd></div>
+        <div><dt>부가 이점</dt><dd>12분짜리 한 덩어리를 안 받아도 되니 <b>데이터·로딩이 가볍습니다.</b> 지하철이나 연습장에서 보는 상황에 유리합니다.</dd></div>
+        <div class="risk"><dt>주의</dt><dd>프로가 <b>구간별로 잘라서 녹화</b>해야 합니다. 지금처럼 한 번에 녹화하면 편집 부담이 생깁니다. 관리자에서 시작·끝 초를 입력하면 자동으로 잘라 재생하는 방식(같은 파일, 구간 재생)으로 우회하는 게 현실적입니다.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       B3-c
+       ========================================================== -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="tag">B3-c</span>
+      <span class="sec-title">세로 타임라인 + 하단 미니바</span>
+    </div>
+    <p class="sec-desc">
+      영상 타임라인을 <b>가로에서 세로로 눕혔습니다.</b> 스크롤 방향과 영상 진행 방향이 같아지고,
+      재생 위치가 타임라인을 따라 내려오면서 <b>지금 어디를 듣고 있는지</b>가 항상 보입니다.
+    </p>
+
+    <div class="phone">
+      <div class="m">
+        <div class="m-status"><span>9:41</span><span class="m-batt"></span></div>
+        <div class="m-nav">
+          <span class="m-back"><svg width="9" height="16" viewBox="0 0 9 16" fill="none"><path d="M8 1 1 8l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="m-navtitle">No.06 · 6월 레슨</span>
+        </div>
+
+        <div class="m-pad">
+          <div class="m-stage" style="aspect-ratio:16/10">
+            <div class="m-stage-tag">톱에서 왼팔 각 잡기</div>
+            <svg class="m-golfer" viewBox="0 0 60 120" fill="none" aria-hidden="true">
+              <circle cx="30" cy="14" r="8" fill="#EDE8DC"/>
+              <path d="M30 22v38M30 34l-15 13M30 34l17 5M30 60l-9 34M30 60l11 34" stroke="#EDE8DC" stroke-width="5" stroke-linecap="round"/>
+              <path d="M47 39 57 68" stroke="#B99247" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+            <div class="m-play"><svg width="15" height="17" viewBox="0 0 15 17" fill="none"><path d="M2 1.5 14 8.5 2 15.5z" fill="currentColor"/></svg></div>
+            <div class="m-scrub">
+              <span>3:41</span>
+              <span class="m-track"><i style="width:29%"></i><span class="mark" style="left:29%;background:#B99247"></span></span>
+              <span>12:24</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="m-pad" style="padding-top:16px">
+          <div class="m-row" style="margin-bottom:12px">
+            <span class="m-label">레슨 흐름</span>
+            <span style="font-size:11px;font-weight:800;color:var(--mink3)">4개 구간 · 12분 24초</span>
+          </div>
+
+          <div class="bc-tl">
+            <span class="fillline"></span>
+
+            <div class="bc-item done">
+              <span class="bc-node"></span>
+              <div class="bc-t">00:00</div>
+              <div class="bc-card">
+                <div class="tt">하체 리드가 자리 잡았어요</div>
+                <p class="pp">5개월 중 가장 큰 변화입니다. 3월엔 상체가 먼저 열렸는데 이번엔 골반이 확실히 먼저 나가요.</p>
+              </div>
+            </div>
+
+            <div class="bc-item now">
+              <span class="bc-node"></span>
+              <div class="bc-t" style="color:var(--mclay)">03:41 · 지금 듣는 중</div>
+              <div class="bc-card">
+                <div class="tt">톱에서 왼팔 각이 무너져요</div>
+                <p class="pp">톱 지점에서 왼팔이 살짝 접히면서 클럽이 안쪽으로 들어옵니다. 이게 임팩트에서 방향이 갈리는 원인이에요. 다음 달은 이것만 봅시다.</p>
+                <div class="bb-add" style="margin-top:11px;padding-top:11px">
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v9M2 6.5h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  톱에서 3초 멈추기 15회 · 숙제에 담기
+                </div>
+              </div>
+            </div>
+
+            <div class="bc-item">
+              <span class="bc-node"></span>
+              <div class="bc-t">07:15</div>
+              <div class="bc-card">
+                <div class="tt">체중 이동은 지금 이대로</div>
+                <p class="pp">왼발로 넘어가는 타이밍이 정확합니다. 여기는 손대지 맙시다 — 잘 되는 걸 고치면 오히려 무너져요.</p>
+              </div>
+            </div>
+
+            <div class="bc-item">
+              <span class="bc-node"></span>
+              <div class="bc-t">10:02</div>
+              <div class="bc-card">
+                <div class="tt">다음 달까지 이것만</div>
+                <p class="pp">톱에서 3초 멈추기 15회, 거울 앞 톱 자세 사진. 두 개만 하고 7월 말에 정면·측면으로 다시 찍어서 올려주세요.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="m-divider" style="margin:16px 0 12px"></div>
+          <div class="m-row" style="margin-bottom:9px">
+            <span class="m-label">지난 레슨</span>
+            <span style="font-size:11.5px;font-weight:800;color:var(--msage)">전체 5개</span>
+          </div>
+          <div class="ba-past">
+            <span class="no">No.05</span>
+            <span class="tx"><span class="tt">하체 리드 만들기</span><span class="ts">5월 27일 · 10분 48초</span></span>
+            <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="m1 1 5 5-5 5" stroke="#A29B8E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+
+        <div class="bc-float">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 2v7M2.5 6 5.5 9l3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          스크롤하는 동안 아래 재생바가 계속 떠 있어요
+        </div>
+        <div style="padding-bottom:14px">
+          <div class="bc-mini">
+            <span class="pl"><svg width="12" height="14" viewBox="0 0 12 14" fill="none"><rect x="1.5" y="1.5" width="3" height="11" rx="1" fill="currentColor"/><rect x="7.5" y="1.5" width="3" height="11" rx="1" fill="currentColor"/></svg></span>
+            <span class="tx">
+              <span class="tt">톱에서 왼팔 각이 무너져요</span>
+              <span class="ts">3:41 / 12:24</span>
+              <span class="bc-minibar"><i></i></span>
+            </span>
+          </div>
+        </div>
+
+        <div class="m-foot" style="padding-top:0">
+          <button class="m-cta">스윙 올리고 확인받기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <dl>
+        <div><dt>가로 스크롤</dt><dd><b>0개.</b> 영상 안의 재생바를 빼면 화면에 가로로 움직이는 요소가 없습니다.</dd></div>
+        <div><dt>핵심 장치</dt><dd>세로 타임라인의 <b>채워진 선</b>이 지금 위치입니다. 아래로 내릴수록 영상도 뒤로 가는 구조라 "얼마나 남았는지"를 스크롤바가 아니라 <b>내용으로</b> 알 수 있습니다.</dd></div>
+        <div><dt>하단 미니바</dt><dd>스크롤 중에도 재생 상태가 남아 있습니다. 화면을 다 읽고 나서 <b>"다시 위로 올라가 영상 찾기"가 필요 없습니다.</b></dd></div>
+        <div class="risk"><dt>주의</dt><dd>타임라인 선과 하단 바가 동시에 있으면 재생 위치를 알려주는 장치가 두 개가 됩니다. 실제 구현에서는 <b>둘 중 하나만 움직이게</b> 하고 나머지는 정적으로 두는 편이 덜 산만합니다.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       추천
+       ========================================================== -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="tag alt">추천</span>
+      <span class="sec-title">셋 중 하나를 고른다면</span>
+    </div>
+    <div class="pick">
+      <h3>B3-a로 시작하는 걸 권합니다</h3>
+      <ul>
+        <li><b>지금 데이터로 바로 됩니다.</b> 관리자 화면에 이미 챕터 입력이 있고, 코멘트 필드 하나만 추가하면 끝입니다. 프로님 작업 방식(한 번에 화면 녹화)도 그대로 유지됩니다.</li>
+        <li><b>"본 구간 1/4"이 재방문 훅으로 바로 이어집니다.</b> 안 본 구간이 남아 있다는 사실만으로 푸시 알림의 명분이 생깁니다 — "아직 안 본 구간이 2개 있어요."</li>
+        <li><b>B3-b는 프로님 부담이 문제입니다.</b> 구조는 가장 편하지만 구간별 녹화나 구간 재생 처리가 필요합니다. 나중에 "구간 시작·끝 초 입력 → 같은 파일 부분 재생"으로 우회 구현하면 그때 전환할 만합니다.</li>
+        <li><b>B3-c는 레슨이 길어질 때.</b> 지금 12분 정도면 B3-a로 충분하고, 20분을 넘어가기 시작하면 타임라인이 필요해집니다.</li>
+        <li><b>세 안 모두 지난 레슨은 "2개 + 전체 보기"</b>로 통일했습니다. 레일로 늘어놓지 않아야 개수가 늘어도 화면이 안 무너집니다.</li>
+      </ul>
+    </div>
+  </section>
+
+  <p class="foot">
+    A-1의 아코디언과 B3-a의 챕터 펼침은 실제로 눌러볼 수 있습니다.
+    영상·사진 자리는 실제 자산으로 교체되고, 코멘트는 흐름 판단용 예시입니다.
+  </p>
+
+</div>
+
+<script>
+(function () {
+  var list = document.getElementById('balist');
+  if (!list) return;
+  var chapters = list.querySelectorAll('.ba-ch');
+  var fill = document.getElementById('bafill');
+  var count = document.getElementById('bacount');
+
+  function sync() {
+    var seen = 0;
+    chapters.forEach(function (c) { if (c.classList.contains('seen')) seen++; });
+    fill.style.width = Math.round((seen / chapters.length) * 100) + '%';
+    count.textContent = seen + '/' + chapters.length;
+  }
+
+  chapters.forEach(function (ch) {
+    var head = ch.querySelector('.ba-head');
+    head.addEventListener('click', function () {
+      var wasOpen = ch.classList.contains('open');
+      chapters.forEach(function (c) { c.classList.remove('open'); });
+      if (!wasOpen) {
+        ch.classList.add('open');
+        ch.classList.add('seen');
+        sync();
+      }
+    });
+  });
+
+  sync();
+})();
+</script>
