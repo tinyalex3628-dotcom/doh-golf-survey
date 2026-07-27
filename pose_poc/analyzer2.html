@@ -80,9 +80,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v32</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v33</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v32"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v33"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
   <br><b style="color:#4ea1ff">v27(안정화):</b> fetch 타임아웃 · 폴링 <b>일시실패 자동 재시도</b>(터널 흔들림 대비) · 업로드 거부/Job 만료 메시지 개선. Stage 0 5회 연속 검증용. (계약 <code>/v1/*·doh.vision.v1</code>는 동결 — 내부만 하드닝)</p>
 </header>
 
@@ -835,18 +835,18 @@ const DOH_RULES=[
  {id:"standing_up",nm:"일어남 (임팩트)",tier:1,
   checks:[{vf:"VF076",lab:"척추각 변화 P1→P7",t:"high",B:[8,12,18]}],
   why:"임팩트에서 상체가 어드레스보다 일어섬(+)"},
- {id:"chicken_wing",nm:"치킨윙 (임팩트 리드팔)",tier:1,
-  checks:[{vf:"VF087",lab:"리드팔 굽음 @P7",t:"high",B:[25,32,40]}],
-  why:"임팩트 리드팔 굽음. 엘리트 5~20° · 아마추어 15~35° 흔함 — 30°대부터 과다로 봄"},
- {id:"flying_elbow",nm:"플라잉 엘보 (탑)",tier:1,
+ {id:"chicken_wing",nm:"치킨윙 경향 (임팩트 리드팔)",tier:1,
+  checks:[{vf:"VF087",lab:"리드팔 굽힘각 @P7",t:"high",B:[25,35,45]}],
+  why:"임팩트 리드팔 굽음. 엘리트 5~20° · 아마추어 20~35° 흔함 + 측정오차 ±3~5° 감안해 35°부터 과다"},
+ {id:"flying_elbow",nm:"플라잉 엘보 경향 (탑)",tier:1,
   checks:[{vf:"VF026",lab:"트레일 팔꿈치 높이 @P4",t:"high",B:[0.15,0.25,0.40]}],
-  why:"탑에서 트레일 팔꿈치가 어깨 위로 뜸. 단위=상완길이 비율(0.3=상완의 30%만큼 위)"},
- {id:"overswing",nm:"오버스윙 (탑)",tier:1,
-  checks:[{vf:"VF123",lab:"리드팔-수직 각 @P4",t:"low",B:[-40,-30,-20]}],
-  why:"탑에서 리드팔이 수직에 지나치게 가까움(팔이 너무 넘어감)"},
- {id:"under_rotation",nm:"회전 부족 (탑)",tier:1,scale:true,
-  checks:[{vf:"VF015",lab:"어깨 회전 @P4",t:"low_abs",B:[-80,-70,-60]}],
-  why:"백스윙탑 어깨 회전량 부족 · ⚠️ 절대각 스케일 보정 전(참고)"},
+  why:"팔꿈치 높이 하나로 본 근사 — 정식 판정은 팔꿈치 깊이(M505)·어깨들림(M403/404) 구현 후 조합"},
+ {id:"overswing",nm:"오버스윙 경향 (탑)",tier:1,
+  checks:[{vf:"VF123",lab:"리드팔 수직각 @P4",t:"low",B:[-40,-30,-20]}],
+  why:"리드팔 수직각 하나로 본 근사 — 정식 오버스윙 판정은 손위치·샤프트·코킹 종합 필요(클럽검출 후)"},
+ {id:"under_rotation",nm:"상체 회전 부족 (탑)",tier:1,scale:true,
+  checks:[{vf:"VF015",lab:"어깨 회전각 @P4",t:"low_abs",B:[-80,-70,-60]}],
+  why:"측정=어깨 회전각(|값|), 진단=상체 회전 부족 · ⚠️ 절대각 스케일 보정 전(참고)"},
  {id:"xfactor",nm:"X-Factor 이상",tier:1,scale:true,
   checks:[{vf:"VF020",lab:"X-Factor @P4",t:"abs",B:[50,60,INF],side:"과대"},
           {vf:"VF020",lab:"X-Factor @P4",t:"low_abs",B:[-25,-INF,-INF],side:"부족"}],
@@ -869,6 +869,14 @@ const DOH_RULES=[
   why:"전환에서 손이 볼쪽(+)으로 던져짐 · 깊이추정(측면 전용)"},
 ];
 const LVL_NM=["정상","주의","과다","심함"], LVL_COL=["#3ecf8e","#ffd166","#ff9f43","#ff6b6b"];
+// 값을 사람 말로 (검수 피드백: "0.3" 대신 "상완의 30%") — 비율 계열만 변환, 각도는 v1num이 ° 붙임
+const DOH_FMT=(()=>{
+  const pct=(v,ref)=>`${ref} ${v>=0?"":"−"}${Math.abs(Math.round(v*100))}%`;
+  const m={VF026:v=>pct(v,"상완의"),VF111:v=>`${v} : 1`};
+  ["VF031","VF033","VF034","VF085","VF091","VF067","VF059"].forEach(k=>m[k]=v=>pct(v,"스탠스폭의"));
+  return m;
+})();
+function dohFmt(vf,v){const f=DOH_FMT[vf];return (f&&v!=null)?f(v):null;}
 function bandText(t,B){ // B(변환공간) → 사람이 읽는 구간 문자열
   const fin=x=>Math.abs(x)<INF/2;
   const fmt=x=>{const a=Math.abs(x);return a<1?a.toFixed(2).replace(/0$/,""):String(Math.round(a*10)/10);};
@@ -921,7 +929,8 @@ function dohProblemsHtml(fd){
         const c=x2.c, sd=c.side?` <span style="color:#8b97a5">[${c.side}]</span>`:"";
         if(!x2.ok) return `<tr><td>${c.vf} ${c.lab}${sd}</td><td colspan="3" style="color:#6b7684">${x2.txt}</td><td>—</td></tr>`;
         const fl=(x2.f.error_flags||[]).length?` <span style="color:#ffb648">${x2.f.error_flags.join(",")}</span>`:"";
-        return `<tr><td>${c.vf} ${c.lab}${sd}</td><td><b>${x2.v}</b></td><td style="color:#8b97a5">${bandText(c.t,c.B)}</td>
+        const vh=dohFmt(c.vf,x2.v)||x2.v;
+        return `<tr><td>${c.vf} ${c.lab}${sd}</td><td><b>${vh}</b></td><td style="color:#8b97a5">${bandText(c.t,c.B)}</td>
           <td style="color:${LVL_COL[x2.lvl]};font-weight:700">${LVL_NM[x2.lvl]}</td>
           <td>${Math.round((x2.f.confidence||0)*100)}%${fl}</td></tr>`;
       }).join("")}</table></details>`;
@@ -1012,7 +1021,7 @@ function dohTilesHtml(fd){
     const st=mTileState(vfs,fd,res); ct[st.k]++;
     const [ic,lab]=T_ST[st.k];
     let v="—";
-    if(st.f&&st.f.value!=null){ const n=v1num(st.f); v=n.v; }
+    if(st.f&&st.f.value!=null){ v=dohFmt(st.f.feature_id,st.f.value)||v1num(st.f).v; }
     else if(st.k==="na") v='<span style="font-size:11px;color:#8b97a5">각도 불일치</span>';
     else if(st.k==="todo") v='<span style="font-size:11px;color:#8b97a5">준비 중</span>';
     const tip=(st.why?st.why+" · ":"")+(st.f?`신뢰도 ${Math.round((st.f.confidence||0)*100)}%`:"엔진 미구현");
