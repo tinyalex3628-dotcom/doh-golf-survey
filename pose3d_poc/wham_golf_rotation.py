@@ -95,12 +95,72 @@ def get_joints(track):
 
 def estimate_up(J, sh_l, sh_r, hp_l, hp_r):
     """월드 up(수직) 축을 데이터에서 추정: 평균 (어깨중심 - 골반중심) 방향.
-    (WHAM 월드좌표의 y/z-up 규약에 의존하지 않기 위함)"""
+    (WHAM 월드좌표의 y/z-up 규약에 의존하지 않기 위함)
+    ⚠️ 앞굽힘(어드레스 ~40°)만큼 기울어지는 편향 있음 → best_up()이 발목-PCA를 우선 시도."""
     mid_sh = 0.5 * (J[:, sh_l] + J[:, sh_r])
     mid_hp = 0.5 * (J[:, hp_l] + J[:, hp_r])
     up = (mid_sh - mid_hp).mean(axis=0)
     n = np.linalg.norm(up)
     return up / (n + 1e-9)
+
+
+def best_up(J, jm, skeleton, p_lo=0, p_hi=None):
+    """up축 추정 우선순위: ① 발목-PCA(metrics.estimate_up, 합성 오차<0.2°·굽힘 무관)
+    ② 몸통평균(폴백). 반환 (up ndarray, method str).
+    합성검증(2026-07-24): 굽힘 40°에서 몸통평균 up은 골반턴을 ~5° 왜곡 → 발목-PCA가 정답."""
+    T = int(J.shape[0])
+    if skeleton == "smpl":
+        try:
+            from wham_golf_metrics import estimate_up as up_pca, SMPL24
+            u, q = up_pca(J, T, SMPL24, p_lo, p_hi if p_hi is not None else T - 1)
+            if u is not None and q >= 0.25:
+                return np.asarray(u, float), "ankle_pca"
+        except Exception:
+            pass
+    return estimate_up(J, jm["l_shoulder"], jm["r_shoulder"], jm["l_hip"], jm["r_hip"]), "torso_mean"
+
+
+def smooth_joints(J, med=5, avg=3):
+    """시간축 스무딩 — NLF 저자 공식 파이프라인(isarandi/nlf-pipeline)의
+    'median-like temporal smoothing'을 이식: 프레임별 지터·스파이크 제거.
+    median(윈도 med) → moving average(윈도 avg). 학습 불필요, (T,J,3) 그대로."""
+    J = np.asarray(J, float)
+    T = J.shape[0]
+    if T < med + 2:
+        return J
+    from numpy.lib.stride_tricks import sliding_window_view
+    def _pad(a, w):
+        k = w // 2
+        return np.concatenate([a[:1].repeat(k, 0), a, a[-1:].repeat(k, 0)], axis=0)
+    out = np.median(sliding_window_view(_pad(J, med), med, axis=0), axis=-1)
+    out = np.mean(sliding_window_view(_pad(out, avg), avg, axis=0), axis=-1)
+    return out
+
+
+def axial_turn_series(J, jm, up, sh_az_ref=None):
+    """회전 분해(합성 GT 검증: X-Factor 오차 5.9°→0.0°, 2026-07-24):
+      골반턴 = 힙라인의 수직축(up) azimuth  (골반은 수평 유지라 투영 안전)
+      X-Factor = 어깨선을 '그 프레임 몸통축⊥평면'에 투영해 힙라인과 이룬 각(축회전)
+                 → 어깨 측면기울임(탑에서 ~25°)이 지면투영을 부풀리던 문제 소거
+      어깨턴 = 골반턴 + X-Factor
+    반환: (sh_turn_abs, hp_turn_abs, xf_abs) — 절대열(P1 기준화는 호출자가)."""
+    T = int(J.shape[0])
+    e1, e2 = plane_basis(up)
+    hp_az = azimuth_series(J, jm["r_hip"], jm["l_hip"], up, e1, e2)
+    # 몸통축: 골반중심→어깨중심 (프레임별)
+    mid_sh = 0.5 * (J[:, jm["l_shoulder"]] + J[:, jm["r_shoulder"]])
+    mid_hp = 0.5 * (J[:, jm["l_hip"]] + J[:, jm["r_hip"]])
+    yp = mid_sh - mid_hp
+    yp /= (np.linalg.norm(yp, axis=1, keepdims=True) + 1e-9)
+    xp = J[:, jm["l_hip"]] - J[:, jm["r_hip"]]                     # 힙라인(r→l)
+    xp = xp - (xp * yp).sum(1, keepdims=True) * yp
+    xp /= (np.linalg.norm(xp, axis=1, keepdims=True) + 1e-9)
+    zp = np.cross(xp, yp)
+    s = J[:, jm["l_shoulder"]] - J[:, jm["r_shoulder"]]            # 어깨선(r→l)
+    s = s - (s * yp).sum(1, keepdims=True) * yp                    # 측면기울임 성분 제거
+    xf = -np.degrees(np.arctan2((s * zp).sum(1), (s * xp).sum(1))) # +yp 회전 = atan2 음수
+    xf = np.degrees(np.unwrap(np.radians(xf)))
+    return hp_az + xf, hp_az, xf
 
 
 def plane_basis(up):
@@ -280,25 +340,31 @@ def emit_vision_v1(sh_turn, hp_turn, xfactor, p1, p4, p7, T, skeleton,
 
 
 def build_v1(J, skeleton="smpl", view="unknown", hand="right", fps=None, video_id="swing",
-             p1=None, p4=None, p7=None):
+             p1=None, p4=None, p7=None, smooth=True):
     """3D 관절(T,J,3) → doh.vision.v1 계약 dict. (서버/재사용용, 출력·파일 없음)
-    회전 4 + 포즈지표 + 척추각을 한 계약으로. analyze()의 CLI 경로와 동일 로직."""
+    회전 4 + 포즈지표 + 척추각을 한 계약으로. analyze()의 CLI 경로와 동일 로직.
+    v2 업그레이드(2026-07-24): ① 시간축 스무딩(nlf-pipeline식) ② 회전=축회전 분해
+    ③ up=발목-PCA 우선 — 전부 build_v1 내부라 콜랩/집PC서버/HF Space 동시 적용."""
     jm = SKELETONS[skeleton]
+    J = smooth_joints(np.asarray(J, float)) if smooth else np.asarray(J, float)
     T = int(J.shape[0])
-    up = estimate_up(J, jm["l_shoulder"], jm["r_shoulder"], jm["l_hip"], jm["r_hip"])
-    e1, e2 = plane_basis(up)
-    sh_az = azimuth_series(J, jm["r_shoulder"], jm["l_shoulder"], up, e1, e2)
-    hp_az = azimuth_series(J, jm["r_hip"], jm["l_hip"], up, e1, e2)
+    # 1패스: 몸통평균 up으로 이벤트만 잡는다 (곡선 모양은 up 편향에 둔감)
+    up0 = estimate_up(J, jm["l_shoulder"], jm["r_shoulder"], jm["l_hip"], jm["r_hip"])
+    e1, e2 = plane_basis(up0)
+    sh_az0 = azimuth_series(J, jm["r_shoulder"], jm["l_shoulder"], up0, e1, e2)
     if p1 is not None and p1 == p4 == p7:
         p1 = p4 = p7 = None
-    a1, a4, a7 = auto_events(sh_az)
+    a1, a4, a7 = auto_events(sh_az0)
     manual = (p1 is not None) or (p4 is not None) or (p7 is not None)
     if p1 is None: p1 = a1
     if p4 is None: p4 = a4
     if p7 is None: p7 = a7
-    sh_turn = turn_relative(sh_az, p1)
-    hp_turn = turn_relative(hp_az, p1)
-    xfactor = sh_turn - hp_turn
+    # 2패스: 어드레스~임팩트 구간 발목-PCA로 정밀 up → 축회전 분해 (합성 GT 검증)
+    up, up_method = best_up(J, jm, skeleton, p1, p7)
+    sh_abs, hp_abs, xf_abs = axial_turn_series(J, jm, up)
+    sh_turn = turn_relative(sh_abs, p1)
+    hp_turn = turn_relative(hp_abs, p1)
+    xfactor = turn_relative(xf_abs, p1)
     pev = detect_p_events(J, jm, up, p1, p4, p7, hand=hand)
     inst = emit_vision_v1(sh_turn, hp_turn, xfactor, p1, p4, p7, T, skeleton,
                           manual, view=view, hand=hand, fps=fps, video_id=video_id,
@@ -330,16 +396,14 @@ def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleto
         print("joints가 (T,J,3)인지, J가 프리셋 최대인덱스보다 큰지 확인.")
         return
 
-    J = get_joints(track)
+    J = smooth_joints(np.asarray(get_joints(track), float))   # nlf-pipeline식 지터 제거
     T = J.shape[0]
-    print(f"프레임 {T} · 관절 {J.shape[1]} · skeleton={skeleton}")
+    print(f"프레임 {T} · 관절 {J.shape[1]} · skeleton={skeleton} · 시간축 스무딩 적용(med5+avg3)")
 
-    up = estimate_up(J, jm["l_shoulder"], jm["r_shoulder"], jm["l_hip"], jm["r_hip"])
-    e1, e2 = plane_basis(up)
-    print(f"추정 up축: [{up[0]:+.2f} {up[1]:+.2f} {up[2]:+.2f}]")
-
-    sh_az = azimuth_series(J, jm["r_shoulder"], jm["l_shoulder"], up, e1, e2)  # 흉곽
-    hp_az = azimuth_series(J, jm["r_hip"], jm["l_hip"], up, e1, e2)            # 골반
+    # 1패스: 몸통평균 up으로 이벤트 검출
+    up0 = estimate_up(J, jm["l_shoulder"], jm["r_shoulder"], jm["l_hip"], jm["r_hip"])
+    e1, e2 = plane_basis(up0)
+    sh_az = azimuth_series(J, jm["r_shoulder"], jm["l_shoulder"], up0, e1, e2)  # 이벤트용
 
     # P구간 자동검출 (수동으로 준 값은 그대로 존중)
     if p1 is not None and p1 == p4 == p7:   # 0/0/0 같은 placeholder → 자동으로
@@ -351,9 +415,13 @@ def analyze(path, p1=None, p4=None, p7=None, save_png=None, check=False, skeleto
     if p7 is None: p7 = a7
     print(f"이벤트 P1/P4/P7 = {p1}/{p4}/{p7}" + ("  (일부 수동지정)" if manual else "  (자동검출)"))
 
-    sh_turn = turn_relative(sh_az, p1)
-    hp_turn = turn_relative(hp_az, p1)
-    xfactor = sh_turn - hp_turn
+    # 2패스: 발목-PCA up + 축회전 분해 (X-Factor 지면투영 과대 소거 — 합성 GT 검증)
+    up, up_method = best_up(J, jm, skeleton, p1, p7)
+    print(f"추정 up축: [{up[0]:+.2f} {up[1]:+.2f} {up[2]:+.2f}]  (방법: {up_method})")
+    sh_abs, hp_abs, xf_abs = axial_turn_series(J, jm, up)
+    sh_turn = turn_relative(sh_abs, p1)
+    hp_turn = turn_relative(hp_abs, p1)
+    xfactor = turn_relative(xf_abs, p1)
 
     def at(fr, name, arr):
         if fr is None:
