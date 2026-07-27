@@ -44,6 +44,8 @@ SIDE = ("DTL",)        # 시상면(척추 전후굴곡·플레인) — 측면만
 # ── 순수 벡터 기하 (3-튜플) ─────────────────────────────────────────────
 def _sub(a, b):   return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
 def _dot(a, b):   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+def _cross(a, b): return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2],
+                          a[0] * b[1] - a[1] * b[0])
 def _norm(a):     return math.sqrt(_dot(a, a))
 def _unit(a):
     n = _norm(a)
@@ -250,6 +252,18 @@ def compute_metrics(J, p1, p4, p7, T, fps=None, hand="right", view="unknown", sk
         pel_dx, "ratio", "P1->P4", "GROUND",
         "OP007", ["PELVIS_TRACK"], ["LEAD_ANKLE", "TRAIL_ANKLE"],
         cbase - 0.05, [], FRONT)
+    # VF085 행잉백: 임팩트에서 골반이 아직 트레일쪽(+)에 남아있나 (P1 대비)
+    add("VF085", "Pelvis lateral @P7 vs P1 (stance-normalized, + = trail = hanging back)",
+        _dot(_sub(J_(p7, "pelvis"), J_(p1, "pelvis")), stance_u) / width,
+        "ratio", "P1->P7", "GROUND",
+        "OP007", ["PELVIS_TRACK"], ["LEAD_ANKLE", "TRAIL_ANKLE"],
+        cbase - 0.05, [], FRONT)
+    # VF091 힙 슬라이드(다운스윙): P4→P7 골반 좌우 이동 (− = 리드쪽)
+    add("VF091", "Pelvis lateral P4→P7 (stance-normalized, - = toward lead)",
+        _dot(_sub(J_(p7, "pelvis"), J_(p4, "pelvis")), stance_u) / width,
+        "ratio", "P4->P7", "GROUND",
+        "OP007", ["PELVIS_TRACK"], ["LEAD_ANKLE", "TRAIL_ANKLE"],
+        cbase - 0.05, [], FRONT)
 
     # ── 4) 템포/구간 (이벤트 프레임 산술, 뷰 무관 → 양쪽 OK) ──
     bs_frames = max(0, p4 - p1)
@@ -307,5 +321,48 @@ def compute_metrics(J, p1, p4, p7, T, fps=None, hand="right", view="unknown", sk
         add("VF001", "Spine Tilt lateral @P1 (from vertical, +=trail lean)",
             lat, "deg", "P1", "GROUND",
             "OP005", ["TORSO_AXIS", "VERTICAL"], ["PELVIS", "NECK"], cpos, upflags, FRONT)
+
+        # ── 6) 문제판정 규칙용 추가 측정 (2026-07-24, append-only) ──
+        # VF036 리버스 스파인: 탑(P4)에서 척추 좌우기울기 (− = 리드/타깃쪽 역기울기)
+        sp4 = _unit(_sub(J_(p4, "neck"), J_(p4, "pelvis")))
+        add("VF036", "Spine Tilt lateral @P4 (+=trail lean, - = reverse spine)",
+            math.degrees(math.atan2(_dot(sp4, t_axis), _dot(sp4, up))), "deg", "P4", "GROUND",
+            "OP005", ["TORSO_AXIS", "VERTICAL"], ["PELVIS", "NECK"], cpos, upflags, FRONT)
+        # VF033 머리 상하 이동 P1→P4 (− = 낮아짐/딥, 스탠스폭 정규화)
+        add("VF033", "Head vertical move P1→P4 (stance-normalized, - = dip)",
+            _dot(_sub(J_(p4, "head"), J_(p1, "head")), up) / width, "ratio", "P1->P4", "GROUND",
+            "OP007", ["HEAD_POINT_TRACK"], ["NOSE"], cpos, upflags, BOTH)
+        # VF026 플라잉 엘보: 탑에서 트레일 팔꿈치가 어깨보다 위(+)인 정도 (상완길이 정규화)
+        ua_len = _norm(_sub(J_(p4, T_EL), J_(p4, T_SH))) + 1e-9
+        add("VF026", "Trail elbow height above shoulder @P4 (/upper-arm len, + = flying)",
+            _dot(_sub(J_(p4, T_EL), J_(p4, T_SH)), up) / ua_len, "ratio", "P4", "BODY",
+            "OP007", ["TRAIL_UPPER_ARM"], ["TRAIL_SHOULDER", "TRAIL_ELBOW"], cpos, upflags, BOTH)
+        # VF123 오버스윙 프록시: 탑에서 리드팔(어깨→손목)이 수직축과 이룬 각 (작을수록 팔이 높음)
+        add("VF123", "Lead arm angle from vertical @P4 (deg, smaller = arm higher)",
+            _angle(_sub(J_(p4, L_WR), J_(p4, L_SH)), up), "deg", "P4", "BODY",
+            "OP001", ["LEAD_ARM_CHAIN", "VERTICAL"], ["LEAD_SHOULDER", "LEAD_WRIST"],
+            cpos - 0.1, upflags, BOTH)
+
+        # 깊이축(볼 방향): up⊥·스탠스축⊥. 부호는 어드레스에서 손이 몸 앞(볼쪽)이라는 사실로 고정
+        d_axis = _unit(_cross(up, t_axis))
+        hand1 = tuple((J_(p1, L_WR)[i] + J_(p1, T_WR)[i]) / 2 for i in range(3))
+        if _dot(_sub(hand1, J_(p1, "pelvis")), d_axis) < 0:
+            d_axis = (-d_axis[0], -d_axis[1], -d_axis[2])
+        # 계약 v1 flag 폐집합 준수: 깊이추정 = depth_unreliable (upflags와 중복 제거)
+        dflags = sorted(set(upflags) | {"depth_unreliable", "interpolated_event"})
+        cdep = round(max(0.15, 0.45 * upq), 2)
+        # VF067 얼리 익스텐션: 다운스윙 후반 골반이 볼쪽(+)으로 나온 양 (P5는 P4·P7 중점 보간)
+        p5i = (int(p4) + int(p7)) // 2
+        add("VF067", "Pelvis toward ball P5→P7 (stance-normalized, + = early extension)",
+            _dot(_sub(J_(p7, "pelvis"), J_(p5i, "pelvis")), d_axis) / width,
+            "ratio", "P5->P7", "GROUND",
+            "OP007", ["PELVIS_TRACK"], ["LEAD_HIP", "TRAIL_HIP"], cdep, dflags, SIDE)
+        # VF059 손 깊이 P4→P6 (+ = 볼쪽으로 던져짐 = OTT 경향, − = 몸쪽 = 샬로잉)
+        p6i = int(p4) + 2 * (int(p7) - int(p4)) // 3
+        hand4 = tuple((J_(p4, L_WR)[i] + J_(p4, T_WR)[i]) / 2 for i in range(3))
+        hand6 = tuple((J_(p6i, L_WR)[i] + J_(p6i, T_WR)[i]) / 2 for i in range(3))
+        add("VF059", "Hand depth change P4→P6 (stance-normalized, + = toward ball/OTT)",
+            _dot(_sub(hand6, hand4), d_axis) / width, "ratio", "P4->P6", "GROUND",
+            "OP007", ["HAND_MID_TRACK"], ["LEAD_WRIST", "TRAIL_WRIST"], cdep, dflags, SIDE)
 
     return feats
