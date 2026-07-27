@@ -15,7 +15,7 @@
 - 설치 첫 화면에서 **"Add python.exe to PATH" 체크** (중요!) → Install.
 
 ### 3. 이 폴더 받기
-- GitHub 저장소에서 **Code ▸ Download ZIP** (브랜치 `claude/ai-video-analysis-engine-wlr06k`)
+- GitHub 저장소에서 **Code ▸ Download ZIP** (브랜치 `claude/session-context-recovery-il15cg`)
   → 압축 풀고 **`server` 폴더**만 있으면 됨. (또는 `git clone` 후 `server`로 이동.)
 
 ### 4. 실행

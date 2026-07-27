@@ -1,7 +1,9 @@
 # DOH 스윙분석 엔진 — 세션 핸드오프 (이어서 작업용)
 
 > 새 채팅/세션이 이 파일을 읽고 **그대로 이어서** 작업하기 위한 요약.
-> 브랜치: `claude/ai-video-analysis-engine-wlr06k` · PR **#7**(open, base=main).
+> 브랜치: `claude/session-context-recovery-il15cg` (origin, PR 미생성) — 최초 작성 브랜치는
+> `claude/ai-video-analysis-engine-wlr06k`(PR #7)였으나 이후 세션 복구를 거치며 이 브랜치로
+> 이어짐. **§8 링크는 항상 최신 브랜치로 갱신할 것** — 다음 세션 복구 시 브랜치명이 또 바뀜.
 
 ---
 
@@ -238,8 +240,8 @@
 - 사용자는 개발 비전문가지만 Colab 셀 실행·에러 캡처 가능.
 
 ## 8. 링크·명령
-- Colab: `https://colab.research.google.com/github/tinyalex3628-dotcom/doh-golf-survey/blob/claude/ai-video-analysis-engine-wlr06k/pose3d_poc/pose3d_simple.ipynb`
-- analyzer2: `https://raw.githack.com/tinyalex3628-dotcom/doh-golf-survey/claude/ai-video-analysis-engine-wlr06k/pose_poc/analyzer2.html`
+- Colab: `https://colab.research.google.com/github/tinyalex3628-dotcom/doh-golf-survey/blob/claude/session-context-recovery-il15cg/pose3d_poc/pose3d_simple.ipynb`
+- analyzer2: `https://raw.githack.com/tinyalex3628-dotcom/doh-golf-survey/claude/session-context-recovery-il15cg/pose_poc/analyzer2.html`
 - 회전 추출: `python rot.py joints.pkl --skeleton smpl --png rot.png --json doh_vision.json` (P구간 자동)
 - 계약 방출: `python pose3d_poc/wham_golf_rotation.py joints.pkl --skeleton smpl --json-v1 doh_vision_v1.json --view FO --hand right`
 - 계약 검증: `python schema/validate.py doh_vision_v1.json`
