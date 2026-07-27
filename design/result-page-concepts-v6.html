@@ -1,0 +1,536 @@
+<title>결과지 v6 — 판정 없는 구조</title>
+<style>
+:root{
+  --wall:#E9E5DB;--panel:#F7F5F0;--ink:#1B1916;--ink-2:#5E594F;--ink-3:#948D7F;
+  --line:#D8D2C4;--forest:#1E3A2B;--sage:#4C7A5E;--clay:#A8552F;--tag-fg:#F7F5F0;
+  --shadow:0 18px 40px -24px rgba(40,34,22,.5);
+}
+@media (prefers-color-scheme:dark){
+  :root{--wall:#17160F;--panel:#201E17;--ink:#EFEBE0;--ink-2:#A9A294;--ink-3:#7C7566;
+    --line:#343126;--forest:#8FC0A2;--sage:#8FC0A2;--clay:#D89468;--tag-fg:#17160F;
+    --shadow:0 18px 46px -22px rgba(0,0,0,.85);}
+}
+:root[data-theme="dark"]{--wall:#17160F;--panel:#201E17;--ink:#EFEBE0;--ink-2:#A9A294;--ink-3:#7C7566;
+  --line:#343126;--forest:#8FC0A2;--sage:#8FC0A2;--clay:#D89468;--tag-fg:#17160F;
+  --shadow:0 18px 46px -22px rgba(0,0,0,.85);}
+:root[data-theme="light"]{--wall:#E9E5DB;--panel:#F7F5F0;--ink:#1B1916;--ink-2:#5E594F;--ink-3:#948D7F;
+  --line:#D8D2C4;--forest:#1E3A2B;--sage:#4C7A5E;--clay:#A8552F;--tag-fg:#F7F5F0;
+  --shadow:0 18px 40px -24px rgba(40,34,22,.5);}
+
+*{box-sizing:border-box;}
+body{margin:0;background:var(--wall);color:var(--ink);
+  font-family:"Pretendard Variable","Pretendard",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;line-height:1.65;overflow-x:hidden;}
+.wrap{max-width:520px;margin:0 auto;padding:40px 18px 80px;}
+
+.eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin:0;}
+h1{font-size:clamp(25px,6.6vw,32px);font-weight:800;letter-spacing:-.035em;line-height:1.26;margin:10px 0 0;text-wrap:balance;}
+.lede{margin:16px 0 0;font-size:15px;color:var(--ink-2);line-height:1.78;}
+.lede strong{color:var(--ink);font-weight:700;}
+
+.sec{margin-top:52px;}
+.sec-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.tag{font-size:10.5px;font-weight:800;letter-spacing:.08em;background:var(--forest);color:var(--tag-fg);padding:4px 9px;border-radius:5px;}
+.tag.alt{background:transparent;color:var(--sage);border:1px solid var(--line);}
+.sec-title{font-size:19px;font-weight:800;letter-spacing:-.03em;}
+.sec-desc{font-size:14px;color:var(--ink-2);margin-top:11px;line-height:1.75;}
+.sec-desc b{color:var(--ink);font-weight:700;}
+
+.chg{margin-top:18px;display:grid;gap:9px;}
+.c{border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:var(--panel);}
+.c-top{display:flex;align-items:center;gap:9px;}
+.c-mark{font-size:9.5px;font-weight:800;letter-spacing:.05em;padding:3px 7px;border-radius:5px;flex:none;}
+.c-mark.out{background:transparent;color:var(--clay);border:1px solid var(--line);}
+.c-mark.in{background:var(--forest);color:var(--tag-fg);}
+.c-mark.fix{background:transparent;color:var(--sage);border:1px solid var(--line);}
+.c-name{font-size:13.5px;font-weight:800;letter-spacing:-.02em;flex:1;}
+.c-why{font-size:13px;color:var(--ink-2);line-height:1.68;margin-top:8px;}
+.c-why b{color:var(--ink);font-weight:700;}
+
+.note{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 17px 18px;margin-top:16px;}
+.note dl{margin:0;display:grid;gap:13px;}
+.note dt{font-size:10px;font-weight:800;letter-spacing:.13em;color:var(--ink-3);margin-bottom:5px;}
+.note dd{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.7;}
+.note dd b{color:var(--ink);font-weight:700;}
+.note .risk dd{color:var(--clay);}
+
+.ph-demo{margin-top:16px;border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+.ph-demo .h{background:var(--panel);padding:11px 14px;font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--ink-3);border-bottom:1px solid var(--line);}
+.ph-demo .b{padding:13px 14px;font-size:13px;color:var(--ink-2);line-height:1.7;background:var(--panel);}
+.ph-demo .b em{font-style:italic;color:var(--ink-3);}
+.ph-demo .b + .b{border-top:1px dashed var(--line);}
+.ph-demo .b strong{color:var(--ink);font-weight:700;display:block;font-size:12px;margin-bottom:4px;letter-spacing:-.01em;}
+
+.foot{margin-top:46px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3);line-height:1.7;}
+
+/* ============================================================
+   PHONE
+   ============================================================ */
+.phone{margin:22px 0 0;border-radius:26px;overflow:hidden;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.08);}
+.m{
+  --paper:#EFEBE3;--card:#FDFCF9;--mink:#1C1A17;--mink2:#6E6960;--mink3:#A29B8E;
+  --mline:#E3DED2;--mforest:#1E3A2B;--stage:#191815;--msage:#4C7A5E;--mclay:#B4643C;--mgold:#B99247;
+  background:var(--paper);color:var(--mink);font-size:14px;display:flex;flex-direction:column;position:relative;
+}
+.m *{box-sizing:border-box;}
+.m-status{display:flex;justify-content:space-between;align-items:center;padding:12px 18px 4px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;}
+.m-batt{width:22px;height:11px;border:1.4px solid var(--mink);border-radius:3px;position:relative;opacity:.7;}
+.m-batt::after{content:"";position:absolute;inset:1.5px;right:7px;background:var(--mink);border-radius:1px;}
+.m-nav{display:flex;align-items:center;padding:8px 16px 10px;}
+.m-back{width:26px;display:grid;place-items:center;color:var(--mink);}
+.m-navtitle{flex:1;text-align:center;font-size:14px;font-weight:800;letter-spacing:-.02em;margin-right:26px;}
+.m-pad{padding:0 16px;}
+.m-foot{padding:14px 16px 22px;}
+.m-cta{width:100%;border:0;border-radius:14px;padding:16px;background:var(--mforest);color:#F3F0E7;font-size:15px;font-weight:800;letter-spacing:-.02em;font-family:inherit;cursor:pointer;display:block;}
+.m-stack{display:flex;flex-direction:column;gap:12px;}
+.m-meta{font-size:11.5px;font-weight:700;color:var(--mink3);letter-spacing:-.01em;}
+.m-h1{font-size:22px;font-weight:800;letter-spacing:-.035em;line-height:1.34;margin:7px 0 0;text-wrap:balance;}
+.m-card{background:var(--card);border:1px solid var(--mline);border-radius:15px;padding:15px 16px;}
+.m-label{font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--mink3);}
+.m-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.m-divider{height:1px;background:var(--mline);margin:3px 0;}
+.m-avatar{width:32px;height:32px;border-radius:10px;flex:none;background:var(--stage);color:#E9E3D4;display:grid;place-items:center;font-size:10.5px;font-weight:800;letter-spacing:-.02em;}
+
+/* 여정 스트립 — 판정 없이 "함께한 기록" */
+.jr{background:var(--card);border:1px solid var(--mline);border-radius:15px;padding:14px 15px;}
+.jr-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.jr-sum{font-size:13.5px;font-weight:800;letter-spacing:-.025em;}
+.jr-sum em{font-style:normal;color:var(--msage);}
+.jr-more{font-size:11px;font-weight:800;color:var(--mink3);}
+.jr-track{display:flex;align-items:flex-start;margin-top:13px;}
+.jr-step{flex:1;text-align:center;position:relative;min-width:0;}
+.jr-step::before{content:"";position:absolute;top:6px;left:-50%;width:100%;height:2px;background:var(--mline);}
+.jr-step:first-child::before{display:none;}
+.jr-step.past::before{background:var(--mforest);}
+.jr-step.now::before{background:var(--mforest);}
+.jr-dot{position:relative;width:14px;height:14px;border-radius:50%;margin:0 auto;background:var(--paper);border:2.5px solid var(--mline);}
+.jr-step.past .jr-dot{background:var(--mforest);border-color:var(--mforest);}
+.jr-step.now .jr-dot{background:var(--mclay);border-color:var(--mclay);box-shadow:0 0 0 4px rgba(180,100,60,.16);}
+.jr-mo{display:block;font-size:10px;font-weight:800;color:var(--mink3);margin-top:7px;font-variant-numeric:tabular-nums;}
+.jr-nm{display:block;font-size:10.5px;font-weight:700;color:var(--mink2);margin-top:2px;letter-spacing:-.03em;line-height:1.3;}
+.jr-step.now .jr-mo,.jr-step.now .jr-nm{color:var(--mclay);}
+.jr-list{display:none;margin-top:14px;padding-top:13px;border-top:1px dashed var(--mline);}
+.jr.open .jr-list{display:block;}
+.jr-row{display:flex;align-items:center;gap:11px;}
+.jr-row + .jr-row{margin-top:11px;}
+.jr-mon{font-size:10.5px;font-weight:800;color:var(--mink3);flex:none;width:26px;font-variant-numeric:tabular-nums;}
+.jr-row .tx{flex:1;min-width:0;}
+.jr-row .tt{font-size:13px;font-weight:700;letter-spacing:-.02em;line-height:1.4;}
+.jr-row .ts{font-size:10.5px;font-weight:600;color:var(--mink3);margin-top:2px;}
+.jr-row.cur .tt{color:var(--mclay);}
+.jr-row.cur .ts{color:var(--mclay);}
+.jr-toggle{width:100%;border:0;background:none;font-family:inherit;color:inherit;padding:0;cursor:pointer;text-align:left;}
+
+/* 두 블록 카드 */
+.key{display:flex;gap:10px;align-items:flex-start;}
+.key + .key{margin-top:13px;padding-top:13px;border-top:1px solid var(--mline);}
+.key .ic{width:22px;height:22px;border-radius:7px;flex:none;display:grid;place-items:center;margin-top:1px;}
+.key.link .ic{background:#EDE8DB;color:var(--mink2);}
+.key.fix .ic{background:#F2E1D5;color:var(--mclay);}
+.key .tx{flex:1;min-width:0;}
+.key .k{font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--mink3);}
+.key .v{font-size:14px;font-weight:600;line-height:1.66;letter-spacing:-.025em;margin-top:4px;}
+.key.fix .v{font-weight:700;}
+
+/* 레슨 영상 */
+.lesson{border:1px solid var(--mline);border-radius:16px;overflow:hidden;background:var(--card);}
+.lesson-head{display:flex;align-items:center;gap:9px;padding:11px 14px;background:var(--stage);color:#EDE8DC;}
+.lesson-head .rec{width:7px;height:7px;border-radius:50%;background:var(--mclay);flex:none;}
+.lesson-head .t{flex:1;font-size:11px;font-weight:800;letter-spacing:.09em;}
+.lesson-head .d{font-size:10.5px;font-weight:700;opacity:.65;font-variant-numeric:tabular-nums;}
+.m-stage{position:relative;overflow:hidden;background:radial-gradient(120% 90% at 62% 34%,#34322B 0%,#201F1B 46%,#131210 100%);aspect-ratio:16/10;}
+.m-golfer{position:absolute;left:50%;bottom:13%;transform:translateX(-50%);width:30%;opacity:.5;}
+.m-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:rgba(247,244,236,.92);display:grid;place-items:center;color:#1C1A17;}
+.m-scrub{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:9px;padding:9px 11px;color:#DDD7C9;font-size:10px;font-weight:700;background:linear-gradient(to top,rgba(10,9,8,.82),transparent);font-variant-numeric:tabular-nums;}
+.m-track{flex:1;height:3px;border-radius:99px;background:rgba(237,232,220,.28);position:relative;}
+.m-track i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:#EDE8DC;}
+.lesson-sub{display:flex;align-items:center;gap:8px;padding:11px 14px;}
+.lesson-sub .tx{flex:1;font-size:12.5px;font-weight:700;color:var(--mink2);letter-spacing:-.02em;}
+.lesson-sub .tx b{color:var(--mink);}
+
+/* 인용 */
+.quote{background:#EFEADC;border-radius:16px;padding:18px 17px 15px;border:1px solid #E2DBC6;position:relative;}
+.quote .qm{font-size:34px;font-weight:800;color:var(--mgold);line-height:0;display:block;height:14px;letter-spacing:-.05em;}
+.quote p{margin:6px 0 0;font-size:15.5px;font-weight:700;line-height:1.66;letter-spacing:-.028em;color:var(--mink);}
+.quote .row{display:flex;align-items:center;gap:8px;margin-top:13px;padding-top:12px;border-top:1px solid #E2DBC6;}
+.quote .who{flex:1;display:flex;align-items:center;gap:8px;}
+.quote .who span{font-size:11px;font-weight:700;color:var(--mink2);}
+.quote .save{display:inline-flex;align-items:center;gap:5px;border:0;background:none;font-family:inherit;font-size:11px;font-weight:800;color:var(--mgold);cursor:pointer;padding:0;}
+
+/* Before/After */
+.ba{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;}
+.ba-cell{border-radius:12px;overflow:hidden;background:#DCD6C7;aspect-ratio:3/4;position:relative;display:grid;place-items:center;}
+.ba-cell.before{background:linear-gradient(155deg,#B9B2A0,#8E8878);}
+.ba-cell.after{background:linear-gradient(155deg,#3C5745,#1E3A2B);}
+.ba-cell figure{margin:0;width:44%;}
+.ba-cell .cap{position:absolute;left:0;right:0;bottom:0;padding:7px 9px;font-size:9.5px;font-weight:800;letter-spacing:.05em;color:rgba(255,255,255,.92);background:linear-gradient(to top,rgba(0,0,0,.45),transparent);}
+.ba-arrow{color:var(--mink3);}
+
+/* 숙제 */
+.hw{display:flex;gap:11px;align-items:flex-start;width:100%;text-align:left;background:var(--card);border:1px solid var(--mline);border-radius:14px;padding:13px 14px;font-family:inherit;cursor:pointer;color:inherit;}
+.hw.done{background:#ECEFEA;border-color:#CFDACF;}
+.hw-check{width:21px;height:21px;flex:none;border-radius:7px;margin-top:1px;border:1.8px solid #C9C2B1;display:grid;place-items:center;color:transparent;}
+.hw.done .hw-check{background:var(--mforest);border-color:var(--mforest);color:#F2EEE4;}
+.hw .tx{flex:1;min-width:0;}
+.hw .tt{font-size:13.5px;font-weight:700;letter-spacing:-.02em;line-height:1.45;}
+.hw.done .tt{color:var(--mink2);text-decoration:line-through;text-decoration-color:#A9B3A8;}
+.hw .why{font-size:12px;color:var(--mink2);line-height:1.55;margin-top:4px;letter-spacing:-.02em;}
+.hw .why b{font-weight:800;color:var(--msage);font-size:10px;letter-spacing:.06em;margin-right:4px;}
+.hw.done .why{color:var(--mink3);}
+
+/* 질문 */
+.q-box{background:var(--card);border:1.5px solid var(--mline);border-radius:15px;padding:14px 15px;}
+.q-title{font-size:13.5px;font-weight:800;letter-spacing:-.025em;line-height:1.5;}
+.q-input{width:100%;border:0;background:transparent;font-family:inherit;font-size:13.5px;color:var(--mink);padding:0;margin-top:8px;line-height:1.6;resize:none;height:40px;}
+.q-input::placeholder{color:var(--mink3);}
+.q-input:focus{outline:none;}
+.q-send{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding-top:10px;border-top:1px solid var(--mline);}
+.q-hint{font-size:10.5px;font-weight:700;color:var(--mink3);letter-spacing:-.01em;}
+.q-btn{border:0;background:var(--mforest);color:#F3F0E7;font-family:inherit;font-size:11.5px;font-weight:800;padding:7px 13px;border-radius:9px;cursor:pointer;}
+
+/* 다음 달 */
+.next{background:var(--stage);border-radius:16px;padding:17px 17px 18px;color:#EDE8DC;position:relative;overflow:hidden;}
+.next::after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(185,146,71,.22),transparent 68%);}
+.next .lb{font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--mgold);}
+.next .h{font-size:17px;font-weight:800;letter-spacing:-.03em;line-height:1.42;margin-top:9px;position:relative;}
+.next .p{font-size:13px;line-height:1.7;margin-top:8px;color:rgba(237,232,220,.72);letter-spacing:-.02em;position:relative;}
+.next .when{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:13px;border-top:1px solid rgba(237,232,220,.16);position:relative;}
+.next .when .t{flex:1;font-size:12px;font-weight:700;color:rgba(237,232,220,.85);letter-spacing:-.02em;}
+.next .when .b{font-size:11px;font-weight:800;color:var(--stage);background:#EDE8DC;padding:6px 11px;border-radius:8px;}
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">DOH GOLF · 결과지 v6</p>
+  <h1>골프는 한 달에<br>끝나지 않으니까</h1>
+  <p class="lede">
+    "해결됐어요"를 빼자는 판단이 맞습니다. <strong>실제로 한 달 만에 해결되는 경우가 드문데</strong>
+    화면이 매달 해결을 요구하면, 프로님은 못 쓰고 회원은 못 채운 기분만 남습니다.
+    대신 그 자리에 <strong>지난달 숙제·목표에 대한 코멘트</strong>를 넣었고,
+    "건드리지 말 것"은 뺐습니다.
+  </p>
+
+  <!-- ==========================================================
+       변경
+       ========================================================== -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="tag alt">변경</span>
+      <span class="sec-title">무엇이 바뀌었나</span>
+    </div>
+
+    <div class="chg">
+      <div class="c">
+        <div class="c-top"><span class="c-mark out">삭제</span><span class="c-name">"해결됐어요" 판정</span></div>
+        <div class="c-why">한 달 단위 합격/불합격은 골프에 안 맞습니다. 3개월째 같은 걸 보고 있어도 그게 정상이고, 화면이 그걸 실패로 표시하면 <b>구독을 끊을 이유를 화면이 스스로 만들어냅니다.</b></div>
+      </div>
+      <div class="c">
+        <div class="c-top"><span class="c-mark in">추가</span><span class="c-name">"지난달 이어서" 코멘트</span></div>
+        <div class="c-why">지난달 숙제와 목표에 대해 한두 마디. <b>판정이 아니라 관찰</b>이라 프로님이 쓰기 쉽고, "3초 멈추기 하셨죠? 톱이 확실히 안정됐어요"처럼 <b>기억하고 있다는 감각과 칭찬을 동시에</b> 담습니다.</div>
+      </div>
+      <div class="c">
+        <div class="c-top"><span class="c-mark out">삭제</span><span class="c-name">"건드리지 말 것"</span></div>
+        <div class="c-why">기능이 사라지는 게 아닙니다. 칭찬은 위의 "지난달 이어서" 안에 자연스럽게 들어가요. <b>칸을 따로 두면 매달 억지로 채워야 하는 부담</b>만 생깁니다.</div>
+      </div>
+      <div class="c">
+        <div class="c-top"><span class="c-mark fix">수정</span><span class="c-name">여정 스트립의 의미</span></div>
+        <div class="c-why">이게 <b>가장 중요한 연쇄 변경</b>입니다. 스트립은 "해결 판정"을 재료로 만들어졌는데 그 재료가 없어졌어요. 그래서 성격을 바꿨습니다 — <b>"3가지를 고쳤어요"(성과) → "5개월째 함께 만들고 있어요"(누적)</b>. 각 월은 합격 도장이 아니라 <b>그달에 다룬 주제</b>입니다.</div>
+      </div>
+      <div class="c">
+        <div class="c-top"><span class="c-mark fix">수정</span><span class="c-name">제목 어조</span></div>
+        <div class="c-why">"하체는 끝났어요"도 같은 이유로 위험합니다. <b>"하체가 자리를 잡으니 왼팔이 보여요"</b>로 바꿨습니다 — 인과는 살리고 완결은 주장하지 않습니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       화면
+       ========================================================== -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="tag">v6</span>
+      <span class="sec-title">회원 화면</span>
+    </div>
+    <p class="sec-desc">
+      요약 카드가 세 블록에서 <b>두 블록</b>으로 줄었습니다.
+      스트립 라벨과 펼침 내용도 판정 없는 형태로 바꿨습니다.
+    </p>
+
+    <div class="phone">
+      <div class="m">
+        <div class="m-status"><span>9:41</span><span class="m-batt"></span></div>
+        <div class="m-nav">
+          <span class="m-back"><svg width="9" height="16" viewBox="0 0 9 16" fill="none"><path d="M8 1 1 8l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="m-navtitle">No.06 · 6월 레슨</span>
+        </div>
+
+        <div class="m-pad">
+          <div class="m-stack">
+
+            <!-- ① 여정 (판정 없음) -->
+            <div class="jr" id="jr">
+              <button class="jr-toggle" type="button" id="jrbtn">
+                <div class="jr-top">
+                  <span class="jr-sum"><em>5개월째</em> 함께 만들고 있어요</span>
+                  <span class="jr-more">기록 보기</span>
+                </div>
+                <div class="jr-track">
+                  <span class="jr-step past"><span class="jr-dot"></span><span class="jr-mo">3월</span><span class="jr-nm">슬라이스</span></span>
+                  <span class="jr-step past"><span class="jr-dot"></span><span class="jr-mo">4월</span><span class="jr-nm">뒤땅</span></span>
+                  <span class="jr-step past"><span class="jr-dot"></span><span class="jr-mo">5월</span><span class="jr-nm">하체 리드</span></span>
+                  <span class="jr-step now"><span class="jr-dot"></span><span class="jr-mo">6월</span><span class="jr-nm">왼팔 각</span></span>
+                </div>
+              </button>
+              <div class="jr-list">
+                <div class="jr-row">
+                  <span class="jr-mon">3월</span>
+                  <span class="tx"><span class="tt">슬라이스 잡기</span><span class="ts">2개월 함께 봤어요</span></span>
+                </div>
+                <div class="jr-row">
+                  <span class="jr-mon">4월</span>
+                  <span class="tx"><span class="tt">아이언 뒤땅 줄이기</span><span class="ts">1개월</span></span>
+                </div>
+                <div class="jr-row">
+                  <span class="jr-mon">5월</span>
+                  <span class="tx"><span class="tt">하체 리드 만들기</span><span class="ts">2개월 함께 봤어요</span></span>
+                </div>
+                <div class="jr-row cur">
+                  <span class="jr-mon">6월</span>
+                  <span class="tx"><span class="tt">톱에서 왼팔 각 잡기</span><span class="ts">지금 보고 있는 주제</span></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ② 제목 -->
+            <div>
+              <div class="m-meta">이도형 프로 · 6월 27일 받음</div>
+              <h2 class="m-h1">하체가 자리를 잡으니<br>왼팔이 보여요</h2>
+            </div>
+
+            <!-- ③ 두 블록 -->
+            <div class="m-card">
+              <div class="key link">
+                <span class="ic">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.6 7.4 7.4 4.6M5 2.6l.9-.9a2.4 2.4 0 0 1 3.4 3.4l-.9.9M7 9.4l-.9.9a2.4 2.4 0 0 1-3.4-3.4l.9-.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                </span>
+                <span class="tx">
+                  <span class="k">지난달 이어서</span>
+                  <span class="v">3초 멈추기 숙제 하셨죠? 톱이 확실히 안정됐어요. 왼팔은 아직 살짝 접히지만 지난달보다는 훨씬 낫습니다.</span>
+                </span>
+              </div>
+              <div class="key fix">
+                <span class="ic"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1.5v8M1.5 5.5h8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span>
+                <span class="tx">
+                  <span class="k">이번 달 고칠 것</span>
+                  <span class="v">하체가 잡히면서 이제 톱에서 왼팔 접힘이 눈에 들어와요. 임팩트 방향이 갈리는 원인입니다.</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- ④ 레슨 영상 -->
+            <div class="lesson">
+              <div class="lesson-head">
+                <span class="rec"></span>
+                <span class="t">LESSON 06 · 프로 피드백</span>
+                <span class="d">3:24</span>
+              </div>
+              <div class="m-stage">
+                <svg class="m-golfer" viewBox="0 0 60 120" fill="none" aria-hidden="true">
+                  <circle cx="30" cy="14" r="8" fill="#EDE8DC"/>
+                  <path d="M30 22v38M30 34l-15 13M30 34l17 5M30 60l-9 34M30 60l11 34" stroke="#EDE8DC" stroke-width="5" stroke-linecap="round"/>
+                  <path d="M47 39 57 68" stroke="#B99247" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+                <div class="m-play"><svg width="15" height="17" viewBox="0 0 15 17" fill="none"><path d="M2 1.5 14 8.5 2 15.5z" fill="currentColor"/></svg></div>
+                <div class="m-scrub"><span>0:00</span><span class="m-track"><i style="width:0%"></i></span><span>3:24</span></div>
+              </div>
+              <div class="lesson-sub">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style="color:var(--msage);flex:none"><circle cx="6.5" cy="4.2" r="2.6" stroke="currentColor" stroke-width="1.5"/><path d="M1.8 11.4c.7-2.3 2.5-3.5 4.7-3.5s4 1.2 4.7 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <span class="tx"><b>회원님 스윙만 보고</b> 녹화한 이번 달 레슨이에요</span>
+              </div>
+            </div>
+
+            <!-- ⑤ 인용 -->
+            <div class="quote">
+              <span class="qm">“</span>
+              <p>급하게 갈 필요 없어요. 하체를 먼저 잡았으니 왼팔은 훨씬 빨리 잡힙니다.</p>
+              <div class="row">
+                <span class="who">
+                  <span class="m-avatar" style="width:26px;height:26px;border-radius:8px;font-size:9px">이도형</span>
+                  <span>이도형 프로 · 담당 5개월</span>
+                </span>
+                <button class="save" type="button">
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v6M2.8 4.5 5.5 7.2 8.2 4.5M1.5 9.5h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  이미지 저장
+                </button>
+              </div>
+            </div>
+
+            <!-- ⑥ Before / After -->
+            <div>
+              <div class="m-row" style="margin-bottom:9px">
+                <span class="m-label">톱 자세 · 한 달 변화</span>
+                <span style="font-size:11px;font-weight:800;color:var(--mink3)">크게 보기</span>
+              </div>
+              <div class="ba">
+                <span class="ba-cell before">
+                  <figure><svg viewBox="0 0 60 120" fill="none" aria-hidden="true"><circle cx="30" cy="14" r="8" fill="#F4F1E9"/><path d="M30 22v38M30 34l-18 8M30 34l17 9M30 60l-12 32M30 60l13 32" stroke="#F4F1E9" stroke-width="5" stroke-linecap="round"/></svg></figure>
+                  <span class="cap">5월 27일</span>
+                </span>
+                <span class="ba-arrow"><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 6h11M8 2l4 4-4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span class="ba-cell after">
+                  <figure><svg viewBox="0 0 60 120" fill="none" aria-hidden="true"><circle cx="30" cy="14" r="8" fill="#F4F1E9"/><path d="M30 22v38M30 34l-15 13M30 34l17 5M30 60l-9 34M30 60l11 34" stroke="#F4F1E9" stroke-width="5" stroke-linecap="round"/></svg></figure>
+                  <span class="cap">6월 27일</span>
+                </span>
+              </div>
+              <div style="font-size:12px;font-weight:600;color:var(--mink2);margin-top:9px;line-height:1.6;letter-spacing:-.02em">
+                골반이 열리는 순서가 달라졌어요. 왼쪽은 상체가 먼저, 오른쪽은 하체가 먼저입니다.
+              </div>
+            </div>
+
+            <!-- ⑦ 숙제 -->
+            <div class="m-row" style="margin-top:2px">
+              <span class="m-label">이번 달 숙제</span>
+              <span style="font-size:11px;font-weight:800;color:var(--mink3)" id="hwcount">0/2</span>
+            </div>
+            <div class="m-stack" style="gap:8px" id="hwlist">
+              <button class="hw" type="button">
+                <span class="hw-check"><svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="m1 4.6 3 3L10 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span class="tx">
+                  <span class="tt">톱에서 3초 멈추기 15회</span>
+                  <span class="why"><b>WHY</b>왼팔이 접히는 순간을 몸이 알아채게 만드는 연습이에요</span>
+                </span>
+              </button>
+              <button class="hw" type="button">
+                <span class="hw-check"><svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="m1 4.6 3 3L10 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span class="tx">
+                  <span class="tt">거울 앞 톱 자세 사진 찍기</span>
+                  <span class="why"><b>WHY</b>다음 달 비교 자료가 돼요. 각도가 같아야 변화가 보입니다</span>
+                </span>
+              </button>
+            </div>
+
+            <!-- ⑧ 질문 -->
+            <div class="q-box">
+              <div class="q-title">이번 레슨에서 이해 안 된 것,<br>하나만 남겨주세요</div>
+              <textarea class="q-input" placeholder="예) 톱에서 멈추면 리듬이 깨지지 않나요?"></textarea>
+              <div class="q-send">
+                <span class="q-hint">다음 영상에서 프로가 직접 답해요</span>
+                <button class="q-btn" type="button">남기기</button>
+              </div>
+            </div>
+
+            <div class="m-divider" style="margin:4px 0"></div>
+
+            <!-- ⑨ 다음 달 -->
+            <div class="next">
+              <div class="lb">NEXT · 7월 레슨</div>
+              <div class="h">6월 레슨은 여기까지.<br>다음 달에도 왼팔을 이어서 봅시다</div>
+              <p class="p">한 달 만에 다 잡히는 건 아니에요. 3초 멈추기를 꾸준히 하시면 다음 달엔 릴리즈까지 같이 볼 수 있습니다.</p>
+              <div class="when">
+                <span class="t">7월 27일쯤 스윙 올려주세요</span>
+                <span class="b">알림 받기</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="m-foot">
+          <button class="m-cta">스윙 올리고 확인받기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <dl>
+        <div><dt>성장 증거는 어디로 갔나</dt><dd>"해결 3건"이라는 성과 표시가 사라진 만큼, <b>Before/After 사진의 비중이 올라갑니다.</b> 이제 이 화면에서 눈으로 확인 가능한 변화는 사진뿐이에요. 촬영 각도 가이드를 신청 화면에 넣는 일이 <b>선택이 아니라 필수</b>가 됐습니다.</dd></div>
+        <div><dt>같은 주제가 이어져도 괜찮게</dt><dd>스트립 펼침에 "2개월 함께 봤어요"를 넣었습니다. 같은 주제를 오래 보는 게 <b>실패가 아니라 깊이</b>로 읽히도록. 7월에도 왼팔이면 "2개월 함께 보는 중"이 됩니다.</dd></div>
+        <div><dt>다음 달 예고도 바꿨습니다</dt><dd>"다음엔 릴리즈" → <b>"다음 달에도 왼팔을 이어서"</b>. 매달 새 주제를 예고하면 결국 해결 판정과 같은 압박이 됩니다. 이어서 보는 것도 정당한 예고예요.</dd></div>
+        <div><dt>프로 입력 정리</dt><dd>필수 <b>3개</b> — 제목 / 지난달 이어서 / 이번 달 고칠 것. 선택 <b>4개</b> — 인용 한 줄, 숙제(목적 포함), 사진 캡션, 다음 달 예고. v5보다 필수가 하나 줄었습니다.</dd></div>
+        <div class="risk"><dt>주의</dt><dd>첫 레슨에는 "지난달 이어서"가 없습니다. 그 경우 <b>블록을 숨기고</b> "이번 달 고칠 것"만 나가야 합니다 — 빈 칸이나 "첫 레슨입니다" 같은 안내로 자리를 채우면 오히려 허전해 보입니다.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       작성 가이드
+       ========================================================== -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="tag alt">가이드</span>
+      <span class="sec-title">입력칸 안내문구</span>
+    </div>
+    <p class="sec-desc">
+      화면 품질의 절반이 <b>placeholder 문구</b>에서 결정됩니다.
+      판정을 없앤 만큼 "무엇을 쓸지"를 예시로 보여줘야 해요.
+    </p>
+
+    <div class="ph-demo">
+      <div class="h">지난달 이어서 · 필수</div>
+      <div class="b">
+        <strong>안내문구</strong>
+        <em>지난달 숙제와 목표가 어떻게 됐는지 한두 마디로. 다 안 됐어도 괜찮아요 — 뭐가 나아졌는지만 짚어주세요.</em>
+      </div>
+      <div class="b">
+        <strong>예시</strong>
+        "3초 멈추기 하셨죠? 톱이 확실히 안정됐어요. 왼팔은 아직이지만 지난달보다는 훨씬 낫습니다."
+      </div>
+    </div>
+
+    <div class="ph-demo">
+      <div class="h">이번 달 고칠 것 · 필수</div>
+      <div class="b">
+        <strong>안내문구</strong>
+        <em>지난달과 이어서 써주세요. "A가 잡히니까 B가 보인다" 형태면 회원이 흐름을 이해합니다.</em>
+      </div>
+      <div class="b">
+        <strong>예시</strong>
+        "하체가 잡히면서 이제 톱에서 왼팔 접힘이 눈에 들어와요. 임팩트 방향이 갈리는 원인입니다."
+      </div>
+    </div>
+
+    <div class="ph-demo">
+      <div class="h">다음 달 예고 · 선택</div>
+      <div class="b">
+        <strong>안내문구</strong>
+        <em>같은 주제를 이어서 봐도 됩니다. 왜 이어서 보는지만 한 줄 적어주세요.</em>
+      </div>
+      <div class="b">
+        <strong>예시</strong>
+        "한 달 만에 다 잡히는 건 아니에요. 3초 멈추기를 꾸준히 하시면 다음 달엔 릴리즈까지 같이 볼 수 있습니다."
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">
+    여정 스트립("기록 보기")과 숙제 체크는 실제로 동작합니다.
+    v5 대비 프로 필수 입력이 4개에서 3개로 줄었습니다.
+  </p>
+
+</div>
+
+<script>
+(function () {
+  var jr = document.getElementById('jr');
+  var btn = document.getElementById('jrbtn');
+  if (btn) {
+    btn.addEventListener('click', function () {
+      jr.classList.toggle('open');
+      jr.querySelector('.jr-more').textContent = jr.classList.contains('open') ? '접기' : '기록 보기';
+    });
+  }
+  var list = document.getElementById('hwlist');
+  if (!list) return;
+  var items = list.querySelectorAll('.hw');
+  var count = document.getElementById('hwcount');
+  function sync() {
+    var done = 0;
+    items.forEach(function (t) { if (t.classList.contains('done')) done++; });
+    count.textContent = done + '/' + items.length;
+  }
+  items.forEach(function (t) {
+    t.addEventListener('click', function () { t.classList.toggle('done'); sync(); });
+  });
+  sync();
+})();
+</script>
