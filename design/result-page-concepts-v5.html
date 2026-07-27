@@ -1,0 +1,474 @@
+<title>결과지 v5 — 관계감 라운드</title>
+<style>
+:root{
+  --wall:#E9E5DB;--panel:#F7F5F0;--ink:#1B1916;--ink-2:#5E594F;--ink-3:#948D7F;
+  --line:#D8D2C4;--forest:#1E3A2B;--sage:#4C7A5E;--clay:#A8552F;--tag-fg:#F7F5F0;
+  --shadow:0 18px 40px -24px rgba(40,34,22,.5);
+}
+@media (prefers-color-scheme:dark){
+  :root{--wall:#17160F;--panel:#201E17;--ink:#EFEBE0;--ink-2:#A9A294;--ink-3:#7C7566;
+    --line:#343126;--forest:#8FC0A2;--sage:#8FC0A2;--clay:#D89468;--tag-fg:#17160F;
+    --shadow:0 18px 46px -22px rgba(0,0,0,.85);}
+}
+:root[data-theme="dark"]{--wall:#17160F;--panel:#201E17;--ink:#EFEBE0;--ink-2:#A9A294;--ink-3:#7C7566;
+  --line:#343126;--forest:#8FC0A2;--sage:#8FC0A2;--clay:#D89468;--tag-fg:#17160F;
+  --shadow:0 18px 46px -22px rgba(0,0,0,.85);}
+:root[data-theme="light"]{--wall:#E9E5DB;--panel:#F7F5F0;--ink:#1B1916;--ink-2:#5E594F;--ink-3:#948D7F;
+  --line:#D8D2C4;--forest:#1E3A2B;--sage:#4C7A5E;--clay:#A8552F;--tag-fg:#F7F5F0;
+  --shadow:0 18px 40px -24px rgba(40,34,22,.5);}
+
+*{box-sizing:border-box;}
+body{margin:0;background:var(--wall);color:var(--ink);
+  font-family:"Pretendard Variable","Pretendard",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;line-height:1.65;overflow-x:hidden;}
+.wrap{max-width:520px;margin:0 auto;padding:40px 18px 80px;}
+
+.eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin:0;}
+h1{font-size:clamp(25px,6.6vw,32px);font-weight:800;letter-spacing:-.035em;line-height:1.26;margin:10px 0 0;text-wrap:balance;}
+.lede{margin:16px 0 0;font-size:15px;color:var(--ink-2);line-height:1.78;}
+.lede strong{color:var(--ink);font-weight:700;}
+
+.sec{margin-top:52px;}
+.sec-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.tag{font-size:10.5px;font-weight:800;letter-spacing:.08em;background:var(--forest);color:var(--tag-fg);padding:4px 9px;border-radius:5px;}
+.tag.alt{background:transparent;color:var(--sage);border:1px solid var(--line);}
+.sec-title{font-size:19px;font-weight:800;letter-spacing:-.03em;}
+.sec-desc{font-size:14px;color:var(--ink-2);margin-top:11px;line-height:1.75;}
+.sec-desc b{color:var(--ink);font-weight:700;}
+
+.judge{margin-top:18px;display:grid;gap:9px;}
+.j{border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:var(--panel);}
+.j-top{display:flex;align-items:center;gap:9px;}
+.j-mark{font-size:9.5px;font-weight:800;letter-spacing:.05em;padding:3px 7px;border-radius:5px;flex:none;}
+.j-mark.take{background:var(--forest);color:var(--tag-fg);}
+.j-mark.bend{background:transparent;color:var(--sage);border:1px solid var(--line);}
+.j-name{font-size:13.5px;font-weight:800;letter-spacing:-.02em;flex:1;}
+.j-why{font-size:13px;color:var(--ink-2);line-height:1.68;margin-top:8px;}
+.j-why b{color:var(--ink);font-weight:700;}
+
+.note{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 17px 18px;margin-top:16px;}
+.note dl{margin:0;display:grid;gap:13px;}
+.note dt{font-size:10px;font-weight:800;letter-spacing:.13em;color:var(--ink-3);margin-bottom:5px;}
+.note dd{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.7;}
+.note dd b{color:var(--ink);font-weight:700;}
+.note .risk dd{color:var(--clay);}
+
+.foot{margin-top:46px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3);line-height:1.7;}
+
+/* ============================================================
+   PHONE
+   ============================================================ */
+.phone{margin:22px 0 0;border-radius:26px;overflow:hidden;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.08);}
+.m{
+  --paper:#EFEBE3;--card:#FDFCF9;--mink:#1C1A17;--mink2:#6E6960;--mink3:#A29B8E;
+  --mline:#E3DED2;--mforest:#1E3A2B;--stage:#191815;--msage:#4C7A5E;--mclay:#B4643C;--mgold:#B99247;
+  background:var(--paper);color:var(--mink);font-size:14px;display:flex;flex-direction:column;position:relative;
+}
+.m *{box-sizing:border-box;}
+.m-status{display:flex;justify-content:space-between;align-items:center;padding:12px 18px 4px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;}
+.m-batt{width:22px;height:11px;border:1.4px solid var(--mink);border-radius:3px;position:relative;opacity:.7;}
+.m-batt::after{content:"";position:absolute;inset:1.5px;right:7px;background:var(--mink);border-radius:1px;}
+.m-nav{display:flex;align-items:center;padding:8px 16px 10px;}
+.m-back{width:26px;display:grid;place-items:center;color:var(--mink);}
+.m-navtitle{flex:1;text-align:center;font-size:14px;font-weight:800;letter-spacing:-.02em;margin-right:26px;}
+.m-pad{padding:0 16px;}
+.m-foot{padding:14px 16px 22px;}
+.m-cta{width:100%;border:0;border-radius:14px;padding:16px;background:var(--mforest);color:#F3F0E7;font-size:15px;font-weight:800;letter-spacing:-.02em;font-family:inherit;cursor:pointer;display:block;}
+.m-stack{display:flex;flex-direction:column;gap:12px;}
+.m-meta{font-size:11.5px;font-weight:700;color:var(--mink3);letter-spacing:-.01em;}
+.m-h1{font-size:22px;font-weight:800;letter-spacing:-.035em;line-height:1.34;margin:7px 0 0;text-wrap:balance;}
+.m-card{background:var(--card);border:1px solid var(--mline);border-radius:15px;padding:15px 16px;}
+.m-label{font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--mink3);}
+.m-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.m-divider{height:1px;background:var(--mline);margin:3px 0;}
+.m-avatar{width:32px;height:32px;border-radius:10px;flex:none;background:var(--stage);color:#E9E3D4;display:grid;place-items:center;font-size:10.5px;font-weight:800;letter-spacing:-.02em;}
+
+/* 여정 스트립 */
+.jr{background:var(--card);border:1px solid var(--mline);border-radius:15px;padding:14px 15px;}
+.jr-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.jr-sum{font-size:13.5px;font-weight:800;letter-spacing:-.025em;}
+.jr-sum em{font-style:normal;color:var(--msage);}
+.jr-more{font-size:11px;font-weight:800;color:var(--mink3);}
+.jr-track{display:flex;align-items:flex-start;margin-top:13px;}
+.jr-step{flex:1;text-align:center;position:relative;min-width:0;}
+.jr-step::before{content:"";position:absolute;top:6px;left:-50%;width:100%;height:2px;background:var(--mline);}
+.jr-step:first-child::before{display:none;}
+.jr-step.done::before{background:var(--mforest);}
+.jr-dot{position:relative;width:14px;height:14px;border-radius:50%;margin:0 auto;background:var(--paper);border:2.5px solid var(--mline);}
+.jr-step.done .jr-dot{background:var(--mforest);border-color:var(--mforest);}
+.jr-step.now .jr-dot{background:var(--mclay);border-color:var(--mclay);box-shadow:0 0 0 4px rgba(180,100,60,.16);}
+.jr-mo{display:block;font-size:10px;font-weight:800;color:var(--mink3);margin-top:7px;font-variant-numeric:tabular-nums;}
+.jr-nm{display:block;font-size:10.5px;font-weight:700;color:var(--mink2);margin-top:2px;letter-spacing:-.03em;line-height:1.3;}
+.jr-step.now .jr-mo,.jr-step.now .jr-nm{color:var(--mclay);}
+.jr-list{display:none;margin-top:14px;padding-top:13px;border-top:1px dashed var(--mline);}
+.jr.open .jr-list{display:block;}
+.jr-row{display:flex;align-items:center;gap:10px;}
+.jr-row + .jr-row{margin-top:10px;}
+.jr-badge{font-size:9.5px;font-weight:800;padding:3px 7px;border-radius:5px;flex:none;}
+.jr-badge.ok{background:#E6EDE7;color:var(--msage);}
+.jr-badge.ing{background:#F2E1D5;color:var(--mclay);}
+.jr-row .tx{flex:1;min-width:0;}
+.jr-row .tt{font-size:13px;font-weight:700;letter-spacing:-.02em;}
+.jr-row .ts{font-size:10.5px;font-weight:600;color:var(--mink3);margin-top:1px;}
+.jr-toggle{width:100%;border:0;background:none;font-family:inherit;color:inherit;padding:0;cursor:pointer;text-align:left;}
+
+/* 핵심 3줄 */
+.key{display:flex;gap:10px;align-items:flex-start;}
+.key + .key{margin-top:11px;padding-top:11px;border-top:1px solid var(--mline);}
+.key .ic{width:22px;height:22px;border-radius:7px;flex:none;display:grid;place-items:center;margin-top:1px;}
+.key.ok .ic{background:#E6EDE7;color:var(--msage);}
+.key.fix .ic{background:#F2E1D5;color:var(--mclay);}
+.key.keep .ic{background:#EDE8DB;color:var(--mink2);}
+.key .tx{flex:1;min-width:0;}
+.key .k{font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--mink3);}
+.key .v{font-size:14px;font-weight:700;line-height:1.55;letter-spacing:-.025em;margin-top:3px;}
+
+/* 레슨 영상 프레임 */
+.lesson{border:1px solid var(--mline);border-radius:16px;overflow:hidden;background:var(--card);}
+.lesson-head{
+  display:flex;align-items:center;gap:9px;padding:11px 14px;
+  background:var(--stage);color:#EDE8DC;
+}
+.lesson-head .rec{width:7px;height:7px;border-radius:50%;background:var(--mclay);flex:none;}
+.lesson-head .t{flex:1;font-size:11px;font-weight:800;letter-spacing:.09em;}
+.lesson-head .d{font-size:10.5px;font-weight:700;opacity:.65;font-variant-numeric:tabular-nums;}
+.m-stage{position:relative;overflow:hidden;background:radial-gradient(120% 90% at 62% 34%,#34322B 0%,#201F1B 46%,#131210 100%);aspect-ratio:16/10;}
+.m-golfer{position:absolute;left:50%;bottom:13%;transform:translateX(-50%);width:30%;opacity:.5;}
+.m-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:rgba(247,244,236,.92);display:grid;place-items:center;color:#1C1A17;}
+.m-scrub{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:9px;padding:9px 11px;color:#DDD7C9;font-size:10px;font-weight:700;background:linear-gradient(to top,rgba(10,9,8,.82),transparent);font-variant-numeric:tabular-nums;}
+.m-track{flex:1;height:3px;border-radius:99px;background:rgba(237,232,220,.28);position:relative;}
+.m-track i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:#EDE8DC;}
+.lesson-sub{display:flex;align-items:center;gap:8px;padding:11px 14px;}
+.lesson-sub .tx{flex:1;font-size:12.5px;font-weight:700;color:var(--mink2);letter-spacing:-.02em;}
+.lesson-sub .tx b{color:var(--mink);}
+
+/* 인용 카드 (통합: 기억 문장 = 이번 레슨 한 줄) */
+.quote{
+  background:#EFEADC;border-radius:16px;padding:18px 17px 15px;
+  border:1px solid #E2DBC6;position:relative;
+}
+.quote .qm{
+  font-size:34px;font-weight:800;color:var(--mgold);line-height:0;
+  display:block;height:14px;letter-spacing:-.05em;
+}
+.quote p{margin:6px 0 0;font-size:15.5px;font-weight:700;line-height:1.66;letter-spacing:-.028em;color:var(--mink);}
+.quote .row{display:flex;align-items:center;gap:8px;margin-top:13px;padding-top:12px;border-top:1px solid #E2DBC6;}
+.quote .who{flex:1;display:flex;align-items:center;gap:8px;}
+.quote .who span{font-size:11px;font-weight:700;color:var(--mink2);}
+.quote .save{
+  display:inline-flex;align-items:center;gap:5px;border:0;background:none;
+  font-family:inherit;font-size:11px;font-weight:800;color:var(--mgold);cursor:pointer;padding:0;
+}
+
+/* Before/After */
+.ba{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;}
+.ba-cell{border-radius:12px;overflow:hidden;background:#DCD6C7;aspect-ratio:3/4;position:relative;display:grid;place-items:center;}
+.ba-cell.before{background:linear-gradient(155deg,#B9B2A0,#8E8878);}
+.ba-cell.after{background:linear-gradient(155deg,#3C5745,#1E3A2B);}
+.ba-cell figure{margin:0;width:44%;}
+.ba-cell .cap{position:absolute;left:0;right:0;bottom:0;padding:7px 9px;font-size:9.5px;font-weight:800;letter-spacing:.05em;color:rgba(255,255,255,.92);background:linear-gradient(to top,rgba(0,0,0,.45),transparent);}
+.ba-arrow{color:var(--mink3);}
+
+/* 숙제 (목적 포함) */
+.hw{display:flex;gap:11px;align-items:flex-start;width:100%;text-align:left;background:var(--card);border:1px solid var(--mline);border-radius:14px;padding:13px 14px;font-family:inherit;cursor:pointer;color:inherit;}
+.hw.done{background:#ECEFEA;border-color:#CFDACF;}
+.hw-check{width:21px;height:21px;flex:none;border-radius:7px;margin-top:1px;border:1.8px solid #C9C2B1;display:grid;place-items:center;color:transparent;}
+.hw.done .hw-check{background:var(--mforest);border-color:var(--mforest);color:#F2EEE4;}
+.hw .tx{flex:1;min-width:0;}
+.hw .tt{font-size:13.5px;font-weight:700;letter-spacing:-.02em;line-height:1.45;}
+.hw.done .tt{color:var(--mink2);text-decoration:line-through;text-decoration-color:#A9B3A8;}
+.hw .why{font-size:12px;color:var(--mink2);line-height:1.55;margin-top:4px;letter-spacing:-.02em;}
+.hw .why b{font-weight:800;color:var(--msage);font-size:10px;letter-spacing:.06em;margin-right:4px;}
+.hw.done .why{color:var(--mink3);}
+
+/* 질문 */
+.q-box{background:var(--card);border:1.5px solid var(--mline);border-radius:15px;padding:14px 15px;}
+.q-title{font-size:13.5px;font-weight:800;letter-spacing:-.025em;line-height:1.5;}
+.q-input{width:100%;border:0;background:transparent;font-family:inherit;font-size:13.5px;color:var(--mink);padding:0;margin-top:8px;line-height:1.6;resize:none;height:40px;}
+.q-input::placeholder{color:var(--mink3);}
+.q-input:focus{outline:none;}
+.q-send{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding-top:10px;border-top:1px solid var(--mline);}
+.q-hint{font-size:10.5px;font-weight:700;color:var(--mink3);letter-spacing:-.01em;}
+.q-btn{border:0;background:var(--mforest);color:#F3F0E7;font-family:inherit;font-size:11.5px;font-weight:800;padding:7px 13px;border-radius:9px;cursor:pointer;}
+
+/* 다음 달 예고 */
+.next{background:var(--stage);border-radius:16px;padding:17px 17px 18px;color:#EDE8DC;position:relative;overflow:hidden;}
+.next::after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;
+  background:radial-gradient(circle,rgba(185,146,71,.22),transparent 68%);}
+.next .lb{font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--mgold);}
+.next .h{font-size:17px;font-weight:800;letter-spacing:-.03em;line-height:1.42;margin-top:9px;position:relative;}
+.next .p{font-size:13px;line-height:1.7;margin-top:8px;color:rgba(237,232,220,.72);letter-spacing:-.02em;position:relative;}
+.next .when{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:13px;border-top:1px solid rgba(237,232,220,.16);position:relative;}
+.next .when .t{flex:1;font-size:12px;font-weight:700;color:rgba(237,232,220,.85);letter-spacing:-.02em;}
+.next .when .b{font-size:11px;font-weight:800;color:var(--stage);background:#EDE8DC;padding:6px 11px;border-radius:8px;}
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">DOH GOLF · 결과지 v5</p>
+  <h1>관계감은 요소가 아니라<br>문장에서 나온다</h1>
+  <p class="lede">
+    2차 피드백에서 쓸 만한 것만 골라 반영했습니다. 이번 라운드의 함정은
+    <strong>같은 일을 하는 요소를 세 개 제안했다</strong>는 점이었어요 —
+    기억 문장, 이번 레슨 한 줄, 종료 문장은 전부 "프로가 나를 기억한다"는
+    같은 감정을 담당합니다. 셋 다 넣으면 프로가 쓸 칸만 늘고 화면은 무거워집니다.
+    <strong>하나로 합쳤습니다.</strong>
+  </p>
+
+  <!-- ==========================================================
+       판정
+       ========================================================== -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="tag alt">검토</span>
+      <span class="sec-title">2차 피드백 판정</span>
+    </div>
+
+    <div class="judge">
+      <div class="j">
+        <div class="j-top"><span class="j-mark bend">통합</span><span class="j-name">기억 문장 + 이번 레슨 한 줄 + 종료 문장 → 인용 카드 하나</span></div>
+        <div class="j-why">세 제안 모두 옳지만 <b>한 화면에 셋은 과잉</b>입니다. 영상 바로 아래 <b>인용 카드 하나</b>로 합쳤습니다 — 인과("지난달 하체를 잡았으니까 이번엔 왼팔이 보이는 거예요")를 담고, 스크린샷 찍고 싶게 꾸미고, 저장 버튼까지. 종료 문장의 "함께" 어조는 다음 달 예고 카드 카피에 녹였습니다. <b>프로가 쓰는 칸은 그대로 1개.</b></div>
+      </div>
+      <div class="j">
+        <div class="j-top"><span class="j-mark take">채택</span><span class="j-name">숙제에 "왜" 한 줄</span></div>
+        <div class="j-why">"왜 하는지 알면 한다"는 판단에 동의합니다. 숙제마다 <b>목적 한 줄(선택 입력)</b>을 붙였습니다. 프로 입장에선 어차피 영상에서 말하는 내용이라 옮겨 적는 수준입니다.</div>
+      </div>
+      <div class="j">
+        <div class="j-top"><span class="j-mark take">채택</span><span class="j-name">질문 유도 카피 구체화</span></div>
+        <div class="j-why">"질문 남기기"(기능 이름) → <b>"이번 레슨에서 이해 안 된 것 하나만 남겨주세요"</b>(행동 지시). 개발 비용 0인 카피 수정인데 참여율 차이는 실제로 큽니다.</div>
+      </div>
+      <div class="j">
+        <div class="j-top"><span class="j-mark take">채택</span><span class="j-name">영상을 "레슨 영상"답게</span></div>
+        <div class="j-why">일반 플레이어처럼 보인다는 지적이 맞습니다. 플레이어에 <b>레슨 헤더 프레임</b>(LESSON 06 · 프로 피드백)을 씌우고, 아래에 "이 영상은 회원님 스윙만 보고 녹화한 영상"이라는 한 줄을 붙였습니다. 콘텐츠가 아니라 <b>1:1 레슨</b>이라는 사실이 형태로 보입니다.</div>
+      </div>
+      <div class="j">
+        <div class="j-top"><span class="j-mark take">채택</span><span class="j-name">인과형 카피 전반</span></div>
+        <div class="j-why">"왼팔입니다"가 아니라 "하체를 잡았으니까 왼팔이 보인다"로. UI가 아니라 <b>작성 가이드 문제</b>라서, 프로 입력칸 placeholder에 인과 예시 문장을 박는 것으로 해결합니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       화면
+       ========================================================== -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="tag">v5</span>
+      <span class="sec-title">회원 화면 — 최종 후보</span>
+    </div>
+    <p class="sec-desc">
+      v4 골격(여정 → 핵심 3줄 → 영상 → 숙제 → 질문 → 다음 달 예고)은 그대로,
+      네 군데를 바꿨습니다: <b>레슨 프레임을 입은 영상, 그 아래 인용 카드,
+      목적이 붙은 숙제, 구체화된 질문 카피.</b>
+    </p>
+
+    <div class="phone">
+      <div class="m">
+        <div class="m-status"><span>9:41</span><span class="m-batt"></span></div>
+        <div class="m-nav">
+          <span class="m-back"><svg width="9" height="16" viewBox="0 0 9 16" fill="none"><path d="M8 1 1 8l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="m-navtitle">No.06 · 6월 레슨</span>
+        </div>
+
+        <div class="m-pad">
+          <div class="m-stack">
+
+            <!-- ① 여정 -->
+            <div class="jr" id="jr">
+              <button class="jr-toggle" type="button" id="jrbtn">
+                <div class="jr-top">
+                  <span class="jr-sum">지금까지 <em>3가지</em>를 고쳤어요</span>
+                  <span class="jr-more">기록 보기</span>
+                </div>
+                <div class="jr-track">
+                  <span class="jr-step done"><span class="jr-dot"></span><span class="jr-mo">3월</span><span class="jr-nm">슬라이스</span></span>
+                  <span class="jr-step done"><span class="jr-dot"></span><span class="jr-mo">4월</span><span class="jr-nm">뒤땅</span></span>
+                  <span class="jr-step done"><span class="jr-dot"></span><span class="jr-mo">5월</span><span class="jr-nm">하체 리드</span></span>
+                  <span class="jr-step now"><span class="jr-dot"></span><span class="jr-mo">6월</span><span class="jr-nm">왼팔 각</span></span>
+                </div>
+              </button>
+              <div class="jr-list">
+                <div class="jr-row"><span class="jr-badge ok">해결</span><span class="tx"><span class="tt">슬라이스가 심해요</span><span class="ts">3월 지적 → 4월 해결 · 1개월</span></span></div>
+                <div class="jr-row"><span class="jr-badge ok">해결</span><span class="tx"><span class="tt">아이언 뒤땅이 잦아요</span><span class="ts">4월 지적 → 5월 해결 · 1개월</span></span></div>
+                <div class="jr-row"><span class="jr-badge ok">해결</span><span class="tx"><span class="tt">하체 리드가 늦어요</span><span class="ts">5월 지적 → 6월 해결 · 1개월</span></span></div>
+                <div class="jr-row"><span class="jr-badge ing">진행 중</span><span class="tx"><span class="tt">톱에서 왼팔 각이 무너져요</span><span class="ts">6월 시작 · 이번 달 과제</span></span></div>
+              </div>
+            </div>
+
+            <!-- ② 제목 + 핵심 3줄 -->
+            <div>
+              <div class="m-meta">이도형 프로 · 6월 27일 받음</div>
+              <h2 class="m-h1">하체는 끝났어요.<br>이제 왼팔입니다</h2>
+            </div>
+
+            <div class="m-card">
+              <div class="key ok">
+                <span class="ic"><svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="m1 4.6 3 3L10 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span class="tx"><span class="k">해결됐어요</span><span class="v">하체 리드 — 5월 과제였고 이번 달에 자리 잡았습니다</span></span>
+              </div>
+              <div class="key fix">
+                <span class="ic"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1.5v8M1.5 5.5h8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span>
+                <span class="tx"><span class="k">이번 달 고칠 것</span><span class="v">하체가 잡히면서 이제 톱에서 왼팔 접힘이 보여요. 임팩트 방향이 갈리는 원인입니다</span></span>
+              </div>
+              <div class="key keep">
+                <span class="ic"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="3.2" stroke="currentColor" stroke-width="1.8"/></svg></span>
+                <span class="tx"><span class="k">건드리지 말 것</span><span class="v">체중 이동 타이밍. 잘 되는 걸 고치면 오히려 무너져요</span></span>
+              </div>
+            </div>
+
+            <!-- ③ 레슨 영상 프레임 -->
+            <div class="lesson">
+              <div class="lesson-head">
+                <span class="rec"></span>
+                <span class="t">LESSON 06 · 프로 피드백</span>
+                <span class="d">3:24</span>
+              </div>
+              <div class="m-stage">
+                <svg class="m-golfer" viewBox="0 0 60 120" fill="none" aria-hidden="true">
+                  <circle cx="30" cy="14" r="8" fill="#EDE8DC"/>
+                  <path d="M30 22v38M30 34l-15 13M30 34l17 5M30 60l-9 34M30 60l11 34" stroke="#EDE8DC" stroke-width="5" stroke-linecap="round"/>
+                  <path d="M47 39 57 68" stroke="#B99247" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+                <div class="m-play"><svg width="15" height="17" viewBox="0 0 15 17" fill="none"><path d="M2 1.5 14 8.5 2 15.5z" fill="currentColor"/></svg></div>
+                <div class="m-scrub"><span>0:00</span><span class="m-track"><i style="width:0%"></i></span><span>3:24</span></div>
+              </div>
+              <div class="lesson-sub">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style="color:var(--msage);flex:none"><circle cx="6.5" cy="4.2" r="2.6" stroke="currentColor" stroke-width="1.5"/><path d="M1.8 11.4c.7-2.3 2.5-3.5 4.7-3.5s4 1.2 4.7 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <span class="tx"><b>회원님 스윙만 보고</b> 녹화한 이번 달 레슨이에요</span>
+              </div>
+            </div>
+
+            <!-- ④ 인용 카드 (통합) -->
+            <div class="quote">
+              <span class="qm">“</span>
+              <p>지난달 하체를 먼저 잡았으니까, 이번엔 왼팔이 보이는 거예요. 순서대로 가고 있습니다.</p>
+              <div class="row">
+                <span class="who">
+                  <span class="m-avatar" style="width:26px;height:26px;border-radius:8px;font-size:9px">이도형</span>
+                  <span>이도형 프로 · 담당 5개월</span>
+                </span>
+                <button class="save" type="button">
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v6M2.8 4.5 5.5 7.2 8.2 4.5M1.5 9.5h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  이미지 저장
+                </button>
+              </div>
+            </div>
+
+            <!-- ⑤ Before / After -->
+            <div>
+              <div class="m-row" style="margin-bottom:9px">
+                <span class="m-label">톱 자세 · 한 달 변화</span>
+                <span style="font-size:11px;font-weight:800;color:var(--mink3)">크게 보기</span>
+              </div>
+              <div class="ba">
+                <span class="ba-cell before">
+                  <figure><svg viewBox="0 0 60 120" fill="none" aria-hidden="true"><circle cx="30" cy="14" r="8" fill="#F4F1E9"/><path d="M30 22v38M30 34l-18 8M30 34l17 9M30 60l-12 32M30 60l13 32" stroke="#F4F1E9" stroke-width="5" stroke-linecap="round"/></svg></figure>
+                  <span class="cap">5월 27일</span>
+                </span>
+                <span class="ba-arrow"><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 6h11M8 2l4 4-4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span class="ba-cell after">
+                  <figure><svg viewBox="0 0 60 120" fill="none" aria-hidden="true"><circle cx="30" cy="14" r="8" fill="#F4F1E9"/><path d="M30 22v38M30 34l-15 13M30 34l17 5M30 60l-9 34M30 60l11 34" stroke="#F4F1E9" stroke-width="5" stroke-linecap="round"/></svg></figure>
+                  <span class="cap">6월 27일</span>
+                </span>
+              </div>
+              <div style="font-size:12px;font-weight:600;color:var(--mink2);margin-top:9px;line-height:1.6;letter-spacing:-.02em">
+                골반이 열리는 순서가 달라졌어요. 왼쪽은 상체가 먼저, 오른쪽은 하체가 먼저입니다.
+              </div>
+            </div>
+
+            <!-- ⑥ 숙제 (목적 포함) -->
+            <div class="m-row" style="margin-top:2px">
+              <span class="m-label">이번 달 숙제</span>
+              <span style="font-size:11px;font-weight:800;color:var(--mink3)" id="hwcount">0/2</span>
+            </div>
+            <div class="m-stack" style="gap:8px" id="hwlist">
+              <button class="hw" type="button">
+                <span class="hw-check"><svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="m1 4.6 3 3L10 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span class="tx">
+                  <span class="tt">톱에서 3초 멈추기 15회</span>
+                  <span class="why"><b>WHY</b>왼팔이 접히는 순간을 몸이 알아채게 만드는 연습이에요</span>
+                </span>
+              </button>
+              <button class="hw" type="button">
+                <span class="hw-check"><svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="m1 4.6 3 3L10 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span class="tx">
+                  <span class="tt">거울 앞 톱 자세 사진 찍기</span>
+                  <span class="why"><b>WHY</b>다음 달 비교 자료가 돼요. 각도가 같아야 변화가 보입니다</span>
+                </span>
+              </button>
+            </div>
+
+            <!-- ⑦ 질문 -->
+            <div class="q-box">
+              <div class="q-title">이번 레슨에서 이해 안 된 것,<br>하나만 남겨주세요</div>
+              <textarea class="q-input" placeholder="예) 톱에서 멈추면 리듬이 깨지지 않나요?"></textarea>
+              <div class="q-send">
+                <span class="q-hint">다음 영상에서 프로가 직접 답해요</span>
+                <button class="q-btn" type="button">남기기</button>
+              </div>
+            </div>
+
+            <div class="m-divider" style="margin:4px 0"></div>
+
+            <!-- ⑧ 다음 달 예고 (종료 문장 통합) -->
+            <div class="next">
+              <div class="lb">NEXT · 7월 레슨</div>
+              <div class="h">6월 레슨은 여기까지.<br>다음 달엔 릴리즈를 함께 만들어봅시다</div>
+              <p class="p">왼팔 각이 잡히면 그다음은 임팩트 이후 손목이 풀리는 타이밍입니다. 이게 마지막 퍼즐이에요.</p>
+              <div class="when">
+                <span class="t">7월 27일쯤 스윙 올려주세요</span>
+                <span class="b">알림 받기</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="m-foot">
+          <button class="m-cta">스윙 올리고 확인받기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <dl>
+        <div><dt>인용 카드가 통합 지점</dt><dd>기억 문장(인과) + 이번 레슨 한 줄(스크린샷) + 저장 버튼(공유)이 <b>카드 하나</b>에 다 들어갑니다. 프로가 쓰는 칸은 여전히 1개 — "이번 달 한 줄" 필드에 인과 예시 placeholder를 넣어 문장 방향만 유도합니다.</dd></div>
+        <div><dt>영상 프레임의 의미</dt><dd>LESSON 06 헤더와 "회원님 스윙만 보고 녹화" 한 줄은 장식이 아니라 <b>가격 정당화</b>입니다. 유튜브 무료 레슨과 이 영상의 차이는 내용이 아니라 "나만을 위한 것"이라는 사실이고, 그걸 형태로 보여줍니다.</dd></div>
+        <div><dt>숙제 목적은 선택 입력</dt><dd>프로가 목적을 안 쓰면 WHY 줄 없이 제목만 나갑니다. <b>화면이 무너지지 않는 선택 필드</b>로 두는 게 원칙입니다.</dd></div>
+        <div class="risk"><dt>주의</dt><dd>인용 카드는 프로가 실제로 인과형 문장을 써야 삽니다. "왼팔 조심하세요" 같은 단문이 들어오면 카드가 초라해져요. <b>placeholder 예시 문장이 사실상의 작성 가이드</b>이므로 문구를 공들여 정해야 합니다.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <p class="foot">
+    여정 스트립("기록 보기")과 숙제 체크는 실제로 동작합니다.
+    v4 대비 프로 추가 입력: 숙제 목적 한 줄(선택)뿐입니다.
+  </p>
+
+</div>
+
+<script>
+(function () {
+  var jr = document.getElementById('jr');
+  var btn = document.getElementById('jrbtn');
+  if (btn) {
+    btn.addEventListener('click', function () {
+      jr.classList.toggle('open');
+      jr.querySelector('.jr-more').textContent = jr.classList.contains('open') ? '접기' : '기록 보기';
+    });
+  }
+  var list = document.getElementById('hwlist');
+  if (!list) return;
+  var items = list.querySelectorAll('.hw');
+  var count = document.getElementById('hwcount');
+  function sync() {
+    var done = 0;
+    items.forEach(function (t) { if (t.classList.contains('done')) done++; });
+    count.textContent = done + '/' + items.length;
+  }
+  items.forEach(function (t) {
+    t.addEventListener('click', function () { t.classList.toggle('done'); sync(); });
+  });
+  sync();
+})();
+</script>
