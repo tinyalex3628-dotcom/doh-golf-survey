@@ -1,0 +1,1026 @@
+[
+ {
+  "phase": "P1",
+  "en": "Shoulder Height Trail High (P1)",
+  "ko": "트레일 어깨 과상승",
+  "cat": "Shoulder",
+  "verdict": "✅ 가능",
+  "why": "골반·흉곽 측정군 (일부 구현)"
+ },
+ {
+  "phase": "P1",
+  "en": "Pelvis Tilt Anterior Excessive (P1)",
+  "ko": "골반 과전방경사",
+  "cat": "Pelvis",
+  "verdict": "✅ 가능",
+  "why": "M202/203/102 척추·골반 자세 (일부 구현)"
+ },
+ {
+  "phase": "P1",
+  "en": "Pelvis Tilt Posterior Excessive (P1)",
+  "ko": "골반 과후방경사",
+  "cat": "Pelvis",
+  "verdict": "✅ 가능",
+  "why": "M202/203/102 척추·골반 자세 (일부 구현)"
+ },
+ {
+  "phase": "P1",
+  "en": "Elbow Rotation Trail Out (P1)",
+  "ko": "트레일 팔꿈치 외회전",
+  "cat": "Elbow",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P1",
+  "en": "Elbow Flexion Trail Excessive (P1)",
+  "ko": "트레일 팔꿈치 과굴곡",
+  "cat": "Elbow",
+  "verdict": "✅ 가능",
+  "why": "M501/502/506/507/508 팔 (일부 구현)"
+ },
+ {
+  "phase": "P1",
+  "en": "Weak Grip Match (P1)",
+  "ko": "양손 위크 그립 매치",
+  "cat": "Grip",
+  "verdict": "✕ 불가",
+  "why": "손목 축회전/그립 — 영상 원리적 한계(센서 영역)"
+ },
+ {
+  "phase": "P1",
+  "en": "Strong Grip Match (P1)",
+  "ko": "양손 스트롱 그립 매치",
+  "cat": "Grip",
+  "verdict": "✕ 불가",
+  "why": "손목 축회전/그립 — 영상 원리적 한계(센서 영역)"
+ },
+ {
+  "phase": "P1",
+  "en": "Shaft Lean Backward (P1)",
+  "ko": "샤프트 후경",
+  "cat": "Shaft",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P1",
+  "en": "Foot Pressure Anterior Excessive (P1)",
+  "ko": "전족부 압력 과다",
+  "cat": "Pressure",
+  "verdict": "✕ 불가",
+  "why": "압력판·발 keypoint 필요"
+ },
+ {
+  "phase": "P1",
+  "en": "Foot Pressure Posterior Excessive (P1)",
+  "ko": "후족부 압력 과다",
+  "cat": "Pressure",
+  "verdict": "✕ 불가",
+  "why": "압력판·발 keypoint 필요"
+ },
+ {
+  "phase": "P1",
+  "en": "Foot Angle Toe-Out Excessive (P1)",
+  "ko": "과도한 발끝 벌림",
+  "cat": "Foot",
+  "verdict": "✕ 불가",
+  "why": "압력판·발 keypoint 필요"
+ },
+ {
+  "phase": "P1",
+  "en": "Foot Angle Toe-In Excessive (P1)",
+  "ko": "과도한 안짱걸음 셋업",
+  "cat": "Foot",
+  "verdict": "✕ 불가",
+  "why": "압력판·발 keypoint 필요"
+ },
+ {
+  "phase": "P1",
+  "en": "Lead Pressure Excessive (P1)",
+  "ko": "어드레스 리드측 압력 과다",
+  "cat": "Pressure",
+  "verdict": "✕ 불가",
+  "why": "압력판·발 keypoint 필요"
+ },
+ {
+  "phase": "P2",
+  "en": "Outside Takeaway (P2)",
+  "ko": "아웃사이드 테이크어웨이",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P2",
+  "en": "Inside Takeaway (P2)",
+  "ko": "인사이드 테이크어웨이",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P2",
+  "en": "Body Rotation Dominant (P2)",
+  "ko": "몸통 회전 우세",
+  "cat": "Thorax",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P2",
+  "en": "Early Wrist Cock (P2)",
+  "ko": "얼리 코킹",
+  "cat": "Wrist",
+  "verdict": "✕ 불가",
+  "why": "손목 축회전/그립 — 영상 원리적 한계(센서 영역)"
+ },
+ {
+  "phase": "P2",
+  "en": "Late Wrist Cock (P2)",
+  "ko": "레이트 코킹",
+  "cat": "Wrist",
+  "verdict": "✕ 불가",
+  "why": "손목 축회전/그립 — 영상 원리적 한계(센서 영역)"
+ },
+ {
+  "phase": "P2",
+  "en": "Lead Wrist Flexion Excessive (P2)",
+  "ko": "리드 손목 과굴곡",
+  "cat": "Wrist",
+  "verdict": "✕ 불가",
+  "why": "손목 축회전/그립 — 영상 원리적 한계(센서 영역)"
+ },
+ {
+  "phase": "P2",
+  "en": "Lead Wrist Extension Excessive (P2)",
+  "ko": "리드 손목 과신전",
+  "cat": "Wrist",
+  "verdict": "✕ 불가",
+  "why": "손목 축회전/그립 — 영상 원리적 한계(센서 영역)"
+ },
+ {
+  "phase": "P2",
+  "en": "Clubface Closed Excessive (P2)",
+  "ko": "클럽페이스 과닫힘",
+  "cat": "Clubface",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P2",
+  "en": "Clubface Open Excessive (P2)",
+  "ko": "클럽페이스 과열림",
+  "cat": "Clubface",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P2",
+  "en": "Hand Depth Deep (P2)",
+  "ko": "손 깊이 과다",
+  "cat": "Hand",
+  "verdict": "◐ 조건부",
+  "why": "깊이축 — 측면(DTL)에서만, 추정"
+ },
+ {
+  "phase": "P2",
+  "en": "Trail Elbow Flexion Excessive (P2)",
+  "ko": "트레일 팔꿈치 과굴곡",
+  "cat": "Elbow",
+  "verdict": "✅ 가능",
+  "why": "M501/502/506/507/508 팔 (일부 구현)"
+ },
+ {
+  "phase": "P2",
+  "en": "Pelvic Sway Excessive (P2)",
+  "ko": "골반 과측면이동",
+  "cat": "Pelvis",
+  "verdict": "✅ 가능",
+  "why": "M104/M301/M801 좌우 이동 (일부 구현)"
+ },
+ {
+  "phase": "P2",
+  "en": "Head Sway Excessive (P2)",
+  "ko": "머리 과측면이동",
+  "cat": "Head",
+  "verdict": "✅ 가능",
+  "why": "M104/M301/M801 좌우 이동 (일부 구현)"
+ },
+ {
+  "phase": "P2",
+  "en": "Spine Angle Loss (P2)",
+  "ko": "척추각 손실",
+  "cat": "Spine",
+  "verdict": "✅ 가능",
+  "why": "M202/203/102 척추·골반 자세 (일부 구현)"
+ },
+ {
+  "phase": "P2",
+  "en": "Spine Angle Increase (P2)",
+  "ko": "척추각 증가",
+  "cat": "Spine",
+  "verdict": "✅ 가능",
+  "why": "M202/203/102 척추·골반 자세 (일부 구현)"
+ },
+ {
+  "phase": "P2",
+  "en": "Lead Pressure Excessive (P2)",
+  "ko": "리드측 압력 과다(P2)",
+  "cat": "Pressure",
+  "verdict": "✕ 불가",
+  "why": "압력판·발 keypoint 필요"
+ },
+ {
+  "phase": "P2",
+  "en": "Lead Knee Flexion Excessive (P2)",
+  "ko": "리드 무릎 과굴곡",
+  "cat": "Knee",
+  "verdict": "✅ 가능",
+  "why": "M705/706/709/710 무릎 (일부 구현)"
+ },
+ {
+  "phase": "P2",
+  "en": "Lead Knee Collapse (P2)",
+  "ko": "리드 무릎 붕괴",
+  "cat": "Knee",
+  "verdict": "✅ 가능",
+  "why": "M705/706/709/710 무릎 (일부 구현)"
+ },
+ {
+  "phase": "P4",
+  "en": "Hand Height High (P4)",
+  "ko": "손 높이 과다",
+  "cat": "Hand",
+  "verdict": "✅ 가능",
+  "why": "M604/606 손 위치 (일부 구현)"
+ },
+ {
+  "phase": "P4",
+  "en": "Hand Height Low (P4)",
+  "ko": "손 높이 부족",
+  "cat": "Hand",
+  "verdict": "✅ 가능",
+  "why": "M604/606 손 위치 (일부 구현)"
+ },
+ {
+  "phase": "P4",
+  "en": "Hand Depth Deep (P4)",
+  "ko": "손 깊이 과다",
+  "cat": "Hand",
+  "verdict": "◐ 조건부",
+  "why": "깊이축 — 측면(DTL)에서만, 추정"
+ },
+ {
+  "phase": "P4",
+  "en": "Hand Depth Shallow (P4)",
+  "ko": "손 깊이 부족",
+  "cat": "Hand",
+  "verdict": "◐ 조건부",
+  "why": "깊이축 — 측면(DTL)에서만, 추정"
+ },
+ {
+  "phase": "P4",
+  "en": "Shaft Cross-Line (P4)",
+  "ko": "샤프트 크로스 라인",
+  "cat": "Shaft",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P4",
+  "en": "Shaft Laid Off (P4)",
+  "ko": "샤프트 레이드 오프",
+  "cat": "Shaft",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P4",
+  "en": "Clubface Open Excessive (P4)",
+  "ko": "클럽페이스 과열림",
+  "cat": "Clubface",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P4",
+  "en": "Clubface Closed Excessive (P4)",
+  "ko": "클럽페이스 과닫힘",
+  "cat": "Clubface",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P4",
+  "en": "Lead Arm Plane Steep (P4)",
+  "ko": "리드암 과수직",
+  "cat": "Lead Arm",
+  "verdict": "✅ 가능",
+  "why": "M501/502/506/507/508 팔 (일부 구현)"
+ },
+ {
+  "phase": "P4",
+  "en": "Lead Arm Plane Flat (P4)",
+  "ko": "리드암 과수평",
+  "cat": "Lead Arm",
+  "verdict": "✅ 가능",
+  "why": "M501/502/506/507/508 팔 (일부 구현)"
+ },
+ {
+  "phase": "P4",
+  "en": "Trail Elbow Flexion Excessive (P4)",
+  "ko": "트레일 팔꿈치 과굴곡",
+  "cat": "Elbow",
+  "verdict": "✅ 가능",
+  "why": "M501/502/506/507/508 팔 (일부 구현)"
+ },
+ {
+  "phase": "P4",
+  "en": "Trail Elbow Extension Excessive (P4)",
+  "ko": "트레일 팔꿈치 과신전",
+  "cat": "Elbow",
+  "verdict": "✅ 가능",
+  "why": "M501/502/506/507/508 팔 (일부 구현)"
+ },
+ {
+  "phase": "P4",
+  "en": "Trail Elbow Flying (P4)",
+  "ko": "트레일 플라잉 엘보",
+  "cat": "Elbow",
+  "verdict": "✅ 가능",
+  "why": "M501/502/506/507/508 팔 (일부 구현)"
+ },
+ {
+  "phase": "P4",
+  "en": "Lead Elbow Flexion Excessive (P4)",
+  "ko": "리드 팔꿈치 과굴곡",
+  "cat": "Elbow",
+  "verdict": "✅ 가능",
+  "why": "M501/502/506/507/508 팔 (일부 구현)"
+ },
+ {
+  "phase": "P4",
+  "en": "Arm-Body Disconnect (P4)",
+  "ko": "팔-몸통 분리",
+  "cat": "Arm-Thorax",
+  "verdict": "✅ 가능",
+  "why": "M501/502/506/507/508 팔 (일부 구현)"
+ },
+ {
+  "phase": "P4",
+  "en": "Pelvis Rotation Excessive (P4)",
+  "ko": "골반 과회전",
+  "cat": "Pelvis",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P4",
+  "en": "Pelvis Rotation Insufficient (P4)",
+  "ko": "골반 회전 부족",
+  "cat": "Pelvis",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P4",
+  "en": "Thorax Rotation Excessive (P4)",
+  "ko": "흉곽 과회전",
+  "cat": "Thorax",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P4",
+  "en": "Thorax Rotation Insufficient (P4)",
+  "ko": "흉곽 회전 부족",
+  "cat": "Thorax",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P4",
+  "en": "X-Factor Excessive (P4)",
+  "ko": "X-Factor 과다",
+  "cat": "Thorax-Pelvis",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P4",
+  "en": "X-Factor Insufficient (P4)",
+  "ko": "X-Factor 부족",
+  "cat": "Thorax-Pelvis",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P4",
+  "en": "Head Height High (P4)",
+  "ko": "머리 상승",
+  "cat": "Head",
+  "verdict": "✅ 가능",
+  "why": "M301/302/303 머리 (일부 구현)"
+ },
+ {
+  "phase": "P4",
+  "en": "Head Translation Trail (P4)",
+  "ko": "머리 우측 이동",
+  "cat": "Head",
+  "verdict": "✅ 가능",
+  "why": "M301/302/303 머리 (일부 구현)"
+ },
+ {
+  "phase": "P4",
+  "en": "Reverse Pivot (P4)",
+  "ko": "리버스 피벗",
+  "cat": "Center",
+  "verdict": "◐ 조건부",
+  "why": "검토 필요"
+ },
+ {
+  "phase": "P4",
+  "en": "Trail Knee Extension Excessive (P4)",
+  "ko": "트레일 무릎 과신전",
+  "cat": "Knee",
+  "verdict": "✅ 가능",
+  "why": "M705/706/709/710 무릎 (일부 구현)"
+ },
+ {
+  "phase": "P4",
+  "en": "Trail Knee Flexion Excessive (P4)",
+  "ko": "트레일 무릎 과굴곡",
+  "cat": "Knee",
+  "verdict": "✅ 가능",
+  "why": "M705/706/709/710 무릎 (일부 구현)"
+ },
+ {
+  "phase": "P4",
+  "en": "Trail Foot Pressure Lateral Excessive (P4)",
+  "ko": "트레일발 바깥압력 과다",
+  "cat": "Foot Pressure",
+  "verdict": "✕ 불가",
+  "why": "압력판·발 keypoint 필요"
+ },
+ {
+  "phase": "P4",
+  "en": "Lead Pressure Excessive (P4)",
+  "ko": "리드측 압력 과다",
+  "cat": "Pressure",
+  "verdict": "✕ 불가",
+  "why": "압력판·발 keypoint 필요"
+ },
+ {
+  "phase": "P6",
+  "en": "Pelvis Rotation Insufficient",
+  "ko": "골반 회전 부족",
+  "cat": "Pelvis",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P6",
+  "en": "Pelvis Rotation Excessive",
+  "ko": "골반 과회전",
+  "cat": "Pelvis",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P6",
+  "en": "Pelvis Stall",
+  "ko": "골반 회전 정지",
+  "cat": "Pelvis",
+  "verdict": "✅ 가능",
+  "why": "골반·흉곽 측정군 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Thorax Rotation Insufficient",
+  "ko": "흉곽 회전 부족",
+  "cat": "Thorax",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P6",
+  "en": "Thorax Rotation Excessive",
+  "ko": "흉곽 과회전",
+  "cat": "Thorax",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P6",
+  "en": "Early Extension",
+  "ko": "얼리 익스텐션",
+  "cat": "Pelvis",
+  "verdict": "✅ 가능",
+  "why": "M105 tush line + M121 골반상승 (구현됨)"
+ },
+ {
+  "phase": "P6",
+  "en": "Head Drop",
+  "ko": "머리 하강",
+  "cat": "Head",
+  "verdict": "✅ 가능",
+  "why": "M301/302/303 머리 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Head Hanging Back",
+  "ko": "머리 뒤잔류",
+  "cat": "Head",
+  "verdict": "✅ 가능",
+  "why": "M301/302/303 머리 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Deep Hands",
+  "ko": "손 깊음",
+  "cat": "Hands",
+  "verdict": "✅ 가능",
+  "why": "M604/606 손 위치 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Forward Hands",
+  "ko": "손 전방",
+  "cat": "Hands",
+  "verdict": "✅ 가능",
+  "why": "M604/606 손 위치 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Hands Too Far From Body",
+  "ko": "손이 몸에서 멀어짐",
+  "cat": "Hands",
+  "verdict": "✅ 가능",
+  "why": "M604/606 손 위치 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Hands Too Close To Body",
+  "ko": "손이 몸에 가까움",
+  "cat": "Hands",
+  "verdict": "✅ 가능",
+  "why": "M604/606 손 위치 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Late Arm",
+  "ko": "팔 하강 지연",
+  "cat": "Arm",
+  "verdict": "✅ 가능",
+  "why": "M501/502/506/507/508 팔 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Trail Elbow Behind Body",
+  "ko": "트레일 팔꿈치 뒤처짐",
+  "cat": "Trail Elbow",
+  "verdict": "✅ 가능",
+  "why": "M501/502/506/507/508 팔 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Steep Shaft",
+  "ko": "가파른 샤프트",
+  "cat": "Shaft",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Shallow Shaft",
+  "ko": "눕는 샤프트",
+  "cat": "Shaft",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Casting",
+  "ko": "캐스팅",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Lead Pressure Insufficient",
+  "ko": "리드측 압력 부족",
+  "cat": "Pressure",
+  "verdict": "✕ 불가",
+  "why": "압력판·발 keypoint 필요"
+ },
+ {
+  "phase": "P6",
+  "en": "Lead Pressure Excessive",
+  "ko": "리드측 압력 과다",
+  "cat": "Pressure",
+  "verdict": "✕ 불가",
+  "why": "압력판·발 keypoint 필요"
+ },
+ {
+  "phase": "P6",
+  "en": "Incomplete Pressure Transfer",
+  "ko": "압력 이동 미완성",
+  "cat": "Pressure",
+  "verdict": "✕ 불가",
+  "why": "압력판·발 keypoint 필요"
+ },
+ {
+  "phase": "P6",
+  "en": "Spin-out",
+  "ko": "스핀아웃",
+  "cat": "Pelvis",
+  "verdict": "◐ 조건부",
+  "why": "검토 필요"
+ },
+ {
+  "phase": "P6",
+  "en": "Low Point Variability Increase",
+  "ko": "최저점 변동 증가",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Angle Of Attack Variability Increase",
+  "ko": "어택앵글 변동성 증가",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Cross-over Top Pattern",
+  "ko": "크로스오버 탑 패턴",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Spine Flexion Excessive",
+  "ko": "척추 과굴곡",
+  "cat": "Spine",
+  "verdict": "✅ 가능",
+  "why": "M202/203/102 척추·골반 자세 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Trail Side Bend Excessive",
+  "ko": "트레일측 측굴 과다",
+  "cat": "Thorax",
+  "verdict": "✅ 가능",
+  "why": "M202/203/102 척추·골반 자세 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Chicken Wing Pattern",
+  "ko": "치킨윙 패턴",
+  "cat": "Arm",
+  "verdict": "◐ 조건부",
+  "why": "검토 필요"
+ },
+ {
+  "phase": "P6",
+  "en": "Inside Delivery",
+  "ko": "인사이드 딜리버리",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Over The Top",
+  "ko": "오버 더 탑",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Trail Elbow Flying",
+  "ko": "플라잉 엘보",
+  "cat": "Trail Elbow",
+  "verdict": "✅ 가능",
+  "why": "M501/502/506/507/508 팔 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Shaft Lay Down",
+  "ko": "샤프트 눕힘",
+  "cat": "Shaft",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Handle Deep",
+  "ko": "핸들 깊음",
+  "cat": "Shaft",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "High Angle Of Attack",
+  "ko": "높은 어택앵글",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Push Tendency",
+  "ko": "푸시 경향",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Impact Consistency Decrease",
+  "ko": "임팩트 일관성 감소",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Lead Arm Separation Increase",
+  "ko": "리드암-흉곽 분리 증가",
+  "cat": "Arm",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P6",
+  "en": "Inside Club Delivery",
+  "ko": "안쪽 전달",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Neutral Club Delivery",
+  "ko": "중립 전달",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Outside Club Delivery",
+  "ko": "바깥쪽 전달",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Steep Club Delivery",
+  "ko": "가파른 전달",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Shallow Club Delivery",
+  "ko": "눕는 전달",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Club Face Open At Impact",
+  "ko": "임팩트 페이스 오픈",
+  "cat": "Club Face",
+  "verdict": "◐ 조건부",
+  "why": "검토 필요"
+ },
+ {
+  "phase": "P6",
+  "en": "Club Face Closed At Impact",
+  "ko": "임팩트 페이스 클로즈",
+  "cat": "Club Face",
+  "verdict": "◐ 조건부",
+  "why": "검토 필요"
+ },
+ {
+  "phase": "P6",
+  "en": "Reduced Club Control",
+  "ko": "클럽 컨트롤 저하",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Early Upper Body Rotation",
+  "ko": "상체 조기 회전",
+  "cat": "Thorax",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P6",
+  "en": "Blocked Body Rotation",
+  "ko": "몸통 회전 막힘",
+  "cat": "Thorax",
+  "verdict": "✅ 가능",
+  "why": "M101/M201 3D 회전 (구현됨)"
+ },
+ {
+  "phase": "P6",
+  "en": "Trail Elbow Tucked",
+  "ko": "트레일 팔꿈치 붙음",
+  "cat": "Trail Elbow",
+  "verdict": "✅ 가능",
+  "why": "M501/502/506/507/508 팔 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Reduced Lag",
+  "ko": "래그 감소",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P6",
+  "en": "Thoracic Hyperextension",
+  "ko": "흉추 과신전",
+  "cat": "Spine",
+  "verdict": "✅ 가능",
+  "why": "M202/203/102 척추·골반 자세 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Increased Vertical Force",
+  "ko": "수직력 증가",
+  "cat": "Pressure",
+  "verdict": "✕ 불가",
+  "why": "압력판·발 keypoint 필요"
+ },
+ {
+  "phase": "P6",
+  "en": "Side Bend Compensation",
+  "ko": "측굴 보상",
+  "cat": "Thorax",
+  "verdict": "✅ 가능",
+  "why": "M202/203/102 척추·골반 자세 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Excessive Side Bend",
+  "ko": "과도한 측굴",
+  "cat": "Thorax",
+  "verdict": "✅ 가능",
+  "why": "M202/203/102 척추·골반 자세 (일부 구현)"
+ },
+ {
+  "phase": "P6",
+  "en": "Trail Arm Extension Compensation",
+  "ko": "트레일 팔 신전 보상",
+  "cat": "Arm",
+  "verdict": "✅ 가능",
+  "why": "M501/502/506/507/508 팔 (일부 구현)"
+ },
+ {
+  "phase": "P7",
+  "en": "Hand Direction Forward (P7)",
+  "ko": "손 앞섬",
+  "cat": "Hands",
+  "verdict": "✅ 가능",
+  "why": "M604/606 손 위치 (일부 구현)"
+ },
+ {
+  "phase": "P7",
+  "en": "Club Face Open (P7)",
+  "ko": "임팩트 시 클럽페이스 오픈",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P7",
+  "en": "Club Face Closed (P7)",
+  "ko": "임팩트 시 클럽페이스 클로즈",
+  "cat": "Club",
+  "verdict": "✕ 불가",
+  "why": "클럽/샤프트 검출 필요 (2차)"
+ },
+ {
+  "phase": "P7",
+  "en": "Pelvis Open (P7)",
+  "ko": "임팩트 시 골반 과오픈",
+  "cat": "Pelvis",
+  "verdict": "✅ 가능",
+  "why": "골반·흉곽 측정군 (일부 구현)"
+ },
+ {
+  "phase": "P7",
+  "en": "Pelvis Closed (P7)",
+  "ko": "임팩트 시 골반 부족회전",
+  "cat": "Pelvis",
+  "verdict": "✅ 가능",
+  "why": "골반·흉곽 측정군 (일부 구현)"
+ },
+ {
+  "phase": "P7",
+  "en": "Thorax Open (P7)",
+  "ko": "임팩트 시 흉곽 과오픈",
+  "cat": "Thorax",
+  "verdict": "✅ 가능",
+  "why": "골반·흉곽 측정군 (일부 구현)"
+ },
+ {
+  "phase": "P7",
+  "en": "Thorax Closed (P7)",
+  "ko": "임팩트 시 흉곽 부족회전",
+  "cat": "Thorax",
+  "verdict": "✅ 가능",
+  "why": "골반·흉곽 측정군 (일부 구현)"
+ },
+ {
+  "phase": "P7",
+  "en": "Standing Up (P7)",
+  "ko": "몸 일어남",
+  "cat": "Posture",
+  "verdict": "◐ 조건부",
+  "why": "검토 필요"
+ },
+ {
+  "phase": "P7",
+  "en": "Forward Bend Excessive (P7)",
+  "ko": "상체 과숙임",
+  "cat": "Posture",
+  "verdict": "✅ 가능",
+  "why": "M202/203/102 척추·골반 자세 (일부 구현)"
+ },
+ {
+  "phase": "P7",
+  "en": "Side Bend Excessive (P7)",
+  "ko": "측굴 과다",
+  "cat": "Thorax",
+  "verdict": "✅ 가능",
+  "why": "M202/203/102 척추·골반 자세 (일부 구현)"
+ },
+ {
+  "phase": "P7",
+  "en": "Lead Pressure Excessive (P7)",
+  "ko": "리드측 압력 과다",
+  "cat": "Pressure",
+  "verdict": "✕ 불가",
+  "why": "압력판·발 keypoint 필요"
+ },
+ {
+  "phase": "P7",
+  "en": "Hand Distance Close To Body (P7)",
+  "ko": "손이 몸에 너무 가까움",
+  "cat": "Hands",
+  "verdict": "✅ 가능",
+  "why": "M604/606 손 위치 (일부 구현)"
+ },
+ {
+  "phase": "P7",
+  "en": "Hand Distance Far From Body (P7)",
+  "ko": "손이 몸에서 너무 멂",
+  "cat": "Hands",
+  "verdict": "✅ 가능",
+  "why": "M604/606 손 위치 (일부 구현)"
+ },
+ {
+  "phase": "P7",
+  "en": "Chicken Wing (P7)",
+  "ko": "치킨윙",
+  "cat": "Arm",
+  "verdict": "◐ 조건부",
+  "why": "검토 필요"
+ },
+ {
+  "phase": "P7",
+  "en": "Lead Wrist Flexion (P7)",
+  "ko": "리드 손목 굴곡",
+  "cat": "Wrist",
+  "verdict": "✕ 불가",
+  "why": "손목 축회전/그립 — 영상 원리적 한계(센서 영역)"
+ },
+ {
+  "phase": "P7",
+  "en": "Lead Wrist Extension (P7)",
+  "ko": "리드 손목 신전",
+  "cat": "Wrist",
+  "verdict": "✕ 불가",
+  "why": "손목 축회전/그립 — 영상 원리적 한계(센서 영역)"
+ }
+]
