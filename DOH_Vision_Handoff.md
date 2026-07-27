@@ -218,6 +218,21 @@
   (1순위 SwingNet 융합 — 계약에 method:"swingnet" 이미 예약 / NLF-ViTg 감시 / GVHMR 평가 / 클럽검출).
 - ⚠️ 실영상 미검증. 콜랩 첫 실행에서 X-Factor 스케일·이벤트 정확도 재확인 → 규칙 임계값 보정.
 
+## 5p. 실측 발견 — **NLF v0.3.2는 CPU 실행 불가** (2026-07-24, 사용자 콜랩 실측) ⚠️ 중요
+사용자가 콜랩에서 GPU 연결 실패(무료 한도 추정) → CPU로 시도 → 런타임 에러:
+`Could not run 'aten::empty_strided' with arguments from the 'CUDA' backend` (분석 단계 ⑤에서 발생).
+- **원인 확정:** `server/app.py` 코드는 문제 없음(`.cuda()` 하드코딩 전무 확인 — grep 전수검사, `DEVICE`
+  변수로 일관 처리, `torch.jit.load(...).to(DEVICE)`). **모델 파일(`nlf_l_multi_0.3.2.torchscript`) 내부에
+  CUDA가 하드코딩된 연산이 있어 `.to("cpu")`로도 못 바꿈** — 서드파티 배포 바이너리라 우리가 못 고침.
+  (조사 중 확인한 [nlf issue #33](https://github.com/isarandi/nlf/issues/33)의 "aten::get_autocast_dtype"
+  계열과 같은 부류의 CUDA-only 이슈로 보임.)
+- **파급:** 예전에 "HF Spaces CPU Basic도 대응"이라 가정했던 것(§5j 등, 당시 미검증 표시)이 **이번 실측으로
+  틀렸음이 확인됨.** NLF 쓰는 한 GPU는 선택이 아니라 **필수** — HF Spaces는 ZeroGPU(무료지만 GPU 할당)
+  또는 유료 GPU 티어만 유효. 배포 계획에서 "CPU 폴백"은 제외해야 함.
+- **당장 처방:** GPU 연결 안 되면 CPU로 우회 시도하지 말 것(항상 이 에러로 죽음) — 시간대 바꿔 재시도
+  / 다른 구글계정 / Colab Pro 중 택1로 GPU 확보가 유일한 길.
+- **다음 확인:** GPU 연결 성공 시 실제 분석 1회 완주 → X-Factor 스케일 확인이 여전히 최우선 과제(§5o).
+
 ## Stage 0 완료 기준 (사용자 확정 — 이거 다 되면 완료)
 **기능(7):** 연결테스트·업로드·Job생성·GPU분석완료·JSON반환·analyzer2 렌더 (7단계 초록).
 **안정성:** 같은 영상 **5회 연속** — 실패0·Job누락0·UI오류0.
