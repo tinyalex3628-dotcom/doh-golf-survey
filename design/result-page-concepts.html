@@ -1,0 +1,1318 @@
+<title>결과지 UI/UX 시안 — DOH GOLF</title>
+<style>
+/* ============================================================
+   DECK CHROME — 시안을 걸어두는 "스튜디오 벽"
+   ============================================================ */
+:root{
+  --wall:#E9E5DB;
+  --panel:#F7F5F0;
+  --panel-2:#FFFFFF;
+  --ink:#1B1916;
+  --ink-2:#5E594F;
+  --ink-3:#948D7F;
+  --line:#D8D2C4;
+  --line-soft:#E4DFD2;
+  --forest:#1E3A2B;
+  --sage:#4C7A5E;
+  --clay:#A8552F;
+  --shadow:0 24px 50px -28px rgba(40,34,22,.55);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --wall:#17160F;
+    --panel:#201E17;
+    --panel-2:#26241C;
+    --ink:#EFEBE0;
+    --ink-2:#A9A294;
+    --ink-3:#7C7566;
+    --line:#343126;
+    --line-soft:#2B291F;
+    --forest:#8FC0A2;
+    --sage:#8FC0A2;
+    --clay:#D89468;
+    --shadow:0 24px 60px -26px rgba(0,0,0,.85);
+  }
+}
+:root[data-theme="dark"]{
+  --wall:#17160F;
+  --panel:#201E17;
+  --panel-2:#26241C;
+  --ink:#EFEBE0;
+  --ink-2:#A9A294;
+  --ink-3:#7C7566;
+  --line:#343126;
+  --line-soft:#2B291F;
+  --forest:#8FC0A2;
+  --sage:#8FC0A2;
+  --clay:#D89468;
+  --shadow:0 24px 60px -26px rgba(0,0,0,.85);
+}
+:root[data-theme="light"]{
+  --wall:#E9E5DB;
+  --panel:#F7F5F0;
+  --panel-2:#FFFFFF;
+  --ink:#1B1916;
+  --ink-2:#5E594F;
+  --ink-3:#948D7F;
+  --line:#D8D2C4;
+  --line-soft:#E4DFD2;
+  --forest:#1E3A2B;
+  --sage:#4C7A5E;
+  --clay:#A8552F;
+  --shadow:0 24px 50px -28px rgba(40,34,22,.55);
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--wall);
+  color:var(--ink);
+  font-family:"Pretendard Variable","Pretendard",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  line-height:1.6;
+}
+.wrap{max-width:1240px;margin:0 auto;padding:56px 24px 100px;}
+
+.eyebrow{
+  font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+h1{
+  font-size:clamp(30px,4.4vw,46px);
+  font-weight:800;letter-spacing:-.035em;line-height:1.18;
+  margin:12px 0 0;text-wrap:balance;max-width:20ch;
+}
+.lede{
+  margin:18px 0 0;max-width:62ch;
+  font-size:16px;color:var(--ink-2);line-height:1.75;
+}
+.lede strong{color:var(--ink);font-weight:700;}
+
+.rule{height:1px;background:var(--line);border:0;margin:44px 0 0;}
+
+/* ---- 원칙 그리드 ---- */
+.principles{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:1px;background:var(--line);border:1px solid var(--line);
+  margin-top:40px;border-radius:14px;overflow:hidden;
+}
+.pr{background:var(--panel);padding:20px 20px 22px;}
+.pr-k{
+  font-size:10.5px;font-weight:800;letter-spacing:.14em;color:var(--ink-3);
+  font-variant-numeric:tabular-nums;
+}
+.pr-t{font-size:15px;font-weight:800;letter-spacing:-.02em;margin-top:9px;}
+.pr-d{font-size:13px;color:var(--ink-2);margin-top:7px;line-height:1.65;}
+
+/* ---- 섹션 ---- */
+.sec{margin-top:76px;}
+.sec-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
+.sec-num{
+  font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--sage);
+  font-variant-numeric:tabular-nums;
+}
+.sec-title{font-size:26px;font-weight:800;letter-spacing:-.03em;}
+.sec-desc{font-size:14.5px;color:var(--ink-2);margin-top:12px;max-width:66ch;line-height:1.72;}
+
+/* ---- 시안 레일 ---- */
+.rail{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:24px;margin-top:34px;align-items:start;
+}
+@media (max-width:1080px){.rail{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media (max-width:740px){.rail{grid-template-columns:1fr;}}
+
+.slot{min-width:0;}
+.slot-head{display:flex;align-items:center;gap:9px;margin-bottom:14px;}
+.slot-tag{
+  font-size:10.5px;font-weight:800;letter-spacing:.09em;
+  background:var(--forest);color:var(--wall);
+  padding:4px 9px;border-radius:5px;
+}
+:root[data-theme="dark"] .slot-tag,
+:root:not([data-theme="light"]) .slot-tag{}
+@media (prefers-color-scheme:dark){.slot-tag{color:#17160F;}}
+:root[data-theme="dark"] .slot-tag{color:#17160F;}
+:root[data-theme="light"] .slot-tag{color:#F7F5F0;}
+.slot-name{font-size:16px;font-weight:800;letter-spacing:-.02em;}
+
+.note{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;padding:18px 18px 20px;margin-top:18px;
+}
+.note dl{margin:0;display:grid;gap:13px;}
+.note dt{
+  font-size:10.5px;font-weight:800;letter-spacing:.13em;color:var(--ink-3);
+  margin-bottom:5px;
+}
+.note dd{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.68;}
+.note dd b{color:var(--ink);font-weight:700;}
+.note .risk dd{color:var(--clay);}
+
+/* ============================================================
+   PHONE FRAME
+   ============================================================ */
+.phone{
+  width:100%;max-width:360px;margin:0 auto;
+  border-radius:30px;overflow:hidden;
+  box-shadow:var(--shadow);
+  border:1px solid rgba(0,0,0,.08);
+  background:#EFEBE3;
+}
+
+/* ============================================================
+   MOCKUP TOKENS — 앱 자체의 색. 데크 테마와 무관하게 고정한다.
+   (시안은 "앱의 실제 화면"이므로 벽 색이 바뀌어도 변하지 않는다)
+   ============================================================ */
+.m{
+  --paper:#EFEBE3;
+  --card:#FDFCF9;
+  --mink:#1C1A17;
+  --mink2:#6E6960;
+  --mink3:#A29B8E;
+  --mline:#E3DED2;
+  --mforest:#1E3A2B;
+  --stage:#191815;
+  --msage:#4C7A5E;
+  --mclay:#B4643C;
+  --mgold:#B99247;
+
+  background:var(--paper);
+  color:var(--mink);
+  font-size:14px;
+  height:660px;
+  display:flex;flex-direction:column;
+  position:relative;
+  overflow:hidden;
+}
+.m *{box-sizing:border-box;}
+
+/* 상태바 */
+.m-status{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 18px 4px;font-size:12px;font-weight:700;color:var(--mink);
+  letter-spacing:-.01em;font-variant-numeric:tabular-nums;flex:none;
+}
+.m-batt{width:22px;height:11px;border:1.4px solid var(--mink);border-radius:3px;position:relative;opacity:.75;}
+.m-batt::after{content:"";position:absolute;inset:1.5px;right:7px;background:var(--mink);border-radius:1px;}
+
+/* 내비 */
+.m-nav{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 16px 10px;flex:none;
+}
+.m-back{
+  width:26px;height:26px;flex:none;display:grid;place-items:center;
+  color:var(--mink);
+}
+.m-navtitle{
+  flex:1;text-align:center;font-size:14.5px;font-weight:800;letter-spacing:-.02em;
+  margin-right:26px;
+}
+
+/* 스크롤 본문 */
+.m-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 16px 16px;}
+.m-body::-webkit-scrollbar{width:0;}
+
+/* 하단 고정 CTA */
+.m-foot{
+  flex:none;padding:12px 16px 20px;background:var(--paper);
+  border-top:1px solid transparent;
+}
+.m-cta{
+  width:100%;border:0;border-radius:14px;padding:16px;
+  background:var(--mforest);color:#F3F0E7;
+  font-size:15px;font-weight:800;letter-spacing:-.02em;
+  font-family:inherit;cursor:pointer;display:block;text-align:center;
+}
+.m-cta[disabled]{background:#C9C4B7;color:#F6F4EE;cursor:default;}
+.m-cta-ghost{
+  width:100%;border:1.5px solid var(--mline);border-radius:14px;padding:14px;
+  background:var(--card);color:var(--mink);
+  font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;
+  margin-bottom:8px;
+}
+
+/* 공통 조각 */
+.m-meta{font-size:11.5px;font-weight:700;color:var(--mink3);letter-spacing:-.01em;}
+.m-h1{
+  font-size:23px;font-weight:800;letter-spacing:-.035em;line-height:1.32;
+  margin:8px 0 0;text-wrap:balance;
+}
+.m-card{
+  background:var(--card);border:1px solid var(--mline);
+  border-radius:16px;padding:15px 16px;
+}
+.m-label{
+  font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--mink3);
+}
+
+/* 영상 스테이지 */
+.m-stage{
+  position:relative;border-radius:14px;overflow:hidden;
+  background:
+    radial-gradient(120% 90% at 62% 34%, #34322B 0%, #201F1B 46%, #131210 100%);
+  aspect-ratio:16/10;
+}
+.m-stage.tall{aspect-ratio:4/5;}
+.m-stage.full{border-radius:0;aspect-ratio:auto;}
+.m-golfer{
+  position:absolute;left:50%;bottom:12%;transform:translateX(-50%);
+  width:34%;opacity:.5;
+}
+.m-stage-tag{
+  position:absolute;top:11px;left:11px;
+  background:rgba(15,14,12,.72);color:#EDE8DC;
+  font-size:10.5px;font-weight:700;letter-spacing:-.01em;
+  padding:5px 9px;border-radius:6px;
+  backdrop-filter:blur(4px);
+}
+.m-play{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:52px;height:52px;border-radius:50%;
+  background:rgba(247,244,236,.92);display:grid;place-items:center;
+  color:#1C1A17;
+}
+.m-scrub{
+  position:absolute;left:0;right:0;bottom:0;
+  display:flex;align-items:center;gap:9px;
+  padding:9px 11px;color:#DDD7C9;font-size:10.5px;font-weight:700;
+  background:linear-gradient(to top,rgba(10,9,8,.8),transparent);
+  font-variant-numeric:tabular-nums;
+}
+.m-track{
+  flex:1;height:3px;border-radius:99px;background:rgba(237,232,220,.28);
+  position:relative;
+}
+.m-track i{
+  position:absolute;left:0;top:0;bottom:0;width:34%;
+  border-radius:99px;background:#EDE8DC;
+}
+.m-track .mark{
+  position:absolute;top:-3px;width:9px;height:9px;border-radius:50%;
+  background:var(--mclay);border:2px solid #191815;
+}
+
+/* 프로 카드 */
+.m-pro{display:flex;align-items:center;gap:10px;}
+.m-avatar{
+  width:34px;height:34px;border-radius:11px;flex:none;
+  background:var(--stage);color:#E9E3D4;
+  display:grid;place-items:center;font-size:11px;font-weight:800;letter-spacing:-.02em;
+}
+
+/* 유틸 */
+.m-stack{display:flex;flex-direction:column;gap:11px;}
+.m-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.m-num{font-variant-numeric:tabular-nums;}
+
+/* ============================================================
+   A-1 · 리빌
+   ============================================================ */
+.a1-score{
+  display:flex;align-items:flex-end;gap:9px;margin-top:2px;
+}
+.a1-score b{
+  font-size:44px;font-weight:800;letter-spacing:-.05em;line-height:.9;
+  font-variant-numeric:tabular-nums;
+}
+.a1-delta{
+  font-size:12.5px;font-weight:800;color:var(--msage);
+  padding-bottom:5px;letter-spacing:-.01em;
+}
+.a1-line{
+  border-left:2.5px solid var(--mforest);padding-left:12px;
+}
+.a1-line.keep{border-left-color:var(--mline);}
+.a1-line .k{font-size:11.5px;font-weight:800;color:var(--mink2);}
+.a1-line.keep .k{color:var(--mink3);}
+.a1-line .v{font-size:14px;font-weight:600;line-height:1.6;margin-top:4px;letter-spacing:-.02em;}
+.a1-loop{
+  display:flex;align-items:center;gap:7px;
+  background:#EAE5D9;border-radius:10px;padding:9px 12px;
+  font-size:12.5px;font-weight:700;color:var(--mink2);letter-spacing:-.02em;
+}
+.a1-upsell{
+  background:#EAE6DB;border:1px solid var(--mline);border-radius:14px;padding:14px;
+}
+.a1-upsell p{margin:0;font-size:12.5px;color:var(--mink2);line-height:1.6;letter-spacing:-.02em;}
+.a1-upsell .go{
+  display:flex;align-items:center;gap:9px;margin-top:12px;
+  padding-top:12px;border-top:1px solid #DDD7C8;
+}
+.a1-badge{
+  font-size:9px;font-weight:800;letter-spacing:.05em;
+  background:var(--mgold);color:#241D0C;padding:3px 6px;border-radius:4px;
+}
+.reveal{animation:rise .5s cubic-bezier(.2,.7,.3,1) both;}
+@keyframes rise{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion:reduce){.reveal{animation:none;}}
+
+/* ============================================================
+   A-2 · 카드 스택
+   ============================================================ */
+.a2-seg{display:flex;gap:4px;padding:0 16px 12px;flex:none;}
+.a2-seg i{flex:1;height:3px;border-radius:99px;background:#DCD6C7;}
+.a2-seg i.on{background:var(--mforest);}
+.a2-deck{flex:1;padding:0 16px;overflow:hidden;position:relative;}
+.a2-card{
+  display:none;height:100%;flex-direction:column;gap:13px;
+  animation:slidein .34s cubic-bezier(.2,.7,.3,1) both;
+}
+.a2-card.on{display:flex;}
+@keyframes slidein{from{opacity:0;transform:translateX(16px);}to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion:reduce){.a2-card{animation:none;}}
+.a2-kicker{font-size:11px;font-weight:800;letter-spacing:.13em;color:var(--mink3);}
+.a2-big{font-size:25px;font-weight:800;letter-spacing:-.04em;line-height:1.3;text-wrap:balance;}
+.a2-cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.a2-cmp .cell{
+  background:var(--card);border:1px solid var(--mline);border-radius:13px;padding:12px;
+}
+.a2-cmp .cell b{
+  display:block;font-size:26px;font-weight:800;letter-spacing:-.04em;
+  font-variant-numeric:tabular-nums;margin-top:5px;
+}
+.a2-cmp .cell.now{border-color:var(--mforest);}
+.a2-cmp .cell.now b{color:var(--mforest);}
+.a2-bars{display:flex;flex-direction:column;gap:9px;margin-top:2px;}
+.a2-bar .t{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--mink2);}
+.a2-bar .g{height:6px;border-radius:99px;background:#DFD9CA;margin-top:6px;overflow:hidden;}
+.a2-bar .g i{display:block;height:100%;border-radius:99px;background:var(--mforest);}
+.a2-bar .g i.warn{background:var(--mclay);}
+.a2-dots{display:flex;justify-content:center;gap:6px;padding:10px 0 2px;}
+.a2-dots button{
+  width:7px;height:7px;padding:0;border:0;border-radius:50%;
+  background:#CFC8B7;cursor:pointer;
+}
+.a2-dots button.on{background:var(--mforest);width:18px;border-radius:99px;}
+
+/* ============================================================
+   A-3 · 대시보드
+   ============================================================ */
+.a3-ring{position:relative;width:132px;height:132px;margin:2px auto 0;}
+.a3-ring svg{transform:rotate(-90deg);display:block;}
+.a3-ringtext{
+  position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:1px;
+}
+.a3-ringtext b{font-size:36px;font-weight:800;letter-spacing:-.05em;font-variant-numeric:tabular-nums;line-height:1;}
+.a3-ringtext span{font-size:10.5px;font-weight:800;letter-spacing:.1em;color:var(--mink3);}
+.a3-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.a3-cell{background:var(--card);border:1px solid var(--mline);border-radius:13px;padding:12px 13px;}
+.a3-cell .n{font-size:11.5px;font-weight:700;color:var(--mink2);letter-spacing:-.01em;}
+.a3-cell .v{
+  display:flex;align-items:baseline;gap:5px;margin-top:6px;
+}
+.a3-cell .v b{font-size:20px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;}
+.a3-cell .v i{font-size:11px;font-weight:800;font-style:normal;}
+.a3-cell .v i.up{color:var(--msage);}
+.a3-cell .v i.down{color:var(--mclay);}
+.a3-cell .g{height:4px;border-radius:99px;background:#E5E0D2;margin-top:9px;overflow:hidden;}
+.a3-cell .g i{display:block;height:100%;border-radius:99px;background:var(--mforest);}
+.a3-cell .g i.weak{background:var(--mclay);}
+.a3-spark{
+  background:var(--card);border:1px solid var(--mline);border-radius:14px;padding:14px 15px 12px;
+}
+.a3-lock{
+  display:flex;align-items:center;gap:9px;
+  background:#EAE5D9;border:1px dashed #CCC5B4;border-radius:12px;padding:12px 13px;
+  font-size:12.5px;font-weight:700;color:var(--mink2);letter-spacing:-.02em;
+}
+
+/* ============================================================
+   B-1 · 비교 슬라이더
+   ============================================================ */
+.b1-hero{position:relative;flex:none;}
+.b1-compare{
+  position:relative;aspect-ratio:1/1;overflow:hidden;border-radius:16px;
+  background:#DCD6C7;touch-action:none;cursor:ew-resize;user-select:none;
+}
+.b1-side{position:absolute;inset:0;display:grid;place-items:center;}
+.b1-side.before{
+  background:linear-gradient(155deg,#B9B2A0,#8E8878);
+}
+.b1-side.after{
+  background:linear-gradient(155deg,#3C5745,#1E3A2B);
+  clip-path:inset(0 0 0 50%);
+}
+.b1-side span{
+  position:absolute;bottom:12px;font-size:10px;font-weight:800;letter-spacing:.12em;
+  color:rgba(255,255,255,.9);
+}
+.b1-side.before span{left:12px;}
+.b1-side.after span{right:12px;}
+.b1-figure{width:38%;opacity:.85;}
+.b1-handle{
+  position:absolute;top:0;bottom:0;left:50%;width:2px;background:#FDFCF9;
+  transform:translateX(-1px);pointer-events:none;
+}
+.b1-knob{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:34px;height:34px;border-radius:50%;background:#FDFCF9;
+  display:grid;place-items:center;color:#1C1A17;
+  box-shadow:0 3px 10px rgba(0,0,0,.28);pointer-events:none;
+}
+.b1-delta{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--mforest);border-radius:14px;padding:13px;color:#EFEAE0;
+}
+.b1-delta b{font-size:26px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;}
+.b1-delta small{font-size:11.5px;font-weight:700;opacity:.82;letter-spacing:-.01em;}
+.b1-quote{
+  font-size:14px;font-weight:600;line-height:1.68;letter-spacing:-.02em;color:var(--mink);
+}
+.b1-timeline{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;}
+.b1-tick{
+  flex:none;width:52px;background:var(--card);border:1px solid var(--mline);
+  border-radius:11px;padding:9px 0;text-align:center;
+}
+.b1-tick.on{border-color:var(--mforest);background:#E8EDE7;}
+.b1-tick b{display:block;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.03em;}
+.b1-tick span{font-size:9.5px;font-weight:700;color:var(--mink3);}
+
+/* ============================================================
+   B-2 · 레슨 노트
+   ============================================================ */
+.b2-prog{
+  display:flex;align-items:center;gap:10px;
+  background:var(--card);border:1px solid var(--mline);border-radius:14px;padding:13px 15px;
+}
+.b2-prog .g{flex:1;height:6px;border-radius:99px;background:#E2DCCD;overflow:hidden;}
+.b2-prog .g i{display:block;height:100%;background:var(--mforest);border-radius:99px;transition:width .3s ease;}
+.b2-prog b{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+.b2-task{
+  display:flex;gap:11px;align-items:flex-start;width:100%;text-align:left;
+  background:var(--card);border:1px solid var(--mline);border-radius:14px;
+  padding:14px 15px;font-family:inherit;cursor:pointer;color:inherit;
+}
+.b2-task.done{background:#ECEFEA;border-color:#CFDACF;}
+.b2-check{
+  width:21px;height:21px;flex:none;border-radius:7px;margin-top:1px;
+  border:1.8px solid #C9C2B1;display:grid;place-items:center;color:transparent;
+}
+.b2-task.done .b2-check{background:var(--mforest);border-color:var(--mforest);color:#F2EEE4;}
+.b2-task .tx{flex:1;min-width:0;}
+.b2-task .tt{font-size:14px;font-weight:700;letter-spacing:-.02em;line-height:1.45;}
+.b2-task.done .tt{color:var(--mink2);text-decoration:line-through;text-decoration-color:#A9B3A8;}
+.b2-task .td{font-size:12px;color:var(--mink2);margin-top:4px;line-height:1.55;letter-spacing:-.01em;}
+.b2-clip{
+  font-size:11px;font-weight:800;color:var(--msage);margin-top:7px;
+  display:inline-flex;align-items:center;gap:4px;
+}
+.b2-memo{
+  background:#F0EBDD;border-radius:14px;padding:14px 15px;
+  border-left:3px solid var(--mgold);
+}
+.b2-voice{
+  display:flex;align-items:center;gap:10px;background:var(--stage);
+  border-radius:12px;padding:11px 13px;color:#E9E3D4;
+}
+.b2-wave{flex:1;display:flex;align-items:center;gap:2.5px;height:20px;}
+.b2-wave i{flex:1;background:rgba(233,227,212,.55);border-radius:99px;}
+
+/* ============================================================
+   B-3 · 챕터 플레이어
+   ============================================================ */
+.b3-archive{display:flex;gap:7px;overflow-x:auto;padding:2px 16px 12px;flex:none;}
+.b3-arc{
+  flex:none;padding:7px 12px;border-radius:99px;font-size:11.5px;font-weight:800;
+  background:#E4DFD1;color:var(--mink2);letter-spacing:-.01em;white-space:nowrap;
+}
+.b3-arc.on{background:var(--mforest);color:#F0ECE1;}
+.b3-arc.new{background:#F0E4D2;color:var(--mclay);}
+.b3-chapters{display:flex;gap:6px;overflow-x:auto;padding:12px 16px 4px;flex:none;}
+.b3-chip{
+  flex:none;display:flex;align-items:center;gap:6px;
+  padding:8px 12px;border-radius:10px;border:1px solid var(--mline);
+  background:var(--card);font-family:inherit;font-size:12px;font-weight:700;
+  color:var(--mink2);cursor:pointer;letter-spacing:-.02em;white-space:nowrap;
+}
+.b3-chip .t{font-size:11px;font-weight:800;color:var(--mink3);font-variant-numeric:tabular-nums;}
+.b3-chip.on{background:var(--mforest);border-color:var(--mforest);color:#F0ECE1;}
+.b3-chip.on .t{color:rgba(240,236,225,.72);}
+.b3-panel{padding:4px 16px 0;}
+.b3-cmt{display:none;}
+.b3-cmt.on{display:block;animation:rise .3s ease both;}
+.b3-cmt .h{font-size:16px;font-weight:800;letter-spacing:-.03em;line-height:1.4;}
+.b3-cmt .p{font-size:13.5px;color:var(--mink2);line-height:1.7;margin-top:8px;letter-spacing:-.02em;}
+.b3-drill{
+  display:flex;align-items:center;gap:10px;margin-top:12px;
+  background:var(--card);border:1px solid var(--mline);border-radius:13px;padding:12px 13px;
+}
+.b3-drillicon{
+  width:32px;height:32px;border-radius:9px;flex:none;background:#E8EDE7;
+  display:grid;place-items:center;color:var(--mforest);
+}
+
+/* ---- 추천 조합 ---- */
+.combo{
+  margin-top:34px;background:var(--panel);border:1px solid var(--line);
+  border-radius:16px;padding:26px 26px 28px;
+}
+.combo h3{margin:0;font-size:19px;font-weight:800;letter-spacing:-.03em;}
+.combo ol{margin:16px 0 0;padding-left:0;list-style:none;counter-reset:c;display:grid;gap:14px;}
+.combo li{
+  counter-increment:c;display:grid;grid-template-columns:26px 1fr;gap:12px;
+  font-size:14px;color:var(--ink-2);line-height:1.68;
+}
+.combo li::before{
+  content:counter(c);
+  font-size:11px;font-weight:800;color:var(--sage);
+  border:1px solid var(--line);border-radius:7px;
+  display:grid;place-items:center;height:24px;
+  font-variant-numeric:tabular-nums;
+}
+.combo li b{color:var(--ink);font-weight:700;}
+
+.foot{
+  margin-top:60px;padding-top:22px;border-top:1px solid var(--line);
+  font-size:12.5px;color:var(--ink-3);
+}
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">DOH GOLF · 결과지 화면 설계</p>
+  <h1>결과지는 읽히는 화면이 아니라<br>다음 방문을 예약하는 화면이다</h1>
+  <p class="lede">
+    AI 분석 결과지와 프로 피드백 결과지, 두 화면의 시안을 <strong>각 3안씩</strong> 만들었습니다.
+    현재 안은 정보 전달은 정확하지만 <strong>다 읽고 나면 할 일이 없어서</strong> 그대로 종료됩니다.
+    여섯 시안은 각각 다른 심리 장치 — 순차 공개, 완주 구조, 수집욕, 변화 체감, 미완료 과제, 아카이브 —
+    를 하나씩 골라 넣었습니다. 여러 개를 다 넣지 않고 하나씩만 넣은 이유는,
+    훅이 겹치면 화면이 시끄러워지고 결국 아무것도 작동하지 않기 때문입니다.
+  </p>
+
+  <hr class="rule">
+
+  <div class="principles">
+    <div class="pr">
+      <div class="pr-k">HOOK 01</div>
+      <div class="pr-t">한 번에 다 보여주지 않기</div>
+      <div class="pr-d">결과 전체를 스크롤 한 번에 노출하면 "다 봤다"는 종료 신호가 됩니다. 진단 → 근거 → 처방 순으로 리듬을 끊습니다.</div>
+    </div>
+    <div class="pr">
+      <div class="pr-k">HOOK 02</div>
+      <div class="pr-t">항상 미완료를 남기기</div>
+      <div class="pr-d">체크 안 된 숙제 하나, 아직 안 열린 그래프 하나. 자이가르닉 효과 — 사람은 끝난 일보다 안 끝난 일을 기억합니다.</div>
+    </div>
+    <div class="pr">
+      <div class="pr-k">HOOK 03</div>
+      <div class="pr-t">비교 대상은 남이 아니라 과거의 나</div>
+      <div class="pr-d">타인 랭킹은 하위 80%를 이탈시킵니다. 지난 회차 대비 변화만 보여주면 모든 사용자가 승자가 됩니다.</div>
+    </div>
+    <div class="pr">
+      <div class="pr-k">HOOK 04</div>
+      <div class="pr-t">잘한 것을 반드시 같이</div>
+      <div class="pr-d">교정 지적만 반복되면 "나는 늘 틀렸다"가 학습됩니다. 유지할 것 한 줄이 재방문의 감정적 연료입니다.</div>
+    </div>
+    <div class="pr">
+      <div class="pr-k">HOOK 05</div>
+      <div class="pr-t">마지막은 예약, 종료가 아니라</div>
+      <div class="pr-d">"내 스윙 다시 보기"는 과거로 보냅니다. 결과지의 끝은 항상 다음 촬영·다음 질문으로 나가야 합니다.</div>
+    </div>
+    <div class="pr">
+      <div class="pr-k">HOOK 06</div>
+      <div class="pr-t">AI의 한계를 유료 전환점으로</div>
+      <div class="pr-d">"영상만으로는 확실하지 않아요"는 사과가 아니라 프로 결제의 근거입니다. 궁금증이 가장 큰 지점에 배치합니다.</div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       화면 A
+       ========================================================== -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="sec-num">화면 A</span>
+      <span class="sec-title">AI 분석 결과지</span>
+    </div>
+    <p class="sec-desc">
+      무료 또는 저관여 구간. 목표는 정확한 진단 전달이 아니라 <b>"이걸 사람한테 제대로 물어보고 싶다"</b>는
+      상태를 만드는 것입니다. 그래서 세 안 모두 마지막 스크롤 지점에 프로 연결을 놓았습니다.
+    </p>
+
+    <div class="rail">
+
+      <!-- ---------- A-1 리빌 ---------- -->
+      <div class="slot">
+        <div class="slot-head"><span class="slot-tag">A-1</span><span class="slot-name">리빌 · 한 줄씩 열리는 진단</span></div>
+        <div class="phone">
+          <div class="m">
+            <div class="m-status"><span>9:41</span><span class="m-batt"></span></div>
+            <div class="m-nav">
+              <span class="m-back"><svg width="9" height="16" viewBox="0 0 9 16" fill="none"><path d="M8 1 1 8l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span class="m-navtitle">분석 결과</span>
+            </div>
+            <div class="m-body">
+              <div class="m-stack">
+                <div class="reveal" style="animation-delay:.05s">
+                  <div class="m-meta">7월 25일 · 드라이버 · 3회차</div>
+                  <div class="a1-score">
+                    <b class="m-num">68</b>
+                    <span class="a1-delta">▲ 4 지난주보다</span>
+                  </div>
+                  <h2 class="m-h1">임팩트에서<br>골반이 늦게 돌아요</h2>
+                </div>
+
+                <div class="m-stage reveal" style="animation-delay:.25s">
+                  <div class="m-stage-tag">문제 구간 · 임팩트 P4</div>
+                  <svg class="m-golfer" viewBox="0 0 60 120" fill="none" aria-hidden="true">
+                    <circle cx="30" cy="14" r="8" fill="#EDE8DC"/>
+                    <path d="M30 22v38M30 34l-16 12M30 34l17 9M30 60l-9 34M30 60l11 34" stroke="#EDE8DC" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M47 43 58 74" stroke="#B4643C" stroke-width="3" stroke-linecap="round"/>
+                  </svg>
+                  <div class="m-scrub">
+                    <span>0:00</span>
+                    <span class="m-track"><i></i><span class="mark" style="left:34%"></span></span>
+                    <span>0:02</span>
+                  </div>
+                </div>
+
+                <div class="a1-loop reveal" style="animation-delay:.4s">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7a5 5 0 1 1 1.6 3.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M2 4.2V7h2.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  이 구간만 0.25배속으로 반복 재생 중
+                </div>
+
+                <div class="a1-line reveal" style="animation-delay:.55s">
+                  <div class="k">먼저 고칠 것</div>
+                  <div class="v">어깨보다 하체가 먼저 리드되도록 연습해보세요.</div>
+                </div>
+
+                <div class="a1-line keep reveal" style="animation-delay:.7s">
+                  <div class="k">유지할 것</div>
+                  <div class="v">백스윙 템포가 안정적이에요. 지금 리듬 그대로.</div>
+                </div>
+
+                <div class="a1-upsell reveal" style="animation-delay:.85s">
+                  <p>AI는 영상 각도만 보고 판단해요. 골반이 늦은 게 <b style="color:var(--mink)">유연성 때문인지 습관 때문인지</b>는 사람이 봐야 압니다.</p>
+                  <div class="go">
+                    <span class="a1-badge">PRO</span>
+                    <span style="flex:1;font-size:13.5px;font-weight:800;letter-spacing:-.02em">이도형 프로에게 이 영상 보내기</span>
+                    <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="m1 1 5 5-5 5" stroke="#A29B8E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="m-foot">
+              <button class="m-cta">내일 이 드릴 하고 다시 찍기</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="note">
+          <dl>
+            <div><dt>핵심 장치</dt><dd>진입 시 점수 카운트업 + 진단 문장이 <b>0.15초 간격으로 순차 등장</b>. 스크롤 위치가 아니라 시간이 정보를 통제합니다.</dd></div>
+            <div><dt>이탈이 줄어드는 이유</dt><dd>문장이 아직 다 안 나왔기 때문에 뒤로가기를 누르지 못합니다. 그리고 CTA가 <b>"다시 보기"(과거)가 아니라 "내일 다시 찍기"(미래)</b>입니다.</dd></div>
+            <div><dt>구현 메모</dt><dd>기존 데이터 그대로 사용 가능. <code>animation-delay</code>만 추가. 문제 구간 마커는 피드백 테이블의 챕터 초 값 재사용.</dd></div>
+            <div class="risk"><dt>주의</dt><dd>2회차부터는 애니메이션이 방해가 됩니다. 같은 분석 재방문 시에는 즉시 표시로 전환하세요.</dd></div>
+          </dl>
+        </div>
+      </div>
+
+      <!-- ---------- A-2 카드 스택 ---------- -->
+      <div class="slot">
+        <div class="slot-head"><span class="slot-tag">A-2</span><span class="slot-name">카드 3장 · 스토리 문법</span></div>
+        <div class="phone">
+          <div class="m">
+            <div class="m-status"><span>9:41</span><span class="m-batt"></span></div>
+            <div class="m-nav">
+              <span class="m-back"><svg width="9" height="16" viewBox="0 0 9 16" fill="none"><path d="M8 1 1 8l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span class="m-navtitle">7월 25일 · 드라이버</span>
+            </div>
+            <div class="a2-seg" id="a2seg">
+              <i class="on"></i><i></i><i></i>
+            </div>
+
+            <div class="a2-deck">
+              <!-- card 1 -->
+              <div class="a2-card on" data-a2="0">
+                <div class="a2-kicker">01 · 무엇이 문제인가</div>
+                <div class="a2-big">임팩트에서 골반이<br>0.08초 늦게 돌아요</div>
+                <div class="m-stage tall" style="flex:1">
+                  <div class="m-stage-tag">임팩트 P4</div>
+                  <svg class="m-golfer" viewBox="0 0 60 120" fill="none" aria-hidden="true">
+                    <circle cx="30" cy="14" r="8" fill="#EDE8DC"/>
+                    <path d="M30 22v38M30 34l-16 12M30 34l17 9M30 60l-9 34M30 60l11 34" stroke="#EDE8DC" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M47 43 58 74" stroke="#B4643C" stroke-width="3" stroke-linecap="round"/>
+                  </svg>
+                  <div class="m-scrub"><span>0:01</span><span class="m-track"><i style="width:52%"></i><span class="mark" style="left:52%"></span></span><span>0:02</span></div>
+                </div>
+              </div>
+
+              <!-- card 2 -->
+              <div class="a2-card" data-a2="1">
+                <div class="a2-kicker">02 · 지난번과 무엇이 달라졌나</div>
+                <div class="a2-big">템포는 좋아졌고<br>회전만 남았어요</div>
+                <div class="a2-cmp">
+                  <div class="cell">
+                    <span class="m-label">7월 11일</span>
+                    <b class="m-num" style="color:var(--mink3)">64</b>
+                  </div>
+                  <div class="cell now">
+                    <span class="m-label">오늘</span>
+                    <b class="m-num">68</b>
+                  </div>
+                </div>
+                <div class="a2-bars">
+                  <div class="a2-bar"><div class="t"><span>백스윙 템포</span><span class="m-num">82</span></div><div class="g"><i style="width:82%"></i></div></div>
+                  <div class="a2-bar"><div class="t"><span>체중 이동</span><span class="m-num">74</span></div><div class="g"><i style="width:74%"></i></div></div>
+                  <div class="a2-bar"><div class="t"><span>골반 회전 타이밍</span><span class="m-num">41</span></div><div class="g"><i class="warn" style="width:41%"></i></div></div>
+                  <div class="a2-bar"><div class="t"><span>피니시 밸런스</span><span class="m-num">70</span></div><div class="g"><i style="width:70%"></i></div></div>
+                </div>
+                <div class="m-card" style="margin-top:auto;background:#EAE6DB">
+                  <div style="font-size:12.5px;color:var(--mink2);line-height:1.6;letter-spacing:-.02em">
+                    3주 연속 템포가 80점을 넘었어요. <b style="color:var(--mink)">이 리듬은 이제 몸이 기억한 겁니다.</b>
+                  </div>
+                </div>
+              </div>
+
+              <!-- card 3 -->
+              <div class="a2-card" data-a2="2">
+                <div class="a2-kicker">03 · 그래서 무엇을 할까</div>
+                <div class="a2-big">하체 리드 드릴<br>하루 5분</div>
+                <div class="m-card">
+                  <div class="m-label">오늘의 드릴</div>
+                  <div style="font-size:14px;font-weight:700;margin-top:7px;letter-spacing:-.02em;line-height:1.5">발 모으고 스윙 20회 → 어깨보다 골반이 먼저 열리는 감각 잡기</div>
+                </div>
+                <div class="a1-upsell" style="margin-top:auto">
+                  <p>여기까지 본 사람은 대부분 이렇게 묻습니다 — <b style="color:var(--mink)">"제 몸으로 이게 되는 게 맞나요?"</b></p>
+                  <div class="go">
+                    <span class="a1-badge">PRO</span>
+                    <span style="flex:1;font-size:13.5px;font-weight:800;letter-spacing:-.02em">이도형 프로에게 물어보기</span>
+                    <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="m1 1 5 5-5 5" stroke="#A29B8E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="a2-dots" id="a2dots">
+              <button class="on" data-go="0" aria-label="1번 카드"></button>
+              <button data-go="1" aria-label="2번 카드"></button>
+              <button data-go="2" aria-label="3번 카드"></button>
+            </div>
+            <div class="m-foot">
+              <button class="m-cta" id="a2next">다음</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="note">
+          <dl>
+            <div><dt>핵심 장치</dt><dd>세로 스크롤을 버리고 <b>좌우 카드 3장</b>으로 고정. 한 카드 = 한 메시지. 상단 세그먼트 바가 "2장 남았다"를 계속 알려줍니다.</dd></div>
+            <div><dt>이탈이 줄어드는 이유</dt><dd>스크롤은 중간에 멈춰도 죄책감이 없지만 <b>3장 중 1장에서 멈추면 미완료로 느껴집니다.</b> 완주율이 오르고, 프로 연결 CTA는 완주한 사람에게만 보여 전환율이 가장 높은 자리에 놓입니다.</dd></div>
+            <div><dt>구현 메모</dt><dd>스와이프 + 하단 CTA가 "다음 → 다음 → 프로에게 물어보기"로 라벨이 바뀝니다. 카드 인덱스만 상태로 관리.</dd></div>
+            <div class="risk"><dt>주의</dt><dd>정보를 다시 찾아보기 어렵습니다. 3장을 다 본 뒤에는 전체 스크롤 뷰로 전환되는 경로가 반드시 필요합니다.</dd></div>
+          </dl>
+        </div>
+      </div>
+
+      <!-- ---------- A-3 대시보드 ---------- -->
+      <div class="slot">
+        <div class="slot-head"><span class="slot-tag">A-3</span><span class="slot-name">스코어 리포트 · 수집형</span></div>
+        <div class="phone">
+          <div class="m">
+            <div class="m-status"><span>9:41</span><span class="m-batt"></span></div>
+            <div class="m-nav">
+              <span class="m-back"><svg width="9" height="16" viewBox="0 0 9 16" fill="none"><path d="M8 1 1 8l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span class="m-navtitle">스윙 리포트 · 3회차</span>
+            </div>
+            <div class="m-body">
+              <div class="m-stack">
+                <div class="a3-ring">
+                  <svg width="132" height="132" viewBox="0 0 132 132">
+                    <circle cx="66" cy="66" r="56" fill="none" stroke="#DFD9CA" stroke-width="11"/>
+                    <circle cx="66" cy="66" r="56" fill="none" stroke="#1E3A2B" stroke-width="11"
+                            stroke-linecap="round" stroke-dasharray="351.9" stroke-dashoffset="112.6"/>
+                  </svg>
+                  <div class="a3-ringtext">
+                    <b class="m-num">68</b>
+                    <span>SWING SCORE</span>
+                  </div>
+                </div>
+                <div style="text-align:center;font-size:12.5px;font-weight:700;color:var(--msage);letter-spacing:-.02em;margin-top:-2px">
+                  지난 회차보다 4점 올랐어요
+                </div>
+
+                <div class="m-card" style="padding:0;overflow:hidden">
+                  <div class="m-stage" style="border-radius:0">
+                    <div class="m-stage-tag">문제 구간 · 임팩트 P4</div>
+                    <svg class="m-golfer" viewBox="0 0 60 120" fill="none" aria-hidden="true">
+                      <circle cx="30" cy="14" r="8" fill="#EDE8DC"/>
+                      <path d="M30 22v38M30 34l-16 12M30 34l17 9M30 60l-9 34M30 60l11 34" stroke="#EDE8DC" stroke-width="5" stroke-linecap="round"/>
+                      <path d="M47 43 58 74" stroke="#B4643C" stroke-width="3" stroke-linecap="round"/>
+                    </svg>
+                    <div class="m-scrub"><span>0:00</span><span class="m-track"><i></i><span class="mark" style="left:34%"></span></span><span>0:02</span></div>
+                  </div>
+                  <div style="padding:13px 15px">
+                    <div style="font-size:15px;font-weight:800;letter-spacing:-.03em">임팩트에서 골반이 늦게 돌아요</div>
+                  </div>
+                </div>
+
+                <div class="a3-grid">
+                  <div class="a3-cell">
+                    <div class="n">백스윙 템포</div>
+                    <div class="v"><b class="m-num">82</b><i class="up">+3</i></div>
+                    <div class="g"><i style="width:82%"></i></div>
+                  </div>
+                  <div class="a3-cell">
+                    <div class="n">체중 이동</div>
+                    <div class="v"><b class="m-num">74</b><i class="up">+6</i></div>
+                    <div class="g"><i style="width:74%"></i></div>
+                  </div>
+                  <div class="a3-cell">
+                    <div class="n">골반 회전</div>
+                    <div class="v"><b class="m-num">41</b><i class="down">-2</i></div>
+                    <div class="g"><i class="weak" style="width:41%"></i></div>
+                  </div>
+                  <div class="a3-cell">
+                    <div class="n">피니시 밸런스</div>
+                    <div class="v"><b class="m-num">70</b><i class="up">+1</i></div>
+                    <div class="g"><i style="width:70%"></i></div>
+                  </div>
+                </div>
+
+                <div class="a3-spark">
+                  <div class="m-row">
+                    <span class="m-label">회차별 추이</span>
+                    <span style="font-size:11px;font-weight:800;color:var(--mink3)">3 / 5회차</span>
+                  </div>
+                  <svg viewBox="0 0 240 62" style="width:100%;height:62px;margin-top:9px" preserveAspectRatio="none" aria-hidden="true">
+                    <path d="M0 62 12 44 96 40 180 26 180 62Z" fill="#1E3A2B" opacity=".1"/>
+                    <path d="M12 44 96 40 180 26" fill="none" stroke="#1E3A2B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M180 26 228 18" fill="none" stroke="#A29B8E" stroke-width="2" stroke-dasharray="4 5" stroke-linecap="round"/>
+                    <circle cx="180" cy="26" r="4.5" fill="#1E3A2B"/>
+                    <circle cx="228" cy="18" r="3.5" fill="none" stroke="#A29B8E" stroke-width="1.8"/>
+                  </svg>
+                  <div class="m-row" style="font-size:10.5px;font-weight:700;color:var(--mink3)">
+                    <span>1회차</span><span>3회차</span><span>5회차</span>
+                  </div>
+                </div>
+
+                <div class="a3-lock">
+                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="2.5" y="6.5" width="10" height="7" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 6.5V4.8a2.5 2.5 0 0 1 5 0v1.7" stroke="currentColor" stroke-width="1.5"/></svg>
+                  <span>5회차를 채우면 <b style="color:var(--mink)">구간별 성장 리포트</b>가 열려요 · 2회 남음</span>
+                </div>
+              </div>
+            </div>
+            <div class="m-foot">
+              <button class="m-cta">4회차 스윙 올리기</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="note">
+          <dl>
+            <div><dt>핵심 장치</dt><dd>매 회차 <b>숫자가 쌓이는 구조</b>. 4개 지표 + 회차 추이 + "5회차에 열리는 리포트" 언락.</dd></div>
+            <div><dt>이탈이 줄어드는 이유</dt><dd>결과지를 보는 이유가 "진단 확인"에서 <b>"내 기록 확인"</b>으로 바뀝니다. 기록은 끊기면 아까워서 계속 올리게 됩니다. 점선으로 그린 다음 회차 예측선이 빈칸을 채우고 싶게 만듭니다.</dd></div>
+            <div><dt>구현 메모</dt><dd>지표 4개를 AI가 점수화해야 합니다. 세 안 중 <b>백엔드 작업량이 가장 큽니다</b> — 노드 라이브러리의 피처 스코어를 0~100으로 정규화해 매핑하면 재사용 가능.</dd></div>
+            <div class="risk"><dt>주의</dt><dd>점수가 떨어진 회차에서 이탈 위험이 큽니다. 하락 시에는 반드시 오른 지표를 상단에 먼저 배치하고, 총점 하락은 "이번엔 다른 부분에 집중했어요"로 프레이밍하세요.</dd></div>
+          </dl>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       화면 B
+       ========================================================== -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="sec-num">화면 B</span>
+      <span class="sec-title">프로 피드백 결과지 (정규레슨)</span>
+    </div>
+    <p class="sec-desc">
+      돈을 낸 사람이 보는 화면. 여기서는 <b>"이 돈이 아깝지 않았다"</b>를 30초 안에 체감시켜야 다음 달 구독이 유지됩니다.
+      핵심은 프로가 얼마나 많이 썼는지가 아니라 <b>내가 얼마나 변했는지</b>가 먼저 보이는 것입니다.
+    </p>
+
+    <div class="rail">
+
+      <!-- ---------- B-1 비교 슬라이더 ---------- -->
+      <div class="slot">
+        <div class="slot-head"><span class="slot-tag">B-1</span><span class="slot-name">비교 슬라이더 · 변화 체감형</span></div>
+        <div class="phone">
+          <div class="m">
+            <div class="m-status"><span>9:41</span><span class="m-batt"></span></div>
+            <div class="m-nav">
+              <span class="m-back"><svg width="9" height="16" viewBox="0 0 9 16" fill="none"><path d="M8 1 1 8l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span class="m-navtitle">No.06 · 6월 리포트</span>
+            </div>
+            <div class="m-body">
+              <div class="m-stack">
+                <div>
+                  <div class="m-meta">이도형 프로 · 담당 5개월</div>
+                  <h2 class="m-h1">한 달 만에 이만큼<br>달라졌어요</h2>
+                </div>
+
+                <div class="b1-compare" id="b1c">
+                  <div class="b1-side before">
+                    <svg class="b1-figure" viewBox="0 0 60 120" fill="none" aria-hidden="true">
+                      <circle cx="30" cy="14" r="8" fill="#F4F1E9"/>
+                      <path d="M30 22v38M30 34l-18 8M30 34l17 9M30 60l-12 32M30 60l13 32" stroke="#F4F1E9" stroke-width="5" stroke-linecap="round"/>
+                    </svg>
+                    <span>5월 27일 · BEFORE</span>
+                  </div>
+                  <div class="b1-side after" id="b1after">
+                    <svg class="b1-figure" viewBox="0 0 60 120" fill="none" aria-hidden="true">
+                      <circle cx="30" cy="14" r="8" fill="#F4F1E9"/>
+                      <path d="M30 22v38M30 34l-15 13M30 34l17 5M30 60l-9 34M30 60l11 34" stroke="#F4F1E9" stroke-width="5" stroke-linecap="round"/>
+                    </svg>
+                    <span>6월 27일 · AFTER</span>
+                  </div>
+                  <div class="b1-handle" id="b1h"><span class="b1-knob">
+                    <svg width="15" height="11" viewBox="0 0 15 11" fill="none"><path d="M5 1 1 5.5 5 10M10 1l4 4.5-4 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </span></div>
+                </div>
+                <div style="text-align:center;font-size:11.5px;font-weight:700;color:var(--mink3);margin-top:-4px">
+                  좌우로 밀어서 비교해보세요
+                </div>
+
+                <div class="b1-delta">
+                  <div style="text-align:center">
+                    <b class="m-num">+6</b>
+                    <small style="display:block">스윙 스코어</small>
+                  </div>
+                  <div style="width:1px;height:32px;background:rgba(239,234,224,.25)"></div>
+                  <div style="text-align:center">
+                    <b class="m-num">12</b>
+                    <small style="display:block">분석 클립</small>
+                  </div>
+                  <div style="width:1px;height:32px;background:rgba(239,234,224,.25)"></div>
+                  <div style="text-align:center">
+                    <b class="m-num">8</b>
+                    <small style="display:block">프로 코멘트</small>
+                  </div>
+                </div>
+
+                <div class="m-card">
+                  <div class="m-pro" style="margin-bottom:11px">
+                    <span class="m-avatar">이도형</span>
+                    <div style="flex:1">
+                      <div style="font-size:13px;font-weight:800;letter-spacing:-.02em">이도형 프로</div>
+                      <div style="font-size:11px;font-weight:600;color:var(--mink3)">KPGA 투어프로</div>
+                    </div>
+                  </div>
+                  <p class="b1-quote" style="margin:0">
+                    "이번 달은 하체 리드가 완전히 자리 잡았어요. 다음은 톱에서 왼팔 각만 지켜봅시다."
+                  </p>
+                </div>
+
+                <div>
+                  <div class="m-row" style="margin-bottom:8px">
+                    <span class="m-label">5개월의 기록</span>
+                    <span style="font-size:11px;font-weight:800;color:var(--msage)">전체 보기</span>
+                  </div>
+                  <div class="b1-timeline">
+                    <div class="b1-tick"><b class="m-num">62</b><span>2월</span></div>
+                    <div class="b1-tick"><b class="m-num">65</b><span>3월</span></div>
+                    <div class="b1-tick"><b class="m-num">64</b><span>4월</span></div>
+                    <div class="b1-tick"><b class="m-num">68</b><span>5월</span></div>
+                    <div class="b1-tick on"><b class="m-num">74</b><span>6월</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="m-foot">
+              <button class="m-cta-ghost">내 변화 이미지로 저장하기</button>
+              <button class="m-cta">7월 스윙 올리기</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="note">
+          <dl>
+            <div><dt>핵심 장치</dt><dd>BEFORE / AFTER를 나란히 두지 않고 <b>겹쳐서 손가락으로 밀어 비교</b>. 변화를 보는 게 아니라 직접 만들어냅니다.</dd></div>
+            <div><dt>이탈이 줄어드는 이유</dt><dd>구독 해지는 "내가 늘고 있나?"라는 의심에서 시작됩니다. 이 화면은 결제일 직전 그 의심에 <b>손으로 만질 수 있는 답</b>을 줍니다. 저장·공유는 자연스러운 바이럴 경로이기도 합니다.</dd></div>
+            <div><dt>구현 메모</dt><dd>이미 BEFORE/AFTER 사진 2장을 받고 있으니 <b>추가 데이터 없이 바로 적용 가능</b>. 촬영 각도만 통일되면 효과가 큽니다 — 신청 화면에 정면/측면 가이드 프레임 추가를 권합니다.</dd></div>
+            <div class="risk"><dt>주의</dt><dd>각도·복장·조명이 다르면 오히려 비교가 안 되고 신뢰를 잃습니다. 각도가 다를 땐 슬라이더 대신 나란히 배치로 자동 폴백하세요.</dd></div>
+          </dl>
+        </div>
+      </div>
+
+      <!-- ---------- B-2 레슨 노트 ---------- -->
+      <div class="slot">
+        <div class="slot-head"><span class="slot-tag">B-2</span><span class="slot-name">레슨 노트 · 미완료 과제형</span></div>
+        <div class="phone">
+          <div class="m">
+            <div class="m-status"><span>9:41</span><span class="m-batt"></span></div>
+            <div class="m-nav">
+              <span class="m-back"><svg width="9" height="16" viewBox="0 0 9 16" fill="none"><path d="M8 1 1 8l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span class="m-navtitle">6월 레슨 노트</span>
+            </div>
+            <div class="m-body">
+              <div class="m-stack">
+                <div>
+                  <div class="m-meta">No.06 · 이도형 프로 · 6월 27일 받음</div>
+                  <h2 class="m-h1">톱에서 왼팔 각<br>잡기</h2>
+                </div>
+
+                <div class="b2-voice">
+                  <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="m5 4 8 4.5L5 13z" fill="currentColor"/></svg>
+                  <span class="b2-wave" aria-hidden="true">
+                    <i style="height:32%"></i><i style="height:62%"></i><i style="height:88%"></i><i style="height:48%"></i>
+                    <i style="height:74%"></i><i style="height:100%"></i><i style="height:40%"></i><i style="height:66%"></i>
+                    <i style="height:30%"></i><i style="height:82%"></i><i style="height:54%"></i><i style="height:38%"></i>
+                    <i style="height:70%"></i><i style="height:26%"></i><i style="height:58%"></i><i style="height:44%"></i>
+                  </span>
+                  <span style="font-size:11px;font-weight:800;font-variant-numeric:tabular-nums">1:12</span>
+                </div>
+                <div style="font-size:11.5px;font-weight:700;color:var(--mink3);text-align:center;margin-top:-5px">
+                  프로 음성 코멘트 · 글보다 먼저 들어보세요
+                </div>
+
+                <div class="b2-memo">
+                  <div class="m-label" style="color:var(--mgold)">이번 달 총평</div>
+                  <p style="margin:7px 0 0;font-size:13.5px;font-weight:600;line-height:1.68;letter-spacing:-.02em">
+                    "하체 리드가 완전히 자리 잡았어요. 다음은 톱에서 왼팔 각만 지켜봅시다."
+                  </p>
+                </div>
+
+                <div class="b2-prog">
+                  <span style="font-size:12px;font-weight:800;letter-spacing:-.02em">이번 달 숙제</span>
+                  <span class="g"><i id="b2fill" style="width:33%"></i></span>
+                  <b id="b2count">1/3</b>
+                </div>
+
+                <div class="m-stack" style="gap:8px" id="b2list">
+                  <button class="b2-task done">
+                    <span class="b2-check"><svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="m1 4.6 3 3L10 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="tx">
+                      <span class="tt">발 모으고 스윙 20회</span>
+                      <span class="td">하체 리드 감각 유지용. 매일 아침 5분.</span>
+                    </span>
+                  </button>
+                  <button class="b2-task">
+                    <span class="b2-check"><svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="m1 4.6 3 3L10 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="tx">
+                      <span class="tt">톱에서 3초 멈추기 15회</span>
+                      <span class="td">왼팔이 접히는 순간을 몸이 알아채게 만드는 드릴.</span>
+                      <span class="b2-clip">
+                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="m3.5 2.5 5 3-5 3z" fill="currentColor"/></svg>
+                        프로 시범 클립 0:42
+                      </span>
+                    </span>
+                  </button>
+                  <button class="b2-task">
+                    <span class="b2-check"><svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="m1 4.6 3 3L10 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="tx">
+                      <span class="tt">거울 앞 톱 자세 사진 찍기</span>
+                      <span class="td">왼팔 각도를 눈으로 확인. 다음 달 비교 자료로도 씁니다.</span>
+                    </span>
+                  </button>
+                </div>
+
+                <div class="m-card" style="background:#EAE6DB;border-style:dashed">
+                  <div style="font-size:12.5px;font-weight:700;color:var(--mink2);line-height:1.6;letter-spacing:-.02em">
+                    숙제 3개를 다 하면 <b style="color:var(--mink)">7월 스윙 올리기</b>가 열려요.
+                    프로가 같은 지적을 두 번 하지 않도록.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="m-foot">
+              <button class="m-cta" id="b2cta" disabled>숙제 2개 남았어요</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="note">
+          <dl>
+            <div><dt>핵심 장치</dt><dd>프로의 긴 코멘트를 <b>체크 가능한 숙제 3개</b>로 구조화. 음성 코멘트를 맨 위에 올려 사람이 붙어 있다는 감각을 먼저 줍니다.</dd></div>
+            <div><dt>이탈이 줄어드는 이유</dt><dd>화면을 나가도 <b>체크 안 된 항목 2개가 남습니다.</b> 홈 화면 배지·알림의 근거가 생기고, 재방문 이유가 "다시 읽기"가 아니라 "체크하러 가기"가 됩니다.</dd></div>
+            <div><dt>구현 메모</dt><dd>관리자 화면에 <b>숙제 입력 필드 3칸</b>만 추가하면 됩니다(현재 자유 서술 글 하나). 프로 입장에서도 쓰기 쉬워지고 작성 시간이 줄어듭니다.</dd></div>
+            <div class="risk"><dt>주의</dt><dd>다음 업로드를 완전히 잠그면 오히려 이탈합니다. "잠금"이 아니라 <b>비활성 + 건너뛰기 가능</b>으로 두고, 체크는 자기보고이므로 검증하지 마세요.</dd></div>
+          </dl>
+        </div>
+      </div>
+
+      <!-- ---------- B-3 챕터 플레이어 ---------- -->
+      <div class="slot">
+        <div class="slot-head"><span class="slot-tag">B-3</span><span class="slot-name">챕터 플레이어 · 아카이브형</span></div>
+        <div class="phone">
+          <div class="m">
+            <div class="m-stage full" style="flex:none;height:238px">
+              <div style="position:absolute;top:14px;left:16px;right:16px;display:flex;align-items:center;color:#EDE8DC">
+                <svg width="9" height="16" viewBox="0 0 9 16" fill="none"><path d="M8 1 1 8l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span style="margin-left:auto;font-size:11px;font-weight:800;letter-spacing:.08em;opacity:.8">NO.06</span>
+              </div>
+              <svg class="m-golfer" viewBox="0 0 60 120" fill="none" aria-hidden="true" style="bottom:16%;width:26%">
+                <circle cx="30" cy="14" r="8" fill="#EDE8DC"/>
+                <path d="M30 22v38M30 34l-16 12M30 34l17 9M30 60l-9 34M30 60l11 34" stroke="#EDE8DC" stroke-width="5" stroke-linecap="round"/>
+                <path d="M47 43 58 74" stroke="#B99247" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+              <div class="m-play"><svg width="16" height="18" viewBox="0 0 16 18" fill="none"><path d="M2 1.5 15 9 2 16.5z" fill="currentColor"/></svg></div>
+              <div class="m-scrub">
+                <span>3:41</span>
+                <span class="m-track"><i style="width:29%"></i><span class="mark" style="left:29%;background:#B99247"></span></span>
+                <span>12:24</span>
+              </div>
+            </div>
+
+            <div class="b3-chapters">
+              <button class="b3-chip on" data-b3="0"><span class="t">00:00</span> 이번 달 총평</button>
+              <button class="b3-chip" data-b3="1"><span class="t">03:41</span> 톱 왼팔 각</button>
+              <button class="b3-chip" data-b3="2"><span class="t">07:15</span> 하체 리드 점검</button>
+              <button class="b3-chip" data-b3="3"><span class="t">10:02</span> 다음 달 숙제</button>
+            </div>
+
+            <div class="b3-panel">
+              <div class="b3-cmt on" data-b3c="0">
+                <div class="h">하체 리드가 자리 잡았어요</div>
+                <p class="p">5개월 중 가장 큰 변화입니다. 3월엔 상체가 먼저 열렸는데 이번엔 골반이 확실히 먼저 나가요. 스윙 스코어가 68 → 74로 오른 것도 대부분 여기서 나온 점수입니다.</p>
+              </div>
+              <div class="b3-cmt" data-b3c="1">
+                <div class="h">톱에서 왼팔 각이 무너져요</div>
+                <p class="p">3분 41초 구간 보세요. 톱 지점에서 왼팔이 살짝 접히면서 클럽이 안쪽으로 들어옵니다. 이게 임팩트에서 방향이 갈리는 원인이에요. 다음 달은 이것만 봅시다.</p>
+                <div class="b3-drill">
+                  <span class="b3-drillicon"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5v12M1.5 7.5h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+                  <span style="flex:1;font-size:12.5px;font-weight:700;letter-spacing:-.02em">톱에서 3초 멈추기 15회</span>
+                  <span style="font-size:11px;font-weight:800;color:var(--msage)">담기</span>
+                </div>
+              </div>
+              <div class="b3-cmt" data-b3c="2">
+                <div class="h">체중 이동은 지금 이대로</div>
+                <p class="p">7분 15초부터 슬로우로 봤어요. 왼발로 넘어가는 타이밍이 정확합니다. 여기는 손대지 맙시다 — 잘 되는 걸 고치면 오히려 무너져요.</p>
+              </div>
+              <div class="b3-cmt" data-b3c="3">
+                <div class="h">다음 달까지 이것만</div>
+                <p class="p">톱에서 3초 멈추기 15회, 거울 앞 톱 자세 사진. 두 개만 하고 7월 말에 정면·측면으로 다시 찍어서 올려주세요. 같은 각도로 찍어야 비교가 됩니다.</p>
+                <div class="b3-drill">
+                  <span class="b3-drillicon"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="2" y="4" width="11" height="8" rx="2" stroke="currentColor" stroke-width="1.6"/><circle cx="7.5" cy="8" r="2" stroke="currentColor" stroke-width="1.6"/></svg></span>
+                  <span style="flex:1;font-size:12.5px;font-weight:700;letter-spacing:-.02em">7월 27일 촬영 알림 받기</span>
+                  <span style="font-size:11px;font-weight:800;color:var(--msage)">설정</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="padding:16px 0 8px;flex:1;display:flex;flex-direction:column;justify-content:flex-end">
+              <div class="m-row" style="padding:0 16px 8px">
+                <span class="m-label">지난 레슨 다시 보기</span>
+              </div>
+              <div class="b3-archive">
+                <span class="b3-arc on">No.06 6월</span>
+                <span class="b3-arc">No.05 5월</span>
+                <span class="b3-arc">No.04 4월</span>
+                <span class="b3-arc">No.03 3월</span>
+              </div>
+            </div>
+
+            <div class="m-foot">
+              <button class="m-cta">스윙 올리고 확인받기</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="note">
+          <dl>
+            <div><dt>핵심 장치</dt><dd>영상이 화면의 주인공. 챕터 칩을 누르면 <b>해당 구간으로 점프하면서 아래 글이 같이 바뀝니다.</b> 글을 읽는 화면이 아니라 보는 화면.</dd></div>
+            <div><dt>이탈이 줄어드는 이유</dt><dd>12분 영상을 통째로 주면 아무도 안 봅니다. 챕터로 쪼개면 <b>"이것만 볼까"가 4번 일어나</b> 체류시간이 늘어납니다. 하단 아카이브는 지난 회차로 이어져 세션이 계속됩니다.</dd></div>
+            <div><dt>구현 메모</dt><dd>관리자 화면에 <b>이미 챕터 입력 기능이 있습니다.</b> 챕터에 "코멘트" 필드 하나만 추가하면 세 안 중 가장 적은 작업으로 구현됩니다.</dd></div>
+            <div class="risk"><dt>주의</dt><dd>프로가 챕터를 안 넣으면 화면이 무너집니다. 챕터 0개일 때의 폴백 레이아웃이 반드시 필요하고, 관리자 화면에서 챕터를 필수값으로 두는 편이 안전합니다.</dd></div>
+          </dl>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       추천
+       ========================================================== -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="sec-num">추천</span>
+      <span class="sec-title">고른다면 이 조합</span>
+    </div>
+    <div class="combo">
+      <h3>A-1 → A-3 → B-3 → B-2 → B-1 순으로</h3>
+      <ol>
+        <li><b>지금 당장: A-1(리빌) + B-3(챕터 플레이어).</b> 둘 다 데이터 구조를 거의 바꾸지 않습니다. B-3는 관리자 챕터 입력에 코멘트 칸 하나만 붙이면 되고, A-1은 CSS 지연 애니메이션과 CTA 문구 교체가 전부입니다. 가장 적은 비용으로 체류시간이 먼저 움직입니다.</li>
+        <li><b>그다음: B-2(숙제 체크).</b> 알림·배지·재방문 트리거의 근거가 여기서 생깁니다. 리텐션 지표에 가장 직접적으로 꽂히는 안이고, 프로의 작성 시간도 오히려 줄어듭니다.</li>
+        <li><b>구독 정착기: B-1(비교 슬라이더).</b> 결제일 직전 주에 푸시로 띄우면 해지 방어 화면이 됩니다. 다만 <b>촬영 각도 통일이 선행 조건</b>이라 신청 화면 가이드 개선과 묶어야 합니다.</li>
+        <li><b>마지막: A-3(스코어 리포트).</b> 지표 정규화라는 백엔드 작업이 필요해 가장 무겁지만, 무료 사용자를 붙잡아두는 힘은 가장 셉니다. 노드 라이브러리 피처 스코어가 안정된 뒤에 붙이세요.</li>
+        <li><b>A-2(카드 3장)는 보류를 권합니다.</b> 완주율은 가장 높지만 정보 재열람이 어렵고, 결과지는 여러 번 다시 보는 화면입니다. 다만 <b>첫 분석 1회차에 한해</b> 온보딩 형태로 쓰면 가장 강력합니다 — A-1과 배타적이지 않습니다.</li>
+      </ol>
+    </div>
+  </section>
+
+  <p class="foot">
+    시안 속 수치·코멘트는 실제 화면 흐름을 판단할 수 있도록 채운 예시 데이터입니다.
+    영상·사진 자리는 실제 자산으로 교체됩니다. 슬라이더·체크·챕터는 실제로 동작하니 만져보세요.
+  </p>
+
+</div>
+
+<script>
+(function () {
+  // ---- A-2 카드 스택 ----
+  var deck = document.querySelectorAll('[data-a2]');
+  var dots = document.querySelectorAll('#a2dots button');
+  var segs = document.querySelectorAll('#a2seg i');
+  var nextBtn = document.getElementById('a2next');
+  var labels = ['다음', '다음', '이도형 프로에게 물어보기'];
+  var idx = 0;
+
+  function goA2(n) {
+    idx = n;
+    deck.forEach(function (c, i) { c.classList.toggle('on', i === n); });
+    dots.forEach(function (d, i) { d.classList.toggle('on', i === n); });
+    segs.forEach(function (s, i) { s.classList.toggle('on', i <= n); });
+    nextBtn.textContent = labels[n];
+  }
+  dots.forEach(function (d) {
+    d.addEventListener('click', function () { goA2(Number(d.dataset.go)); });
+  });
+  if (nextBtn) {
+    nextBtn.addEventListener('click', function () { goA2((idx + 1) % deck.length); });
+  }
+
+  // ---- B-1 비교 슬라이더 ----
+  var box = document.getElementById('b1c');
+  var after = document.getElementById('b1after');
+  var handle = document.getElementById('b1h');
+  if (box) {
+    var drag = false;
+    function setPos(clientX) {
+      var r = box.getBoundingClientRect();
+      var p = Math.min(100, Math.max(0, ((clientX - r.left) / r.width) * 100));
+      after.style.clipPath = 'inset(0 0 0 ' + p + '%)';
+      handle.style.left = p + '%';
+    }
+    box.addEventListener('pointerdown', function (e) {
+      drag = true; box.setPointerCapture(e.pointerId); setPos(e.clientX);
+    });
+    box.addEventListener('pointermove', function (e) { if (drag) setPos(e.clientX); });
+    box.addEventListener('pointerup', function () { drag = false; });
+    box.addEventListener('pointercancel', function () { drag = false; });
+  }
+
+  // ---- B-2 숙제 체크 ----
+  var tasks = document.querySelectorAll('#b2list .b2-task');
+  var fill = document.getElementById('b2fill');
+  var count = document.getElementById('b2count');
+  var cta = document.getElementById('b2cta');
+  function syncB2() {
+    var done = 0;
+    tasks.forEach(function (t) { if (t.classList.contains('done')) done++; });
+    fill.style.width = Math.round((done / tasks.length) * 100) + '%';
+    count.textContent = done + '/' + tasks.length;
+    var left = tasks.length - done;
+    cta.disabled = left > 0;
+    cta.textContent = left > 0 ? '숙제 ' + left + '개 남았어요' : '7월 스윙 올리기';
+  }
+  tasks.forEach(function (t) {
+    t.addEventListener('click', function () { t.classList.toggle('done'); syncB2(); });
+  });
+  if (tasks.length) syncB2();
+
+  // ---- B-3 챕터 ----
+  var chips = document.querySelectorAll('.b3-chip');
+  var cmts = document.querySelectorAll('.b3-cmt');
+  chips.forEach(function (c) {
+    c.addEventListener('click', function () {
+      var n = c.dataset.b3;
+      chips.forEach(function (x) { x.classList.toggle('on', x === c); });
+      cmts.forEach(function (m) { m.classList.toggle('on', m.dataset.b3c === n); });
+    });
+  });
+})();
+</script>
