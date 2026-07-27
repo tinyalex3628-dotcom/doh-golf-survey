@@ -80,9 +80,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v30</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v31</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v30"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v31"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
   <br><b style="color:#4ea1ff">v27(안정화):</b> fetch 타임아웃 · 폴링 <b>일시실패 자동 재시도</b>(터널 흔들림 대비) · 업로드 거부/Job 만료 메시지 개선. Stage 0 5회 연속 검증용. (계약 <code>/v1/*·doh.vision.v1</code>는 동결 — 내부만 하드닝)</p>
 </header>
 
@@ -911,7 +911,11 @@ function dohProblemsHtml(fd){
     return `<div style="border:1px solid #2a323d;border-radius:8px;padding:8px 10px;margin-bottom:6px">
       <span style="color:${col};font-weight:700">● ${tag}</span> <b>${r.nm}</b>${t2}${sc}${ev}</div>`;
   };
-  hits.forEach(x=>h+=row(x));
+  // 세로 정렬: 1군(신뢰 높은 측정) 감지 먼저, 2군(깊이추정) 감지는 아래로
+  const h1=hits.filter(x=>x.r.tier!==2), h2=hits.filter(x=>x.r.tier===2);
+  h1.forEach(x=>h+=row(x));
+  if(h2.length) h+=`<div style="font-size:12px;color:#ffb648;margin:9px 0 5px;font-weight:700">아래는 2군 — 앞뒤 깊이 추정이라 오차가 큽니다 (참고용)</div>`;
+  h2.forEach(x=>h+=row(x));
   if(!hits.length) h+=`<div class="note" style="border-color:#2f6b52;color:#3ecf8e">✓ 감지된 문제 없음 (측정 가능한 범위 내에서)</div>`;
   // 정상 항목은 아래 '측정 상태판'에 초록 타일로 나오므로 여기선 생략(중복 제거).
   if(DOH_REVIEW_MODE&&nas.length) h+=`<details style="margin-top:2px"><summary style="cursor:pointer;font-size:12.5px;color:#6b7684">판정불가 ${nas.length}건 보기 (검수)</summary><div style="margin-top:6px">${nas.map(row).join("")}</div></details>`;
@@ -978,7 +982,7 @@ function mTileState(vfs,fd,res){
 }
 function dohTilesHtml(fd){
   const res=runDohRules(fd), ct={bad:0,warn:0,ok:0,meas:0,na:0,todo:0};
-  const rows=M_GRID.map(([reg,m,nm,tier,vfs])=>{
+  const items=M_GRID.map(([reg,m,nm,tier,vfs])=>{
     const st=mTileState(vfs,fd,res); ct[st.k]++;
     const [ic,lab]=T_ST[st.k];
     let v="—";
@@ -986,11 +990,18 @@ function dohTilesHtml(fd){
     else if(st.k==="na") v='<span style="font-size:11px;color:#8b97a5">각도 불일치</span>';
     else if(st.k==="todo") v='<span style="font-size:11px;color:#8b97a5">준비 중</span>';
     const tip=(st.why?st.why+" · ":"")+(st.f?`신뢰도 ${Math.round((st.f.confidence||0)*100)}%`:"엔진 미구현");
-    return {reg,html:`<div class="tile ${st.k}" title="${m} ${nm} — ${tip}">
-      <div class="tc">${m}${tier===2?'<span class="t2">2군</span>':''}</div>
+    return {reg,tier,k:st.k,html:`<div class="tile ${st.k}" title="${m} ${nm} — ${tip}">
+      <div class="tc">${m}${tier===2?'<span class="t2">2군</span>':''}<span style="float:right;color:#55606d">${reg}</span></div>
       <div class="tn">${nm}</div><div class="tv">${v}</div>
       <div class="ts">${ic} ${lab}</div></div>`};
   });
+  // 세로 정렬: 신뢰 높은 1군 문제 → 2군 문제 → 정상/측정됨 → 측정불가·미구현(하단 분리)
+  const prob=x=>x.k==="bad"||x.k==="warn", fine=x=>x.k==="ok"||x.k==="meas", none=x=>x.k==="na"||x.k==="todo";
+  const p1=items.filter(x=>prob(x)&&x.tier===1), p2=items.filter(x=>prob(x)&&x.tier===2);
+  const okz=items.filter(fine), nz=items.filter(none);
+  const grid=a=>`<div class="tgrid">`+a.map(x=>x.html).join("")+`</div>`;
+  const sec=(t,c,d)=>`<div style="font-size:12.5px;font-weight:700;color:${c};margin:11px 0 5px">${t}`
+    +(d?`<span style="font-weight:400;color:#6b7684;font-size:11.5px"> — ${d}</span>`:"")+`</div>`;
   let h=`<h2>측정 상태판 <span class="badge">42개 전체</span></h2>`;
   h+=`<div class="tlegend">
     <span style="color:#ff6b6b"><b>▲ 문제</b> ${ct.bad+ct.warn}</span>
@@ -998,11 +1009,12 @@ function dohTilesHtml(fd){
     <span style="color:#4ea1ff"><b>• 측정됨</b> ${ct.meas}</span>
     <span><b>— 측정 불가</b> ${ct.na}</span>
     <span><b>· 미구현</b> ${ct.todo}</span></div>`;
-  const regs=[]; rows.forEach(r=>{ if(regs.indexOf(r.reg)<0) regs.push(r.reg); });
-  regs.forEach(reg=>{
-    h+=`<div style="font-size:12.5px;font-weight:700;color:#8b97a5;margin:9px 0 5px">${reg}</div>`
-      +`<div class="tgrid">`+rows.filter(r=>r.reg===reg).map(r=>r.html).join("")+`</div>`;
-  });
+  if(p1.length) h+=sec(`▲ 문제 — 1군 (신뢰 높음) ${p1.length}`,"#ff6b6b","단일 카메라로 잘 잡히는 측정")+grid(p1);
+  if(p2.length) h+=sec(`▲ 문제 — 2군 (깊이추정·참고) ${p2.length}`,"#ffb648","앞뒤 깊이라 오차 큼 — 보수적으로 볼 것")+grid(p2);
+  if(okz.length) h+=sec(`✓ 정상 · 측정됨 ${okz.length}`,"#3ecf8e")+grid(okz);
+  if(nz.length) h+=`<details style="margin-top:12px;border-top:1px solid #2a323d;padding-top:8px">
+    <summary style="cursor:pointer;font-size:12.5px;color:#6b7684;font-weight:700">측정 안 된 항목 ${nz.length}개 보기 <span style="font-weight:400">(각도 불일치 ${ct.na} · 엔진 미구현 ${ct.todo})</span></summary>
+    <div style="margin-top:7px">${grid(nz)}</div></details>`;
   h+=`<div class="note">타일에 마우스를 올리면 판정 근거·신뢰도가 뜹니다. <b>측정됨</b>=값은 나왔지만 아직 정상/문제를 가를 기준(임계값)이 없는 항목 · <b>미구현</b>=엔진에 아직 없는 측정(추가 예정).</div>`;
   return h;
 }
