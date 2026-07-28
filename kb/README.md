@@ -3,6 +3,16 @@
 원본: 사용자가 수작업으로 만든 `DOH_P1/P2/P4/P6/P7.xlsx` (레슨 현장 경험 기반).
 이 폴더는 그 원본에서 **엔진이 읽을 수 있게 추출**한 것이다. 원본이 정본이며, 충돌 시 원본 우선.
 
+## 원본 보존 (`source/`, 2026-07-28)
+원본 5개가 **브랜치 4곳에 흩어져** 있던 것을 이 폴더로 모았다 (흩어진 브랜치가 지워지면 정본이 유실되므로):
+| 파일 | 가져온 브랜치 |
+|---|---|
+| `source/DOH_P1.xlsx` (시트16) | `claude/doh-p1-address-dictionary-6reuzf` |
+| `source/DOH_P4.xlsx` (시트16) | `claude/p4-file-modifications-j8jpxh` |
+| `source/DOH_P6.xlsx` (시트6) | `claude/doh-mechanism-dictionary-qf66w7` |
+| `source/DOH_P7.xlsx` (시트11) | `claude/doh-mechanism-dictionary-iyk9pk` |
+| **DOH_P2.xlsx — ⚠️ 깃허브 어디에도 없음** | 추출 세션에서 채팅 업로드로만 쓰인 듯. **내용은 그래프에 들어 있으나(P2 엣지 42개) 원본 파일은 미보존 — 사용자가 다시 올려주면 여기 추가할 것.** |
+
 | 파일 | 내용 |
 |---|---|
 | `kb_causal_graph.json` | 인과 그래프 — 노드 209 · 엣지 285 (High 182 / Medium 38 / Pattern Dependent 64 / Low 1). 각 엣지에 `src`·`tgt`·`conf`·`mech`(메커니즘 문장)·`branch`(A/B/C 분기) |
