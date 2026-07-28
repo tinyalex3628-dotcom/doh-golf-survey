@@ -366,6 +366,21 @@ def compute_metrics(J, p1, p4, p7, T, fps=None, hand="right", view="unknown", sk
         add("VF059", "Hand depth change P4→P6 (stance-normalized, + = toward ball/OTT)",
             _dot(_sub(hand6, hand4), d_axis) / width, "ratio", "P4->P6", "GROUND",
             "OP007", ["HAND_MID_TRACK"], ["LEAD_WRIST", "TRAIL_WRIST"], cdep, dflags, SIDE)
+        # ── VF028 Hand Depth @P4 — **heel line 기준** (사용자 확정 2026-07-25) ──
+        # 기준면: 어드레스(P1) 양 발목을 지나는 지면 수직면 = 뒷꿈치 수직선의 3D판.
+        # 손중점이 그 면에서 볼쪽(+) / 몸 뒤쪽(−)으로 얼마나 떨어졌나 ÷ 스탠스폭.
+        #   음수(뒤) = Hand Depth Deep  /  양수(볼쪽) = Hand Depth Shallow   ← KB 판정 재료
+        # heel line을 택한 이유(핸드오프 §5s): ① 발은 스윙 중 고정 → 회전 오차가 전파되지 않음
+        #   (KB 원문의 '흉곽 상대' 방식은 회전각 오차가 그대로 실림) ② Sportsbox 'Hand Thrust'와
+        #   같은 축·같은 부호(+=볼쪽)라 상용 대조검증 가능 ③ 레슨 현장 관행 일치.
+        # KB의 흉곽상대 정의는 폐기가 아니라 보조 — '회전 대비 과한가'는 별도 지표로 후속.
+        # 플래그: P4는 직접 검출 이벤트라 interpolated_event 없음(VF067/059와 다름).
+        heel_mid = tuple((J_(p1, L_AN)[i] + J_(p1, T_AN)[i]) / 2 for i in range(3))
+        add("VF028", "Hand Depth @P4 vs heel line (stance-normalized, + = toward ball/shallow, - = behind/deep)",
+            _dot(_sub(hand4, heel_mid), d_axis) / width, "ratio", "P4", "GROUND",
+            "OP007", ["HAND_MID_TRACK", "STANCE_LINE"],
+            ["LEAD_WRIST", "TRAIL_WRIST", "LEAD_ANKLE", "TRAIL_ANKLE"],
+            cdep, list(upflags), SIDE)
         # VF121 골반 상승 P5→P7 (M106) — "벨트버클이 위로 뜬다" = 얼리익스텐션의 수직 성분.
         # 수직축은 두 뷰 모두 화면 안 → 정면에서도 유효(정면은 볼쪽 돌진을 못 보므로 이걸로 부분 포착).
         add("VF121", "Pelvis lift P5→P7 (leg-normalized, + = standing up / belt buckle rises)",
