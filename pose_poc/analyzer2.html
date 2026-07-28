@@ -80,9 +80,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v35</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v36</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v35"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v36"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
   <br><b style="color:#4ea1ff">v27(안정화):</b> fetch 타임아웃 · 폴링 <b>일시실패 자동 재시도</b>(터널 흔들림 대비) · 업로드 거부/Job 만료 메시지 개선. Stage 0 5회 연속 검증용. (계약 <code>/v1/*·doh.vision.v1</code>는 동결 — 내부만 하드닝)</p>
 </header>
 
@@ -882,14 +882,24 @@ const DOH_FMT=(()=>{
 })();
 function dohFmt(vf,v){const f=DOH_FMT[vf];return (f&&v!=null)?f(v):null;}
 function bandText(t,B){ // B(변환공간) → 사람이 읽는 구간 문자열
+  // ⚠️ 이 문구의 부등호·부호는 dohCheck 의 실제 비교와 **반드시** 일치해야 한다.
+  //   같은 숫자인데 화면과 판정이 다르면 사용자는 이유를 알 수 없다.
+  // ① 부등호: 판정은 `tv < B[i]` (strict) 이라 '정상' 경계값은 정상에 포함되지 않는다.
+  //    → `≥/≤` 가 아니라 `>/<` 로 적는다. (경계에 정확히 걸리면 나쁜 쪽 = 보수적.
+  //      판정 로직은 그대로 두므로 과거 분석 결과는 하나도 바뀌지 않는다.)
+  // ② 부호: low/low_abs 는 `tv=-v` 라 실제 임계값이 **-B[i]** 다. 예전엔 abs() 로 찍어
+  //    음수 기준의 부호가 사라졌다 — 리버스스파인이 실제 기준 −5 인데 "정상 ≥5" 로,
+  //    리버스피벗·힙슬라이드도 같은 식으로 잘못 보였다.
   const fin=x=>Math.abs(x)<INF/2;
-  const fmt=x=>{const a=Math.abs(x);return a<1?a.toFixed(2).replace(/\.?0+$/,""):String(Math.round(a*10)/10);};
+  const num=x=>{const a=Math.abs(x);return a<1?a.toFixed(2).replace(/\.?0+$/,""):String(Math.round(a*10)/10);};
+  const fmt=x=>(x<0?"−":"")+num(x);
   if(t==="high"||t==="abs"){const p=t==="abs"?"|값| ":"";
-    let s=`정상 ≤${fmt(B[0])}`; if(fin(B[1]))s+=` · 주의 ~${fmt(B[1])}`; if(fin(B[2]))s+=` · 과다 ~${fmt(B[2])} · 심함 ≥${fmt(B[2])}`; else s+=` · 과다 ≥${fmt(B[1])}`;
+    let s=`정상 <${fmt(B[0])}`; if(fin(B[1]))s+=` · 주의 ~${fmt(B[1])}`; if(fin(B[2]))s+=` · 과다 ~${fmt(B[2])} · 심함 ≥${fmt(B[2])}`; else s+=` · 과다 ≥${fmt(B[1])}`;
     return p+s;}
-  if(t==="low"){let s=`정상 ≥${fmt(B[0])}`; if(fin(B[1]))s+=` · 주의 ~${fmt(B[1])}`; if(fin(B[2]))s+=` · 과다 ~${fmt(B[2])} · 심함 ≤${fmt(B[2])}`; else s+=` · 과다 ≤${fmt(B[1])}`;
+  const g=i=>-B[i];   // 변환공간(tv) → 실제 값(v) 공간
+  if(t==="low"){let s=`정상 >${fmt(g(0))}`; if(fin(B[1]))s+=` · 주의 ~${fmt(g(1))}`; if(fin(B[2]))s+=` · 과다 ~${fmt(g(2))} · 심함 ≤${fmt(g(2))}`; else s+=` · 과다 ≤${fmt(g(1))}`;
     return s;}
-  if(t==="low_abs"){let s=`|값| ≥${fmt(B[0])} 정상`; if(fin(B[1]))s+=` · ~${fmt(B[1])} 주의`; if(fin(B[2]))s+=` · ~${fmt(B[2])} 과다 · 미만 심함`; else s+=` · 미만 주의`;
+  if(t==="low_abs"){let s=`|값| >${fmt(g(0))} 정상`; if(fin(B[1]))s+=` · ~${fmt(g(1))} 주의`; if(fin(B[2]))s+=` · ~${fmt(g(2))} 과다 · 미만 심함`; else s+=` · 미만 주의`;
     return s;}
   return "";
 }

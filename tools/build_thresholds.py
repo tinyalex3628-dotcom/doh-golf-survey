@@ -109,7 +109,8 @@ ws.cell(nr,1,"근거 등급 정의 — A: 논문·투어 데이터로 검증된 
             "모든 구간은 실측 스윙이 쌓이면 평균±표준편차 기반으로 재설정 예정.").font=Font(name=FONT,size=9,italic=True,color="666666")
 nr+=1
 ws.merge_cells(start_row=nr,start_column=1,end_row=nr,end_column=12)
-ws.cell(nr,1,"판정 로직: 4단계 구간. 명명 원칙(검수 2차 반영): 측정명(Feature, 예: 어깨 회전각)과 진단명(예: 상체 회전 부족)을 분리하고, "
+ws.cell(nr,1,"판정 로직: 4단계 구간. ⚠️ 경계 규약: 경계값에 정확히 걸리면 나쁜 쪽 판정(보수적) — 이 표의 ≤0.12 는 동작상 <0.12 (analyzer2 v36부터 화면 문구도 >/< 로 일치시킴). "
+            "명명 원칙(검수 2차 반영): 측정명(Feature, 예: 어깨 회전각)과 진단명(예: 상체 회전 부족)을 분리하고, "
             "단일 지표 근사 진단엔 '경향'을 붙인다. 다중측정→한 문제 조합은 DOH Node 설계(계약 §3.6)가 최종 형태 — 측정이 채워지면 규칙에 check만 추가.").font=Font(name=FONT,size=9,italic=True,color="666666")
 
 ws2=wb.create_sheet("42개 커버리지")
