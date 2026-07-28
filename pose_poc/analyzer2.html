@@ -80,9 +80,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v34</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v35</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v34"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v35"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
   <br><b style="color:#4ea1ff">v27(안정화):</b> fetch 타임아웃 · 폴링 <b>일시실패 자동 재시도</b>(터널 흔들림 대비) · 업로드 거부/Job 만료 메시지 개선. Stage 0 5회 연속 검증용. (계약 <code>/v1/*·doh.vision.v1</code>는 동결 — 내부만 하드닝)</p>
 </header>
 
@@ -820,6 +820,9 @@ const DOH_RULES=[
  {id:"reverse_pivot",nm:"리버스 피벗",tier:1,
   checks:[{vf:"VF034",lab:"골반 좌우이동 P1→P4",t:"low",B:[0.06,0.10,0.18]}],
   why:"탑에서 체중(골반)이 오히려 리드쪽(−)에 있음"},
+ {id:"shoulder_tilt_p1",nm:"어드레스 어깨 기울기 부족 (트레일 어깨 높음)",tier:1,
+  checks:[{vf:"VF008",lab:"어깨 기울기 @P1",t:"low",B:[-5,-2,0]}],
+  why:"측정=어깨 기울기(°, +=트레일 어깨가 낮음), 진단=어드레스 기울기 부족. 오른손잡이는 트레일 손이 그립 아래라 트레일 어깨가 낮은 게 정상(통상 8~12°). 0°에 가깝거나 음수면 트레일 어깨가 오히려 높다는 뜻 — KB에서 아웃사이드 테이크어웨이·얼리 리프트를 유발하는 뿌리원인(원인 5·결과 0). 하한 5°는 up축 전두면 오차가 1:1 전파되는 걸 감안한 여유(selfcheck_metrics.py로 확인)"},
  {id:"reverse_spine",nm:"리버스 스파인 (탑)",tier:1,
   checks:[{vf:"VF036",lab:"척추 좌우기울기 @P4",t:"low",B:[5,10,18]}],
   why:"탑에서 척추가 타깃(리드)쪽으로 역기울어짐(−)"},
@@ -874,13 +877,13 @@ const LVL_NM=["정상","주의","과다","심함"], LVL_COL=["#3ecf8e","#ffd166"
 const DOH_FMT=(()=>{
   const pct=(v,ref)=>`${ref} ${v>=0?"":"−"}${Math.abs(Math.round(v*100))}%`;
   const m={VF026:v=>pct(v,"상완의"),VF111:v=>`${v} : 1`};
-  ["VF031","VF033","VF034","VF085","VF091","VF067","VF059"].forEach(k=>m[k]=v=>pct(v,"스탠스폭의"));
+  ["VF031","VF033","VF034","VF085","VF091","VF067","VF059","VF028"].forEach(k=>m[k]=v=>pct(v,"스탠스폭의"));
   return m;
 })();
 function dohFmt(vf,v){const f=DOH_FMT[vf];return (f&&v!=null)?f(v):null;}
 function bandText(t,B){ // B(변환공간) → 사람이 읽는 구간 문자열
   const fin=x=>Math.abs(x)<INF/2;
-  const fmt=x=>{const a=Math.abs(x);return a<1?a.toFixed(2).replace(/0$/,""):String(Math.round(a*10)/10);};
+  const fmt=x=>{const a=Math.abs(x);return a<1?a.toFixed(2).replace(/\.?0+$/,""):String(Math.round(a*10)/10);};
   if(t==="high"||t==="abs"){const p=t==="abs"?"|값| ":"";
     let s=`정상 ≤${fmt(B[0])}`; if(fin(B[1]))s+=` · 주의 ~${fmt(B[1])}`; if(fin(B[2]))s+=` · 과다 ~${fmt(B[2])} · 심함 ≥${fmt(B[2])}`; else s+=` · 과다 ≥${fmt(B[1])}`;
     return p+s;}
@@ -971,7 +974,7 @@ const M_GRID=[
  ["머리","M301","머리 좌우이동",1,["VF031"]],
  ["머리","M302","머리 상하이동",1,["VF033"]],
  ["머리","M303","머리 깊이",2,[]],
- ["어깨","M401","양 어깨 높이차",1,[]],
+ ["어깨","M401","양 어깨 높이차",1,["VF008"]],
  ["어깨","M402","어깨선 기울기",1,["VF022"]],
  ["어깨","M403","리드 어깨 들림",2,[]],
  ["어깨","M404","트레일 어깨 들림",2,[]],
@@ -984,7 +987,7 @@ const M_GRID=[
  ["팔","M505","트레일 팔꿈치 깊이",2,[]],
  ["손","M604","손 높이",1,["VF123"]],
  ["손","M606","손 좌우(볼 대비)",1,[]],
- ["손","M605","손 깊이",2,["VF059"]],
+ ["손","M605","손 깊이",2,["VF059","VF028"]],
  ["손","M607","손–몸통 거리",2,[]],
  ["하체","M701","리드 고관절 굽힘",1,[]],
  ["하체","M702","트레일 고관절 굽힘",1,[]],
@@ -1025,7 +1028,13 @@ function dohTilesHtml(fd){
     if(st.f&&st.f.value!=null){ v=dohFmt(st.f.feature_id,st.f.value)||v1num(st.f).v; }
     else if(st.k==="na") v='<span style="font-size:11px;color:#8b97a5">각도 불일치</span>';
     else if(st.k==="todo") v='<span style="font-size:11px;color:#8b97a5">준비 중</span>';
-    const tip=(st.why?st.why+" · ":"")+(st.f?`신뢰도 ${Math.round((st.f.confidence||0)*100)}%`:"엔진 미구현");
+    // 한 M코드에 VF가 여러 개면 타일은 대표값 하나만 보여준다(판정 있는 쪽 우선).
+    // 나머지가 조용히 사라지지 않도록 툴팁에 전부 나열한다 — 예: M605는 VF059(변화량,
+    // OTT 판정)와 VF028(heel line 기준 절대 깊이, 판정기준 미설정)을 함께 담는다.
+    const others=vfs.map(v=>fd[v]).filter(f=>f&&f.value!=null&&f!==st.f)
+      .map(f=>`${f.feature_id} ${dohFmt(f.feature_id,f.value)||v1num(f).v}`);
+    const tip=(st.why?st.why+" · ":"")+(st.f?`신뢰도 ${Math.round((st.f.confidence||0)*100)}%`:"엔진 미구현")
+      +(others.length?" · 함께 측정됨: "+others.join(" · "):"");
     return {reg,tier,k:st.k,html:`<div class="tile ${st.k}" title="${m} ${nm} — ${tip}">
       <div class="tc">${m}${tier===2?'<span class="t2">2군</span>':''}<span style="float:right;color:#55606d">${reg}</span></div>
       <div class="tn">${nm}</div><div class="tv">${v}</div>

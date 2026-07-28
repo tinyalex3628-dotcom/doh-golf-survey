@@ -321,6 +321,23 @@ def compute_metrics(J, p1, p4, p7, T, fps=None, hand="right", view="unknown", sk
         add("VF001", "Spine Tilt lateral @P1 (from vertical, +=trail lean)",
             lat, "deg", "P1", "GROUND",
             "OP005", ["TORSO_AXIS", "VERTICAL"], ["PELVIS", "NECK"], cpos, upflags, FRONT)
+        # ── VF008 어깨 기울기 @P1 (M401/M402) — KB `Shoulder Height Trail High (P1)` 판정 재료 ──
+        # 어깨선(트레일→리드)이 지면과 이루는 각. + = 리드 어깨가 높다 = **트레일 어깨가 낮다**.
+        # 오른손잡이는 트레일 손이 그립 아래에 있어 트레일 어깨가 낮은 게 **정상** — 부호 방향 주의.
+        #   0에 가깝거나 음수(트레일이 오히려 높음) = KB의 'Trail High' = 이상.
+        # 부호 규약: 핸드오프 §5t의 '좌우기울기 + = 트레일 낮음' 과 일치
+        #   → Sportsbox 'Chest Side Bend'와 같은 축·같은 부호라 상용 대조검증 가능.
+        # 단위 deg 채택 이유: M401(높이차 ratio)과 M402(기울기 deg)는 Catalog §주의대로 '같은 정보의
+        #   두 표현'이고, Feature Spec의 VF008이 이미 deg로 등록돼 있으며, 상용이 각도로 파니 비교가 쉽다.
+        # 뷰 게이팅 FRONT: 높이차(up 성분)는 두 뷰 모두 화면 안이지만, 각도를 내려면 분모인
+        #   **어깨너비**가 필요한데 측면(DTL)에선 어깨선이 깊이축이라 그 길이가 신뢰불가.
+        #   → 분자만 되고 분모가 안 되므로 정면 전용. (Catalog "M401/M402(전두)=FO 우세"와 일치)
+        sh1 = _sub(J_(p1, L_SH), J_(p1, T_SH))       # 트레일 → 리드 어깨
+        add("VF008", "Shoulder Tilt @P1 (from ground, + = trail shoulder lower)",
+            math.degrees(math.asin(max(-1.0, min(1.0, _dot(sh1, up) / (_norm(sh1) + 1e-9))))),
+            "deg", "P1", "GROUND",
+            "OP005", ["SHOULDER_LINE", "GROUND_NORMAL"], ["LEAD_SHOULDER", "TRAIL_SHOULDER"],
+            cpos, upflags, FRONT)
 
         # ── 6) 문제판정 규칙용 추가 측정 (2026-07-24, append-only) ──
         # VF036 리버스 스파인: 탑(P4)에서 척추 좌우기울기 (− = 리드/타깃쪽 역기울기)

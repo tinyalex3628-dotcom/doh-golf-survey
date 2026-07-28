@@ -1,5 +1,6 @@
-# DOH 뷰별 측정가능표 — 시트1: 진단 17규칙 × 정면/측면 / 시트2: 측정 42 × 정면/측면
+# DOH 뷰별 측정가능표 — 시트1: 진단 18규칙 × 정면/측면 / 시트2: 측정 42 × 정면/측면
 # 근거 = 엔진 실제 게이팅(wham_golf_metrics.py FRONT/SIDE/BOTH + analyzer2 규칙) — 문서화.
+import os
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -11,6 +12,7 @@ D=[
 ("스웨이",OK,NO,"좌우(타깃선) 이동 — 측면에선 화면 깊이축이라 원리적 불가"),
 ("리버스 피벗",OK,NO,"좌우 체중편향 — 상동"),
 ("리버스 스파인",OK,NO,"척추 좌우 기울기 — 정면에서만 보임"),
+("어드레스 어깨 기울기 부족",OK,NO,"어깨선 좌우 기울기 — 각도를 내려면 어깨너비가 필요한데 측면에선 깊이축"),
 ("힙 슬라이드 과다",OK,NO,"골반 좌우 이동"),
 ("행잉백",OK,NO,"임팩트 좌우 체중 잔류"),
 ("자세 무너짐 (백스윙)",NO,OK,"척추 앞숙임 변화(시상면) — 정면에선 깊이축"),
@@ -44,7 +46,7 @@ M=[
 ("머리","M301","머리 좌우이동",OK,NO,"됨","스웨이 재료"),
 ("머리","M302","머리 상하이동",OK,OK,"됨",""),
 ("머리","M303","머리 깊이",NO,LO,"안 됨","헤드비하인드볼 — 깊이추정"),
-("어깨","M401","양 어깨 높이차",OK,NO,"안 됨","전두면"),
+("어깨","M401","양 어깨 높이차",OK,NO,"됨","전두면 — 높이차(수직)는 양쪽 화면 안이지만 각도의 분모인 어깨너비가 측면에선 깊이축이라 신뢰불가 → 정면 전용(VF008)"),
 ("어깨","M402","어깨선 기울기",OK,LO,"됨(표시만)","어깨플레인은 측면 우세·좌우틸트는 정면"),
 ("어깨","M403","리드 어깨 들림",OK,OK,"안 됨","수직 — 양쪽"),
 ("어깨","M404","트레일 어깨 들림",OK,OK,"안 됨",""),
@@ -84,7 +86,7 @@ def cell_view(ws,r,c,v):
     if bg: x.fill=PatternFill("solid",fgColor=bg)
     x.alignment=Alignment(horizontal="center",vertical="center")
 
-ws=wb.active; ws.title="진단 17 × 뷰"
+ws=wb.active; ws.title=f"진단 {len(D)} × 뷰"
 H=["진단명","정면(FO)","측면(DTL)","왜 그런가"]
 W=[22,12,12,52]
 for j,h in enumerate(H,1):
@@ -131,7 +133,7 @@ r=len(M)+3
 ws2.merge_cells(start_row=r,start_column=1,end_row=r,end_column=7)
 ws2.cell(r,1,f"요약: 정면 ✅{fo_ok}/42 · 측면 ✅{dt_ok}+◐{dt_lo}/42. ◐=깊이추정(측면에서만, 오차 큼·2군). "
              "'구현 안 됨' 항목도 뷰 판정은 확정 — 엔진에 추가되는 즉시 이 표 그대로 적용.").font=Font(name=FONT,size=9,italic=True,color="666666")
-out="/tmp/claude-0/-home-user-doh-golf-survey/22e3c218-6758-56bc-9d04-15083f8a3bd1/scratchpad/DOH_뷰별_측정가능표.xlsx"
+out=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs", "DOH_뷰별_측정가능표.xlsx")
 wb.save(out)
 print(f"진단 {len(D)} (FO {nFO} / DTL {nDT}+{nDL}) · 측정 {len(M)} (FO {fo_ok} / DTL {dt_ok}+{dt_lo})")
 print("saved:",out)

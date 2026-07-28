@@ -1,4 +1,5 @@
 # DOH — KB 인과추적 작업표 v2 (조사기반) : 0.벤치마크 / A / B / C / D
+import os
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -187,12 +188,13 @@ C=[
  "◐ 조건부 — 측면 필요 + SMPL 골반 표현력 한계. Sportsbox는 골프전용 학습으로 해결, 우리는 범용 NLF라 열세 예상. "
  "구현하되 신뢰도 낮게 표기 권장",
  "sportsbox 6DOF / SMPL 구조 한계"),
-("Shoulder Height Trail High (P1)",5,"양 어깨 높이차(M401)","설계만",
+("Shoulder Height Trail High (P1)",5,"양 어깨 높이차(M401)","✅ 구현 완료(2026-07-28) — VF008",
  "(trail_sh − lead_sh)·up ÷ 어깨너비. 오른손잡이는 트레일 어깨가 자연히 낮은 게 정상 → 부호 주의",
  "Sportsbox 'Chest Side Bend'(+ = 트레일측이 낮아짐)가 유사 개념 — 다만 각도(°), 우리는 비율. "
  "각도로 내면 상용과 직접 비교 가능",
- "✅ 가능(정면, 난이도 최하) — 화면-내 수직축. ★ 우선순위 1위 권장. "
- "각도 단위로 내면 Sportsbox Side Bend와 대조검증도 가능",
+ "✅ 구현됨 — VF008 @P1, 단위 deg(Sportsbox Side Bend 대조 가능), 정면 전용. "
+ "판정 구간 정상≥5°/주의2~5/과다0~2/심함≤0 (근거등급 B). "
+ "selfcheck_metrics.py: 기하 정답 대조 오차 0.00°, up축 전두면 롤 오차만 1:1 전파",
  "sportsbox Side Bend 정의"),
 ("Lead Arm Plane Flat/Steep (P4)",7,"리드팔 플레인각(M504)","설계만",
  "리드 어깨→리드 손목 벡터와 지면 사이 각",
@@ -212,8 +214,8 @@ sheet(wb,"C. 측정 구현 설계",
  [28,6,16,26,52,52,50,30],C,
  lambda j,v,row: (GR if (j==7 and str(v).startswith("✅")) else (YE if (j==7 and str(v).startswith("◐")) else None)),
  notes=[
- "▶ 우선순위(효과÷난이도): ① 어깨 높이차(P1, 난이도 최하·5엣지·Sportsbox Side Bend와 대조가능)",
- "   → ② 리드팔 플레인(7엣지, 클럽 불필요) → ③ Hand Depth(11엣지 최대, 기준선 결정 필요) → ④ 골반 틸트(범용모델 열세 예상)",
+ "▶ 우선순위(효과÷난이도): ①~③ 진행 상황 — ③ Hand Depth ✅구현(VF028, 2026-07-28, 판정구간은 측면 실측 대기) ·",
+ "   ① 어깨 높이차 ✅구현+판정구간까지(VF008, 2026-07-28) · 남은 것 → ② 리드팔 플레인(7엣지, 클럽 불필요) → ④ 골반 틸트(범용모델 열세 예상)",
  "★ Hand Depth 기준선 권고: heel line(①)을 주판정으로. 이유 — (a)발이 고정이라 회전오차 전파 없음 (b)Sportsbox Thrust와 정의가 사실상 동일해 비교·검증 가능 (c)사용자 현장 관행과 일치.",
  "   KB의 흉곽상대(②)는 '회전 대비 과한가'를 볼 때 보조 지표로 병행.",
  "■ 2건(Head Height·Knee)은 재분류 — 측정이 이미 있어 C가 아니라 B(기준만 필요).",
@@ -269,6 +271,6 @@ sheet(wb,"D. 정의 확인 필요",
  "★ 부호규약 통일 권고: Sportsbox 규약(Turn +=목표쪽 열림 / Side Bend +=트레일측 낮음 / Lift +=위 / Thrust +=앞)을 그대로 채택하면",
  "   나중에 상용 데이터와 대조검증할 때 변환이 필요 없다. 지금 정하는 게 비용 0.",
 ])
-out="/tmp/claude-0/-home-user-doh-golf-survey/22e3c218-6758-56bc-9d04-15083f8a3bd1/scratchpad/DOH_ABCD_작업표.xlsx"
+out=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs", "DOH_ABCD_작업표.xlsx")
 wb.save(out); print("saved:",out)
 print(f"시트: 0.벤치마크 {len(BM)} · A {len(A)} · B {len(B)} · C {len(C)} · D {len(D)}")
