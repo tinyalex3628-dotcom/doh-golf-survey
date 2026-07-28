@@ -22,7 +22,7 @@ import numpy as np, cv2, torch, torchvision, torchvision.ops  # noqa: F401 (nms 
 import gradio as gr
 
 # ── 엔진 파일(단일 소스): GitHub raw에서 가져옴 ──
-BR = "claude/session-context-recovery-il15cg"
+BR = "claude/doh-vision-handoff-review-j1rim1"
 BASE = f"https://raw.githubusercontent.com/tinyalex3628-dotcom/doh-golf-survey/{BR}/pose3d_poc"
 for _f in ("wham_golf_rotation.py", "wham_golf_metrics.py"):
     if not os.path.exists(_f):
