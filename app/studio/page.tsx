@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import StudioWorkbench, { QueueItem, MemberContext } from "@/components/studio/StudioWorkbench";
+import StudioWorkbench, { QueueItem, MemberContext, ReferenceSwing } from "@/components/studio/StudioWorkbench";
 import { LessonDraft, Drill, PrevHomework } from "@/components/studio/LessonComposer";
 import "@/components/studio/studio.css";
 
@@ -29,8 +29,52 @@ export default function StudioPage() {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [member, setMember] = useState<MemberContext | null>(null);
   const [drills, setDrills] = useState<Drill[] | undefined>(undefined);
+  const [refSwings, setRefSwings] = useState<ReferenceSwing[]>([]);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [error, setError] = useState("");
+
+  // ---------- 프로 스윙 라이브러리 ----------
+  const loadRefs = useCallback(async () => {
+    const { data } = await supabase
+      .from("reference_swings")
+      .select("id, name, club, view, handed, note, path")
+      .order("uses", { ascending: false })
+      .limit(60);
+    const rows = (data ?? []) as any[];
+    const signed = await Promise.all(
+      rows.map(async (r) => {
+        const { data: s } = await supabase.storage.from("reference").createSignedUrl(r.path, HOUR);
+        return {
+          id: r.id, name: r.name, club: r.club, view: r.view,
+          handed: r.handed as "right" | "left", note: r.note || undefined,
+          videoUrl: s?.signedUrl ?? null, thumbUrl: null,
+        };
+      })
+    );
+    setRefSwings(signed);
+  }, [supabase]);
+
+  const uploadRef = useCallback(async (file: File) => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) throw new Error("no user");
+    const name = window.prompt("누구의 스윙인가요?", file.name.replace(/\.[^.]+$/, "")) || "이름 없음";
+    const club = window.prompt("클럽 (드라이버 / 아이언 / 웨지 등)", "드라이버") || "드라이버";
+    const view = window.prompt("촬영 각도 (정면 / 후면)", "정면") || "정면";
+    const lefty = window.confirm("왼손 스윙인가요? (확인=왼손, 취소=오른손)");
+    const path = `${u.user.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
+    const { error: upErr } = await supabase.storage.from("reference").upload(path, file, {
+      contentType: file.type || "video/mp4",
+      upsert: false,
+    });
+    if (upErr) throw upErr;
+    const { error: insErr } = await supabase.from("reference_swings").insert({
+      owner: u.user.id, name, club, view, handed: lefty ? "left" : "right", path,
+    });
+    if (insErr) throw insErr;
+    await loadRefs();
+  }, [supabase, loadRefs]);
+
+  useEffect(() => { loadRefs(); }, [loadRefs]);
 
   // ---------- 대기열 ----------
   useEffect(() => {
@@ -256,8 +300,10 @@ export default function StudioPage() {
         queue={queue}
         member={member}
         drills={drills}
+        refSwings={refSwings}
         onPickMember={setCurrentId}
         onSaveLesson={saveLesson}
+        onUploadReference={uploadRef}
       />
     </>
   );

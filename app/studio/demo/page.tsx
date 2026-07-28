@@ -44,11 +44,20 @@ const MEMBER = {
   ],
 };
 
+const REFS = [
+  { id: "r1", name: "교습용 기본형", club: "드라이버", view: "정면", handed: "right" as const, note: "템포 3:1", videoUrl: null },
+  { id: "r2", name: "교습용 기본형", club: "드라이버", view: "후면", handed: "right" as const, note: "플레인 참고", videoUrl: null },
+  { id: "r3", name: "하체 리드 시범", club: "아이언", view: "정면", handed: "right" as const, videoUrl: null },
+  { id: "r4", name: "왼손 시범 스윙", club: "아이언", view: "정면", handed: "left" as const, note: "좌우 자동 반전", videoUrl: null },
+  { id: "r5", name: "피니시 균형 시범", club: "웨지", view: "정면", handed: "right" as const, videoUrl: null },
+];
+
 export default function StudioDemoPage() {
   return (
     <StudioWorkbench
       queue={QUEUE}
       member={MEMBER}
+      refSwings={REFS}
       onPickMember={() => {}}
       onSaveLesson={async (draft, mode) => {
         // 데모에서는 저장하지 않고 콘솔로만 확인합니다

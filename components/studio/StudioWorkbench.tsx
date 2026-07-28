@@ -36,6 +36,17 @@ export type PastRound = {
   thumbUrl?: string | null;
 };
 
+export type ReferenceSwing = {
+  id: string;
+  name: string;          // "로리 매킬로이"
+  club: string;          // "드라이버"
+  view: string;          // "정면" / "후면"
+  handed: "right" | "left";
+  note?: string;
+  videoUrl: string | null;
+  thumbUrl?: string | null;
+};
+
 export type MemberContext = {
   name: string;
   roundNo: number;
@@ -70,18 +81,22 @@ export default function StudioWorkbench({
   queue = [],
   member,
   drills,
+  refSwings = [],
   onPickMember,
   onSaveLesson,
+  onUploadReference,
 }: {
   queue?: QueueItem[];
   member?: MemberContext | null;
   drills?: Drill[];
+  refSwings?: ReferenceSwing[];
   onPickMember?: (id: string) => void;
   onSaveLesson?: (
     draft: LessonDraft,
     mode: "draft" | "send",
     extras: { recording: Blob | null; shots: [string | null, string | null] }
   ) => Promise<void> | void;
+  onUploadReference?: (file: File) => Promise<void> | void;
 }) {
   const A = useAnalyzer();
   const [queueOpen, setQueueOpen] = useState(true);
@@ -89,8 +104,13 @@ export default function StudioWorkbench({
   const [saving, setSaving] = useState(false);
   const [shots, setShots] = useState<[string | null, string | null]>([null, null]);
   const [activePast, setActivePast] = useState<string | null>(null);
+  const [activeRef, setActiveRef] = useState<string | null>(null);
+  const [cxTab, setCxTab] = useState<"past" | "pro">("past");
+  const [refClub, setRefClub] = useState<string>("전체");
   const [toast, setToast] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const refUploadRef = useRef<HTMLInputElement>(null);
+  const fileTarget = useRef<number | null>(null);   // 파일 선택이 어느 화면으로 갈지
   const toastTimer = useRef<any>(null);
 
   const say = useCallback((m: string) => {
@@ -145,13 +165,56 @@ export default function StudioWorkbench({
     if (!p.videoUrl) { say("이 회차에는 영상이 없습니다"); return; }
     A.setPaneSource(1, p.videoUrl, `지난 ${p.date} · No.${String(p.roundNo).padStart(2, "0")}`);
     setActivePast(p.id);
+    setActiveRef(null);
     say(`${p.date} 회차를 B 화면에 올렸습니다`);
+  }
+
+  function openReference(r: ReferenceSwing) {
+    if (!r.videoUrl) { say("이 스윙에는 영상 파일이 없습니다"); return; }
+    A.setPaneSource(1, r.videoUrl, `${r.name} · ${r.club} ${r.view}`);
+    setActiveRef(r.id);
+    setActivePast(null);
+    // 왼손잡이 스윙과 비교할 땐 좌우를 뒤집어야 자세가 겹쳐 보인다
+    if (r.handed === "left") {
+      requestAnimationFrame(() => A.toggleFlip(1));
+      say(`${r.name} · 왼손 스윙이라 좌우를 뒤집었습니다`);
+    } else {
+      say(`${r.name} 스윙을 B 화면에 올렸습니다`);
+    }
   }
 
   function closeCompare() {
     A.setPaneSource(1, null);
     setActivePast(null);
+    setActiveRef(null);
   }
+
+  /** 이 화면의 영상을 파일에서 열거나 교체한다 */
+  function pickFileFor(i: number) {
+    fileTarget.current = i;
+    fileRef.current?.click();
+  }
+
+  function closePane(i: number) {
+    if (i === 1) { closeCompare(); return; }
+    // A를 닫으면 B가 있던 영상을 A로 끌어올린다 (빈 A + 채워진 B 상태 방지)
+    if (A.panes[1].url) {
+      A.setPaneSource(0, A.panes[1].url, A.panes[1].label);
+      A.setPaneSource(1, null);
+      setActivePast(null); setActiveRef(null);
+    } else {
+      A.setPaneSource(0, null);
+    }
+  }
+
+  const refClubs = useMemo(
+    () => ["전체", ...Array.from(new Set(refSwings.map((r) => r.club)))],
+    [refSwings]
+  );
+  const refList = useMemo(
+    () => (refClub === "전체" ? refSwings : refSwings.filter((r) => r.club === refClub)),
+    [refSwings, refClub]
+  );
 
   function capture(which: 0 | 1) {
     const idx = which === 0 ? (A.compare ? 1 : 0) : 0;
@@ -257,7 +320,7 @@ export default function StudioWorkbench({
                 ))}
               </div>
               <div className="sx-qfoot">
-                <button className="sx-btn wide" onClick={() => fileRef.current?.click()}>파일에서 영상 열기</button>
+                <button className="sx-btn wide" onClick={() => pickFileFor(0)}>파일에서 영상 열기</button>
                 <span className="sx-qhint">접으면 얇은 띠만 남습니다</span>
               </div>
             </>
@@ -334,7 +397,9 @@ export default function StudioWorkbench({
                         <button className="sx-mini" onClick={() => A.zoomBy(i, 1 / 1.2)}>−</button>
                         <button className="sx-mini" onClick={() => A.zoomBy(i, 1.2)}>＋</button>
                         <button className={`sx-mini ${pd.flip ? "on" : ""}`} onClick={() => A.toggleFlip(i)} title="좌우 반전">⇋</button>
-                        <button className="sx-mini" onClick={() => A.resetView(i)} title="초기화">⟲</button>
+                        <button className="sx-mini" onClick={() => A.resetView(i)} title="확대·위치 초기화">⟲</button>
+                        <button className="sx-mini" onClick={() => pickFileFor(i)} title="다른 영상 파일로 교체">교체</button>
+                        <button className="sx-mini" onClick={() => closePane(i)} title="이 영상 닫기">✕</button>
                       </div>
                       <div className="sx-pfoot">
                         <span className="sx-ptime">{formatTime(A.currentTimeOf(i))}</span>
@@ -347,10 +412,13 @@ export default function StudioWorkbench({
                       </div>
                     </>
                   ) : (
-                    <button className="sx-vempty" onClick={() => fileRef.current?.click()}>
+                    <button className="sx-vempty" onClick={() => pickFileFor(i)}>
                       <span className="sx-vempty-i">＋</span>
-                      <span>분석할 영상을 여세요</span>
-                      <span className="dim">왼쪽 대기열에서 회원을 고르거나 파일을 엽니다</span>
+                      <span>{i === 0 ? "분석할 영상을 여세요" : "비교할 영상을 여세요"}</span>
+                      <span className="dim">
+                        {i === 0 ? "왼쪽 대기열에서 회원을 고르거나 파일을 엽니다"
+                                 : "오른쪽에서 과거 스윙·프로 스윙을 눌러도 됩니다"}
+                      </span>
                     </button>
                   )}
                 </div>
@@ -492,10 +560,75 @@ export default function StudioWorkbench({
             {recording ? "● 녹화 중 · 이 패널은 영상에 찍히지 않습니다" : "이 패널은 녹화 화면에 포함되지 않습니다"}
           </div>
 
-          <div className="sx-cxbody">
-            {!member && <div className="sx-empty">왼쪽에서 회원을 선택하면 지난 기록이 여기에 표시됩니다</div>}
+          <div className="sx-cxtabs">
+            <button className={cxTab === "past" ? "on" : ""} onClick={() => setCxTab("past")}>
+              회원 기록{member?.past.length ? ` ${member.past.length}` : ""}
+            </button>
+            <button className={cxTab === "pro" ? "on" : ""} onClick={() => setCxTab("pro")}>
+              프로 스윙{refSwings.length ? ` ${refSwings.length}` : ""}
+            </button>
+          </div>
 
-            {member && (
+          <div className="sx-cxbody">
+            {/* ===== 프로 스윙 라이브러리 ===== */}
+            {cxTab === "pro" && (
+              <div className="sx-sec">
+                <div className="sx-sech">
+                  <span>프로 스윙 라이브러리</span>
+                  <span className="dim sm">누르면 B 화면에서 비교</span>
+                </div>
+                {refClubs.length > 1 && (
+                  <div className="sx-filter">
+                    {refClubs.map((c) => (
+                      <button key={c} className={refClub === c ? "on" : ""} onClick={() => setRefClub(c)}>{c}</button>
+                    ))}
+                  </div>
+                )}
+                {refList.length === 0 && (
+                  <div className="sx-empty sm">
+                    저장된 프로 스윙이 없습니다.<br />
+                    아래에서 영상을 추가하면 언제든 꺼내 쓸 수 있습니다.
+                  </div>
+                )}
+                {refList.map((r) => (
+                  <button
+                    key={r.id}
+                    className={`sx-past ${activeRef === r.id ? "on" : ""}`}
+                    onClick={() => openReference(r)}
+                  >
+                    <span className="sx-pthumb">
+                      {r.thumbUrl
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={r.thumbUrl} alt="" />
+                        : <i />}
+                    </span>
+                    <span className="sx-ptxt">
+                      <span className="sx-pdate">
+                        {r.name}
+                        {r.handed === "left" && <em className="sx-lefty">왼손</em>}
+                      </span>
+                      <span className="sx-phead">{r.club} · {r.view}{r.note ? ` · ${r.note}` : ""}</span>
+                    </span>
+                    <span className="sx-popen">{activeRef === r.id ? "B 비교 중" : "B로 열기 →"}</span>
+                  </button>
+                ))}
+                {onUploadReference && (
+                  <button className="sx-btn wide sx-refadd" onClick={() => refUploadRef.current?.click()}>
+                    + 프로 스윙 추가
+                  </button>
+                )}
+                <p className="sx-qnote">
+                  직접 촬영한 시범 스윙이나 이용 허락을 받은 영상을 쓰세요.
+                </p>
+              </div>
+            )}
+
+            {/* ===== 회원 기록 ===== */}
+            {cxTab === "past" && !member && (
+              <div className="sx-empty">왼쪽에서 회원을 선택하면 지난 기록이 여기에 표시됩니다</div>
+            )}
+
+            {cxTab === "past" && member && (
               <>
                 <div className="sx-sec">
                   <div className="sx-sech">
@@ -603,8 +736,31 @@ export default function StudioWorkbench({
         hidden
         onChange={(e) => {
           const f = e.target.files?.[0];
-          if (f) A.loadFile(A.panes[0].url ? 1 : 0, f);
+          if (f) {
+            const i = fileTarget.current ?? (A.panes[0].url ? 1 : 0);
+            A.loadFile(i, f);
+            if (i === 1) { setActivePast(null); setActiveRef(null); }
+            say(`${i === 0 ? "A" : "B"} 화면에 ${f.name} 을(를) 열었습니다`);
+          }
+          fileTarget.current = null;
           e.target.value = "";
+        }}
+      />
+      <input
+        ref={refUploadRef}
+        type="file"
+        accept="video/*"
+        hidden
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          try {
+            await onUploadReference?.(f);
+            say("프로 스윙 라이브러리에 추가했습니다");
+          } catch {
+            say("추가하지 못했습니다");
+          }
         }}
       />
     </div>
