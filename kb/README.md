@@ -15,8 +15,17 @@
 
 | 파일 | 내용 |
 |---|---|
-| `kb_causal_graph.json` | 인과 그래프 — 노드 209 · 엣지 285 (High 182 / Medium 38 / Pattern Dependent 64 / Low 1). 각 엣지에 `src`·`tgt`·`conf`·`mech`(메커니즘 문장)·`branch`(A/B/C 분기) |
-| `kb_feature_map.json` | KB Feature 128개 × 우리 엔진 측정가능성 판정 (✅66 / ◐10 / ✕52) |
+| `kb_causal_graph.json` | 인과 그래프 — **노드 289 · 엣지 436** (High 311 / Medium 47 / Pattern Dependent 77 / Low 1). 각 엣지에 `src`·`tgt`·`conf`·`mech`(메커니즘 문장)·`branch`(A/B/C 분기). `tools/build_kb_graph.py`가 재생성 |
+| `kb_causal_graph.v1.json` | 2026-07-25 세션의 원 추출본(285엣지) — **동결.** 병합의 베이스라 지우면 안 됨 |
+| `kb_feature_map.json` | KB Feature 128개 × 우리 엔진 측정가능성 판정 (✅66 / ◐10 / ✕52) ⚠️ P6 21개 반영 전 수치 — 갱신 필요 |
+
+## ⚠️ 누락 사고와 복구 (2026-07-28)
+v1 추출본(285엣지)에 **파싱 실패로 통째로 빠진 데가 있었다**:
+- **P2 — 18개 중 4개 누락** (Pelvic Sway / Spine Angle Loss / Lead Knee Flexion / Lead Knee Collapse — 전부 우리가 측정 가능한 것들)
+- **P6 — 21개 전부 누락** (체인 하나당 한 행인 시트 구조를 한 셀 파서가 못 읽음)
+→ `tools/build_kb_graph.py` 신설(재현 가능한 추출기)로 복구. **v1 285엣지는 전부 보존**하고
+  누락 Feature의 엣지 151개만 추가하는 보수적 병합. 검증: P2 18/18 · P6 21/21 · 노드 오염 0.
+교훈: 추출 스크립트를 안 남기면 누락을 검증할 방법이 없다. 이제 수정은 스크립트를 고치고 재실행.
 
 ## 쓰는 법
 - `mech` 문장은 **회원 화면에 그대로 노출 가능** (KB 원문 = 코칭 언어).
