@@ -16,6 +16,7 @@ import { SWING_COLORS, ToolId, formatTime } from "@/lib/swing/draw";
 import { formatRelative } from "@/lib/swing/sync";
 import { useAnalyzer } from "./useAnalyzer";
 import LessonComposer, { LessonDraft, PrevHomework, Drill } from "./LessonComposer";
+import { CaptionSeg } from "@/lib/subtitle/glossary";
 
 export type QueueItem = {
   id: string;
@@ -85,6 +86,8 @@ export default function StudioWorkbench({
   onPickMember,
   onSaveLesson,
   onUploadReference,
+  onTranscribe,
+  onAddCorrection,
 }: {
   queue?: QueueItem[];
   member?: MemberContext | null;
@@ -97,11 +100,14 @@ export default function StudioWorkbench({
     extras: { recording: Blob | null; shots: [string | null, string | null] }
   ) => Promise<void> | void;
   onUploadReference?: (file: File) => Promise<void> | void;
+  onTranscribe?: (audio: Blob) => Promise<CaptionSeg[] | null>;
+  onAddCorrection?: (wrong: string, correct: string) => void;
 }) {
   const A = useAnalyzer();
   const [queueOpen, setQueueOpen] = useState(true);
   const [composing, setComposing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
   const [shots, setShots] = useState<[string | null, string | null]>([null, null]);
   const [activePast, setActivePast] = useState<string | null>(null);
   const [activeRef, setActiveRef] = useState<string | null>(null);
@@ -240,6 +246,7 @@ export default function StudioWorkbench({
   // ---------- 레슨 작성 화면 ----------
   if (composing && member) {
     return (
+      <>
       <LessonComposer
         memberName={member.name}
         roundNo={member.roundNo}
@@ -249,10 +256,30 @@ export default function StudioWorkbench({
         drills={drills}
         captureShots={shots}
         saving={saving}
+        transcribing={transcribing}
         onCapture={capture}
+        onTranscribe={
+          onTranscribe
+            ? async () => {
+                if (!A.rec.blob) { say("녹화본이 없습니다"); return null; }
+                setTranscribing(true);
+                try {
+                  return await onTranscribe(A.rec.blob);
+                } catch {
+                  say("음성 인식에 실패했습니다. 잠시 후 다시 시도해주세요");
+                  return null;
+                } finally {
+                  setTranscribing(false);
+                }
+              }
+            : undefined
+        }
+        onAddCorrection={onAddCorrection}
         onBack={() => setComposing(false)}
         onSave={saveLesson}
       />
+      {toast && <div className="sx-toast">{toast}</div>}
+      </>
     );
   }
 

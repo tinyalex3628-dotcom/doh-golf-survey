@@ -65,6 +65,20 @@ export default function StudioDemoPage() {
         console.log("[demo] save", mode, draft);
         await new Promise((r) => setTimeout(r, 400));
       }}
+      onTranscribe={async () => {
+        // 데모: 실제 인식 대신 예시 자막을 돌려줍니다 (실서비스는 Whisper 호출)
+        await new Promise((r) => setTimeout(r, 900));
+        return [
+          { start: 0, end: 3.4, text: "민수님 안녕하세요, 이번 달 스윙 같이 볼게요." },
+          { start: 3.4, end: 8.1, text: "지난달 숙제였던 톱에서 3초 멈추기, 영상에 효과가 그대로 보입니다." },
+          { start: 8.1, end: 13.6, text: "다만 임팩트 직후에 머리가 먼저 열리면서 얼리 익스텐션이 살짝 남아 있어요." },
+          { start: 13.6, end: 18.2, text: "이번 달은 임팩트 후 3초 정지 드릴로 이 구간만 잡아보겠습니다." },
+        ];
+      }}
+      onAddCorrection={(wrong, correct) => {
+        // eslint-disable-next-line no-console
+        console.log("[demo] correction", wrong, "→", correct);
+      }}
     />
   );
 }

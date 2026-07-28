@@ -7,6 +7,8 @@
 // ============================================================
 
 import { useEffect, useMemo, useState } from "react";
+import { CaptionSeg } from "@/lib/subtitle/glossary";
+import CaptionEditor from "./CaptionEditor";
 
 export type Homework = { id: string; title: string; why: string };
 export type Drill = { id: string; title: string; why: string };
@@ -20,7 +22,8 @@ export type LessonDraft = {
   quote: string;
   nextPreview: string;
   nextUploadOn: string;
-  captions: [string, string];
+  captions: [string, string];        // 비교 이미지 캡션
+  subtitles: CaptionSeg[];           // 레슨 영상 자막
 };
 
 export type PrevHomework = { title: string; done: number; target: number };
@@ -55,7 +58,10 @@ export default function LessonComposer({
   drills = DEFAULT_DRILLS,
   captureShots,
   saving,
+  transcribing,
   onCapture,
+  onTranscribe,
+  onAddCorrection,
   onBack,
   onSave,
 }: {
@@ -67,7 +73,10 @@ export default function LessonComposer({
   drills?: Drill[];
   captureShots: [string | null, string | null];
   saving?: boolean;
+  transcribing?: boolean;
   onCapture?: (which: 0 | 1) => void;
+  onTranscribe?: () => Promise<CaptionSeg[] | null>;
+  onAddCorrection?: (wrong: string, correct: string) => void;
   onBack: () => void;
   onSave: (draft: LessonDraft, mode: "draft" | "send") => void;
 }) {
@@ -81,8 +90,14 @@ export default function LessonComposer({
     nextPreview: "",
     nextUploadOn: plusMonth(),
     captions: ["", ""],
+    subtitles: [],
   });
   const [tagInput, setTagInput] = useState("");
+
+  async function runTranscribe() {
+    const segs = await onTranscribe?.();
+    if (segs) setD((p) => ({ ...p, subtitles: segs }));
+  }
 
   const set = <K extends keyof LessonDraft>(k: K, v: LessonDraft[K]) => setD((p) => ({ ...p, [k]: v }));
 
@@ -311,6 +326,17 @@ export default function LessonComposer({
           </div>
 
           <div className="lc-f">
+            <CaptionEditor
+              segments={d.subtitles}
+              transcribing={transcribing}
+              canTranscribe={!!recUrl && !!onTranscribe}
+              onTranscribe={runTranscribe}
+              onChange={(segs) => set("subtitles", segs)}
+              onAddCorrection={onAddCorrection}
+            />
+          </div>
+
+          <div className="lc-f">
             <span className="lc-lab">다음 회차 예고 <em>고쳐 써도 됩니다</em>
               {d.nextPreview && <b className="lc-auto-tag">자동 초안</b>}</span>
             <textarea
@@ -364,7 +390,9 @@ export default function LessonComposer({
 
               <div className="lc-p-video">
                 <span className="lc-p-play">▶</span>
-                <span className="lc-p-vlabel">레슨 영상 · 음성 해설</span>
+                <span className="lc-p-vlabel">
+                  레슨 영상 · 음성 해설{d.subtitles.length > 0 && <em className="lc-p-cc"> CC 자막</em>}
+                </span>
                 <span className="lc-p-vtime">{recUrl ? recLabel : "--:--"}</span>
               </div>
 
@@ -419,7 +447,8 @@ export default function LessonComposer({
         <div className="lc-foot-info">
           <b>{memberName} · {roundNo}회차 레슨 카드</b>
           <span className="dim">
-            {recUrl ? `영상 ${recLabel}` : "영상 없음"} · 캡처 {captureShots.filter(Boolean).length}장 ·
+            {recUrl ? `영상 ${recLabel}` : "영상 없음"}
+            {d.subtitles.length > 0 ? ` · 자막 ${d.subtitles.length}구간` : ""} · 캡처 {captureShots.filter(Boolean).length}장 ·
             숙제 {d.homeworks.length}건 · 필수 {filled} / 5 작성
           </span>
         </div>

@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { expireDateLabel, isExpired } from "@/lib/helpers";
+import CaptionVideo from "@/components/CaptionVideo";
 
 export const dynamic = "force-dynamic";
 
@@ -84,16 +85,22 @@ export default async function FeedbackViewPage({ params }: { params: { token: st
           {feedback.diagnosis ? ` · ${feedback.diagnosis}` : ""}
         </p>
 
-        {/* 분석 영상 */}
+        {/* 분석 영상 — 첫 영상(음성 해설)에는 자막 버튼이 붙어요 */}
         {fbVideos.filter(Boolean).map((url, i) => (
           <div className="fb-video-card" key={i}>
-            <video src={url!} controls playsInline preload="metadata" />
+            <CaptionVideo
+              src={url!}
+              captions={i === 0 && Array.isArray(feedback.captions) ? feedback.captions : []}
+            />
             <div className="fb-video-caption">
               <div style={{ fontSize: 15, fontWeight: 800, color: "#191f28" }}>
                 스윙 분석 영상 {fbVideos.length > 1 ? i + 1 : "(음성 해설)"}
               </div>
               <div style={{ fontSize: 13, fontWeight: 600, color: "#8b95a1", marginTop: 3 }}>
                 회원님 영상에 선을 그려 설명했어요
+                {i === 0 && Array.isArray(feedback.captions) && feedback.captions.length > 0
+                  ? " · 자막 버튼을 누르면 해설이 글로 보여요"
+                  : ""}
               </div>
             </div>
           </div>

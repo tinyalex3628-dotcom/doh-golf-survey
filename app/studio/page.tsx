@@ -76,6 +76,31 @@ export default function StudioPage() {
 
   useEffect(() => { loadRefs(); }, [loadRefs]);
 
+  // ---------- 자막: 음성 인식 + 개인 교정 사전 ----------
+  const transcribe = useCallback(async (audio: Blob) => {
+    // 프로가 승인해둔 개인 교정 규칙을 함께 보낸다
+    const { data: rules } = await supabase
+      .from("stt_corrections")
+      .select("wrong, correct")
+      .order("uses", { ascending: false })
+      .limit(500);
+    const form = new FormData();
+    form.append("file", audio, "lesson.webm");
+    form.append("corrections", JSON.stringify((rules ?? []).map((r: any) => [r.wrong, r.correct])));
+    const res = await fetch("/api/transcribe", { method: "POST", body: form });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json?.error || "transcribe failed");
+    return json.segments as { start: number; end: number; text: string }[];
+  }, [supabase]);
+
+  const addCorrection = useCallback(async (wrong: string, correct: string) => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return;
+    await supabase
+      .from("stt_corrections")
+      .upsert({ owner: u.user.id, wrong, correct }, { onConflict: "owner,wrong" });
+  }, [supabase]);
+
   // ---------- 대기열 ----------
   useEffect(() => {
     (async () => {
@@ -242,6 +267,7 @@ export default function StudioPage() {
             next_upload_on: draft.nextUploadOn || null,
             round_no: member?.roundNo ?? null,
             homeworks: draft.homeworks.map((h, i) => ({ id: h.id || `hw${i}`, title: h.title, why: h.why, target: 1 })),
+            captions: draft.subtitles,
             diagnosis: draft.headline,
             body: draft.focus,
           },
@@ -304,6 +330,8 @@ export default function StudioPage() {
         onPickMember={setCurrentId}
         onSaveLesson={saveLesson}
         onUploadReference={uploadRef}
+        onTranscribe={transcribe}
+        onAddCorrection={addCorrection}
       />
     </>
   );
