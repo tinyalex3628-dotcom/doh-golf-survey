@@ -1,6 +1,9 @@
 // ============================================================
 // 회원용 스윙분석 — 모바일 화면에서 직접 분석하는 도구
 // 갤러리에서 영상을 불러와 선을 긋고, 프로 영상과 나란히 비교한다.
+//
+// 앱(웹뷰) 연동: /swing?src=<영상URL>&src2=<비교영상URL> 로 열면
+// 해당 영상이 미리 로드된 상태로 시작한다. (docs/APP_INTEGRATION.md 참고)
 // ============================================================
 
 import SwingAnalyzer from "@/components/swing/SwingAnalyzer";
@@ -11,6 +14,15 @@ export const metadata = {
   description: "내 스윙 영상에 직접 선을 긋고, 두 영상을 나란히 비교 분석해보세요.",
 };
 
-export default function SwingPage() {
-  return <SwingAnalyzer variant="member" />;
+export default function SwingPage({
+  searchParams,
+}: {
+  searchParams?: { src?: string; src2?: string };
+}) {
+  return (
+    <SwingAnalyzer
+      variant="member"
+      initialUrls={[searchParams?.src ?? null, searchParams?.src2 ?? null]}
+    />
+  );
 }

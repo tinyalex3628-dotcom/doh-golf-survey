@@ -607,6 +607,8 @@ export default function SwingAnalyzer({
         commitShape(i, { id: shapeSeq++, tool: "angle", color, width: strokeW, points: pts });
         setPendingAngle(null);
         setPreview(null);
+        // 모바일: 각도가 완성되면 기본 도구로 복귀 — 그래야 다음 탭이 재생/일시정지로 동작한다
+        if (!isPro) setTool("line");
       } else {
         setPendingAngle({ pane: i, pts });
         say(pts.length === 1 ? "각도: 꼭짓점을 탭하세요 (2/3)" : "각도: 마지막 점을 탭하세요 (3/3)");
