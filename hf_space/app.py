@@ -22,11 +22,16 @@ import numpy as np, cv2, torch, torchvision, torchvision.ops  # noqa: F401 (nms 
 import gradio as gr
 
 # ── 엔진 파일(단일 소스): GitHub raw에서 가져옴 ──
-BR = "claude/doh-vision-handoff-review-j1rim1"
+# 운영선: engine-stable (검증 통과분만 fast-forward). 개발 브랜치를 직접 보게 하면
+# 커밋 즉시 실서비스에 뜨므로 금지 — 배포 = `git push origin <작업브랜치>:engine-stable`.
+BR = "engine-stable"
 BASE = f"https://raw.githubusercontent.com/tinyalex3628-dotcom/doh-golf-survey/{BR}/pose3d_poc"
 for _f in ("wham_golf_rotation.py", "wham_golf_metrics.py"):
     if not os.path.exists(_f):
         urllib.request.urlretrieve(f"{BASE}/{_f}", _f)
+RULES_URL = f"https://raw.githubusercontent.com/tinyalex3628-dotcom/doh-golf-survey/{BR}/rules/doh_rules.v1.json"
+if not os.path.exists("doh_rules.v1.json"):
+    urllib.request.urlretrieve(RULES_URL, "doh_rules.v1.json")
 from wham_golf_rotation import build_v1  # noqa: E402
 
 # ── NLF 모델(TorchScript → torch버전 무관). 시작 시 CPU 로드, 추론 시 가용 디바이스로 이동 ──

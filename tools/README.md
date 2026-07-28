@@ -11,7 +11,16 @@
 
 실행: `python3 tools/build_thresholds.py` (openpyxl 필요). 출력 경로가 scratchpad로 되어 있으면 `docs/`로 바꿀 것.
 
-## 정본 관계
-- **판정 구간의 실행 정본은 `pose_poc/analyzer2.html`의 `DOH_RULES`** — 엔진이 실제로 쓰는 값.
-- 엑셀은 그 구간의 **근거·출처·등급을 기록하는 문서**. 둘이 어긋나면 DOH_RULES가 실제 동작, 엑셀이 의도.
-- 값을 바꿀 땐 양쪽 다 고칠 것.
+## 정본 관계 (2026-07-28 개편 — 앱 운영 대비)
+- **판정 구간의 실행 정본은 `rules/doh_rules.v1.json`** ← 앱/서버가 `GET /v1/rules`로 받아가는 데이터.
+- `analyzer2.html`의 `DOH_RULES` 블록은 `build_rules.py`가 그 JSON에서 **생성**한다(직접 수정 금지 —
+  마커 사이 블록, CI의 `--check`가 어긋나면 실패시킴).
+- 엑셀(기준치_설계근거)은 구간의 **근거·출처·등급 문서**.
+- **기준 수정 절차: rules JSON 고침 → `python3 tools/build_rules.py` → `build_thresholds.py` → 커밋.**
+
+| 추가 스크립트 | 역할 |
+|---|---|
+| `build_rules.py` | rules JSON → analyzer2 블록 생성 / `--check`=동기화 검사(CI) |
+| `build_kb_graph.py` | kb/source/*.xlsx → kb_causal_graph.json (v1 보존+패치 병합) |
+| `build_p2map.py` | docs/DOH_P2_구현표.xlsx |
+| `ci_smoke.py` | 합성 스윙 → build_v1 → 스키마·P순서·게이팅 검증 (CI) |

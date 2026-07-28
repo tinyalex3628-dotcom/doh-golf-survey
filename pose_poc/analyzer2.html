@@ -80,9 +80,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v38</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v39</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v38"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v39"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
   <br><b style="color:#4ea1ff">v27(안정화):</b> fetch 타임아웃 · 폴링 <b>일시실패 자동 재시도</b>(터널 흔들림 대비) · 업로드 거부/Job 만료 메시지 개선. Stage 0 5회 연속 검증용. (계약 <code>/v1/*·doh.vision.v1</code>는 동결 — 내부만 하드닝)</p>
 </header>
 
@@ -812,13 +812,14 @@ const DOH_REVIEW_MODE=true;
 // check: {vf, lab, t, B:[b1,b2,b3], side?}  — t(변환): high=값 클수록 나쁨 / low=작을수록 /
 //   abs=|값| 클수록 / low_abs=|값| 작을수록.  변환값 tv<b1→정상, <b2→주의, <b3→과다, ≥b3→심함.
 const INF=1e9;
+// <<DOH_RULES_GENERATED — tools/build_rules.py가 rules/doh_rules.v1.json에서 생성. 직접 수정 금지>>
 const DOH_RULES=[
  {id:"sway",nm:"스웨이 (백스윙 좌우 밀림)",tier:1,
-  checks:[{vf:"VF031",lab:"머리 좌우이동 P1→P4",t:"high",B:[0.12,0.18,0.30]},
-          {vf:"VF034",lab:"골반 좌우이동 P1→P4",t:"high",B:[0.10,0.15,0.25]}],
+  checks:[{vf:"VF031",lab:"머리 좌우이동 P1→P4",t:"high",B:[0.12,0.18,0.3]},
+          {vf:"VF034",lab:"골반 좌우이동 P1→P4",t:"high",B:[0.1,0.15,0.25]}],
   why:"백스윙에서 머리/골반이 트레일쪽(+)으로 밀림 (스탠스폭 비율)"},
  {id:"reverse_pivot",nm:"리버스 피벗",tier:1,
-  checks:[{vf:"VF034",lab:"골반 좌우이동 P1→P4",t:"low",B:[0.06,0.10,0.18]}],
+  checks:[{vf:"VF034",lab:"골반 좌우이동 P1→P4",t:"low",B:[0.06,0.1,0.18]}],
   why:"탑에서 체중(골반)이 오히려 리드쪽(−)에 있음"},
  {id:"shoulder_tilt_p1",nm:"어드레스 어깨 기울기 부족 (트레일 어깨 높음)",tier:1,
   checks:[{vf:"VF008",lab:"어깨 기울기 @P1",t:"low",B:[-5,-2,0]}],
@@ -827,10 +828,10 @@ const DOH_RULES=[
   checks:[{vf:"VF036",lab:"척추 좌우기울기 @P4",t:"low",B:[5,10,18]}],
   why:"탑에서 척추가 타깃(리드)쪽으로 역기울어짐(−)"},
  {id:"hip_slide",nm:"힙 슬라이드 과다 (다운스윙)",tier:1,
-  checks:[{vf:"VF091",lab:"골반 좌우이동 P4→P7",t:"low",B:[0.35,0.45,0.60]}],
+  checks:[{vf:"VF091",lab:"골반 좌우이동 P4→P7",t:"low",B:[0.35,0.45,0.6]}],
   why:"다운스윙에서 골반이 리드쪽(−)으로 과하게 밀림(회전 대신 슬라이드)"},
  {id:"hanging_back",nm:"행잉백 (임팩트 체중 잔류)",tier:1,
-  checks:[{vf:"VF085",lab:"골반 위치 @P7 (P1대비)",t:"high",B:[0.06,0.12,0.20]}],
+  checks:[{vf:"VF085",lab:"골반 위치 @P7 (P1대비)",t:"high",B:[0.06,0.12,0.2]}],
   why:"임팩트에서 체중이 아직 트레일쪽(+)에 남아있음"},
  {id:"loss_posture",nm:"자세 무너짐 (백스윙)",tier:1,
   checks:[{vf:"VF038",lab:"척추각 변화 P1→P4",t:"abs",B:[8,12,18]}],
@@ -842,7 +843,7 @@ const DOH_RULES=[
   checks:[{vf:"VF087",lab:"리드팔 굽힘각 @P7",t:"high",B:[25,35,45]}],
   why:"임팩트 리드팔 굽음. 엘리트 5~20° · 아마추어 20~35° 흔함 + 측정오차 ±3~5° 감안해 35°부터 과다"},
  {id:"flying_elbow",nm:"플라잉 엘보 경향 (탑)",tier:1,
-  checks:[{vf:"VF026",lab:"트레일 팔꿈치 높이 @P4",t:"high",B:[0.15,0.25,0.40]}],
+  checks:[{vf:"VF026",lab:"트레일 팔꿈치 높이 @P4",t:"high",B:[0.15,0.25,0.4]}],
   why:"팔꿈치 높이 하나로 본 근사 — 정식 판정은 팔꿈치 깊이(M505)·어깨들림(M403/404) 구현 후 조합"},
  {id:"overswing",nm:"오버스윙 경향 (탑)",tier:1,
   checks:[{vf:"VF123",lab:"리드팔 수직각 @P4",t:"low",B:[-40,-30,-20]}],
@@ -861,17 +862,18 @@ const DOH_RULES=[
   checks:[{vf:"VF033",lab:"머리 상하이동 P1→P4",t:"abs",B:[0.12,0.18,0.28]}],
   why:"백스윙 중 머리가 위아래로 과하게 움직임 (스탠스폭 비율)"},
  {id:"tempo",nm:"템포 이상",tier:1,
-  checks:[{vf:"VF111",lab:"템포 비율(백:다운)",t:"high",B:[3.6,4.2,5.0],side:"느림"},
+  checks:[{vf:"VF111",lab:"템포 비율(백:다운)",t:"high",B:[3.6,4.2,5],side:"느림"},
           {vf:"VF111",lab:"템포 비율(백:다운)",t:"low",B:[-2.2,-1.8,-1.4],side:"빠름"}],
   why:"백:다운 시간비. 통상 2.2~3.6(3:1 근방)이 정상권"},
  {id:"early_ext",nm:"얼리 익스텐션",tier:1,
-  checks:[{vf:"VF067",lab:"골반 볼쪽 이동 P5→P7 (tush line 이탈)",t:"high",B:[0.10,0.15,0.25],side:"돌진·측면"},
-          {vf:"VF121",lab:"골반 상승 P5→P7 (벨트버클 뜸)",t:"high",B:[0.06,0.10,0.16],side:"상승·양쪽뷰"}],
+  checks:[{vf:"VF067",lab:"골반 볼쪽 이동 P5→P7 (tush line 이탈)",t:"high",B:[0.1,0.15,0.25],side:"돌진·측면"},
+          {vf:"VF121",lab:"골반 상승 P5→P7 (벨트버클 뜸)",t:"high",B:[0.06,0.1,0.16],side:"상승·양쪽뷰"}],
   why:"다운스윙 후반 골반이 볼쪽으로 돌진(측면=tush line 이탈, 화면 안 축이라 측정 가능) + 위로 상승(벨트버클 뜸, 수직이라 정면에서도 보임)"},
  {id:"ott",nm:"오버더톱 경향",tier:2,
-  checks:[{vf:"VF059",lab:"손 깊이변화 P4→P6",t:"high",B:[0.20,0.30,0.45]}],
+  checks:[{vf:"VF059",lab:"손 깊이변화 P4→P6",t:"high",B:[0.2,0.3,0.45]}],
   why:"전환에서 손이 볼쪽(+)으로 던져짐 · 깊이추정(측면 전용)"},
 ];
+// <<END DOH_RULES_GENERATED>>
 const LVL_NM=["정상","주의","과다","심함"], LVL_COL=["#3ecf8e","#ffd166","#ff9f43","#ff6b6b"];
 // 값을 사람 말로 (검수 피드백: "0.3" 대신 "상완의 30%") — 비율 계열만 변환, 각도는 v1num이 ° 붙임
 const DOH_FMT=(()=>{

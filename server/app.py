@@ -224,11 +224,25 @@ def capabilities():
     return {
         "api_version": "v1",
         "engines": ["vision"],
-        "endpoints": ["POST /v1/analyze/video", "GET /v1/jobs/{id}"],
+        "endpoints": ["POST /v1/analyze/video", "GET /v1/jobs/{id}", "GET /v1/rules"],
         "models": {"pose": POSE_MODEL},
         "schemas": ["doh.vision.v1"],
         "device": DEVICE, "cuda": torch.cuda.is_available(), "max_side": MAX_SIDE,
     }
+
+
+@app.get("/v1/rules")
+def rules_v1():
+    """판정 규칙 정본(rules/doh_rules.v1.json) 서빙 — 앱이 이걸 받아 판정한다.
+    기준치 수정 = 이 파일 교체(서버 재시작 불필요, 매 요청 재로드) — 앱 업데이트 없음.
+    Stage0 계약엔 '추가'만 한 것(기존 /v1/* 라우트 무변경)."""
+    import json as _json
+    fp = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                      "rules", "doh_rules.v1.json")
+    if not os.path.exists(fp):                     # 서버 단독 배포(파일 미동봉) 폴백
+        fp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "doh_rules.v1.json")
+    with open(fp, encoding="utf-8") as f:
+        return _json.load(f)
 
 
 @app.get("/v1/health")

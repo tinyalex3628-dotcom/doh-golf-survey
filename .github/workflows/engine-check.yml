@@ -1,0 +1,37 @@
+# 엔진 자동 검증 — 운영 중 지속 업데이트의 안전장치.
+# 모든 푸시에서 돌며, 이게 초록이어야 engine-stable(운영선)로 배포한다.
+# 배포 = git push origin <작업브랜치>:engine-stable  (검증 통과 후에만)
+name: engine-check
+on:
+  push:
+    paths:
+      - "pose3d_poc/**"
+      - "schema/**"
+      - "rules/**"
+      - "pose_poc/analyzer2.html"
+      - "tools/build_rules.py"
+      - ".github/workflows/engine-check.yml"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 기하 자기검증 (합성 정답 대조 — 계산식 회귀)
+        run: python3 pose3d_poc/selfcheck_metrics.py
+
+      - name: 계약 스키마 자기검증 (doh.vision.v1 + 정본 예제)
+        run: python3 schema/validate.py
+
+      - name: 판정 정본 동기화 (rules JSON ↔ analyzer2 생성 블록)
+        run: python3 tools/build_rules.py --check
+
+      - name: 엔진 통합 스모크 (합성 스윙 → build_v1 → 스키마 검증)
+        run: |
+          pip -q install numpy
+          python3 tools/ci_smoke.py
