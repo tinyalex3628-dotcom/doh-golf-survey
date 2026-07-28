@@ -252,7 +252,21 @@ def detect_p_events(J, jm, up, p1, p4, p7, hand="right"):
     # P10: 임팩트 이후 손 최고점(피니시). 없으면 마지막 프레임.
     p10 = int(p7 + np.argmax(hand_h[p7:])) if (p7 is not None and p7 < T - 1) else T - 1
     p3, p5, p9 = arm_parallel(p1, p4), arm_parallel(p4, p7), arm_parallel(p7, p10)
+
+    # P2 근사(2026-07-28): 정의는 '샤프트 지면 평행'이라 클럽 없이는 정확히 못 잡지만,
+    # 그 순간 손은 대략 엉덩이 높이다 → 백스윙에서 손중점 높이가 골반 높이를 처음
+    # 넘는 프레임을 프록시로 쓴다. Feature Spec §5 각주가 이미 "P2는 보간 프레임 +
+    # interpolated_event" 를 예정해 둠. 어드레스에서 손이 이미 골반 위면(이상 자세/
+    # 검출오류) 프록시 불성립 → P1~P3 중간 보간 폴백.
+    hip_h = (0.5 * (J[:, jm["l_hip"]] + J[:, jm["r_hip"]])) @ up
+    p2 = None
+    p3eff = p3 if p3 is not None else lerp(p1, p4, 0.55)
+    if p1 is not None and p3eff is not None and hand_h[p1] < hip_h[p1]:
+        for t in range(int(p1) + 1, int(p3eff) + 1):
+            if hand_h[t] >= hip_h[t]:
+                p2 = t; break
     out = {}
+    out["P2"] = (p2, "pose_rule") if p2 is not None else (lerp(p1, p3eff, 0.5), "interpolated")
     out["P3"] = (p3, "pose_rule") if p3 is not None else (lerp(p1, p4, 0.55), "interpolated")
     out["P5"] = (p5, "pose_rule") if p5 is not None else (lerp(p4, p7, 0.55), "interpolated")
     out["P9"] = (p9, "pose_rule") if p9 is not None else (lerp(p7, p10, 0.40), "interpolated")
@@ -261,8 +275,8 @@ def detect_p_events(J, jm, up, p1, p4, p7, hand="right"):
 
 
 def _build_events(p1, p4, p7, ev_conf, ev_method, p_events):
-    """P1/P4/P7(회전곡선 검출) + P3/P5/P9/P10(detect_p_events) 을 P순서로 병합.
-       P2/P6/P8(샤프트)은 클럽엔진 부재라 생략(정직). schema swing_events 준수."""
+    """P1/P4/P7(회전곡선 검출) + P2(손높이 프록시)/P3/P5/P9/P10(detect_p_events) 병합.
+       P6/P8(샤프트)은 클럽엔진 부재라 계속 생략(정직). P2는 프록시라 conf 낮음. schema 준수."""
     base = {"P1": (int(p1), ev_conf, ev_method),
             "P4": (int(p4), ev_conf, ev_method),
             "P7": (int(p7), ev_conf, ev_method)}
@@ -321,7 +335,11 @@ def emit_vision_v1(sh_turn, hp_turn, xfactor, p1, p4, p7, T, skeleton,
             f["error_flags"] = fl
             f["confidence"] = round(max(0.1, f["confidence"] - 0.1), 2)
         phase_feats.append(f)
-    p3, p5, p10 = pf("P3"), pf("P5"), pf("P10")
+    p2, p3, p5, p10 = pf("P2"), pf("P3"), pf("P5"), pf("P10")
+    # P2 회전 — Spec §5에 원래 있던 ID(VF013/016). KB 'Body Rotation Dominant (P2)' 판정 재료.
+    # P2는 프록시 검출(손높이=엉덩이높이)이라 pose_rule이어도 근사 — dc 크게(신뢰 낮게).
+    addp("VF013", "Shoulder Turn @P2", p2, sh_turn, "P2", "OP006", ["SHOULDER_LINE_TRACK"], 0.10, SH + HP, itp("P2"))
+    addp("VF016", "Hip Turn @P2", p2, hp_turn, "P2", "OP006", ["HIP_LINE_TRACK"], 0.10, HP, itp("P2"))
     addp("VF014", "Shoulder Turn @P3", p3, sh_turn, "P3", "OP006", ["SHOULDER_LINE_TRACK"], 0.05, SH + HP, itp("P3"))
     addp("VF017", "Hip Turn @P3", p3, hp_turn, "P3", "OP006", ["HIP_LINE_TRACK"], 0.05, HP, itp("P3"))
     addp("VF019", "X-Factor @P3", p3, xfactor, "P3", "OP002",

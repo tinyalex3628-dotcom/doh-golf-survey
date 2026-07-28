@@ -232,6 +232,30 @@
 - **VF151 신설 사유:** 임팩트 흉곽 회전량을 담는 ID가 §5에 없었음(골반은 VF075가 담당).
   KB의 `Thorax Open/Closed (P7)` 판정 재료. append-only 규칙 준수(기존 ID 의미 불변).
 
+## 7c. P2 근사 활성화 (v1.2 append, 2026-07-28) — 클럽 없이 되는 P2 몸 지표
+
+> §7b는 "P2는 샤프트 평행이라 계속 미검출"이라 했지만, 이는 **클럽 지표**에만 맞는 말이었다.
+> KB P2 Feature 18개를 분해하면 9개는 클럽이 아니라 **몸**을 본다(스웨이·척추각·팔꿈치·무릎·손깊이)
+> — 천천히 변하는 양이라 시점이 몇 프레임 어긋나도 안 무너진다. §5 각주가 원래 예정했던
+> "P2 = 보간 프레임 + `interpolated_event`" 를 실행에 옮긴 것.
+> **P2 프록시 규칙:** 백스윙(P1→P4)에서 손중점 높이가 골반 높이를 처음 넘는 프레임
+> (P2에서 손은 대략 엉덩이 높이라는 관행 근거). 불성립 시 P1→P3 중간 보간.
+> 클럽 지표(Outside/Inside Takeaway·Clubface)는 여전히 불가 — 정확한 프레임+클럽 검출 필요.
+
+| VF | name | OP | Prim | @P | CS | unit | view | →KB |
+|---|---|---|---|---|---|---|---|---|
+| VF152 | Head Sway P1→P2 (+=trail) | OP011 | HEAD_POINT_TRACK,STANCE_LINE | P1→P2 | GROUND | ratio | F | Head Sway Excessive (P2) |
+| VF153 | Pelvis Sway P1→P2 (+=trail) | OP007 | PELVIS_TRACK | P1→P2 | GROUND | ratio | F | Pelvic Sway Excessive (P2) |
+| VF154 | Spine Angle Δ P1→P2 (−=들림) | OP005 | TORSO_AXIS,GROUND | P1→P2 | GROUND | deg | D | Spine Angle Loss/Increase (P2) |
+| VF155 | Trail Arm Flex @P2 | OP001 | TRAIL_UPPER_ARM,TRAIL_FOREARM | P2 | BODY | deg | F/D | Trail Elbow Flexion Excessive (P2) |
+| VF156 | Lead Knee Flex Δ P1→P2 | OP001 | LEAD_THIGH,LEAD_SHANK | P1→P2 | BODY | deg | F/D | Lead Knee Flexion Excessive (P2) |
+| VF157 | Hand Depth @P2 (heel line, −=deep) | OP007 | HAND_MID_TRACK,STANCE_LINE | P2 | GROUND | ratio | D | Hand Depth Deep (P2) |
+| VF158 | Lead Knee Collapse @P2 (+=안쪽) | OP007 | LEAD_THIGH,LEAD_SHANK,STANCE_LINE | P2 | GROUND | ratio | F | Lead Knee Collapse (P2) |
+
+- 회전 @P2는 **VF013/VF016이 §2에 원래 있던 ID** — 방출만 추가(KB `Body Rotation Dominant (P2)` 재료).
+- 전부 `interpolated_event` 플래그 + conf 감점(근사 시점 정직 표기). 판정 구간은 실측 후.
+- 손목 4개(코킹·플렉션)는 마커리스 손 오차 8~20°(§5t)라 보류, 클럽 4개·압력 1개는 센서 부재로 불가.
+
 ---
 
 ## 8. Structure-inferred (약신뢰, 참고용) — 구조 추정 [10]

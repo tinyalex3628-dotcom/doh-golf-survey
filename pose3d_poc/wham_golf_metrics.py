@@ -339,6 +339,8 @@ def compute_metrics(J, p1, p4, p7, T, fps=None, hand="right", view="unknown", sk
             "OP005", ["SHOULDER_LINE", "GROUND_NORMAL"], ["LEAD_SHOULDER", "TRAIL_SHOULDER"],
             cpos, upflags, FRONT)
 
+
+
         # ── 6) 문제판정 규칙용 추가 측정 (2026-07-24, append-only) ──
         # VF036 리버스 스파인: 탑(P4)에서 척추 좌우기울기 (− = 리드/타깃쪽 역기울기)
         sp4 = _unit(_sub(J_(p4, "neck"), J_(p4, "pelvis")))
@@ -405,5 +407,65 @@ def compute_metrics(J, p1, p4, p7, T, fps=None, hand="right", view="unknown", sk
             / (_norm(_sub(J_(p1, "pelvis"), J_(p1, L_AN))) + 1e-9),
             "ratio", "P5->P7", "GROUND",
             "OP007", ["PELVIS_TRACK"], ["LEAD_HIP", "TRAIL_HIP"], cpos, upflags, BOTH)
+        # ── P2(테이크어웨이) 근사 + 몸 지표 (2026-07-28, KB P2 복구분 활성화) ──
+        # P2 정의(샤프트 지면평행)는 클럽 없이 못 잡지만, KB P2 Feature 18개 중 9개는
+        # '클럽이 아니라 몸'을 본다(머리/골반 스웨이·척추각·팔꿈치·무릎·손깊이). 이들은
+        # 천천히 변하는 양이라 시점이 몇 프레임 어긋나도 값이 안 무너짐 → 근사 P2로 측정.
+        # 프록시: 백스윙에서 손중점 높이가 골반 높이를 처음 넘는 프레임 (rotation의
+        # detect_p_events P2와 같은 규칙 — VF059의 p6i 내부보간과 같은 기존 관행).
+        # Spec §5 각주가 이미 "P2는 보간 프레임 + interpolated_event" 예정. 정직 표기 유지.
+        def hand_mid(fr):
+            return tuple((J_(fr, L_WR)[i] + J_(fr, T_WR)[i]) / 2 for i in range(3))
+        p2i, p2flags = None, ["interpolated_event"]
+        if _dot(hand_mid(p1), up) < _dot(J_(p1, "pelvis"), up):
+            for t in range(int(p1) + 1, int(p4) + 1):
+                if _dot(hand_mid(t), up) >= _dot(J_(t, "pelvis"), up):
+                    p2i = t; break
+        if p2i is None:                                  # 프록시 불성립 → P1~P4의 30% 보간
+            p2i = int(p1) + max(1, int(0.30 * (int(p4) - int(p1))))
+        cp2 = round(max(0.15, cpos - 0.12), 2)           # 근사 시점만큼 감점
+        # VF152 머리 좌우이동 P1→P2 — "P2에서 대가리가 P1 대비 움직였나" (KB Head Sway Excessive P2)
+        add("VF152", "Head Sway lateral P1->P2 (stance-normalized, + = trail)",
+            _dot(_sub(J_(p2i, "head"), J_(p1, "head")), stance_u) / width, "ratio", "P1->P2",
+            "GROUND", "OP011", ["HEAD_POINT_TRACK", "STANCE_LINE"], ["NOSE", "LEAD_ANKLE", "TRAIL_ANKLE"],
+            cp2, p2flags, FRONT)
+        # VF153 골반 좌우이동 P1→P2 (KB Pelvic Sway Excessive P2)
+        add("VF153", "Pelvis Sway lateral P1->P2 (stance-normalized, + = trail)",
+            _dot(_sub(J_(p2i, "pelvis"), J_(p1, "pelvis")), stance_u) / width, "ratio", "P1->P2",
+            "GROUND", "OP007", ["PELVIS_TRACK"], ["LEAD_ANKLE", "TRAIL_ANKLE"],
+            cp2, p2flags, FRONT)
+        # VF154 척추각 변화 P1→P2 (KB Spine Angle Loss/Increase P2 — 부호로 갈림: −=들림/Loss)
+        add("VF154", "Spine Angle change P1->P2 (deg, - = losing posture/standing up)",
+            spine_from_ground(p2i) - spine_from_ground(p1), "deg", "P1->P2",
+            "GROUND", "OP005", ["TORSO_AXIS", "GROUND"], ["PELVIS", "NECK"],
+            cp2, sorted(set(upflags) | set(p2flags)), SIDE)
+        # VF155 트레일 팔꿈치 굽힘 @P2 (KB Trail Elbow Flexion Excessive P2 — 조기 굴곡)
+        add("VF155", "Trail Arm Flex @P2 (180-interior, early fold check)",
+            180.0 - _interior(J_(p2i, T_SH), J_(p2i, T_EL), J_(p2i, T_WR)), "deg", "P2",
+            "BODY", "OP001", ["TRAIL_UPPER_ARM", "TRAIL_FOREARM"],
+            ["TRAIL_SHOULDER", "TRAIL_ELBOW", "TRAIL_WRIST"], cp2, p2flags, BOTH)
+        # VF156 리드 무릎 굽힘 변화 P1→P2 (KB Lead Knee Flexion Excessive P2)
+        add("VF156", "Lead Knee Flex change P1->P2 (deg, + = more bend)",
+            (180.0 - _interior(J_(p2i, L_HIP), J_(p2i, L_KN), J_(p2i, L_AN)))
+            - (180.0 - _interior(J_(p1, L_HIP), J_(p1, L_KN), J_(p1, L_AN))),
+            "deg", "P1->P2", "BODY", "OP001", ["LEAD_THIGH", "LEAD_SHANK"],
+            ["LEAD_HIP", "LEAD_KNEE", "LEAD_ANKLE"], cp2, p2flags, BOTH)
+        # VF157 손 깊이 @P2 vs heel line (KB Hand Depth Deep P2 — VF028과 같은 식, 시점만 P2)
+        heel_mid2 = tuple((J_(p1, L_AN)[i] + J_(p1, T_AN)[i]) / 2 for i in range(3))
+        add("VF157", "Hand Depth @P2 vs heel line (stance-normalized, - = behind/deep)",
+            _dot(_sub(hand_mid(p2i), heel_mid2), d_axis) / width, "ratio", "P2",
+            "GROUND", "OP007", ["HAND_MID_TRACK", "STANCE_LINE"],
+            ["LEAD_WRIST", "TRAIL_WRIST", "LEAD_ANKLE", "TRAIL_ANKLE"],
+            round(max(0.15, cdep - 0.1), 2), sorted(set(dflags) | set(p2flags)), SIDE)
+        # VF158 리드 무릎 안쪽 무너짐 @P2 (KB Lead Knee Collapse — 전두면 힙-발목 선 대비 무릎 이탈,
+        #   + = 트레일쪽(안쪽으로 무너짐). 다리길이 정규화. 신규 기하 — P2 9개 중 유일한 새 계산.)
+        hipL, knL, anL = J_(p2i, L_HIP), J_(p2i, L_KN), J_(p2i, L_AN)
+        f = _dot(_sub(knL, anL), up) / (_dot(_sub(hipL, anL), up) + 1e-9)   # 무릎 높이비
+        line_pt = tuple(anL[i] + f * (hipL[i] - anL[i]) for i in range(3))  # 힙-발목 선 위 대응점
+        leg_len = _norm(_sub(hipL, anL)) + 1e-9
+        add("VF158", "Lead Knee Collapse @P2 (knee off hip-ankle line, leg-norm, + = inward/trail)",
+            _dot(_sub(knL, line_pt), stance_u) / leg_len, "ratio", "P2",
+            "GROUND", "OP007", ["LEAD_THIGH", "LEAD_SHANK", "STANCE_LINE"],
+            ["LEAD_HIP", "LEAD_KNEE", "LEAD_ANKLE"], cp2, p2flags, FRONT)
 
     return feats
