@@ -50,9 +50,12 @@ export function useAnalyzer() {
   const [history, setHistory] = useState<HistEntry[]>([]);
   const [redoStack, setRedoStack] = useState<HistEntry[]>([]);
 
-  const [tool, setTool] = useState<ToolId>("line");
+  const [tool, setTool] = useState<ToolId>("pan");
   const [color, setColor] = useState("#ffd60a");
   const [strokeW, setStrokeW] = useState(4);
+  // 하나 그리면 이동으로 돌아간다. 확대한 화면을 끌어 옮기려다 선이 그어지는 걸 막는다.
+  // 여러 개를 연달아 그릴 때는 '연속'을 켜서 도구를 고정할 수 있다.
+  const [oneShot, setOneShot] = useState(true);
 
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -105,6 +108,9 @@ export function useAnalyzer() {
   useEffect(() => { loopRef.current = loop; }, [loop]);
   useEffect(() => { progressRef.current = progress; }, [progress]);
   useEffect(() => { playingRef.current = playing; }, [playing]);
+
+  const oneShotRef = useRef(oneShot);
+  useEffect(() => { oneShotRef.current = oneShot; }, [oneShot]);
 
   const uiTickPending = useRef(false);
   const uiTick = useCallback(() => {
@@ -357,6 +363,7 @@ export function useAnalyzer() {
     });
     setHistory((h) => [...h, { type: "add", pane, shape: s }]);
     setRedoStack([]);
+    if (oneShotRef.current) setTool("pan");   // 하나 그렸으면 다시 이동 모드로
   }
 
   const undo = useCallback(() => {
@@ -736,7 +743,7 @@ export function useAnalyzer() {
   return {
     // 상태
     panes, compare, range, synced, relTime, shapes, activePane,
-    tool, setTool, color, setColor, strokeW, setStrokeW,
+    tool, setTool, color, setColor, strokeW, setStrokeW, oneShot, setOneShot,
     playing, progress, speed, setSpeed, loop, setLoop, fps, setFps, sound, setSound,
     canUndo: history.length > 0, canRedo: redoStack.length > 0,
     // ref 연결

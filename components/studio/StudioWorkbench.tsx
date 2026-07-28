@@ -510,6 +510,16 @@ export default function StudioWorkbench({
               <span className="sx-tl">{t.label}</span>
             </button>
           ))}
+          <button
+            className={`sx-tool sx-lock ${A.oneShot ? "" : "on"}`}
+            onClick={() => A.setOneShot(!A.oneShot)}
+            title={A.oneShot
+              ? "지금은 하나 그리면 이동으로 돌아갑니다 — 누르면 도구를 고정합니다"
+              : "지금은 도구가 고정돼 계속 그립니다 — 누르면 한 번씩만 그립니다"}
+          >
+            <span className="sx-ti">{A.oneShot ? "①" : "∞"}</span>
+            <span className="sx-tl">{A.oneShot ? "한번" : "연속"}</span>
+          </button>
           <span className="sx-rdiv" />
           <button className="sx-tool" onClick={A.undo} disabled={!A.canUndo} title="되돌리기 (Ctrl+Z)">
             <span className="sx-ti">↶</span><span className="sx-tl">되돌</span>

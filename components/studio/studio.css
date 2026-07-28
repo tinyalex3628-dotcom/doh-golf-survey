@@ -278,6 +278,8 @@
 .sx-tool.on { background: var(--hi); border-color: var(--hb); color: var(--tx); }
 .sx-ti { font-size: 14px; line-height: 1.1; }
 .sx-tl { font-size: 9px; font-weight: 700; }
+.sx-lock { border-color: var(--bd); margin-top: 4px; }
+.sx-lock.on { background: var(--hi); border-color: var(--hb); color: var(--tx); }
 .sx-rdiv { height: 1px; background: var(--bd); margin: 5px 3px; flex-shrink: 0; }
 .sx-colors { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; padding: 2px 0 4px; }
 .sx-color { width: 15px; height: 15px; border-radius: var(--r2); border: 1px solid rgba(0, 0, 0, .5); cursor: pointer; padding: 0; }
