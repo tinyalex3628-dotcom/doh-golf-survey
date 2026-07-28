@@ -80,9 +80,9 @@
 </head>
 <body>
 <header>
-  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v37</span></h1>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v38</span></h1>
   <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
-  <b style="color:#3ecf8e">이 화면에 "BUILD v37"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
+  <b style="color:#3ecf8e">이 화면에 "BUILD v38"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b>
   <br><b style="color:#4ea1ff">v27(안정화):</b> fetch 타임아웃 · 폴링 <b>일시실패 자동 재시도</b>(터널 흔들림 대비) · 업로드 거부/Job 만료 메시지 개선. Stage 0 5회 연속 검증용. (계약 <code>/v1/*·doh.vision.v1</code>는 동결 — 내부만 하드닝)</p>
 </header>
 
@@ -1023,8 +1023,14 @@ function mTileState(vfs,fd,res){
   if(rules.length){
     const worst=Math.max(...rules.map(x=>x.lvl));
     const wr=rules.filter(x=>x.lvl===worst);
-    if(worst>=2) return {k:"bad",f:val[0],why:wr.map(x=>`${x.r.nm}(${LVL_NM[x.lvl]})`).join(" · ")};
-    if(worst===1) return {k:"warn",f:val[0],why:wr.map(x=>x.r.nm).join(" · ")+" — 조금 넘음"};
+    // 대표값 = 그 판정을 실제로 유발한 VF의 측정값. 전에는 무조건 val[0]이라
+    // M201(VF015+VF020)에서 어깨회전 −94.2°(정상) 옆에 X-Factor(과다) 딱지가 붙는
+    // "값 따로 라벨 따로" 오표시가 났음 (2026-07-28 검수 지적).
+    const trig=wr.flatMap(x=>x.checks)
+      .filter(c=>c.ok&&c.lvl===worst&&vfs.indexOf(c.c.vf)>=0).map(c=>c.f);
+    const rep=trig[0]||val[0];
+    if(worst>=2) return {k:"bad",f:rep,why:wr.map(x=>`${x.r.nm}(${LVL_NM[x.lvl]})`).join(" · ")};
+    if(worst===1) return {k:"warn",f:rep,why:wr.map(x=>x.r.nm).join(" · ")+" — 조금 넘음"};
     return {k:"ok",f:val[0],why:"구간 내(정상)"};
   }
   return {k:"meas",f:val[0],why:"측정값만 (판정 기준 없음)"};
