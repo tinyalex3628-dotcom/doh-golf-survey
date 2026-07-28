@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Screen } from '../components/Screen';
 import { Press, SectionLabel } from '../components/ui';
-import { PositionControls, P10_LABELS, frameToP, pToFrame } from '../components/PositionControls';
+import { PositionControls } from '../components/PositionControls';
+import { SwingStage } from '../components/SwingStage';
+import { RangePicker } from '../components/RangePicker';
 import { BottomSheet } from '../components/BottomSheet';
+import { useSwingClip } from '../hooks/useSwingClip';
+import { useComparison } from '../state/comparison';
+import { getProClip } from '../data/proClips';
+import { P_LABELS } from '../utils/swingTimeline';
 import { colors, radius, weight } from '../theme/tokens';
 import { useNav } from '../navigation/useNav';
 import { useToast } from '../components/Toast';
@@ -12,31 +17,90 @@ import { useToast } from '../components/Toast';
 export default function ProCompareScreen() {
   const { go } = useNav();
   const { showToast } = useToast();
-  const [pIdx, setPIdx] = useState(3);
-  const [frame, setFrame] = useState(38);
+  const { pro, cam } = useComparison();
   const [sheet, setSheet] = useState(false);
-  const curP = P10_LABELS[pIdx];
+  const [progress, setProgress] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [tuning, setTuning] = useState(false);
 
-  const setFromP = (i: number) => { setPIdx(i); setFrame(pToFrame(i)); };
-  const setFromFrame = (v: number) => { setFrame(v); setPIdx(frameToP(v)); };
+  // 프로 영상은 앱이 구간을 미리 잡아둔 것 → locked (사용자가 못 바꿈)
+  const proInfo = getProClip(pro, cam);
+  const proClip = useSwingClip({
+    uri: proInfo.uri,
+    lockedRange: proInfo.range,
+    knownDuration: proInfo.duration,
+  });
+  // 내 영상만 사용자가 시작/끝을 직접 찍는다
+  const myClip = useSwingClip({});
+
+  // 현재 진행도에 가까운 '검출된' P (없으면 % 로 표시)
+  let nearP = -1;
+  let best = Infinity;
+  proClip.markers.forEach((v, i) => {
+    if (v == null) return;
+    const d = Math.abs(v - progress);
+    if (d < best && d < 0.06) { best = d; nearP = i; }
+  });
+  const curP = nearP >= 0 ? P_LABELS[nearP] : `${Math.round(progress * 100)}%`;
+
+  useEffect(() => {
+    if (!playing) return;
+    const id = setInterval(() => {
+      setProgress((p) => {
+        const next = p + 0.012;
+        if (next >= 1) { setPlaying(false); return 1; }
+        return next;
+      });
+    }, 50);
+    return () => clearInterval(id);
+  }, [playing]);
 
   return (
     <Screen>
       <View style={styles.split}>
-        <VideoHalf tag={`PRO ${curP}`} tagBg="rgba(237,217,163,.9)" colors={[colors.accentGreen, colors.darkestGreen]} ring="rgba(237,217,163,.3)" />
-        <VideoHalf tag={`ME ${curP}`} tagBg="rgba(159,216,180,.9)" colors={[colors.highlightGreen, colors.darkestGreen]} ring="rgba(159,216,180,.3)" />
+        <View style={{ flex: 1 }}>
+          <SwingStage
+            badge={`PRO ${curP}`}
+            uri={proClip.uri}
+            seekTime={proClip.timeAt(progress)}
+            paused={!playing}
+            onLoad={proClip.onLoad}
+          />
+          <Text style={styles.halfCaption}>{proInfo.name} · {proInfo.view}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <SwingStage
+            badge={`ME ${curP}`}
+            uri={myClip.uri}
+            seekTime={myClip.timeAt(progress)}
+            paused={!playing}
+            onLoad={myClip.onLoad}
+          />
+          <Text style={styles.halfCaption}>내 스윙</Text>
+        </View>
       </View>
 
       <View style={styles.syncBadge}>
-        <Text style={styles.syncText}>🔗 프레임 동기화 ON</Text>
+        <Text style={styles.syncText}>🔗 스윙 구간 기준 동기화</Text>
       </View>
 
       <View style={styles.panel}>
         <SectionLabel style={{ color: colors.goldLight, letterSpacing: 0.5, marginBottom: 9 }}>
-          P1–P10 · 양쪽 슬라이드바 연동
+          스윙 진행도 · 양쪽 슬라이드바 연동
         </SectionLabel>
-        <PositionControls pIdx={pIdx} frame={frame} onP={setFromP} onFrame={setFromFrame} dark showButtons />
+        <PositionControls
+          progress={progress}
+          onProgress={(v) => { setPlaying(false); setProgress(v); }}
+          markers={proClip.markers}
+          playing={playing}
+          onTogglePlay={() => setPlaying((v) => !v)}
+          dark
+          showButtons
+        />
         <View style={{ flexDirection: 'row', gap: 7, marginTop: 8 }}>
+          <Press activeScale={0.97} onPress={() => setTuning((v) => !v)} style={styles.panelBtn}>
+            <Text style={styles.panelBtnText}>{tuning ? '구간 닫기' : '⇔ 싱크'}</Text>
+          </Press>
           <Press activeScale={0.97} onPress={() => showToast('선을 그렸어요')} style={styles.panelBtn}>
             <Text style={styles.panelBtnText}>✎ 선 그리기</Text>
           </Press>
@@ -45,6 +109,31 @@ export default function ProCompareScreen() {
           </Press>
         </View>
       </View>
+
+      {tuning ? (
+        <View style={{ marginTop: 10, gap: 10 }}>
+          <RangePicker
+            label={`${proInfo.name} 프로`}
+            range={proClip.range}
+            duration={proClip.duration}
+            scrubTime={proClip.scrubTime}
+            onScrub={proClip.setScrub}
+            onSetStart={proClip.markStart}
+            onSetEnd={proClip.markEnd}
+            onReset={proClip.reset}
+          />
+          <RangePicker
+            label="내 스윙"
+            range={myClip.range}
+            duration={myClip.duration}
+            scrubTime={myClip.scrubTime}
+            onScrub={myClip.setScrub}
+            onSetStart={() => { myClip.markStart(); showToast('내 스윙 시작 지점을 정했어요'); }}
+            onSetEnd={() => { myClip.markEnd(); showToast('내 스윙 끝 지점을 정했어요'); }}
+            onReset={myClip.reset}
+          />
+        </View>
+      ) : null}
 
       <Press onPress={() => setSheet(true)} activeScale={0.99} style={styles.askRow}>
         <View style={{ flex: 1 }}>
@@ -84,45 +173,9 @@ export default function ProCompareScreen() {
   );
 }
 
-function VideoHalf({
-  tag,
-  tagBg,
-  colors: grad,
-  ring,
-}: {
-  tag: string;
-  tagBg: string;
-  colors: readonly [string, string];
-  ring: string;
-}) {
-  return (
-    <LinearGradient colors={grad} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={styles.half}>
-      <View style={[styles.halfTag, { backgroundColor: tagBg }]}>
-        <Text style={styles.halfTagText}>{tag}</Text>
-      </View>
-      <View style={[styles.halfSilhouette, { borderColor: ring }]} />
-    </LinearGradient>
-  );
-}
-
 const styles = StyleSheet.create({
   split: { flexDirection: 'row', gap: 8 },
-  half: { flex: 1, aspectRatio: 3 / 5, borderRadius: 13, overflow: 'hidden' },
-  halfTag: { position: 'absolute', top: 7, left: 7, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 100 },
-  halfTagText: { color: colors.bezelBlack, fontSize: 9, fontWeight: weight.black },
-  halfSilhouette: {
-    position: 'absolute',
-    left: '28%',
-    top: '15%',
-    width: '44%',
-    height: '74%',
-    borderTopLeftRadius: 50,
-    borderTopRightRadius: 50,
-    borderBottomLeftRadius: 22,
-    borderBottomRightRadius: 22,
-    backgroundColor: 'rgba(247,244,236,.14)',
-    borderWidth: 1,
-  },
+  halfCaption: { fontSize: 10.5, color: colors.textWeak, marginTop: 5, fontWeight: weight.bold, textAlign: 'center' },
   syncBadge: { alignSelf: 'center', marginTop: 9, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 100, backgroundColor: 'rgba(46,92,68,.09)' },
   syncText: { fontSize: 11, fontWeight: weight.black, color: colors.accentGreen },
   panel: { marginTop: 10, backgroundColor: colors.ink, borderRadius: radius.chip, padding: 13 },

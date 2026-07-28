@@ -68,7 +68,7 @@ export const TAB_ROOT: Record<TabKey, RouteName> = {
 };
 
 /** 스윙 한 개 (갤러리 → 비교 화면으로 전달) */
-export type SwingItem = { label: string; club: string; side: string };
+export type SwingItem = { label: string; club: string; side: string; uri?: string };
 
 /** React Navigation 파라미터 목록 */
 export type RootStackParamList = {
@@ -79,9 +79,9 @@ export type RootStackParamList = {
   upload: undefined;
   // 갤러리 진입 모드: 기본은 분석(analyze), 비교용 선택이면 pickForCompare
   gallery: { mode?: 'analyze' | 'pickForCompare' } | undefined;
-  single: undefined;
+  single: { swing?: SwingItem } | undefined;
   // 비교 화면은 선택된 과거 스윙을 파라미터로 받는다
-  multi: { pastSwing?: SwingItem } | undefined;
+  multi: { pastSwing?: SwingItem; currentSwing?: SwingItem } | undefined;
   hub2: undefined;
   proSelect: undefined;
   camera: undefined;

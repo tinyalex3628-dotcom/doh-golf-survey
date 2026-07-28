@@ -18,10 +18,11 @@ export default function GalleryScreen() {
   const { groups, source } = useSwings();
 
   const onPick = (label: string, item: Swing) => {
+    // uri를 함께 넘겨야 다음 화면에서 실제 영상이 재생된다 (샘플 데이터엔 uri가 없어 플레이스홀더)
     if (pickMode) {
-      navigation.navigate('multi', { pastSwing: { label, club: item.club, side: item.side } });
+      navigation.navigate('multi', { pastSwing: { label, club: item.club, side: item.side, uri: item.uri } });
     } else {
-      navigation.navigate('single');
+      navigation.navigate('single', { swing: { label, club: item.club, side: item.side, uri: item.uri } });
     }
   };
 

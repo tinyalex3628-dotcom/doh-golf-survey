@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Screen } from '../components/Screen';
-import { Card, Press, PrimaryButton } from '../components/ui';
+import { Card, PrimaryButton } from '../components/ui';
 import { SwingStage } from '../components/SwingStage';
-import { PositionControls, P10_LABELS, frameToP, pToFrame } from '../components/PositionControls';
-import { colors, radius, weight } from '../theme/tokens';
+import { PositionControls } from '../components/PositionControls';
+import { useSwingClip } from '../hooks/useSwingClip';
+import { getProClip } from '../data/proClips';
+import { P_LABELS } from '../utils/swingTimeline';
+import { colors, weight } from '../theme/tokens';
 import { useNav } from '../navigation/useNav';
 import { PRO_NAMES, useComparison } from '../state/comparison';
 
@@ -12,17 +15,46 @@ export default function ProSoloScreen() {
   const { go } = useNav();
   const { pro, cam } = useComparison();
   const proName = pro ? PRO_NAMES[pro] : '이도형';
-  const [pIdx, setPIdx] = useState(3);
-  const [frame, setFrame] = useState(38);
 
-  const setFromP = (i: number) => { setPIdx(i); setFrame(pToFrame(i)); };
-  const setFromFrame = (v: number) => { setFrame(v); setPIdx(frameToP(v)); };
+  // 프로 영상 — 구간은 앱이 미리 잡아둔 값(locked)
+  const info = getProClip(pro, cam);
+  const clip = useSwingClip({ uri: info.uri, lockedRange: info.range, knownDuration: info.duration });
+  const [progress, setProgress] = useState(0);
+  const [playing, setPlaying] = useState(false);
+
+  useEffect(() => {
+    if (!playing) return;
+    const id = setInterval(() => {
+      setProgress((p) => {
+        const next = p + 0.012;
+        if (next >= 1) { setPlaying(false); return 1; }
+        return next;
+      });
+    }, 50);
+    return () => clearInterval(id);
+  }, [playing]);
+
+  let nearP = -1;
+  let best = Infinity;
+  clip.markers.forEach((v, i) => {
+    if (v == null) return;
+    const d = Math.abs(v - progress);
+    if (d < best && d < 0.06) { best = d; nearP = i; }
+  });
 
   return (
     <Screen>
-      <SwingStage badge={`${proName} · ${cam ?? '정면'}`}>
+      <SwingStage
+        badge={`${proName} · ${cam ?? '정면'}`}
+        uri={clip.uri}
+        seekTime={clip.timeAt(progress)}
+        paused={!playing}
+        onLoad={clip.onLoad}
+      >
         <View style={styles.posLabel}>
-          <Text style={styles.posLabelText}>현재 포지션 · {P10_LABELS[pIdx]}</Text>
+          <Text style={styles.posLabelText}>
+            {nearP >= 0 ? `현재 포지션 · ${P_LABELS[nearP]}` : `스윙 진행 ${Math.round(progress * 100)}%`}
+          </Text>
         </View>
       </SwingStage>
 
@@ -32,10 +64,18 @@ export default function ProSoloScreen() {
           <Text style={styles.cardHeadHint}>Address → Finish</Text>
         </View>
         <View style={{ marginTop: 9 }}>
-          <PositionControls pIdx={pIdx} frame={frame} onP={setFromP} onFrame={setFromFrame} dark={false} showButtons />
+          <PositionControls
+            progress={progress}
+            onProgress={(v) => { setPlaying(false); setProgress(v); }}
+            markers={clip.markers}
+            playing={playing}
+            onTogglePlay={() => setPlaying((v) => !v)}
+            dark={false}
+            showButtons
+          />
         </View>
         <Text style={styles.learnHint}>
-          버튼을 누르면 슬라이드바가 그 포지션으로 이동해요. "P2가 어디지?"를 눈으로 익히는 학습 UX.
+          버튼을 누르면 슬라이드바가 그 포지션으로 이동해요. 분석 전이라 P구간을 모르면 흐리게 표시돼요.
         </Text>
       </Card>
 
