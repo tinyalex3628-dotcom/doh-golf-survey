@@ -26,9 +26,10 @@ export default function ProCompareScreen() {
   // 프로 영상은 앱이 구간을 미리 잡아둔 것 → locked (사용자가 못 바꿈)
   const proInfo = getProClip(pro, cam);
   const proClip = useSwingClip({
-    uri: proInfo.uri,
+    uri: proInfo.video,
     lockedRange: proInfo.range,
     knownDuration: proInfo.duration,
+    pTimes: proInfo.pTimes,   // P구간은 프로만 — 운영자가 지정한 값
   });
   // 내 영상만 사용자가 시작/끝을 직접 찍는다
   const myClip = useSwingClip({});
@@ -62,6 +63,7 @@ export default function ProCompareScreen() {
           <SwingStage
             badge={`PRO ${curP}`}
             uri={proClip.uri}
+            emptyText="프로 영상 준비 중"
             seekTime={proClip.timeAt(progress)}
             paused={!playing}
             onLoad={proClip.onLoad}
@@ -72,6 +74,7 @@ export default function ProCompareScreen() {
           <SwingStage
             badge={`ME ${curP}`}
             uri={myClip.uri}
+            emptyText="내 스윙 영상 없음"
             seekTime={myClip.timeAt(progress)}
             paused={!playing}
             onLoad={myClip.onLoad}

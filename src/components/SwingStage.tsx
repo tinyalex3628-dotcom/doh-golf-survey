@@ -14,6 +14,7 @@ import { colors, weight } from '../theme/tokens';
 
 export function SwingStage({
   uri,
+  emptyText,
   seekTime,
   paused = true,
   showLine,
@@ -25,6 +26,8 @@ export function SwingStage({
   children,
 }: {
   uri?: string;
+  /** 영상이 없을 때 무대에 띄울 안내 문구 (예: 프로 영상 미등록) */
+  emptyText?: string;
   /** 이 영상에서 보여줄 시각(초). 바뀌면 그 지점으로 이동 */
   seekTime?: number;
   paused?: boolean;
@@ -93,7 +96,15 @@ export function SwingStage({
       {uri ? (
         <VideoView style={StyleSheet.absoluteFill} player={player} nativeControls={false} contentFit="contain" />
       ) : (
-        <View style={styles.silhouette} />
+        <>
+          <View style={styles.silhouette} />
+          {/* 영상이 없으면 숨기지 말고 정직하게 알린다 (프로 영상 미등록 슬롯 등) */}
+          {emptyText ? (
+            <View style={styles.emptyBadge} pointerEvents="none">
+              <Text style={styles.emptyText}>{emptyText}</Text>
+            </View>
+          ) : null}
+        </>
       )}
 
       <Svg style={StyleSheet.absoluteFill as any} viewBox="0 0 100 133" preserveAspectRatio="none" pointerEvents="none">
@@ -143,6 +154,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(11,21,16,.85)',
   },
   angleText: { color: colors.goldLight, fontSize: 11, fontWeight: weight.black },
+  emptyBadge: {
+    position: 'absolute', bottom: 12, left: 12, right: 12, alignItems: 'center',
+    paddingVertical: 5, borderRadius: 100, backgroundColor: 'rgba(11,21,16,.72)',
+  },
+  emptyText: { color: 'rgba(245,241,232,.8)', fontSize: 10.5, fontWeight: weight.bold },
   topBadge: {
     position: 'absolute',
     top: 10,

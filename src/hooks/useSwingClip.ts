@@ -5,7 +5,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
   SwingRange,
-  SwingEvent,
   fullRange,
   isValidRange,
   pMarkers,
@@ -20,7 +19,7 @@ export type SwingClip = {
   range: SwingRange;
   /** 구간 지정용 원본 탐색 위치(초) */
   scrubTime: number;
-  /** P1~P10 참고 눈금 (엔진 결과 있을 때만) */
+  /** P1~P10 눈금 (프로 스윙에만 있음 — 운영자 지정값) */
   markers: (number | null)[];
   ready: boolean;
   onLoad: (info: { duration: number }) => void;
@@ -36,13 +35,12 @@ export function useSwingClip(opts: {
   uri?: string;
   /** 앱 제공 영상(프로)처럼 구간이 정해져 있고 사용자가 못 바꾸는 경우 */
   lockedRange?: SwingRange;
-  /** 엔진 doh.vision.v1 결과가 있으면 P눈금 표시용 */
-  events?: SwingEvent[];
-  fps?: number;
+  /** 운영자가 지정한 P1~P10 시각(초). 프로 스윙만 있고 회원 영상엔 없다 */
+  pTimes?: (number | null)[];
   /** 알려진 길이(프로 영상처럼 메타를 미리 아는 경우) */
   knownDuration?: number;
 }): SwingClip {
-  const { uri, lockedRange, events, fps, knownDuration } = opts;
+  const { uri, lockedRange, pTimes, knownDuration } = opts;
 
   const [duration, setDuration] = useState(knownDuration ?? 0);
   const [range, setRange] = useState<SwingRange>(
@@ -76,7 +74,7 @@ export function useSwingClip(opts: {
     setTouched(false);
   }, [duration, lockedRange]);
 
-  const markers = useMemo(() => pMarkers(events, fps, range), [events, fps, range]);
+  const markers = useMemo(() => pMarkers(pTimes, range), [pTimes, range]);
   const timeAt = useCallback((p: number) => progressToTime(range, p), [range]);
 
   return {

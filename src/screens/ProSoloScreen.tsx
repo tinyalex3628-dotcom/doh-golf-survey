@@ -18,7 +18,7 @@ export default function ProSoloScreen() {
 
   // 프로 영상 — 구간은 앱이 미리 잡아둔 값(locked)
   const info = getProClip(pro, cam);
-  const clip = useSwingClip({ uri: info.uri, lockedRange: info.range, knownDuration: info.duration });
+  const clip = useSwingClip({ uri: info.video, lockedRange: info.range, knownDuration: info.duration, pTimes: info.pTimes });
   const [progress, setProgress] = useState(0);
   const [playing, setPlaying] = useState(false);
 
@@ -47,6 +47,7 @@ export default function ProSoloScreen() {
       <SwingStage
         badge={`${proName} · ${cam ?? '정면'}`}
         uri={clip.uri}
+        emptyText="프로 영상 준비 중"
         seekTime={clip.timeAt(progress)}
         paused={!playing}
         onLoad={clip.onLoad}

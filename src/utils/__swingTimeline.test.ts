@@ -39,13 +39,23 @@ ok(mine.start < mine.end, '시작이 끝을 못 넘음');
 mine = setEnd(mine, 0, 5);  // 시작보다 앞으로 지정 시도
 ok(mine.end > mine.start, '끝이 시작보다 앞설 수 없음');
 
-// P눈금은 참고용 — 있으면 구간 내 위치, 없으면 null
-const marks = pMarkers([{p:'P1',frame:36},{p:'P4',frame:60},{p:'P7',frame:81},{p:'P9',frame:200}], 30, {start:1.2,end:3.0});
-ok(marks[0] !== null && marks[3] !== null && marks[6] !== null, 'P1/P4/P7 눈금 계산됨');
-ok(marks[1] === null && marks[5] === null, '미검출 P2/P6은 null (억지 보간 안 함)');
-ok(marks[8] === null, '구간 밖 P9는 제외');
+// P눈금 — 프로 스윙만. 운영자가 초 단위로 직접 지정한 값을 구간 내 위치로 환산.
+const proRange = { start: 1.2, end: 3.0 };
+// [P1..P10] 중 P1/P4/P7만 적고 나머지는 null, P9는 구간 밖(4.0s)으로 둔다
+const proP = [1.2, null, null, 2.0, null, null, 2.7, null, 4.0, null];
+const marks = pMarkers(proP, proRange);
+ok(marks[0] !== null && marks[3] !== null && marks[6] !== null, '지정한 P1/P4/P7 눈금 계산됨');
+ok(marks[1] === null && marks[5] === null, '안 적은 P2/P6은 null (억지 보간 안 함)');
+ok(marks[8] === null, '구간 밖 P9(4.0s)는 제외');
 ok((marks[3] as number) > 0 && (marks[3] as number) < 1, `P4 눈금이 구간 안 (${(marks[3] as number).toFixed(3)})`);
-ok(pMarkers(undefined, undefined, {start:0,end:1}).every(v => v === null), '엔진 결과 없으면 눈금 전부 없음(싱크는 정상 동작)');
+ok(Math.abs((marks[0] as number) - 0) < 1e-9, 'P1(구간 시작)은 진행도 0');
+ok(Math.abs((marks[6] as number) - (2.7-1.2)/1.8) < 1e-9, 'P7 위치가 구간 비율과 일치');
+// 회원 영상: pTimes 자체가 없다 → P칩이 하나도 안 켜짐 (AI 검출 미사용, 의도된 동작)
+ok(pMarkers(undefined, {start:0,end:1}).every(v => v === null), '회원 영상은 P눈금 전혀 없음');
+ok(pMarkers([], {start:0,end:1}).every(v => v === null), '빈 pTimes도 안전');
+// 그래도 싱크는 정상 — P가 없어도 진행도 매핑은 동작해야 한다
+const memberRange = { start: 0.5, end: 2.5 };
+ok(Math.abs(progressToTime(memberRange, 0.5) - 1.5) < 1e-9, 'P 없어도 진행도 싱크는 정상 동작');
 
 ok(fmtTime(75.34) === '1:15.3' && fmtTime(3.5) === '0:03.5', `시각 표기 ${fmtTime(75.34)} / ${fmtTime(3.5)}`);
 console.log(fail ? `\n❌ 실패 ${fail}` : '\n✅ 전부 통과');

@@ -16,8 +16,13 @@
  * 프로 영상은 `locked: true` — 앱이 미리 구간을 잡아둔 것이라 사용자가 못 바꾼다.
  */
 
-/** 엔진 doh.vision.v1 의 swing_events 한 줄 (참고 눈금용, 선택) */
-export type SwingEvent = { p: string; frame: number; method?: string };
+/**
+ * P구간 정책 (사용자 확정, 2026-07-29)
+ * · **프로 스윙만** P1~P10을 쓴다 — 운영자가 `data/proClips.ts`에 직접 초 단위로 적는다.
+ * · **회원 영상은 P구간을 찾지 않는다.** AI 자동검출이 실용 수준이 못 됨(클럽 없으면
+ *   P2/P6/P8 원리적 불가, P3/P5도 실패 시 P4와 뭉개짐) → 아예 안 쓴다.
+ *   회원 영상은 사용자가 정한 시작/끝 구간 + 진행도 슬라이더로만 본다.
+ */
 
 /** 영상 한 개의 스윙 구간 */
 export type SwingRange = {
@@ -63,20 +68,16 @@ export function setEnd(r: SwingRange, time: number, duration: number): SwingRang
 }
 
 /**
- * 엔진 P시점을 **참고 눈금**으로 변환 — 구간 안에서의 위치(0~1).
- * 구간 밖이거나 검출 안 된 P는 null. 싱크에는 쓰지 않는다.
+ * 운영자가 지정한 P1~P10 시각(초) → 구간 안에서의 위치(0~1).
+ * 안 적힌 P나 구간 밖 P는 null (화면에서 흐리게·비활성).
+ * 회원 영상은 pTimes가 없으니 전부 null → P칩이 아예 안 켜진다(의도된 동작).
  */
-export function pMarkers(
-  events: SwingEvent[] | undefined,
-  fps: number | undefined,
-  r: SwingRange,
-): (number | null)[] {
+export function pMarkers(pTimes: (number | null)[] | undefined, r: SwingRange): (number | null)[] {
   const out: (number | null)[] = Array(10).fill(null);
-  if (!events?.length || !fps || fps <= 0) return out;
-  for (const e of events) {
-    const i = P_LABELS.indexOf(e.p);
-    if (i < 0 || !Number.isFinite(e.frame)) continue;
-    const t = e.frame / fps;
+  if (!pTimes?.length) return out;
+  for (let i = 0; i < Math.min(10, pTimes.length); i++) {
+    const t = pTimes[i];
+    if (t == null || !Number.isFinite(t)) continue;
     if (t < r.start || t > r.end) continue;
     out[i] = timeToProgress(r, t);
   }
