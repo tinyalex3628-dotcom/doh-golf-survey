@@ -46,11 +46,12 @@ export const PRO_CLIPS: Record<'m' | 'f', Record<ProView, ProClip>> = {
       key: 'm',
       name: '이도형',
       view: '정면',
-      // video: require('../../assets/pro/lee_fo.mp4'),
-      duration: 2.4,
-      range: { start: 0.3, end: 1.9, locked: true },
-      // 예시값 — 실제 영상 넣을 때 프레임 보면서 고칠 것
-      pTimes: [0.3, 0.52, 0.74, 1.02, 1.24, 1.38, 1.52, 1.66, 1.78, 1.9],
+      video: require('../../assets/pro/lee_fo.mp4'),
+      duration: 3.57,
+      // ⚠️ range·pTimes는 아직 임시값 — 실제 스윙 영상을 보고 운영자가 초를 맞춰 고칠 것.
+      //    (영상은 3.57초 H.264. 재생·탐색 배선은 검증 완료 — 값만 맞추면 됨)
+      range: { start: 0.5, end: 2.9, locked: true },
+      pTimes: [0.5, 0.8, 1.1, 1.5, 1.8, 2.0, 2.2, 2.45, 2.7, 2.9],
     },
     측면: {
       key: 'm',
