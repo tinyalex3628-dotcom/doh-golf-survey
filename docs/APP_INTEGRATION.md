@@ -30,14 +30,15 @@ import "@/components/swing/swing.css";
 />
 ```
 
-필요 파일은 네 개가 전부입니다 (외부 의존성은 React뿐):
+필요 파일은 세 개가 전부입니다 (외부 의존성은 React뿐):
 
 | 파일 | 역할 |
 |---|---|
 | `components/swing/SwingAnalyzer.tsx` | 화면 + 동작 (재생·비교·구간싱크·제스처) |
 | `components/swing/swing.css` | 스타일 (차콜 다크, `sw-` 접두사라 충돌 없음) |
-| `lib/swing/draw.ts` | 드로잉 엔진 (선·원·각도 렌더링) |
-| `lib/swing/sync.ts` | (PC 전용 싱크 계산 — member 변형은 미사용) |
+| `lib/swing/draw.ts` | 드로잉 엔진 (순수 TS, import 없음) |
+
+`lib/swing/sync.ts` 는 PC 스튜디오 전용이라 회원용에는 필요 없습니다.
 
 ## 회원용에 들어 있는 기능 (2026.07 기준)
 
