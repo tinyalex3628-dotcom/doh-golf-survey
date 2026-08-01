@@ -183,6 +183,7 @@ const S = {
   mark: false,         // 사진 마킹 열림
   lines: [],           // 마킹 선
   tool: '#C0392B',
+  open: {},            // 펼쳐 본 지난 한마디
 };
 
 const $ = s => document.querySelector(s);
@@ -196,30 +197,33 @@ const waiting = () => Q.filter(q => !S.done[q.id]);
 
 /* ── 조각들 ─────────────────────────────────────────────────────── */
 
-/* 영상 자리. 진짜 파일이 없으니 스윙 실루엣만 그린다 — 자리와 조작은 진짜다. */
+/* 영상 자리. 진짜 파일이 없으니 스윙 실루엣만 그린다 — 자리와 조작은 진짜다.
+   세로로 길다. 연습장에서 폰을 세워 찍는 게 대부분이라, 가로 상자에 넣으면
+   위아래가 잘리거나 양옆이 텅 빈다. */
 function player(q, h) {
   return `<div style="position:relative;background:#12160F;border-radius:12px;overflow:hidden;
-      height:${h};display:flex;align-items:center;justify-content:center">
-    <svg viewBox="0 0 120 200" style="height:82%;opacity:.5"><g fill="none" stroke="#7E8C7A"
+      height:${h};aspect-ratio:9/16;flex:none;display:flex;align-items:center;justify-content:center">
+    <svg viewBox="0 0 120 200" style="height:80%;opacity:.5"><g fill="none" stroke="#7E8C7A"
       stroke-width="2.4" stroke-linecap="round"><circle cx="60" cy="26" r="12"/>
       <path d="M60 38v56M60 52 38 74M60 52l24 20M60 94l-14 46M60 94l16 46M84 72l16-34"/></g></svg>
-    <span style="position:absolute;left:10px;top:10px;font-size:10.5px;font-weight:700;
+    <span style="position:absolute;left:9px;top:9px;font-size:10.5px;font-weight:700;
       color:#EDEDE8;background:rgba(0,0,0,.42);border-radius:6px;padding:4px 8px">
       ${esc(q.view)} · ${esc(q.club)}</span>
-    <div style="position:absolute;left:0;right:0;bottom:0;padding:9px 11px;display:flex;
-      align-items:center;gap:9px;background:linear-gradient(transparent,rgba(0,0,0,.6))">
+    <div style="position:absolute;left:0;right:0;bottom:0;padding:9px 10px;display:flex;
+      align-items:center;gap:8px;background:linear-gradient(transparent,rgba(0,0,0,.65))">
       <span data-play style="width:26px;height:26px;border-radius:50%;background:#FFF;flex:none;
         display:flex;align-items:center;justify-content:center;cursor:pointer">
         <svg viewBox="0 0 24 24" width="11" height="11" fill="#12160F"><path d="M7 4v16l13-8z"/></svg></span>
       <span style="flex:1;height:3px;border-radius:9px;background:rgba(255,255,255,.24)">
         <span style="display:block;width:38%;height:100%;border-radius:9px;background:#FFF"></span></span>
-      <span style="font-size:10px;font-weight:600;color:#EDEDE8;font-family:var(--font-num)">
-        0:10 / ${esc(q.dur)}</span>
+      <span style="font-size:10px;font-weight:600;color:#EDEDE8;font-family:var(--font-num);
+        white-space:nowrap">0:10 / ${esc(q.dur)}</span>
     </div>
-    <div style="position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px">
+    <div style="position:absolute;right:9px;top:9px;display:flex;flex-direction:column;gap:6px">
       ${['0.25x', '0.5x', '구간반복'].map((t, i) => `<span data-speed="${t}"
         style="font-size:10px;font-weight:600;border-radius:6px;padding:5px 8px;cursor:pointer;
-        color:${i === 0 ? '#12160F' : '#EDEDE8'};background:${i === 0 ? '#FFF' : 'rgba(0,0,0,.42)'}">${t}</span>`).join('')}
+        text-align:center;color:${i === 0 ? '#12160F' : '#EDEDE8'};
+        background:${i === 0 ? '#FFF' : 'rgba(0,0,0,.42)'}">${t}</span>`).join('')}
     </div>
   </div>`;
 }
@@ -228,18 +232,31 @@ function player(q, h) {
 const B = () => S.view === 'pc';
 const z = (mo, pc) => (B() ? pc : mo);
 
-/* 회원이 올리면서 같이 남긴 것. 이게 곧 질문이다. */
-function memo(q) {
-  return `<div style="background:var(--ns-sand);border-radius:12px;padding:${z(12, 15)}px ${z(13, 16)}px;
-      display:flex;flex-direction:column;gap:${z(8, 11)}px">
-    <div style="display:flex;gap:${z(14, 22)}px">
-      ${[['클럽', q.club], ['시간', q.min + '분'], ['느낌', q.feel]].map(([k, v]) =>
-        `<span style="display:flex;flex-direction:column;gap:3px">
-          <span style="font-size:${z(9, 10)}px;font-weight:700;letter-spacing:.12em;color:var(--ns-ink3)">${k}</span>
-          <span style="font-size:${z(12, 13.5)}px;font-weight:600;color:var(--ns-ink)">${esc(v)}</span></span>`).join('')}
-    </div>
-    <span style="font-size:${z(12.5, 14.5)}px;font-weight:500;color:var(--ns-ink);line-height:1.75">
+/* 회원이 올리면서 같이 남긴 것. 이게 곧 질문이다.
+   영상 바로 옆에 둔다 — 영상을 보면서 질문을 읽어야 답이 그 질문에 붙는다. */
+function memo(q, side) {
+  const m = mem(q);
+  const row = (k, v) => `<div style="display:flex;align-items:baseline;gap:10px;padding:7px 0;
+    border-top:1px solid rgba(0,0,0,.06)">
+    <span style="flex:none;width:${z(46, 52)}px;font-size:${z(10.5, 11.5)}px;font-weight:600;
+      color:var(--ns-ink3)">${k}</span>
+    <span style="flex:1;font-size:${z(12, 13)}px;font-weight:600;color:var(--ns-ink)">${esc(v)}</span></div>`;
+  return `<div style="${side ? 'flex:1;min-width:0;' : ''}background:var(--ns-sand);border-radius:12px;
+      padding:${z(13, 16)}px ${z(14, 17)}px;display:flex;flex-direction:column;gap:${z(9, 11)}px;
+      ${side ? 'overflow-y:auto;' : ''}">
+    <span style="font-size:${z(9.5, 10.5)}px;font-weight:700;letter-spacing:.14em;color:var(--ns-ink3)">
+      회원이 적은 것</span>
+    <span style="font-size:${z(13, 15)}px;font-weight:500;color:var(--ns-ink);line-height:1.85">
       “${esc(q.note)}”</span>
+    <div style="display:flex;flex-direction:column;padding-top:2px">
+      ${row('클럽', q.club)}${row('각도', q.view)}${row('연습', q.min + '분')}
+      ${row('느낌', q.feel)}${row('올린 때', q.ago)}${row('길이', q.dur)}
+    </div>
+    ${side ? `<div style="padding-top:4px;display:flex;flex-direction:column;gap:5px">
+      <span style="font-size:${z(9.5, 10.5)}px;font-weight:700;letter-spacing:.14em;
+        color:var(--ns-ink3)">이번 달 한마디</span>
+      <span style="font-size:${z(12, 13)}px;font-weight:600;color:var(--ns-ink2)">
+        ${m.quota[0]}/${m.quota[1]}회 썼어요</span></div>` : ''}
   </div>`;
 }
 
@@ -275,17 +292,27 @@ function history(q) {
         font-size:${z(11.5, 13)}px;font-weight:500;color:var(--ns-ink3);line-height:1.7">
         정기 피드백을 안 받는 등급이에요. 이번 한마디가 이 사람이 받는 전부입니다.</div>`;
 
-  const past = m.past.map(p =>
-    `<div data-past style="border:1px solid var(--ns-line);background:var(--ns-white);border-radius:11px;
-      padding:${z(11, 14)}px ${z(12, 15)}px;display:flex;flex-direction:column;gap:${z(5, 8)}px;cursor:pointer">
+  /* 다섯 개를 통째로 펼쳐 놓으면 스크롤만 길어져서 오히려 안 읽는다.
+     첫 두 줄만 보이고, 필요한 것만 눌러서 연다. */
+  const past = m.past.map((p, i) => {
+    const key = m.name + i;
+    const op = !!S.open[key];
+    const lines = p.txt.split('\n\n');
+    return `<div data-past="${key}" style="border:1px solid var(--ns-line);background:var(--ns-white);
+      border-radius:11px;padding:${z(11, 14)}px ${z(12, 15)}px;display:flex;flex-direction:column;
+      gap:${z(5, 7)}px;cursor:pointer">
       <div style="display:flex;align-items:baseline;gap:8px">
         <span style="font-size:${z(11, 12.5)}px;font-weight:700;color:var(--ns-bronze);font-family:var(--font-num)">${esc(p.d)}</span>
         <span style="flex:1;font-size:${z(10.5, 11.5)}px;font-weight:500;color:var(--ns-ink3)">${esc(p.club)}</span>
         ${p.photo ? `<span style="font-size:${z(10, 11)}px;font-weight:600;color:var(--ns-ink3)">사진 ${p.photo}</span>` : ''}
       </div>
-      <span style="font-size:${z(11.5, 13.5)}px;font-weight:400;color:var(--ns-ink2);line-height:1.85;
-        white-space:pre-wrap">${esc(p.txt)}</span>
-    </div>`).join('');
+      <span style="font-size:${z(11.5, 13.5)}px;font-weight:400;color:var(--ns-ink2);line-height:1.8;
+        ${op ? 'white-space:pre-wrap' : 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden'}"
+        >${esc(op ? p.txt : lines[0])}</span>
+      ${lines.length > 1 || p.txt.length > 60 ? `<span style="font-size:${z(10.5, 11.5)}px;font-weight:700;
+        color:var(--ns-green)">${op ? '접기' : '더 보기'}${op ? '' : ` · ${lines.length}문단`}</span>` : ''}
+    </div>`;
+  }).join('');
 
   const jn = m.journey.length
     ? `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px">${m.journey.map((t, i) =>
@@ -419,8 +446,10 @@ function renderPC() {
         border-radius:8px;padding:6px 11px">${left(q.left)}</span>
     </div>
     <div style="flex:1;overflow-y:auto;padding:18px 22px 22px;display:flex;flex-direction:column;gap:16px">
-      ${player(q, 'min(46vh,470px)')}
-      ${memo(q)}
+      <div style="flex:none;display:flex;gap:14px;height:min(52vh,540px)">
+        ${player(q, '100%')}
+        ${memo(q, 1)}
+      </div>
       ${done
         ? `<div style="border:1px solid #DCE7DE;background:var(--ns-soft);border-radius:11px;
             padding:14px;display:flex;flex-direction:column;gap:9px">
@@ -508,8 +537,10 @@ function renderMO() {
     ${bar(esc(m.name) + ' 님', 1, `<span style="font-size:10.5px;font-weight:700;font-family:var(--font-num);
       color:${urgent(q.left) ? 'var(--ns-danger)' : 'var(--ns-green)'}">${left(q.left)}</span>`)}
     <div style="flex:1;overflow-y:auto;padding:13px 14px 16px;display:flex;flex-direction:column;gap:12px">
-      ${player(q, '190px')}
-      ${memo(q)}
+      <div style="display:flex;gap:10px;align-items:stretch">
+        ${player(q, '300px')}
+        ${memo(q, 1)}
+      </div>
       <div data-open style="display:flex;align-items:center;gap:8px;border:1px solid var(--ns-line);
         background:var(--ns-card);border-radius:11px;padding:12px 13px;cursor:pointer">
         <span style="flex:1;display:flex;flex-direction:column;gap:3px">
@@ -632,7 +663,11 @@ function wire() {
   on('[data-back]', 'click', () => { S.mo = S.mo === 'h' ? 'w' : 'q'; render(); });
   on('[data-play]', 'click', () => toast('영상을 재생합니다'));
   on('[data-speed]', 'click', e => toast(e.currentTarget.dataset.speed + ' 로 봅니다'));
-  on('[data-past]', 'click', () => toast('그때 보낸 한마디를 통째로 엽니다'));
+  on('[data-past]', 'click', e => {
+    const k = e.currentTarget.dataset.past;
+    S.open[k] = !S.open[k];
+    render();
+  });
   on('[data-vid]', 'click', () => toast('이번 스윙과 나란히 놓고 봅니다'));
 
   // 사진 마킹 — 끌어서 선 하나
