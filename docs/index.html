@@ -5343,12 +5343,21 @@ function render() {
   if (swHost && swHost.parentElement) swHost.remove();   // 지우지 말고 떼어만 둔다
   stage.innerHTML = '';
   stage.appendChild(tpl.content.cloneNode(true));
-  wireCommon();
-  (WIRE[S.route] || (() => {}))();
-  applyPlanMarks();
-  applyLock();
-  applyHits();
-  renderLegend();
+  /* 한 층이 터져도 다음 층은 돈다.
+     전에는 화면 하나의 배선이 예외를 던지면 render() 가 거기서 죽어
+     applyPlanMarks · applyLock 이 아예 안 돌았다. 그러면 무료 회원이
+     잠금 없는 유료 화면을 보게 된다 — 배선 버그가 곧 등급 구멍이었다.
+     특히 applyLock 은 무슨 일이 있어도 돌아야 한다. */
+  const layer = (name, fn) => {
+    try { fn(); }
+    catch (e) { window.__MISS.push(S.route + ' : ' + name + '이(가) 터짐 — ' + e.message); }
+  };
+  layer('공통 배선', wireCommon);
+  layer('화면 배선', WIRE[S.route] || (() => {}));
+  layer('등급 표시', applyPlanMarks);
+  layer('잠금', applyLock);
+  layer('터치 영역', applyHits);
+  layer('범례', renderLegend);
 }
 
 /* ── 공통 배선: 뒤로가기 · 햄버거 · 하단 5탭 ─────────────────────── */
@@ -5541,6 +5550,9 @@ function uploadInto(box, filename, onDone, fail) {
 /* ── 결과지 공통 배선 ──────────────────────────────────────────── */
 function wireResult() {
   quiet = true;
+  try { wireResultBody(); } finally { quiet = false; }   // 터져도 감시 장치는 다시 켠다
+}
+function wireResultBody() {
   onText('기록 보기', () => { S.route = 'r2'; render(); });
   onText('크게 보기', () => go('r7'));
   onText('이미지 저장', () => toast('시스템 공유 시트가 열려요'));
@@ -5564,6 +5576,7 @@ function wireResult() {
     const e = byText(t)[0];
     if (!e) return;
     const row = findCard(e, 4);
+    if (!row) return;
     const box = row.querySelector('span[style*="border-radius: 7px"]');
     tap(row, () => {
       const on = row.dataset.done === '1';
@@ -5593,7 +5606,6 @@ function wireResult() {
   // 레슨 영상 재생
   root().querySelectorAll('[style*="background:#D6D6D3"],[style*="background: rgb(214, 214, 211)"]')
     .forEach(v => tap(v, () => toast('레슨 영상을 재생합니다')));
-  quiet = false;
 }
 
 /* ── 프로 한마디 공통 배선 ──────────────────────────────────────────
@@ -6149,11 +6161,12 @@ const WIRE = {
      닫아도 홈 상단 띠는 남긴다 — 여기서 놓친 사람의 안전망이다. */
   'ar'() {
     quiet = true;                       // 뒤에 흐리게 깔린 홈은 배선하지 않는다
-    const open = root().querySelector('[data-ar-open]');
-    open ? tap(open, () => goResult('r1')) : miss('ar 리포트 열기');
-    const later = root().querySelector('[data-ar-later]');
-    later ? tap(later, () => replaceWith('2a')) : miss('ar 나중에');
-    quiet = false;
+    try {
+      const open = root().querySelector('[data-ar-open]');
+      open ? tap(open, () => goResult('r1')) : miss('ar 리포트 열기');
+      const later = root().querySelector('[data-ar-later]');
+      later ? tap(later, () => replaceWith('2a')) : miss('ar 나중에');
+    } finally { quiet = false; }
   },
 
   /* ── 없던 상태 화면 ─────────────────────────────────────────────── */
