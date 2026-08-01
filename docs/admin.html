@@ -164,23 +164,32 @@ const SNIP = [
 ];
 
 /* ── CRM 껍데기 ────────────────────────────────────────────────────
-   메뉴는 큰 틀 셋으로만 나눈다 — 할 일 / 회원 / 그 외.
-   지금 실제로 하는 일은 '답하기' 하나라, 나머지는 자리만 잡아둔다. */
-const NAV = [
-  ['할 일', [
-    ['today', '오늘 할 일', 'M4 7h16M4 12h16M4 17h10'],
-    ['queue', '답변 요청함', 'M20 14.5A2.5 2.5 0 0 1 17.5 17H9l-4 3.5V7A2.5 2.5 0 0 1 7.5 4.5h10A2.5 2.5 0 0 1 20 7z'],
-  ]],
-  ['회원', [
-    ['members', '회원 관리', 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20c1-4 4-6 8-6s7 2 8 6'],
-    ['fb', '정기 피드백', 'M5 4h14v16l-7-3.5L5 20z'],
-  ]],
-  ['그 외', [
-    ['sched', '일정 · 예약', 'M4 6h16v14H4zM8 3v4M16 3v4M4 10h16'],
-    ['pay', '쿠폰 · 결제', 'M3 8h18v10H3zM3 12h18'],
-    ['set', '설정', 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM4.5 12l-1.2-2 1.6-2.4 2.3.4 1.7-1.6.5-2.3h2.9l.5 2.3 1.7 1.6 2.3-.4 1.6 2.4-1.2 2 1.2 2-1.6 2.4-2.3-.4-1.7 1.6-.5 2.3h-2.9l-.5-2.3-1.7-1.6-2.3.4L3.3 14z'],
-  ]],
+   상단 카테고리 + 메인 대시보드. 왼쪽 세로줄 대신 위에서 뻗어나간다.
+   대시보드가 집이고, 네모 카드가 각 방으로 들어가는 문이다. */
+const TOP = [
+  ['home',    '대시보드'],
+  ['queue',   '답변'],
+  ['members', '회원'],
+  ['stats',   '통계'],
 ];
+/* 위에 다 걸면 줄이 넘친다. 자주 안 쓰는 건 '그 외' 안으로. */
+const MORE = [
+  ['fb',    '정기 피드백'],
+  ['sched', '일정 · 예약'],
+  ['pay',   '쿠폰 · 결제'],
+  ['set',   '설정'],
+];
+
+/* 대시보드에서 들어가는 네모 카드 */
+const TILES = [
+  { k: 'queue',   t: '답변 요청함', d: '회원 스윙에 한마디 남기기', tone: 'cm' },
+  { k: 'members', t: '회원 관리',   d: '회원 카드 · 지난 이력',      tone: '' },
+  { k: 'stats',   t: '통계',        d: '이번 달 숫자로 보기',        tone: '' },
+  { k: 'fb',      t: '정기 피드백', d: '월간 리포트 만들기',         tone: 'fb' },
+  { k: 'sched',   t: '일정 · 예약', d: '오프라인 레슨',              tone: '' },
+  { k: 'pay',     t: '쿠폰 · 결제', d: '구독 · 할인권',              tone: '' },
+];
+
 /* 아직 안 만든 자리 — 무엇을 넣을 자리인지는 적어둔다.
    빈 판이 '고장'으로 보이지 않으려면 이름만으로는 부족하다. */
 const SOON = {
@@ -189,6 +198,7 @@ const SOON = {
   pay:   ['쿠폰 · 결제', '구독 결제 내역과 등급별 오프라인 레슨 할인권입니다.'],
   set:   ['설정', '프로 정보 · 알림 · 자주 쓰는 문장을 여기서 고칩니다.'],
 };
+
 /* 오늘 할 일 — 대시보드 숫자 카드가 아니라 '지금 뭘 해야 하나'다 */
 const TODAY = [
   { k: 'urgent', t: '오늘 안에 답해야 할 것', go: 'queue' },
@@ -196,6 +206,23 @@ const TODAY = [
   { k: 'fb',     t: '이번 달 정기 피드백',     go: 'fb', sub: '7월 27일 도착 예정 · D-5' },
   { k: 'new',    t: '이번 주 새 회원',         go: 'members', sub: '주말골퍼 님' },
 ];
+
+/* ── 통계 ──────────────────────────────────────────────────────────
+   숫자를 늘어놓는 게 아니라 '이 장사가 도는가' 를 본다.
+   세 가지다 — 약속을 지켰나 · 회원이 남았나 · 돈이 도나. */
+const STAT = {
+  month: '7월',
+  keep: { hit: 21, all: 23 },              // 48시간 안에 답한 비율
+  avgH: 14,                                 // 평균 답변까지 걸린 시간
+  tiers: [['무료', 41], ['Basic', 12], ['Coaching', 7], ['Elite', 4]],
+  paid: 23, free: 41,
+  mrr: 1043000,                             // 이번 달 구독 매출
+  mrrPrev: 907000,
+  vids: [['3월', 68], ['4월', 84], ['5월', 96], ['6월', 121], ['7월', 143]],
+  cmUsed: 74, cmGiven: 108,                 // 준 한마디 횟수 대비 쓴 횟수
+  quiet: 6,                                 // 30일 넘게 안 올린 유료 회원
+  churn: 2, joined: 5,
+};
 
 </script>
 <script>
@@ -208,7 +235,8 @@ const TODAY = [
 
 const S = {
   view: 'pc',          // pc | mo
-  nav: 'queue',        // 사이드바에서 고른 곳
+  nav: 'home',         // 상단 카테고리에서 고른 곳
+  more: false,         // '그 외' 펼침
   pick: 'q2',          // 지금 고른 요청
   done: {},            // 답을 보낸 요청
   draft: {},           // 요청별로 쓰던 글 (사람 바꿔도 안 날아간다)
@@ -230,6 +258,7 @@ const left = h => h + '시간 남음';
 const urgent = h => h <= 12;
 const waiting = () => Q.filter(q => !S.done[q.id]);
 const urgentN = () => waiting().filter(q => urgent(q.left)).length;
+const won = n => n.toLocaleString('ko-KR');
 const shots = id => (S.shots[id] = S.shots[id] || []);
 /* 편집 중인 장면 */
 const editing = () => S.mark && shots(S.mark.qid)[S.mark.i];
@@ -485,56 +514,90 @@ function qrow(q, on) {
 }
 
 /* ── CRM 껍데기 ─────────────────────────────────────────────────
-   메뉴는 큰 틀 셋 — 할 일 / 회원 / 그 외.
-   지금 실제로 도는 건 '답변 요청함' 하나고, 나머지는 자리를 잡아둔다. */
-function sidebar() {
-  const badge = k => k === 'queue' ? waiting().length
-                   : k === 'members' ? Object.keys(M).length
-                   : k === 'fb' ? 1 : 0;
-  const item = ([k, name, d]) => {
+   왼쪽 세로줄 대신 위에서 뻗어나간다. 대시보드가 집이고,
+   네모 카드가 각 방으로 들어가는 문이다. */
+function topbar() {
+  const cnt = k => k === 'queue' ? waiting().length : 0;
+  const inMore = MORE.some(([k]) => k === S.nav);
+  const tab = ([k, n], more) => {
     const on = S.nav === k;
-    const n = badge(k);
-    return `<div data-nav="${k}" style="display:flex;align-items:center;gap:10px;padding:9px 11px;
-      border-radius:9px;cursor:pointer;background:${on ? 'rgba(237,237,232,.13)' : 'transparent'}">
-      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
-        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-        style="flex:none;color:${on ? '#EDEDE8' : 'rgba(237,237,232,.5)'}"><path d="${d}"/></svg>
-      <span style="flex:1;font-size:13px;font-weight:${on ? 700 : 500};
-        color:${on ? '#EDEDE8' : 'rgba(237,237,232,.72)'}">${name}</span>
-      ${n ? `<span style="flex:none;font-size:10.5px;font-weight:700;font-family:var(--font-num);
-        color:${k === 'queue' && urgentN() ? '#FFF' : 'rgba(237,237,232,.6)'};
-        background:${k === 'queue' && urgentN() ? 'var(--ns-danger)' : 'rgba(237,237,232,.13)'};
-        border-radius:8px;padding:2px 7px">${n}</span>` : ''}
-    </div>`;
+    const c = cnt(k);
+    return `<span data-nav="${k}" style="position:relative;display:flex;align-items:center;gap:6px;
+      padding:${more ? '10px 12px' : '0 3px'};height:${more ? 'auto' : '100%'};cursor:pointer;
+      ${more ? 'border-radius:8px;' : 'border-bottom:2px solid ' + (on ? 'var(--ns-green)' : 'transparent') + ';'}
+      ${more && on ? 'background:var(--ns-soft);' : ''}">
+      <span style="font-size:13.5px;font-weight:${on ? 700 : 500};
+        color:${on ? 'var(--ns-ink)' : 'var(--ns-ink3)'};white-space:nowrap">${n}</span>
+      ${c ? `<span style="font-size:10.5px;font-weight:700;font-family:var(--font-num);color:#FFF;
+        background:${urgentN() ? 'var(--ns-danger)' : 'var(--ns-bronze)'};border-radius:8px;
+        padding:1px 6px">${c}</span>` : ''}
+    </span>`;
   };
-  return `<div style="flex:none;width:212px;background:#1F2A22;display:flex;flex-direction:column;
-      padding:14px 11px;gap:16px;overflow-y:auto">
-    <div style="display:flex;flex-direction:column;gap:2px;padding:2px 11px 4px">
-      <span style="font-size:13px;font-weight:700;letter-spacing:.05em;color:#EDEDE8">NEXT SWING</span>
-      <span style="font-size:11px;font-weight:400;color:rgba(237,237,232,.5)">이도형 프로</span></div>
-    ${NAV.map(([g, items]) => `<div style="display:flex;flex-direction:column;gap:3px">
-      <span style="font-size:9.5px;font-weight:700;letter-spacing:.16em;color:rgba(237,237,232,.36);
-        padding:0 11px 5px">${g}</span>
-      ${items.map(item).join('')}</div>`).join('')}
+  return `<div style="flex:none;height:56px;display:flex;align-items:stretch;gap:22px;padding:0 26px;
+      background:var(--ns-card);border-bottom:1px solid var(--ns-line);position:relative;z-index:5">
+    <span data-nav="home" style="display:flex;flex-direction:column;justify-content:center;gap:1px;
+      cursor:pointer;padding-right:8px">
+      <span style="font-size:13px;font-weight:700;letter-spacing:.05em;color:var(--ns-ink)">NEXT SWING</span>
+      <span style="font-size:10px;font-weight:400;color:var(--ns-ink3)">관리자</span></span>
+    <div style="display:flex;align-items:stretch;gap:20px">${TOP.map(x => tab(x)).join('')}</div>
+    <div style="position:relative;display:flex;align-items:stretch">
+      <span data-more style="display:flex;align-items:center;gap:5px;cursor:pointer;
+        border-bottom:2px solid ${inMore ? 'var(--ns-green)' : 'transparent'}">
+        <span style="font-size:13.5px;font-weight:${inMore ? 700 : 500};
+          color:${inMore ? 'var(--ns-ink)' : 'var(--ns-ink3)'}">그 외</span>
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+          style="color:var(--ns-ink3);transform:rotate(${S.more ? 180 : 0}deg)"><path d="m6 9 6 6 6-6"/></svg>
+      </span>
+      ${S.more ? `<div style="position:absolute;top:50px;left:-10px;min-width:168px;background:var(--ns-card);
+        border:1px solid var(--ns-line);border-radius:11px;padding:6px;display:flex;flex-direction:column;
+        gap:2px;box-shadow:0 14px 32px -18px rgba(38,40,42,.55);z-index:9">
+        ${MORE.map(x => tab(x, 1)).join('')}</div>` : ''}
+    </div>
+    <span style="flex:1"></span>
+    <span style="display:flex;align-items:center;gap:9px">
+      <span style="font-size:12.5px;font-weight:600;color:var(--ns-ink2)">이도형 프로</span>
+      <span style="width:30px;height:30px;border-radius:50%;background:var(--ns-green);color:#FFF;
+        display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">이</span>
+    </span>
   </div>`;
 }
 
-/* 오늘 할 일 — 숫자 카드 대시보드가 아니라 '지금 뭘 해야 하나' 다 */
-function pageToday() {
+/* 대시보드 — 여기서 각 방으로 들어간다 */
+function pageHome() {
   const u = urgentN(), w = waiting().length;
   const val = { urgent: u + '건', wait: w + '명', fb: 'D-5', new: '1명' };
   const sub = { urgent: u ? '12시간 안에 답해야 해요' : '급한 건 없어요',
                 wait: '48시간 안에 답하면 됩니다' };
+  const badge = k => k === 'queue' ? (w ? w + '건 대기' : '다 답했어요')
+                   : k === 'members' ? Object.keys(M).length + '명'
+                   : k === 'stats' ? STAT.month + ' 기준'
+                   : k === 'fb' ? 'D-5' : '준비 중';
+  const tile = x => {
+    const soon = !!SOON[x.k] && x.k !== 'fb';
+    const col = x.tone === 'cm' ? 'var(--ns-bronze)' : x.tone === 'fb' ? 'var(--ns-green)' : 'var(--ns-ink2)';
+    const face = x.tone === 'cm' ? 'rgba(166,124,61,.10)' : x.tone === 'fb' ? 'var(--ns-soft)' : 'var(--ns-sand)';
+    return `<div data-nav="${x.k}" style="cursor:pointer;background:var(--ns-card);
+      border:1px solid var(--ns-line);border-radius:14px;padding:20px;display:flex;flex-direction:column;
+      gap:9px;min-height:132px;opacity:${soon ? .62 : 1}">
+      <span style="width:34px;height:34px;border-radius:10px;background:${face};color:${col};
+        display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">
+        ${esc(x.t[0])}</span>
+      <span style="font-size:15.5px;font-weight:700;letter-spacing:-.02em;color:var(--ns-ink)">${esc(x.t)}</span>
+      <span style="font-size:12px;font-weight:400;color:var(--ns-ink3);line-height:1.55">${esc(x.d)}</span>
+      <span style="margin-top:auto;font-size:11.5px;font-weight:700;color:${soon ? 'var(--ns-ink3)' : col}">
+        ${badge(x.k)}</span>
+    </div>`;
+  };
   return `<div style="flex:1;overflow-y:auto;background:var(--ns-bg)">
-    <div style="max-width:960px;padding:30px 34px 40px;display:flex;flex-direction:column;gap:26px">
+    <div style="max-width:1120px;margin:0 auto;padding:30px 30px 44px;display:flex;flex-direction:column;gap:28px">
       <div style="display:flex;flex-direction:column;gap:6px">
-        <span style="font-size:24px;font-weight:700;letter-spacing:-.03em;color:var(--ns-ink)">
-          오늘 할 일</span>
+        <span style="font-size:24px;font-weight:700;letter-spacing:-.03em;color:var(--ns-ink)">오늘 할 일</span>
         <span style="font-size:13.5px;font-weight:400;color:var(--ns-ink3)">7월 22일 수요일</span></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(206px,1fr));gap:12px">
         ${TODAY.map(t => {
           const hot = t.k === 'urgent' && u > 0;
-          return `<div data-go="${t.go}" style="cursor:pointer;background:var(--ns-card);
+          return `<div data-nav="${t.go}" style="cursor:pointer;background:var(--ns-card);
             border:1px solid ${hot ? 'rgba(192,57,43,.35)' : 'var(--ns-line)'};border-radius:13px;
             padding:17px 18px;display:flex;flex-direction:column;gap:7px">
             <span style="font-size:12px;font-weight:600;color:var(--ns-ink3)">${t.t}</span>
@@ -544,11 +607,103 @@ function pageToday() {
               ${esc(t.sub || sub[t.k] || '')}</span></div>`;
         }).join('')}
       </div>
-      <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;flex-direction:column;gap:11px">
+        <span style="font-size:15px;font-weight:700;color:var(--ns-ink)">바로 가기</span>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+          ${TILES.map(tile).join('')}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:11px">
         <span style="font-size:15px;font-weight:700;color:var(--ns-ink)">먼저 답할 사람</span>
         <div style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:13px;
           overflow:hidden">${[...waiting()].sort((a, b) => a.left - b.left).map(x => qrow(x, false)).join('')}</div>
       </div>
+    </div></div>`;
+}
+
+/* ── 통계 ────────────────────────────────────────────────────────
+   숫자를 늘어놓지 않는다. 세 가지만 본다 —
+   약속을 지켰나 · 회원이 남았나 · 돈이 도나. */
+function pageStats() {
+  const S1 = STAT;
+  const pct = Math.round(S1.keep.hit / S1.keep.all * 100);
+  const won2 = n => won(n) + '원';
+  const big = (t, v, sub, col) => `<div style="background:var(--ns-card);border:1px solid var(--ns-line);
+    border-radius:13px;padding:18px;display:flex;flex-direction:column;gap:7px">
+    <span style="font-size:12px;font-weight:600;color:var(--ns-ink3)">${t}</span>
+    <span style="font-size:27px;font-weight:700;letter-spacing:-.03em;font-family:var(--font-num);
+      color:${col || 'var(--ns-ink)'}">${v}</span>
+    <span style="font-size:11.5px;font-weight:500;color:var(--ns-ink3);line-height:1.55">${sub}</span></div>`;
+  const sect = (t, note, body) => `<div style="display:flex;flex-direction:column;gap:11px">
+    <div style="display:flex;align-items:baseline;gap:9px">
+      <span style="font-size:15px;font-weight:700;color:var(--ns-ink)">${t}</span>
+      <span style="font-size:11.5px;font-weight:500;color:var(--ns-ink3)">${note}</span></div>
+    ${body}</div>`;
+
+  // 막대 — 라이브러리 없이 그린다
+  const maxV = Math.max(...S1.vids.map(x => x[1]));
+  const bars = `<div style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:13px;
+    padding:20px;display:flex;align-items:flex-end;gap:14px;height:200px">
+    ${S1.vids.map(([m, v], i) => {
+      const on = i === S1.vids.length - 1;
+      return `<span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%;
+        justify-content:flex-end">
+        <span style="font-size:12px;font-weight:700;font-family:var(--font-num);
+          color:${on ? 'var(--ns-green)' : 'var(--ns-ink3)'}">${v}</span>
+        <span style="width:100%;max-width:56px;height:${Math.round(v / maxV * 118)}px;border-radius:7px 7px 3px 3px;
+          background:${on ? 'var(--ns-green)' : 'var(--ns-sand)'}"></span>
+        <span style="font-size:11px;font-weight:500;color:var(--ns-ink3)">${m}</span></span>`;
+    }).join('')}
+  </div>`;
+
+  const tierAll = S1.tiers.reduce((a, x) => a + x[1], 0);
+  const tiers = `<div style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:13px;
+    padding:20px;display:flex;flex-direction:column;gap:13px">
+    <div style="display:flex;height:13px;border-radius:9px;overflow:hidden">
+      ${S1.tiers.map(([n, v], i) => `<span style="width:${v / tierAll * 100}%;
+        background:${['#DCD6C8', 'rgba(166,124,61,.55)', 'var(--ns-bronze)', 'var(--ns-green)'][i]}"></span>`).join('')}
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px">
+      ${S1.tiers.map(([n, v], i) => `<span style="display:flex;align-items:center;gap:7px">
+        <span style="width:9px;height:9px;border-radius:50%;
+          background:${['#DCD6C8', 'rgba(166,124,61,.55)', 'var(--ns-bronze)', 'var(--ns-green)'][i]}"></span>
+        <span style="font-size:12.5px;font-weight:600;color:var(--ns-ink2)">${n}</span>
+        <span style="font-size:12.5px;font-weight:700;font-family:var(--font-num);color:var(--ns-ink)">${v}</span>
+      </span>`).join('')}
+    </div>
+    <span style="font-size:11.5px;font-weight:500;color:var(--ns-ink3);line-height:1.6">
+      유료 ${S1.paid}명 · 무료 ${S1.free}명. 무료에서 Basic 으로 넘어오는 사람이 이 장사의 입구입니다.</span>
+  </div>`;
+
+  return `<div style="flex:1;overflow-y:auto;background:var(--ns-bg)">
+    <div style="max-width:1120px;margin:0 auto;padding:30px 30px 44px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:10px">
+        <span style="font-size:24px;font-weight:700;letter-spacing:-.03em;color:var(--ns-ink)">통계</span>
+        <span style="font-size:13.5px;font-weight:500;color:var(--ns-ink3)">${S1.month} 기준</span></div>
+
+      ${sect('약속을 지켰나', '회원과 한 약속은 48시간입니다',
+        `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(206px,1fr));gap:12px">
+          ${big('48시간 안에 답한 비율', pct + '%', `${S1.keep.all}건 중 ${S1.keep.hit}건`,
+            pct >= 90 ? 'var(--ns-green)' : 'var(--ns-danger)')}
+          ${big('평균 답변까지', S1.avgH + '시간', '빠를수록 다음 달에 또 올립니다')}
+          ${big('돌려준 횟수', (S1.keep.all - S1.keep.hit) + '회',
+            '48시간을 넘겨 횟수를 반환한 건')}
+          ${big('한마디 소진율', Math.round(S1.cmUsed / S1.cmGiven * 100) + '%',
+            `준 ${S1.cmGiven}회 중 ${S1.cmUsed}회 씀`)}
+        </div>`)}
+
+      ${sect('회원이 남았나', '등급이 곧 이 앱의 값어치입니다', tiers)}
+
+      ${sect('영상이 올라오나', '올라오는 영상이 줄면 다음 달 해지가 옵니다', bars)}
+
+      ${sect('돈이 도나', '',
+        `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(206px,1fr));gap:12px">
+          ${big('이번 달 구독', won2(S1.mrr),
+            `지난달보다 ${won2(S1.mrr - S1.mrrPrev)} 늘었어요`, 'var(--ns-green)')}
+          ${big('이번 달 가입', S1.joined + '명', '무료 포함')}
+          ${big('이번 달 해지', S1.churn + '명', '유료 기준')}
+          ${big('30일 넘게 조용한 유료 회원', S1.quiet + '명',
+            '해지 직전 신호입니다. 먼저 연락할 사람들', S1.quiet ? 'var(--ns-danger)' : '')}
+        </div>`)}
     </div></div>`;
 }
 
@@ -577,7 +732,7 @@ function pageMembers() {
     </div>`;
   }).join('');
   return `<div style="flex:1;overflow-y:auto;background:var(--ns-bg)">
-    <div style="padding:30px 34px 40px;display:flex;flex-direction:column;gap:18px">
+    <div style="max-width:1120px;margin:0 auto;padding:30px 30px 44px;display:flex;flex-direction:column;gap:18px">
       <div style="display:flex;align-items:baseline;gap:10px">
         <span style="font-size:24px;font-weight:700;letter-spacing:-.03em;color:var(--ns-ink)">회원 관리</span>
         <span style="font-size:13.5px;font-weight:500;color:var(--ns-ink3)">${Object.keys(M).length}명</span></div>
@@ -598,6 +753,8 @@ function pageSoon(k) {
         white-space:pre-wrap">${esc(d)}</span>
       <span style="font-size:11.5px;font-weight:700;color:var(--ns-bronze);background:rgba(166,124,61,.1);
         border-radius:8px;padding:7px 12px;align-self:center;margin-top:6px">아직 안 만든 자리예요</span>
+      <span data-nav="home" style="font-size:12.5px;font-weight:700;color:var(--ns-green);cursor:pointer;
+        padding-top:6px">‹ 대시보드로</span>
     </div></div>`;
 }
 
@@ -666,19 +823,22 @@ function pageQueue() {
 }
 
 function renderPC() {
-  const page = S.nav === 'today' ? pageToday()
+  const page = S.nav === 'home' ? pageHome()
              : S.nav === 'queue' ? pageQueue()
              : S.nav === 'members' ? pageMembers()
+             : S.nav === 'stats' ? pageStats()
              : pageSoon(S.nav);
-  return `<div style="display:flex;height:100%;background:var(--ns-bg)">${sidebar()}${page}</div>`;
+  return `<div style="display:flex;flex-direction:column;height:100%;background:var(--ns-bg)">
+    ${topbar()}<div style="flex:1;min-height:0;display:flex">${page}</div></div>`;
 }
 
 /* ── 모바일 ─────────────────────────────────────────────────────
    PC 축소판이 아니다. 이동 중에 짧게 답하는 용도라 한 화면에 하나씩만 둔다. */
 function moTabs() {
-  const T = [['today', '오늘', 'M4 7h16M4 12h16M4 17h10'],
+  const T = [['home', '홈', 'M4 11 12 4l8 7v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19z'],
              ['queue', '요청함', 'M20 14.5A2.5 2.5 0 0 1 17.5 17H9l-4 3.5V7A2.5 2.5 0 0 1 7.5 4.5h10A2.5 2.5 0 0 1 20 7z'],
-             ['members', '회원', 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20c1-4 4-6 8-6s7 2 8 6']];
+             ['members', '회원', 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20c1-4 4-6 8-6s7 2 8 6'],
+             ['stats', '통계', 'M5 20V10M12 20V4M19 20v-7']];
   return `<div style="flex:none;display:flex;border-top:1px solid var(--ns-line);background:var(--ns-card)">
     ${T.map(([k, n, d]) => {
       const on = S.nav === k;
@@ -714,7 +874,7 @@ function renderMO() {
     ${body}${moTabs()}</div>`;
 
   // 목록 쪽 — 사이드바 대신 아래 탭
-  if (S.nav === 'today') {
+  if (S.nav === 'home') {
     const u = urgentN();
     return page(`${bar('오늘 할 일')}
       <div style="flex:1;overflow-y:auto">
@@ -727,6 +887,15 @@ function renderMO() {
                 <span style="font-size:11px;font-weight:600;color:var(--ns-ink3)">${t}</span>
                 <span style="font-size:21px;font-weight:700;font-family:var(--font-num);
                   color:${hot ? 'var(--ns-danger)' : 'var(--ns-ink)'}">${v}</span></div>`).join('')}
+          </div>
+          <span style="font-size:13px;font-weight:700;color:var(--ns-ink);padding-top:4px">바로 가기</span>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+            ${TILES.map(x => `<div data-nav="${x.k}" style="cursor:pointer;background:var(--ns-card);
+              border:1px solid var(--ns-line);border-radius:12px;padding:13px 14px;display:flex;
+              flex-direction:column;gap:4px;opacity:${SOON[x.k] && x.k !== 'fb' ? .62 : 1}">
+              <span style="font-size:13px;font-weight:700;color:var(--ns-ink)">${esc(x.t)}</span>
+              <span style="font-size:10.5px;font-weight:400;color:var(--ns-ink3);line-height:1.5">${esc(x.d)}</span>
+            </div>`).join('')}
           </div>
           <span style="font-size:13px;font-weight:700;color:var(--ns-ink);padding-top:4px">먼저 답할 사람</span>
         </div>
@@ -754,6 +923,28 @@ function renderMO() {
               color:${oq ? (urgent(oq.left) ? 'var(--ns-danger)' : 'var(--ns-green)') : 'var(--ns-ink3)'}">
               ${oq ? left(oq.left) : '—'}</span></div>`;
         }).join('')}</div>`);
+  }
+
+  if (S.nav === 'stats') {
+    const pct = Math.round(STAT.keep.hit / STAT.keep.all * 100);
+    const card = (t, v, sub, col) => `<div style="background:var(--ns-card);border:1px solid var(--ns-line);
+      border-radius:12px;padding:13px 14px;display:flex;flex-direction:column;gap:5px">
+      <span style="font-size:11px;font-weight:600;color:var(--ns-ink3)">${t}</span>
+      <span style="font-size:20px;font-weight:700;font-family:var(--font-num);
+        color:${col || 'var(--ns-ink)'}">${v}</span>
+      <span style="font-size:10.5px;font-weight:500;color:var(--ns-ink3);line-height:1.5">${sub}</span></div>`;
+    return page(`${bar('통계', 0, `<span style="font-size:11.5px;font-weight:600;
+      color:var(--ns-ink3)">${STAT.month}</span>`)}
+      <div style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px">
+        ${card('48시간 안에 답한 비율', pct + '%', `${STAT.keep.all}건 중 ${STAT.keep.hit}건`,
+          pct >= 90 ? 'var(--ns-green)' : 'var(--ns-danger)')}
+        ${card('평균 답변까지', STAT.avgH + '시간', '빠를수록 다음 달에 또 올립니다')}
+        ${card('이번 달 구독', won(STAT.mrr) + '원',
+          `지난달보다 ${won(STAT.mrr - STAT.mrrPrev)}원 늘었어요`, 'var(--ns-green)')}
+        ${card('유료 회원', STAT.paid + '명', `무료 ${STAT.free}명`)}
+        ${card('30일 넘게 조용한 유료 회원', STAT.quiet + '명',
+          '해지 직전 신호입니다', 'var(--ns-danger)')}
+      </div>`);
   }
 
   if (!['queue'].includes(S.nav)) {
@@ -970,7 +1161,12 @@ function wire() {
     else if (S.view === 'mo') S.mo = 'q';
     render();
   });
-  on('[data-nav]', 'click', e => { S.nav = e.currentTarget.dataset.nav; S.card = null; render(); });
+  on('[data-nav]', 'click', e => {
+    S.nav = e.currentTarget.dataset.nav; S.card = null; S.more = false;
+    if (S.view === 'mo' && S.nav === 'queue') S.mo = 'q';
+    render();
+  });
+  on('[data-more]', 'click', () => { S.more = !S.more; render(); });
   on('[data-go]', 'click', e => { S.nav = e.currentTarget.dataset.go; render(); });
   on('[data-mem]', 'click', e => { S.card = e.currentTarget.dataset.mem; render(); });
   on('[data-cardgo]', 'click', e => {
