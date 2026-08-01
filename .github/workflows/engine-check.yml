@@ -31,6 +31,9 @@ jobs:
       - name: 판정 정본 동기화 (rules JSON ↔ analyzer2 생성 블록)
         run: python3 tools/build_rules.py --check
 
+      - name: 설문 ↔ KB 결선 검증 (죽은 문항·유령 노드 차단)
+        run: python3 tools/check_survey.py -v
+
       - name: 엔진 통합 스모크 (합성 스윙 → build_v1 → 스키마 검증)
         run: |
           pip -q install numpy

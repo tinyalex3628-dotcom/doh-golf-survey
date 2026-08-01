@@ -1,0 +1,347 @@
+{
+  "schema": "doh.survey.v1",
+  "updated": "2026-08-01",
+  "policy": {
+    "when": "before_analysis",
+    "why_before": "분석 결과를 본 뒤에 물으면 답이 판정에 오염된다(회원이 진단에 맞춰 답한다). 업로드·처리 대기시간을 설문으로 채우면 시간도 안 버린다.",
+    "count": 6,
+    "plus_gate": 1,
+    "rule": "엔진이 카메라로 측정하는 것은 절대 묻지 않는다. 설문은 '보이지 않는 원인'만 담당한다.",
+    "answer_reliability_filter": "회원이 실제로 관찰·확인할 수 있는 것만 묻는다. 느낌(압력 이동 타이밍 등)은 묻지 않고 그 결과(미스샷)로 역추론한다."
+  },
+  "questions": [
+    {
+      "id": "Q1_BALL_FLIGHT",
+      "order": 1,
+      "title": "드라이버로 친 최근 10발 중 가장 흔한 공의 휘어짐은?",
+      "hint": "방향보다 '휘어지는 쪽'을 골라주세요.",
+      "type": "single",
+      "covers": "클럽페이스 (엔진이 클럽을 못 봐서 원리적으로 측정 불가)",
+      "options": [
+        {
+          "label": "오른쪽으로 휘어 나간다 (슬라이스)",
+          "activates": [
+            "Club Face Open (P7)",
+            "Club Face Open (P7) (임팩트 시 클럽페이스 오픈)",
+            "Club Face Open (P6)",
+            "Clubface Open Excessive (P4)",
+            "Clubface Open Excessive (P2)"
+          ],
+          "w": 0.8
+        },
+        {
+          "label": "왼쪽으로 감긴다 (훅)",
+          "activates": [
+            "Club Face Closed (P7)",
+            "Club Face Closed (P7) (임팩트 시 클럽페이스 클로즈)",
+            "Club Face Closed (P6)",
+            "Clubface Closed Excessive (P4)",
+            "Clubface Closed Excessive (P2)"
+          ],
+          "w": 0.8
+        },
+        {
+          "label": "거의 곧게 간다",
+          "activates": [],
+          "w": 0
+        },
+        {
+          "label": "그때그때 다르다",
+          "activates": [
+            "Club Face Open (P7)",
+            "Club Face Open (P7) (임팩트 시 클럽페이스 오픈)",
+            "Club Face Closed (P7)",
+            "Club Face Closed (P7) (임팩트 시 클럽페이스 클로즈)"
+          ],
+          "w": 0.3
+        },
+        {
+          "label": "잘 모르겠다",
+          "activates": [],
+          "w": 0,
+          "skip": true
+        }
+      ],
+      "reach_direct": 36,
+      "reach_chain": 75
+    },
+    {
+      "id": "Q2_MISS",
+      "order": 2,
+      "title": "미스가 날 때 가장 자주 나오는 형태는?",
+      "hint": "아이언 기준으로 골라주세요. 두 개까지 고를 수 있습니다.",
+      "type": "multi",
+      "max": 2,
+      "covers": "압력 이동 (지면반력 — 매트/센서 없이는 측정 불가). 느낌 대신 결과로 역추론한다.",
+      "options": [
+        {
+          "label": "뒤땅 (공 앞 지면을 먼저 친다)",
+          "activates": [
+            "Casting (캐스팅)",
+            "Lead Pressure Insufficient (리드측 압력 부족)",
+            "Incomplete Pressure Transfer (압력 이동 미완성)",
+            "Late Pressure Shift (압력 이동 지연)"
+          ],
+          "w": 0.7
+        },
+        {
+          "label": "탑볼 (공 윗부분을 친다)",
+          "activates": [
+            "Early Pressure Shift (조기 압력 이동)",
+            "Lead Pressure Excessive (리드측 압력 과다)"
+          ],
+          "w": 0.6
+        },
+        {
+          "label": "생크 (클럽 목에 맞아 오른쪽으로 튄다)",
+          "activates": [
+            "Hands Too Far From Body (손이 몸에서 멀어짐)",
+            "Hand Distance Far From Body (P7)",
+            "Spin-out (스핀아웃)"
+          ],
+          "w": 0.8
+        },
+        {
+          "label": "힘이 안 실린다 / 거리가 안 난다",
+          "activates": [
+            "Pelvis Rotation Insufficient (골반 회전 부족)",
+            "Late Pressure Shift (압력 이동 지연)",
+            "Insufficient Trail Side Pressure During Backswing (백스윙 트레일측 압력 부족)"
+          ],
+          "w": 0.5
+        },
+        {
+          "label": "특별한 미스 패턴은 없다",
+          "activates": [],
+          "w": 0
+        }
+      ],
+      "reach_direct": 49,
+      "reach_chain": 156
+    },
+    {
+      "id": "Q3_GRIP",
+      "order": 3,
+      "title": "어드레스 자세에서 고개를 숙여 왼손 등을 보세요. 손가락 관절(너클)이 몇 개 보이나요?",
+      "hint": "오른손잡이 기준. 왼손잡이면 오른손 등을 보세요.",
+      "type": "single",
+      "covers": "그립 (P1 근본원인 — 카메라로는 손 안쪽이 안 보인다)",
+      "note": "'그립이 스트롱인가요?'라고 물으면 회원은 모른다. 너클 개수는 지금 눈으로 셀 수 있다.",
+      "options": [
+        {
+          "label": "0~1개 (손등이 거의 안 보인다)",
+          "activates": [
+            "Weak Grip Match (P1)"
+          ],
+          "w": 0.85
+        },
+        {
+          "label": "2개",
+          "activates": [],
+          "w": 0
+        },
+        {
+          "label": "3개 이상 (손등이 많이 보인다)",
+          "activates": [
+            "Strong Grip Match (P1)",
+            "Strong Trail Grip",
+            "Strong Trail Grip (Grip Ref)"
+          ],
+          "w": 0.85
+        },
+        {
+          "label": "지금 확인이 어렵다",
+          "activates": [],
+          "w": 0,
+          "skip": true
+        }
+      ],
+      "reach_direct": 18,
+      "reach_chain": 73
+    },
+    {
+      "id": "Q4_MOBILITY",
+      "order": 4,
+      "title": "아래 동작을 직접 해보고, 잘 안 되는 것을 모두 골라주세요.",
+      "hint": "느낌이 아니라 실제로 해보고 고르는 문항입니다. 통증이 있으면 멈추세요.",
+      "type": "multi",
+      "covers": "가동범위 (근본원인 — 엔진이 '못 돈다'는 건 봐도 '왜 못 도는지'는 못 본다)",
+      "why_matters": "가동범위가 원인이면 스윙 교정이 아니라 몸 준비가 처방이다. 처방 자체가 바뀐다.",
+      "options": [
+        {
+          "label": "의자에 앉아 무릎을 붙이고 오른발을 바깥으로 벌릴 때, 오른쪽 골반이 뻣뻣하다",
+          "activates": [
+            "Limited Trail Hip Internal Rotation",
+            "Limited Trail Hip Internal Rotation (Mobility Ref)",
+            "Trail Hip Internal Rotation Restriction (Mobility Ref)",
+            "Limited Tibial External Rotation"
+          ],
+          "w": 0.8
+        },
+        {
+          "label": "팔짱 끼고 앉아 상체만 오른쪽으로 돌릴 때, 45도도 안 돌아간다",
+          "activates": [
+            "Limited Thoracic Rotation",
+            "Limited Thoracic Extension",
+            "Limited Thoracic Mobility Compensation",
+            "Limited Pelvis Rotation (P4)"
+          ],
+          "w": 0.8
+        },
+        {
+          "label": "벽 앞에 서서 발을 붙인 채 무릎을 벽에 대기 어렵다 (발목)",
+          "activates": [
+            "Limited Trail Ankle Mobility / Stability"
+          ],
+          "w": 0.75
+        },
+        {
+          "label": "만세하듯 두 팔을 귀 옆까지 올리기가 어렵다",
+          "activates": [
+            "Limited Trail Arm Flexibility (Mobility Ref)",
+            "Limited Thoracic Extension"
+          ],
+          "w": 0.7
+        },
+        {
+          "label": "네 개 다 무리 없이 된다",
+          "activates": [],
+          "w": 0
+        }
+      ],
+      "reach_direct": 15,
+      "reach_chain": 120
+    },
+    {
+      "id": "Q5_CUE",
+      "order": 5,
+      "title": "요즘 스윙할 때 의식하고 있는 말이 있나요? 최근 레슨에서 들은 것도 좋습니다.",
+      "hint": "해당되는 것을 모두 골라주세요.",
+      "type": "multi",
+      "covers": "의도·큐·습관 (다른 방법으로는 절대 알 수 없다 — 회원 머릿속에만 있다)",
+      "why_matters": "동작이 '고장'이 아니라 '지시를 따른 결과'인 경우가 있다. 이걸 모르면 회원이 일부러 하는 걸 결함으로 지적하게 된다.",
+      "options": [
+        {
+          "label": "\"머리를 뒤에 두고 쳐라\"",
+          "activates": [
+            "'Keep The Head Back' Image (머리를 뒤에 남기려는 이미지)"
+          ],
+          "w": 0.9
+        },
+        {
+          "label": "\"엉덩이 빼고 가슴 세워라\"",
+          "activates": [
+            "[Movement Intent / Habit] '엉덩이 빼고 가슴 세워라' 셋업 이미지"
+          ],
+          "w": 0.9
+        },
+        {
+          "label": "\"트레일 팔(오른팔)을 몸에 붙여라\"",
+          "activates": [
+            "[Movement Intent / Habit] '트레일 팔을 몸에 붙여라' 셋업 이미지"
+          ],
+          "w": 0.9
+        },
+        {
+          "label": "\"하체 고정하고 상체만 돌려라\"",
+          "activates": [
+            "[Movement Intent / Habit] 하체를 고정하려는 셋업 습관",
+            "X-Factor Increase Strategy (Intentional)"
+          ],
+          "w": 0.9
+        },
+        {
+          "label": "\"눌러 쳐라 / 뒤땅 내지 마라\"",
+          "activates": [
+            "[Movement Intent] '뒤땅 방지·눌러치기' 이미지"
+          ],
+          "w": 0.9
+        },
+        {
+          "label": "\"슬라이스 안 나게 페이스 닫아라\"",
+          "activates": [
+            "[Movement Intent] '페이스를 열어 두려는' 또는 슬라이스 방지 오해"
+          ],
+          "w": 0.9
+        },
+        {
+          "label": "특별히 의식하는 말은 없다",
+          "activates": [],
+          "w": 0
+        }
+      ],
+      "reach_direct": 7,
+      "reach_chain": 67
+    },
+    {
+      "id": "Q6_ADDRESS_PRESSURE",
+      "order": 6,
+      "title": "어드레스로 서서 발바닥을 느껴보세요. 체중이 어디에 실려 있나요?",
+      "hint": "스윙 중이 아니라 '서 있는 지금' 기준입니다.",
+      "type": "single",
+      "covers": "P1 발 압력 (근본원인 1위 — 스윙 중 압력은 못 느껴도 정지 상태는 느낄 수 있다)",
+      "note": "스윙 중 압력 이동 타이밍은 묻지 않는다(회원이 답할 수 없다). 정적 셋업 압력만 묻고, 동적인 부분은 Q2 미스샷으로 받는다.",
+      "options": [
+        {
+          "label": "앞꿈치 쪽 (발가락)",
+          "activates": [
+            "Foot Pressure Anterior Excessive (P1)"
+          ],
+          "w": 0.75
+        },
+        {
+          "label": "발 한가운데",
+          "activates": [],
+          "w": 0
+        },
+        {
+          "label": "뒤꿈치 쪽",
+          "activates": [
+            "Foot Pressure Posterior Excessive (P1)"
+          ],
+          "w": 0.75
+        },
+        {
+          "label": "왼발(타깃 쪽)에 미리 많이 실려 있다",
+          "activates": [
+            "[Setup / Habit] 리드측 선(先)하중 셋업 습관",
+            "Lead Pressure Excessive (P1)"
+          ],
+          "w": 0.8
+        }
+      ],
+      "reach_direct": 24,
+      "reach_chain": 35
+    }
+  ],
+  "gate": {
+    "id": "G_PAIN",
+    "title": "스윙할 때 아프거나 불편한 곳이 있나요?",
+    "type": "multi",
+    "scored": false,
+    "purpose": "판정에 쓰지 않는다. 가동범위·강도 처방을 막는 안전장치일 뿐이다.",
+    "options": [
+      "허리",
+      "목/어깨",
+      "팔꿈치/손목",
+      "무릎",
+      "고관절",
+      "없다"
+    ],
+    "effect": "'없다' 외의 답이 있으면 Q4 기반 가동범위 처방을 출력하지 않고 '전문가 확인 권장'으로 대체한다."
+  },
+  "removed_from_old_survey": {
+    "why": "기존 DOH_Survey_Final(1).html은 엔진이 이미 측정하는 것을 물었다. 예산 낭비이자, 느낌과 측정이 어긋나면 충돌한다.",
+    "topics": [
+      "스웨이",
+      "얼리 익스텐션",
+      "척추각",
+      "골반/흉곽 회전량",
+      "무릎 각도",
+      "머리 움직임",
+      "템포"
+    ],
+    "overlapping_kb_nodes": 52,
+    "rule": "이 7개 주제는 설문에서 전부 뺀다. 엔진이 숫자로 답한다."
+  }
+}
