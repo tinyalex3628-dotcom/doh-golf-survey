@@ -1080,7 +1080,7 @@ html.demo body{background:#EDEAE3}
     </div>
     <span style="display:block;margin-top:11px;background:var(--ns-green);color:var(--ns-white);border-radius:11px;padding:12px;
                  text-align:center;font-size:14px;font-weight:600;letter-spacing:-.02em">오늘 연습 기록하기</span>
-    <div style="margin-top:12px;padding-top:11px;border-top:1px solid #F2ECE2;display:flex;
+    <div data-fresh-hide style="margin-top:12px;padding-top:11px;border-top:1px solid #F2ECE2;display:flex;
                 align-items:center;gap:7px">
       <span style="font-size:12px;font-weight:500;color:var(--ns-ink3);flex:1">
         어제는 <b style="font-weight:600;color:var(--ns-ink2)">45분 · 드라이버</b> 연습했어요</span>
@@ -1132,13 +1132,13 @@ html.demo body{background:#EDEAE3}
     <div style="height:4px;border-radius:99px;background:var(--ns-sand);margin-top:11px;overflow:hidden">
       <span style="display:block;height:100%;width:72%;background:var(--ns-green);border-radius:99px"></span></div>
     <div style="font-size:11px;font-weight:500;color:var(--ns-ink3);padding-top:8px">
-      이번 달 영상 <b style="font-weight:600;color:var(--ns-ink2);font-family:var(--font-num)">12개</b> 모였어요</div>
+      이번 달 영상 <b data-month-vids style="font-weight:600;color:var(--ns-ink2);font-family:var(--font-num)">12개</b> 모였어요</div>
   </div>
     <div style="height:5px;border-radius:99px;background:var(--ns-sand);margin-top:12px;overflow:hidden">
       <span style="display:block;height:100%;width:72%;background:var(--ns-green);border-radius:99px"></span></div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:9px">
       <span style="flex:1;font-size:11px;font-weight:500;color:var(--ns-ink3)">
-        이번 달 올린 영상 <b style="font-weight:600;color:var(--ns-ink2);font-family:var(--font-num)">12개</b> · 프로가 모아서 분석 중</span>
+        이번 달 올린 영상 <b data-month-vids style="font-weight:600;color:var(--ns-ink2);font-family:var(--font-num)">12개</b> · 프로가 모아서 분석 중</span>
       <span style="font-size:11px;font-weight:600;color:var(--ns-ink2)">지난 레슨</span>
       <span style="color:var(--ns-ink3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;display:block"><path d="m9 5 7 7-7 7"></path></svg></span>
     </div>
@@ -1155,7 +1155,7 @@ html.demo body{background:#EDEAE3}
     <div style="display:flex;gap:12px;justify-content:center;padding-top:8px;margin-top:6px;
                 border-top:1px solid #F2ECE2"><span style="display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ns-ink3)"></span><span style="font-size:10px;font-weight:500;color:var(--ns-ink3)">스윙</span></span><span style="display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ns-bronze)"></span><span style="font-size:10px;font-weight:500;color:var(--ns-ink3)">한마디</span></span><span style="display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ns-green)"></span><span style="font-size:10px;font-weight:500;color:var(--ns-ink3)">피드백일</span></span></div>
   </div></div>
-    <div style="flex:none;margin-top:14px"><div style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:14px;padding:14px 8px;display:flex"><span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font-size:18px;font-weight:600;color:var(--ns-ink);font-family:var(--font-num);letter-spacing:-.04em">12<span style="font-size:11px;font-weight:500;color:var(--ns-ink3)">일</span></span><span style="font-size:10px;font-weight:500;color:var(--ns-ink3)">연습</span></span><span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font-size:18px;font-weight:600;color:var(--ns-ink);font-family:var(--font-num);letter-spacing:-.04em">12<span style="font-size:11px;font-weight:500;color:var(--ns-ink3)">개</span></span><span style="font-size:10px;font-weight:500;color:var(--ns-ink3)">영상</span></span><span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font-size:18px;font-weight:600;color:var(--ns-ink);font-family:var(--font-num);letter-spacing:-.04em">2<span style="font-size:11px;font-weight:500;color:var(--ns-ink3)">회</span></span><span style="font-size:10px;font-weight:500;color:var(--ns-ink3)">한마디</span></span><span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font-size:18px;font-weight:600;color:var(--ns-ink);font-family:var(--font-num);letter-spacing:-.04em">5<span style="font-size:11px;font-weight:500;color:var(--ns-ink3)">일</span></span><span style="font-size:10px;font-weight:500;color:var(--ns-ink3)">최장 연속</span></span></div></div>
+    <div style="flex:none;margin-top:14px"><div data-month-stats style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:14px;padding:14px 8px;display:flex"><span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font-size:18px;font-weight:600;color:var(--ns-ink);font-family:var(--font-num);letter-spacing:-.04em">12<span style="font-size:11px;font-weight:500;color:var(--ns-ink3)">일</span></span><span style="font-size:10px;font-weight:500;color:var(--ns-ink3)">연습</span></span><span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font-size:18px;font-weight:600;color:var(--ns-ink);font-family:var(--font-num);letter-spacing:-.04em">12<span style="font-size:11px;font-weight:500;color:var(--ns-ink3)">개</span></span><span style="font-size:10px;font-weight:500;color:var(--ns-ink3)">영상</span></span><span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font-size:18px;font-weight:600;color:var(--ns-ink);font-family:var(--font-num);letter-spacing:-.04em">2<span style="font-size:11px;font-weight:500;color:var(--ns-ink3)">회</span></span><span style="font-size:10px;font-weight:500;color:var(--ns-ink3)">한마디</span></span><span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font-size:18px;font-weight:600;color:var(--ns-ink);font-family:var(--font-num);letter-spacing:-.04em">5<span style="font-size:11px;font-weight:500;color:var(--ns-ink3)">일</span></span><span style="font-size:10px;font-weight:500;color:var(--ns-ink3)">최장 연속</span></span></div></div>
   </div>
   <div style="flex:none;height:62px;background:var(--ns-card);border-top:1px solid var(--ns-line);display:flex;align-items:flex-start;padding:5px 6px 0"><span style="flex: 1;display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--ns-ink3);padding:7px 0 5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19z"></path></svg><span style="font-size:11px;font-weight:500">홈</span></span><span style="flex: 1;display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--ns-green);padding:7px 0 5px;background:var(--ns-soft);border-radius:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M8.5 13l2.5 2.5 4.5-4.5"></path></svg><span style="font-size:11px;font-weight:600">연습기록</span></span><span style="flex: 1;display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--ns-ink3);padding:7px 0 5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2.5"></rect><path d="m16 11 5-3v8l-5-3z"></path></svg><span style="font-size:11px;font-weight:500">스윙</span></span><span style="flex: 1;display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--ns-ink3);padding:7px 0 5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3.5" y="4.5" width="17" height="6" rx="2"></rect><rect x="3.5" y="13.5" width="17" height="6" rx="2"></rect></svg><span style="font-size:11px;font-weight:500">레슨기록</span></span><span style="flex: 1;display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--ns-ink3);padding:7px 0 5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8.5" r="3.7"></circle><path d="M5 20a7 7 0 0 1 14 0"></path></svg><span style="font-size:11px;font-weight:500">마이</span></span></div>
 </div></template>
@@ -1222,7 +1222,7 @@ html.demo body{background:#EDEAE3}
                 <span style="font-size: 14px; font-weight: 600; color: var(--ns-ink);">영상 추가하기</span>
                 <span style="font-size: 12px; color: var(--ns-ink3);">정면 · 측면 모두 올릴 수 있어요</span>
               </div>
-              <span style="display: flex; align-items: center; gap: 8px; padding: 4px 2px; cursor: pointer;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #B7AF9C;"></span><span style="font-size: 12px; color: var(--ns-ink2);">최근 기록 · 7월 20일 · 보통</span><span style="margin-left: auto; font-size: 11px; color: var(--ns-ink3);">🔥 3일 연속</span></span>
+              <span data-fresh-hide style="display: flex; align-items: center; gap: 8px; padding: 4px 2px; cursor: pointer;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #B7AF9C;"></span><span style="font-size: 12px; color: var(--ns-ink2);">최근 기록 · 7월 20일 · 보통</span><span style="margin-left: auto; font-size: 11px; color: var(--ns-ink3);">🔥 3일 연속</span></span>
             </div>
             <div style="flex: 0 0 auto; display: flex; flex-direction: column; gap: 9px;">
               <span style="font-size: 14px; font-weight: 500; color: var(--ns-ink);">오늘 느낌은 어땠나요?</span>
@@ -1799,7 +1799,7 @@ html.demo body{background:#EDEAE3}
     <div style="height:4px;border-radius:99px;background:var(--ns-sand);margin-top:11px;overflow:hidden">
       <span style="display:block;height:100%;width:72%;background:var(--ns-green);border-radius:99px"></span></div>
     <div style="font-size:11px;font-weight:500;color:var(--ns-ink3);padding-top:8px">
-      이번 달 영상 <b style="font-weight:600;color:var(--ns-ink2);font-family:var(--font-num)">12개</b> 모였어요</div>
+      이번 달 영상 <b data-month-vids style="font-weight:600;color:var(--ns-ink2);font-family:var(--font-num)">12개</b> 모였어요</div>
   </div>
 
       <div style="flex: 0 0 auto; display: flex; flex-direction: column; gap: 11px;">
@@ -1975,7 +1975,7 @@ html.demo body{background:#EDEAE3}
               <div style="flex: 0 0 auto; background: var(--ns-bg); border: 1px solid var(--ns-line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
                 <span style="display: flex; flex-direction: column; gap: 3px;">
                   <span style="font-size:16px; font-weight: 600; letter-spacing: -0.02em; color: var(--ns-ink);">골프러버 님</span>
-                  <span style="font-size: 12px; color: var(--ns-ink3);">2025.03.14 가입 · 함께한 지 500일</span>
+                  <span style="font-size: 12px; color: var(--ns-ink3);" data-pl-join>2025.03.14 가입 · 함께한 지 500일</span>
                 </span>
                 <span style="height: 1px; background: var(--ns-line);"></span>
                 <span style="display: flex; align-items: baseline; gap: 8px;"><span style="font-size:12px; font-weight: 400; letter-spacing: 0.16em; color: var(--ns-ink3);">플랜</span><span style="font-size: 14px; font-weight: 600; letter-spacing: -0.02em; color: var(--ns-ink);" data-pl-name>Elite</span></span>
@@ -2034,7 +2034,7 @@ html.demo body{background:#EDEAE3}
               <div style="display: flex; background: #FBF8F2; border-radius: 12px; padding: 13px 8px;">
                 <span style="flex: 1 1 0%; display: flex; flex-direction: column; align-items: center; gap: 5px; border-right: 1px solid var(--ns-line);">
                   <span style="color: var(--ns-green);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><rect x="4" y="6" width="16" height="14" rx="2"></rect><path d="M8 4v4M16 4v4M4 11h16"></path><path d="m9.5 15.5 1.8 1.8 3.2-3.6"></path></svg></span>
-                  <span style="font-size: 15px; font-weight: 600; color: var(--ns-ink);">12일</span><span style="font-size:12px; color: var(--ns-ink3);">연습일</span>
+                  <span data-pl-days-m style="font-size: 15px; font-weight: 600; color: var(--ns-ink);">12일</span><span style="font-size:12px; color: var(--ns-ink3);">연습일</span>
                 </span>
                 <span style="flex: 1 1 0%; display: flex; flex-direction: column; align-items: center; gap: 5px; border-right: 1px solid var(--ns-line);">
                   <span style="color: var(--ns-green);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><path d="M12 16V5"></path><path d="m7.5 9.5 4.5-4.5 4.5 4.5"></path><path d="M4.5 15v3A1.5 1.5 0 0 0 6 19.5h12a1.5 1.5 0 0 0 1.5-1.5v-3"></path></svg></span>
@@ -2499,9 +2499,9 @@ html.demo body{background:#EDEAE3}
             <div style="margin-top: 10px;">
               
                 <span style="border: 1.5px solid var(--ns-green); background: var(--ns-white); border-radius: 11px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 7px;">
-                  <span style="width: 32px; height: 32px; border-radius: 50%; background: var(--ns-green); color: var(--ns-white); display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg></span>
-                  <span style="font-size: 15px; font-weight: 600; color: #17301F;">정면 영상</span>
-                  <span style="font-size: 12px; color: #17301F; opacity: 0.75;">✅ 등록 완료</span>
+                  <span data-sv-vidbox style="width: 32px; height: 32px; border-radius: 50%; background: var(--ns-green); color: var(--ns-white); display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg></span>
+                  <span data-sv-vidname style="font-size: 15px; font-weight: 600; color: #17301F;">정면 영상</span>
+                  <span data-sv-vid style="font-size: 12px; color: #17301F; opacity: 0.75;">✅ 등록 완료</span>
                 </span>
               
               
@@ -4460,6 +4460,28 @@ const RULE_KO = {
   ott:             ['내려올 때 손이 바깥으로 나와요',
                     '클럽이 바깥에서 들어오면 슬라이스가 납니다.'],
 };
+/* 결과를 읽고 나서 '내일 연습장에서 뭘 하지'에 답이 없으면 앱을 끈다.
+   문제로 나온 것 하나에만 드릴을 붙인다 — 한 번에 하나씩이 이 앱의 방식이다. */
+const DRILL_KO = {
+  sway: ['벽에 오른 엉덩이 대고 백스윙 20회', '벽이 밀리지 않게 제자리에서만 도세요.'],
+  reverse_pivot: ['오른발 안쪽을 밟고 백스윙 20회', '올라갈 때 오른 허벅지 안쪽이 눌리는 느낌을 찾으세요.'],
+  shoulder_tilt_p1: ['오른손을 조금 아래로 잡고 어드레스 10회', '자연히 오른 어깨가 낮아집니다. 그 느낌을 기억하세요.'],
+  reverse_spine: ['머리 뒤에 클럽 대고 백스윙 15회', '클럽이 오른쪽으로 기울어야 해요. 왼쪽으로 넘어가면 반대입니다.'],
+  hip_slide: ['오른발 바깥에 클럽 세우고 다운스윙 20회', '골반이 클럽을 안 건드리게 돌리세요.'],
+  hanging_back: ['왼발만 밟고 스윙 15회', '칠 때 왼발로 완전히 넘어가는 느낌을 만듭니다.'],
+  loss_posture: ['등에 클럽 대고 백스윙 20회', '클럽이 등에서 떨어지면 자세가 무너진 거예요.'],
+  standing_up: ['벽에 엉덩이 대고 임팩트까지 20회', '치는 동안 엉덩이가 벽에서 떨어지지 않게.'],
+  chicken_wing: ['수건을 왼 겨드랑이에 끼고 스윙 20회', '수건이 안 떨어지게 치면 팔이 접히지 않습니다.'],
+  flying_elbow: ['오른 겨드랑이에 헤드커버 끼고 백스윙 20회', '톱까지 안 떨어지게 올려보세요.'],
+  overswing: ['왼팔이 수평될 때까지만 올려서 20회', '짧게 쳐도 거리가 크게 안 줄어드는 걸 확인하세요.'],
+  under_rotation: ['등을 타깃 쪽으로 보낸다 생각하고 백스윙 20회', '어깨가 아니라 등이 돌아간다고 생각하면 더 돌아갑니다.'],
+  xfactor: ['발 모으고 스윙 20회', '발을 붙이면 골반이 덜 돌아서 상체와의 차이가 자연스럽게 잡힙니다.'],
+  trail_knee: ['오른 무릎 굽힌 채로 백스윙 20회', '올라가는 동안 무릎 각도를 그대로 두세요.'],
+  head_dip: ['벽 앞에 서서 머리 대고 백스윙 15회', '머리가 벽에서 떨어지거나 눌리면 출렁인 거예요.'],
+  tempo: ['하나-둘-셋에 올리고 넷에 치기 20회', '숫자를 소리 내어 세면서 치세요.'],
+  early_ext: ['벽에 엉덩이 대고 다운스윙 20회', '내려올 때 엉덩이가 벽에 붙어 있어야 합니다.'],
+  ott: ['공 바깥쪽에 헤드커버 놓고 스윙 20회', '안 건드리고 치면 안에서 들어오는 길입니다.'],
+};
 const P_KO = { P1: '어드레스', P2: '테이크어웨이', P3: '왼팔 수평', P4: '톱', P5: '다운 시작',
                P6: '클럽 수평', P7: '임팩트', P8: '릴리즈', P9: '폴로스루', P10: '피니시' };
 /* 엔진 경고 → 회원이 알아들을 말. 여기 없는 경고는 화면에 안 띄운다. */
@@ -4503,7 +4525,7 @@ function runDohRules(fd, rules) {
 }
 
 /* ── 결과 화면 렌더 ──────────────────────────────────────────────── */
-const E = { BG: '#F3EFE8', CARD: '#FFFDF9', FOREST: '#21402F', INK: '#1D2420',
+const E = { BG: '#F3EFE8', CARD: '#FFFDF9', FOREST: '#21402F', INK: '#1D2420', SOFT: '#F2F8F4',
             INK2: '#4A4638', INK3: '#6E6858', INK4: '#6E6858', LINE: '#E4DED2', SAND: '#EFE9DE' };
 const NUMF = 'font-family:var(--font-num)';
 
@@ -4562,6 +4584,28 @@ function renderEngineResult(host, data, rules) {
       font-size:11px;font-weight:600;color:${E.INK}" data-p-chip data-frame="${e.frame}">${P_KO[e.p] || e.p}
       <span style="color:${E.INK4};font-weight:500;${NUMF}"> ${(e.frame / fps).toFixed(1)}초</span></span>`).join('');
 
+  /* 오늘 할 것 — 제일 심한 것 하나만. 여러 개를 주면 하나도 안 한다. */
+  const worst = judged.find(x => x.lvl >= 2) || judged.find(x => x.lvl === 1);
+  const dr = worst && DRILL_KO[worst.r.id];
+  const todo = dr
+    ? `<div style="margin-top:14px;background:${E.FOREST};border-radius:14px;padding:16px 16px 15px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.62);
+          ${NUMF}">오늘 할 것</div>
+        <div style="margin-top:8px;font-size:16px;font-weight:700;letter-spacing:-.03em;
+          color:#fff;line-height:1.4">${esc(dr[0])}</div>
+        <div style="margin-top:7px;font-size:11.5px;font-weight:400;color:rgba(255,255,255,.72);
+          line-height:1.65">${esc(dr[1])}</div>
+        <div style="margin-top:11px;padding-top:11px;border-top:1px solid rgba(255,255,255,.14);
+          font-size:11px;font-weight:500;color:rgba(255,255,255,.62);line-height:1.6">
+          왜 하나요 — ${esc(ruleName(worst.r))}${ruleWhy(worst.r) ? ' · ' + esc(ruleWhy(worst.r)) : ''}</div>
+      </div>`
+    : `<div style="margin-top:14px;background:${E.SOFT || '#F2F8F4'};border:1px solid #DCE7DE;
+        border-radius:14px;padding:15px 16px">
+        <div style="font-size:13px;font-weight:700;color:${E.FOREST}">오늘은 고칠 게 안 보여요</div>
+        <div style="margin-top:6px;font-size:11.5px;font-weight:400;color:${E.INK2};line-height:1.65">
+          지금 치던 대로 하시면 됩니다. 다음 영상에서 다시 볼게요.</div>
+      </div>`;
+
   const counts = tally(res).map(([nm, n, col]) =>
     `<span style="flex:1;text-align:center">
       <span style="display:block;font-size:19px;font-weight:600;color:${col};${NUMF};letter-spacing:-.03em">${n}</span>
@@ -4592,6 +4636,8 @@ function renderEngineResult(host, data, rules) {
 
     <div style="background:${E.CARD};border:1px solid ${E.LINE};border-radius:12px;padding:13px 8px;
                 display:flex;margin-top:14px">${counts}</div>
+
+    ${todo}
 
     <div style="margin-top:20px">${capBar('스윙 구간')}
       <div style="display:flex;gap:6px;flex-wrap:wrap">${chips}</div></div>
@@ -4683,7 +4729,7 @@ const S = { route: '2a', hist: [], step: 1, picked: null, vids: 0, viaLoading: f
             // 기간 비교 — 몇 달 전 스윙과 나란히 볼지. 목적지는 11 이다.
             cmpAgo: '1',
             // AI 설문 답 — 서버로는 { Q1_BALL_FLIGHT: 'SLICE', … } 형태로 나간다
-            survey: {},
+            survey: {}, vidPicked: false,
             // 업로드 — 한 번이라도 올렸는지(빈 갤러리 판단), 몇 번째 시도인지.
             upDone: false, upTry: 0, upFailed: false,
             // 연습기록 — 오늘 카드 / 프로 한마디 카드는 서로 다른 축의 상태다.
@@ -4753,13 +4799,44 @@ function applyPlanMarks() {
     e.textContent = COUPONS[S.plan] + '장';
   });
 
-  // 첫날부터 '12일 연습 · 12개 영상 · 5일 연속'이 뜨면 내 기록이 아닌 걸 안다
+  applyFresh();
+}
+
+/* 아직 한 개도 안 올린 사람에게 남의 기록을 보여주지 않는다.
+   화면마다 흩어놓으면 또 어긋나므로 여기 한 곳에서만 처리한다.
+   판정은 그릴 때마다 다시 한다 — 부팅 때 한 번만 보면 등급을 바꿔도 안 먹는다. */
+function applyFresh() {
+  if (!fresh()) return;
+
+  // 홈 — 12일 연습 · 12개 영상 · 5일 연속
   const stats = root().querySelector('[data-h-stats]');
-  if (stats && fresh()) {
-    stats.innerHTML = '<span style="font-family:Pretendard,-apple-system,sans-serif;'
-      + 'font-size:12px;font-weight:600;color:var(--ns-sub-g)">'
-      + '아직 기록이 없어요 · 첫 스윙을 올려보세요</span>';
-  }
+  if (stats) stats.innerHTML = '<span style="font-family:Pretendard,-apple-system,sans-serif;'
+    + 'font-size:12px;font-weight:600;color:var(--ns-sub-g)">'
+    + '아직 기록이 없어요 · 첫 스윙을 올려보세요</span>';
+
+  // 오늘 기록하기 — '최근 기록 · 7월 20일 · 🔥 3일 연속'
+  root().querySelectorAll('[data-fresh-hide]').forEach(e => { e.style.display = 'none'; });
+
+  // 마이 — 이번 달 한눈에 보기
+  const z = (sel, v) => root().querySelectorAll(sel).forEach(e => { e.textContent = v; });
+  z('[data-pl-days-m]', '0일');
+  z('[data-pl-vids]', '0개');
+  z('[data-pl-cms]', '0회');
+
+  // 이번 달 통계 4칸 (연습일 · 영상 · 한마디 · 최장 연속)
+  const ms = root().querySelector('[data-month-stats]');
+  if (ms) Array.from(ms.children).forEach(col => {
+    const num = col.firstElementChild && col.firstElementChild.firstChild;
+    if (num && num.nodeType === 3) num.textContent = '0';
+  });
+  z('[data-month-vids]', '0개');
+  z('[data-pl-days]', '오늘 시작');   // '넥스트 스윙 500일째' — 방금 깐 사람이다
+  z('[data-pl-join]', '오늘 가입했어요');
+
+  // 레슨기록 — '받은 레슨 0' 인데 밑에 목록이 4개면 앞뒤가 안 맞는다.
+  // 배지를 아예 숨긴다 (0 은 모순, 6 은 거짓말)
+  const fbn = root().querySelector('[data-fb-count]');
+  if (fbn) fbn.style.display = 'none';
 }
 let toastTimer = null;
 
@@ -5120,6 +5197,10 @@ function swMount(box) {
 }
 
 function render() {
+  // 못 받는 등급에는 도착 팝업이 뜰 일이 없다. 등급을 바꿔 이 화면에 남아 있으면 홈으로.
+  if (S.route === 'ar' && !can('fb')) S.route = '2a';
+  // 오늘 카드는 배선(showVariant)이 먼저 읽으므로 그리기 전에 정해야 한다
+  if (fresh()) S.today = 'empty';   // 오늘 카드의 빈 상태 이름은 empty 다
   const tpl = document.querySelector('template[data-scr="' + S.route + '"]');
   if (swHost && swHost.parentElement) swHost.remove();   // 지우지 말고 떼어만 둔다
   stage.innerHTML = '';
@@ -5601,7 +5682,9 @@ const WIRE = {
           drop.dataset.uploading = '';
           drop.dataset.done = '1';
           S.upDone = true;
-          toast('스윙 1개가 추가됐어요 · 달력에 기록돼요');
+          // 올리고 끝이면 첫 사용자는 여기서 앱을 끈다. 다음 걸음을 붙여준다.
+          toast('스윙을 올렸어요 · 이제 AI가 봐줄 수 있어요',
+                { label: 'AI 분석 하기', fn: () => go('04') });
         }, fail);
       });
     } else miss('2c 업로드 점선 박스');
@@ -5859,8 +5942,14 @@ const WIRE = {
       ch.addEventListener('click', () => toast(ch.textContent.trim().split(' ')[0]
         + ' 구간 (' + ch.dataset.frame + '프레임)으로 이동했어요'));
     });
+    // 무료 회원은 프로에게 못 보낸다. 눌러놓고 신청 화면이 나오면 거기서 막힌다.
     const pro = host.querySelector('[data-e3-pro]');
-    if (pro) tap(pro, () => go('01'));
+    if (pro) {
+      if (!can('fb') && !can('cm')) {
+        pro.textContent = '프로가 직접 봐주는 건 어떤 건가요';
+        tap(pro, () => go('fx'));
+      } else tap(pro, () => go('01'));
+    }
   },
 
   /* ── 정규레슨 결과지 (카카오 알림톡 링크로 진입) ────────────────── */
@@ -6032,7 +6121,7 @@ const WIRE = {
     onCard('과거 스윙 날짜별 조회', 2, () => go('2g'));
   },
 
-  '04'() { onBtn('설문 시작하기', () => { S.step = 1; S.survey = {}; go('05'); }); },
+  '04'() { onBtn('설문 시작하기', () => { S.step = 1; S.survey = {}; S.vidPicked = false; go('05'); }); },
 
   /* ── AI 설문 ─────────────────────────────────────────────────────
      질문지는 여기 한 곳에만 있다. 문구를 고칠 자리도 여기 한 곳뿐이다.
@@ -6184,12 +6273,34 @@ const WIRE = {
   },
 
   '06'() {
+    // 아직 아무것도 안 골랐는데 '등록 완료'가 떠 있었다. 고른 뒤에 완료가 돼야 한다.
+    const vbox = root().querySelector('[data-sv-vidbox]');
+    const vnm = root().querySelector('[data-sv-vidname]');
+    const vst = root().querySelector('[data-sv-vid]');
+    if (vbox && vst) {
+      const done = () => {
+        vbox.style.background = 'var(--ns-green)';
+        vbox.style.opacity = '1';
+        vnm.textContent = '드라이버_0722.mp4';
+        vst.textContent = '등록 완료';
+        S.vidPicked = true;
+      };
+      if (!S.vidPicked) {
+        vbox.style.background = 'var(--ns-sand)';
+        vbox.style.opacity = '.5';
+        vst.textContent = '탭해서 영상 고르기';
+        tap(vst.parentElement, () => { done(); render(); toast('영상을 등록했어요'); });
+      } else done();
+    } else miss('06 영상 등록 자리');
     selectGroup(['정면', '측면'], 'background:#FFFFFF;color:#1D2420;box-shadow:0 1px 3px rgba(29,36,32,.16)',
       lab => toast(lab + ' 영상으로 등록할게요'));
     selectGroup(['좌타', '우타'], 'background:#FFFFFF;color:#1D2420;box-shadow:0 1px 3px rgba(29,36,32,.16)');
     selectGroup(['드라이버', '아이언'], 'background:#FFFFFF;color:#1D2420;box-shadow:0 1px 3px rgba(29,36,32,.16)');
     onBtn('이전', back);
-    onBtn('AI 분석 시작하기', () => { S.clip = true; S.job = 'job_' + Math.abs(Date.now() % 100000).toString(36); go('e2'); });
+    onBtn('AI 분석 시작하기', () => {
+      if (!S.vidPicked) return toast('스윙 영상을 먼저 등록해주세요');
+      S.clip = true; go('e2');
+    });
   },
 
   '07'() {  // AI 분석 결과지 (프로 피드백 결과지와 별개 화면)
