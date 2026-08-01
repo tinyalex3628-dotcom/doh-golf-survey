@@ -231,16 +231,28 @@ def main():
             base = base.split("(")[0].strip()          # P6식 'Name (한글)' → Name
             return any(base and base in o for o in v1_owner_names)
 
-        v1_pairs = {(e["src"], e["tgt"]) for e in v1["edges"]}
+        # 병합 정책 (2026-07-29 수정 — 이전엔 너무 보수적이었다)
+        # 예전: v1에 owner가 없는 Feature의 엣지만 추가 → 원본의 51%가 누락됐다.
+        #       (v1에 이미 있는 Feature라도 v1이 그 Feature의 엣지를 다 담진 않았음)
+        # 지금: **원본에 있는데 v1에 없는 (src,tgt) 쌍은 전부 추가**한다.
+        #       v1 엣지는 여전히 하나도 안 버린다(고유 표기 보존).
+        v1_pairs = {(e["src"].strip(), e["tgt"].strip()) for e in v1["edges"]}
+
+        def clean_pair(e):
+            a, b = e["src"].strip(), e["tgt"].strip()
+            if not (3 <= len(a) <= 110 and 3 <= len(b) <= 110):
+                return False          # 파싱 잔여물 방어
+            return True
+
         patch = [e for e in all_edges
-                 if not known(e["owner"]) and (e["src"], e["tgt"]) not in v1_pairs]
+                 if clean_pair(e) and (e["src"].strip(), e["tgt"].strip()) not in v1_pairs]
         seen, uniq_patch = set(), []
         for e in patch:
             k = (e["ph"], e["kind"], e["src"], e["tgt"])
             if k in seen: continue
             seen.add(k); uniq_patch.append(e)
         edges = v1["edges"] + uniq_patch
-        mode = f"패치 모드: v1 {len(v1['edges'])} 보존 + 신규 owner 엣지 {len(uniq_patch)} 추가"
+        mode = f"병합: v1 {len(v1['edges'])} 전부 보존 + 원본 누락분 {len(uniq_patch)} 추가"
     else:
         seen, edges = set(), []
         for e in all_edges:
