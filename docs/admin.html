@@ -89,7 +89,7 @@ textarea::placeholder{color:#A9A392}
    김OO = 회원 앱의 '골프러버'. 프로가 5개월째 보고 있는 사람이다. */
 const M = {
   kim: {
-    name: '골프러버', real: '김도현', plan: 'Elite', months: 5, join: '2025.03.14',
+    name: '골프러버', real: '김도현', plan: 'Elite', months: 5, join: '2025.03.14', pay1: '2025.03.20', days: 12, daysPrev: 9,
     quota: [2, 6],
     program: 'No.06 · 톱에서 왼팔 각', week: '3주 프로그램 · 2주차',
     journey: ['3월 슬라이스', '4월 뒤땅', '5월 하체 리드', '6월 왼팔 각'],
@@ -109,7 +109,7 @@ const M = {
     ],
   },
   park: {
-    name: '박프로지망', real: '박서준', plan: 'Coaching', months: 2, join: '2026.05.30',
+    name: '박프로지망', real: '박서준', plan: 'Coaching', months: 2, join: '2026.05.30', pay1: '2026.05.30', days: 7, daysPrev: 10,
     quota: [3, 5],
     program: null, week: null,
     journey: ['6월 그립', '7월 셋업'],
@@ -125,7 +125,7 @@ const M = {
     ],
   },
   lee: {
-    name: '주말골퍼', real: '이수민', plan: 'Basic', months: 1, join: '2026.06.28',
+    name: '주말골퍼', real: '이수민', plan: 'Basic', months: 1, join: '2026.06.28', pay1: '2026.07.02', days: 4, daysPrev: 0,
     quota: [1, 2],
     program: null, week: null,
     journey: [],
@@ -224,6 +224,20 @@ const STAT = {
   churn: 2, joined: 5,
 };
 
+/* ── 알림 ──────────────────────────────────────────────────────────
+   요청이 온 지 N 시간이 지나면 알린다. 48시간이 회원과 한 약속이라,
+   촘촘하게 세 번 찌르고 → 하루 → 마감 8시간 전에 한 번 더 본다. */
+const ALERT_STEPS = [3, 6, 9, 24, 40];
+const ALERT_ON = { 3: true, 6: true, 9: true, 24: true, 40: true };
+/* 받는 방법 — 관리자는 웹으로 쓰니 스토어 심사가 없다.
+   아이폰 웹 푸시는 '홈 화면에 추가' 한 경우에만 온다 (iOS 16.4+). */
+const ALERT_HOW = [
+  ['kakao', '카카오 알림톡', '제일 확실해요. 폰 설정이 필요 없어요', true],
+  ['push',  '앱 알림(웹 푸시)', '아이폰은 홈 화면에 추가해야 와요', true],
+  ['mail',  '이메일', '놓치기 쉬워요. 보조로만', false],
+];
+const QUIET = ['밤 10시', '아침 8시'];
+
 </script>
 <script>
 "use strict";
@@ -237,6 +251,11 @@ const S = {
   view: 'pc',          // pc | mo
   nav: 'home',         // 상단 카테고리에서 고른 곳
   more: false,         // '그 외' 펼침
+  bell: false,         // 알림함 펼침
+  read: {},            // 읽은 알림
+  steps: { ...ALERT_ON },   // 몇 시간마다 알릴지
+  how: Object.fromEntries(ALERT_HOW.map(([k, , , on]) => [k, on])),
+  quiet: true,         // 조용한 시간
   pick: 'q2',          // 지금 고른 요청
   done: {},            // 답을 보낸 요청
   draft: {},           // 요청별로 쓰던 글 (사람 바꿔도 안 날아간다)
@@ -262,6 +281,24 @@ const won = n => n.toLocaleString('ko-KR');
 const shots = id => (S.shots[id] = S.shots[id] || []);
 /* 편집 중인 장면 */
 const editing = () => S.mark && shots(S.mark.qid)[S.mark.i];
+
+/* ── 알림 ──────────────────────────────────────────────────────────
+   요청이 온 지 몇 시간 됐는지는 48 - (남은 시간) 으로 나온다.
+   켜 둔 단계 중 이미 지난 것만 알림이 된다. 한 요청에 여러 단계가 지났으면
+   제일 마지막 것만 보여준다 — 같은 사람이 다섯 줄로 쌓이면 안 읽는다. */
+const elapsed = q => 48 - q.left;
+function alerts() {
+  const out = [];
+  waiting().forEach(q => {
+    const e = elapsed(q);
+    const hit = ALERT_STEPS.filter(h => S.steps[h] && e >= h);
+    if (!hit.length) return;
+    const at = hit[hit.length - 1];
+    out.push({ id: q.id + '@' + at, q, at, e, n: hit.length });
+  });
+  return out.sort((a, b) => a.q.left - b.q.left);
+}
+const unread = () => alerts().filter(a => !S.read[a.id]).length;
 
 /* ── 조각들 ─────────────────────────────────────────────────────── */
 
@@ -367,15 +404,34 @@ function history(q) {
     ${body}</div>`;
 
   const av = z(38, 46);
-  const who = `<div style="display:flex;align-items:center;gap:${z(10, 13)}px">
-    <span style="width:${av}px;height:${av}px;border-radius:50%;background:var(--ns-green);color:#FFF;
-      flex:none;display:flex;align-items:center;justify-content:center;font-size:${z(13, 16)}px;font-weight:700">
-      ${esc(m.name[0])}</span>
-    <span style="flex:1;display:flex;flex-direction:column;gap:3px">
-      <span style="font-size:${z(13.5, 16)}px;font-weight:700;color:var(--ns-ink)">${esc(m.name)}
-        <span style="font-size:${z(11, 12.5)}px;font-weight:500;color:var(--ns-ink3)">${esc(m.real)}</span></span>
-      <span style="font-size:${z(11, 12.5)}px;font-weight:500;color:var(--ns-ink3)">
-        ${esc(m.plan)} · ${m.months}개월째 · 한마디 ${m.quota[0]}/${m.quota[1]}회</span></span></div>`;
+  /* 얼마나 오래 낸 사람인지, 요즘 얼마나 치는지 — 답의 세기가 여기서 갈린다.
+     3개월 낸 사람과 이번 달 시작한 사람에게 같은 말을 하면 안 된다. */
+  const dd = m.days - (m.daysPrev || 0);
+  const fact = (k, v, note, col) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+    <span style="font-size:${z(9.5, 10.5)}px;font-weight:600;color:var(--ns-ink3)">${k}</span>
+    <span style="font-size:${z(12, 13.5)}px;font-weight:700;color:${col || 'var(--ns-ink)'};
+      font-family:var(--font-num)">${v}</span>
+    ${note ? `<span style="font-size:${z(10, 11)}px;font-weight:500;color:var(--ns-ink3)">${note}</span>` : ''}
+  </div>`;
+  const who = `<div style="display:flex;flex-direction:column;gap:${z(11, 14)}px">
+    <div style="display:flex;align-items:center;gap:${z(10, 13)}px">
+      <span style="width:${av}px;height:${av}px;border-radius:50%;background:var(--ns-green);color:#FFF;
+        flex:none;display:flex;align-items:center;justify-content:center;font-size:${z(13, 16)}px;font-weight:700">
+        ${esc(m.name[0])}</span>
+      <span style="flex:1;display:flex;flex-direction:column;gap:3px">
+        <span style="font-size:${z(13.5, 16)}px;font-weight:700;color:var(--ns-ink)">${esc(m.name)}
+          <span style="font-size:${z(11, 12.5)}px;font-weight:500;color:var(--ns-ink3)">${esc(m.real)}</span></span>
+        <span style="font-size:${z(11, 12.5)}px;font-weight:500;color:var(--ns-ink3)">
+          ${esc(m.plan)} · ${m.months}개월째 · 한마디 ${m.quota[0]}/${m.quota[1]}회</span></span></div>
+    <div style="display:flex;gap:${z(10, 14)}px;background:var(--ns-sand);border-radius:11px;
+      padding:${z(11, 13)}px ${z(12, 15)}px">
+      ${fact('처음 온 날', esc(m.join), '가입')}
+      ${fact('첫 결제', esc(m.pay1), m.join === m.pay1 ? '가입한 날 바로' : '')}
+      ${fact('이번 달 연습', m.days + '일',
+        dd > 0 ? `지난달보다 ${dd}일 늘었어요` : dd < 0 ? `지난달보다 ${-dd}일 줄었어요` : '지난달과 같아요',
+        dd < 0 ? 'var(--ns-danger)' : dd > 0 ? 'var(--ns-green)' : '')}
+    </div>
+  </div>`;
 
   const prog = m.program
     ? `<div style="background:var(--ns-soft);border:1px solid #DCE7DE;border-radius:11px;
@@ -555,12 +611,131 @@ function topbar() {
         ${MORE.map(x => tab(x, 1)).join('')}</div>` : ''}
     </div>
     <span style="flex:1"></span>
+    <div style="position:relative;display:flex;align-items:center">
+      <span data-bell style="position:relative;width:34px;height:34px;border-radius:9px;display:flex;
+        align-items:center;justify-content:center;cursor:pointer;
+        background:${S.bell ? 'var(--ns-sand)' : 'transparent'}">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--ns-ink2)"
+          stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 15V10a6 6 0 0 0-12 0v5l-1.5 3h15z"/><path d="M10 21h4"/></svg>
+        ${unread() ? `<span style="position:absolute;top:3px;right:3px;min-width:15px;height:15px;
+          border-radius:9px;background:var(--ns-danger);color:#FFF;font-size:9.5px;font-weight:700;
+          font-family:var(--font-num);display:flex;align-items:center;justify-content:center;
+          padding:0 4px">${unread()}</span>` : ''}
+      </span>
+      ${S.bell ? bellBox() : ''}
+    </div>
     <span style="display:flex;align-items:center;gap:9px">
       <span style="font-size:12.5px;font-weight:600;color:var(--ns-ink2)">이도형 프로</span>
       <span style="width:30px;height:30px;border-radius:50%;background:var(--ns-green);color:#FFF;
         display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">이</span>
     </span>
   </div>`;
+}
+
+/* 알림함 — 종을 누르면 열린다 */
+function bellBox() {
+  const list = alerts();
+  const row = a => {
+    const m = mem(a.q);
+    const isNew = !S.read[a.id];
+    return `<div data-alert="${a.id}" style="display:flex;gap:10px;padding:11px 12px;cursor:pointer;
+      border-bottom:1px solid #F2ECE2;background:${isNew ? 'var(--ns-soft)' : 'transparent'}">
+      <span style="flex:none;width:7px;height:7px;border-radius:50%;margin-top:6px;
+        background:${isNew ? (urgent(a.q.left) ? 'var(--ns-danger)' : 'var(--ns-bronze)') : 'transparent'}"></span>
+      <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+        <span style="font-size:12.5px;font-weight:${isNew ? 700 : 500};color:var(--ns-ink);line-height:1.5">
+          ${esc(m.name)} 님 요청이 온 지 <b style="font-family:var(--font-num)">${a.at}시간</b> 지났어요</span>
+        <span style="font-size:11px;font-weight:500;color:var(--ns-ink3);line-height:1.5;
+          display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">
+          ${esc(a.q.note)}</span>
+        <span style="font-size:10.5px;font-weight:700;font-family:var(--font-num);
+          color:${urgent(a.q.left) ? 'var(--ns-danger)' : 'var(--ns-ink3)'}">${left(a.q.left)}
+          ${a.n > 1 ? ` · ${a.n}번째 알림` : ''}</span>
+      </span></div>`;
+  };
+  return `<div style="position:absolute;top:44px;right:-6px;width:330px;background:var(--ns-card);
+    border:1px solid var(--ns-line);border-radius:12px;box-shadow:0 16px 38px -20px rgba(38,40,42,.5);
+    z-index:9;overflow:hidden;display:flex;flex-direction:column">
+    <div style="flex:none;display:flex;align-items:center;padding:12px 13px;border-bottom:1px solid var(--ns-line)">
+      <span style="flex:1;font-size:13px;font-weight:700;color:var(--ns-ink)">알림</span>
+      ${unread() ? `<span data-readall style="font-size:11px;font-weight:700;color:var(--ns-green);
+        cursor:pointer">모두 읽음</span>` : ''}
+    </div>
+    <div style="max-height:340px;overflow-y:auto">
+      ${list.length ? list.map(row).join('')
+        : `<div style="padding:26px 14px;text-align:center;font-size:12px;font-weight:500;
+            color:var(--ns-ink3);line-height:1.7">지금은 알릴 게 없어요.<br>${ALERT_STEPS.filter(h => S.steps[h]).join(' · ')}시간이 지나면 알려드릴게요.</div>`}
+    </div>
+    <div data-nav="set" style="flex:none;padding:11px 13px;border-top:1px solid var(--ns-line);
+      font-size:11.5px;font-weight:600;color:var(--ns-ink3);cursor:pointer">알림 설정 ›</div>
+  </div>`;
+}
+
+/* 설정 — 지금은 알림 규칙 하나만 진짜로 돈다 */
+function pageSet() {
+  const chk = (on, big) => `<span style="flex:none;width:${big ? 20 : 18}px;height:${big ? 20 : 18}px;
+    border-radius:6px;display:flex;align-items:center;justify-content:center;
+    background:${on ? 'var(--ns-green)' : 'transparent'};
+    border:${on ? 'none' : '1.6px solid #C9C3B4'}">
+    ${on ? '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#FFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 5 5 9-10"/></svg>' : ''}</span>`;
+  const card = body => `<div style="background:var(--ns-card);border:1px solid var(--ns-line);
+    border-radius:13px;overflow:hidden">${body}</div>`;
+  const sect = (t, note, body) => `<div style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <span style="font-size:15px;font-weight:700;color:var(--ns-ink)">${t}</span>
+      ${note ? `<span style="font-size:12px;font-weight:400;color:var(--ns-ink3);line-height:1.6">${note}</span>` : ''}
+    </div>${body}</div>`;
+
+  return `<div style="flex:1;overflow-y:auto;background:var(--ns-bg)">
+    <div style="max-width:720px;margin:0 auto;padding:30px 30px 44px;display:flex;flex-direction:column;gap:26px">
+      <span style="font-size:24px;font-weight:700;letter-spacing:-.03em;color:var(--ns-ink)">설정</span>
+
+      ${sect('언제 알릴까요', '요청이 온 지 이만큼 지나면 알려드려요. 회원과 한 약속은 48시간입니다.',
+        card(ALERT_STEPS.map(h => {
+          const on = S.steps[h];
+          const last = h === 40;
+          return `<div data-step="${h}" style="display:flex;align-items:center;gap:12px;padding:14px 16px;
+            cursor:pointer;${last ? '' : 'border-bottom:1px solid #F2ECE2'}">
+            ${chk(on, 1)}
+            <span style="flex:1;display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:13.5px;font-weight:600;color:var(--ns-ink)">
+                ${h}시간 지났을 때</span>
+              <span style="font-size:11.5px;font-weight:400;color:var(--ns-ink3)">
+                ${h <= 9 ? '오늘 안에 처리하려면 이 셋이 핵심이에요'
+                  : h === 24 ? '하루가 지났어요. 절반 왔습니다'
+                  : '마감 8시간 전. 여기서 놓치면 횟수를 돌려드려야 해요'}</span></span>
+          </div>`;
+        }).join(''))) }
+
+      ${sect('어떻게 받을까요', '관리자 화면은 웹이라 스토어 심사가 없습니다. 알림만 골라 두면 됩니다.',
+        card(ALERT_HOW.map(([k, n, d], i) => `<div data-how="${k}" style="display:flex;align-items:center;
+          gap:12px;padding:14px 16px;cursor:pointer;${i === ALERT_HOW.length - 1 ? '' : 'border-bottom:1px solid #F2ECE2'}">
+          ${chk(S.how[k], 1)}
+          <span style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:13.5px;font-weight:600;color:var(--ns-ink)">${n}</span>
+            <span style="font-size:11.5px;font-weight:400;color:var(--ns-ink3)">${d}</span></span>
+        </div>`).join('')))}
+
+      ${sect('조용한 시간', '',
+        card(`<div data-quiet style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer">
+          ${chk(S.quiet, 1)}
+          <span style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:13.5px;font-weight:600;color:var(--ns-ink)">
+              ${QUIET[0]}부터 ${QUIET[1]}까지는 안 보내기</span>
+            <span style="font-size:11.5px;font-weight:400;color:var(--ns-ink3)">
+              그 사이에 쌓인 건 아침에 한 번에 알려드려요</span></span>
+        </div>`))}
+
+      <div style="background:var(--ns-sand);border-radius:12px;padding:16px 18px;display:flex;
+        flex-direction:column;gap:7px">
+        <span style="font-size:12.5px;font-weight:700;color:var(--ns-ink2)">아이폰에서 앱 알림을 받으려면</span>
+        <span style="font-size:12px;font-weight:400;color:var(--ns-ink3);line-height:1.8">
+          사파리로 이 화면을 연 다음 <b>공유 → 홈 화면에 추가</b>를 한 번만 해주세요.
+          그러면 앱처럼 열리고 알림도 옵니다. 안드로이드는 그냥 됩니다.<br>
+          카카오 알림톡은 이 설정과 상관없이 항상 옵니다.</span>
+      </div>
+    </div></div>`;
 }
 
 /* 대시보드 — 여기서 각 방으로 들어간다 */
@@ -827,6 +1002,7 @@ function renderPC() {
              : S.nav === 'queue' ? pageQueue()
              : S.nav === 'members' ? pageMembers()
              : S.nav === 'stats' ? pageStats()
+             : S.nav === 'set' ? pageSet()
              : pageSoon(S.nav);
   return `<div style="display:flex;flex-direction:column;height:100%;background:var(--ns-bg)">
     ${topbar()}<div style="flex:1;min-height:0;display:flex">${page}</div></div>`;
@@ -1162,11 +1338,24 @@ function wire() {
     render();
   });
   on('[data-nav]', 'click', e => {
-    S.nav = e.currentTarget.dataset.nav; S.card = null; S.more = false;
+    S.nav = e.currentTarget.dataset.nav; S.card = null; S.more = false; S.bell = false;
     if (S.view === 'mo' && S.nav === 'queue') S.mo = 'q';
     render();
   });
-  on('[data-more]', 'click', () => { S.more = !S.more; render(); });
+  on('[data-more]', 'click', () => { S.more = !S.more; S.bell = false; render(); });
+  on('[data-bell]', 'click', () => { S.bell = !S.bell; S.more = false; render(); });
+  on('[data-alert]', 'click', e => {
+    const id = e.currentTarget.dataset.alert;
+    S.read[id] = true;
+    S.pick = id.split('@')[0];
+    S.nav = 'queue'; S.bell = false;
+    if (S.view === 'mo') S.mo = 'w';
+    render();
+  });
+  on('[data-readall]', 'click', e => { e.stopPropagation(); alerts().forEach(a => { S.read[a.id] = true; }); render(); });
+  on('[data-step]', 'click', e => { const h = e.currentTarget.dataset.step; S.steps[h] = !S.steps[h]; render(); });
+  on('[data-how]', 'click', e => { const k = e.currentTarget.dataset.how; S.how[k] = !S.how[k]; render(); });
+  on('[data-quiet]', 'click', () => { S.quiet = !S.quiet; render(); });
   on('[data-go]', 'click', e => { S.nav = e.currentTarget.dataset.go; render(); });
   on('[data-mem]', 'click', e => { S.card = e.currentTarget.dataset.mem; render(); });
   on('[data-cardgo]', 'click', e => {
