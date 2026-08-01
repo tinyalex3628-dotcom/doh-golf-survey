@@ -81,7 +81,7 @@ body{font-family:var(--font-base);background:var(--pg);color:var(--ct);-webkit-f
 #stage [data-tapped]:active{opacity:.62;transition:none}
 #stage [data-hit]::after{content:'';position:absolute;left:0;right:0;
   top:50%;transform:translateY(-50%);height:var(--hit-h,44px)}
-#stage [data-hit][data-hit-w]::after{left:50%;width:44px;
+#stage [data-hit][data-hit-w]::after{left:50%;right:auto;width:var(--hit-w,44px);
   transform:translate(-50%,-50%)}
 
 /* 데모 모드 (?demo=1) — 사용자 테스트용. 개발자 패널(화면 점프 · 등급 전환기)을 지우고
@@ -1217,7 +1217,7 @@ html.demo body{background:#EDEAE3}
           <div style="flex: 1 1 0%; overflow-y: auto; background: var(--ns-bg); padding: 6px 20px 0px; display: flex; flex-direction: column; gap: 16px;">
             <div style="flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px;">
               <span style="font-size: 14px; font-weight: 500; color: var(--ns-ink);">오늘 스윙 올리기</span>
-              <div style="border: 1.5px dashed #CBD8CC; background: #F7FAF7; border-radius: 12px; padding: 16px 20px; display: flex; flex-direction: column; align-items: center; gap: 7px;">
+              <div data-up-box style="border: 1.5px dashed #CBD8CC; background: #F7FAF7; border-radius: 12px; padding: 16px 20px; display: flex; flex-direction: column; align-items: center; gap: 7px;">
                 <span style="width: 36px; height: 36px; border-radius: 50%; background: #E6EDE7; color: var(--ns-green); display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></span>
                 <span style="font-size: 14px; font-weight: 600; color: var(--ns-ink);">영상 추가하기</span>
                 <span style="font-size: 12px; color: var(--ns-ink3);">정면 · 측면 모두 올릴 수 있어요</span>
@@ -4761,6 +4761,8 @@ const S = { route: '2a', hist: [], step: 1, picked: null, vids: 0, viaLoading: f
             survey: {}, vidPicked: false,
             // 업로드 — 한 번이라도 올렸는지(빈 갤러리 판단), 몇 번째 시도인지.
             upDone: false, upTry: 0, upFailed: false,
+            // 올라가는 중인 영상. 화면을 나가도 여기 남아 계속 돈다.
+            up: null,
             // 연습기록 — 오늘 카드 / 프로 한마디 카드는 서로 다른 축의 상태다.
             // 기본값은 앱 전체 내러티브(2g·pc1 이 이미 "오늘 스윙 업로드 완료 · 코멘트 도착"을
             // 전제로 한다)와 맞춘다.
@@ -5090,8 +5092,32 @@ function applyHits() {
       if (!e.closest('[data-lockwrap]')) e.style.zIndex = '1';
       e.style.setProperty('--hit-h', h + 'px');
       e.dataset.hit = '1';
-      if (now.width < 44 && Math.min(44, now.width) - now.width > 2) e.dataset.hitW = '1';
     }
+  });
+
+  /* 가로만 좁은 것 — 뒤로가기 화살표가 대표적이다.
+     세로는 44px 을 채우고 있어서 위 검사에 안 걸렸고, 폭이 20px 인 채로 남아 있었다.
+     장갑 낀 엄지로는 못 누른다. 좌우 이웃까지의 여유 안에서만 넓힌다. */
+  all.forEach(({ e, r }) => {
+    if (r.width >= 44) return;
+    let lt = 1e4, rt = 1e4;
+    all.forEach(({ e: x, r: xr }) => {
+      if (x === e || e.contains(x) || x.contains(e)) return;
+      if (xr.bottom <= r.top + 1 || xr.top >= r.bottom - 1) return;   // 같은 줄만
+      if (xr.right <= r.left) lt = Math.min(lt, r.left - xr.right);
+      else if (xr.left >= r.right) rt = Math.min(rt, xr.left - r.right);
+    });
+    const need = (44 - r.width) / 2;
+    const grow = Math.max(0, Math.min(need, lt / 2, rt / 2));
+    if (grow < 1) return;
+    const w = Math.min(44, r.width + grow * 2);
+    if (w - r.width < 2) return;
+    if (getComputedStyle(e).position === 'static') e.style.position = 'relative';
+    if (!e.closest('[data-lockwrap]')) e.style.zIndex = '1';
+    e.style.setProperty('--hit-w', w + 'px');
+    if (!e.dataset.hit) e.style.setProperty('--hit-h', Math.round(r.height) + 'px');
+    e.dataset.hit = '1';
+    e.dataset.hitW = '1';
   });
 }
 /* 디자인 원본이 cursor:pointer 로 표시해 둔 "진짜 누를 영역"까지 올라간다.
@@ -5481,70 +5507,112 @@ function applyLock() {
   });
 }
 
-/* ── 업로드 진행 ────────────────────────────────────────────────────
-   파일 이름 · 퍼센트 · 취소. 끝나면 성공 상태로 바뀐다.
-   실패했을 때 갈 곳은 업로드 실패 화면(uf)이다. */
-function uploadInto(box, filename, onDone, fail) {
-  const base = box.getAttribute('style') || '';
+/* ── 업로드 ────────────────────────────────────────────────────────
+   업로드는 화면이 아니라 앱이 한다.
+   전에는 진행 상태가 그 화면의 DOM 안에만 있어서, 타석에서 화면 한 번 넘기면
+   올라가던 게 소리 없이 죽고 처음 상태로 돌아왔다. 다시 올려야 하는 줄도 모른다.
+   이제 상태는 S.up 에 있고, 타이머는 어느 화면에 있든 계속 돈다.
+   2c 로 돌아오면 지금 몇 %인지 그대로 다시 그린다. */
+const UP_FILE = '드라이버_0722.mp4';
+
+function upStart() {
+  if (S.up && !S.up.done) return;         // 이미 하나 돌고 있으면 또 시작하지 않는다
+  S.up = null;                            // 다 올린 뒤 또 누르면 다음 영상을 올린다
+  S.upTry += 1;
+  // 두 번째 시도는 일부러 끊는다. 실패 화면(uf)이 앱 안에 실제로 있다는 걸
+  // 보여주려면 실패가 한 번은 일어나야 한다. 실서비스에선 진짜 실패일 때만.
+  S.up = { p: 0, done: false, failed: false,
+           failAt: (S.upTry === 2 && !S.upFailed) ? 58 : 0 };
+  upPaint();
+  setTimeout(upTick, 200);
+}
+
+function upTick() {
+  const u = S.up;
+  if (!u || u.done || u.failed) return;
+  u.p = Math.min(100, u.p + 12 + Math.round(u.p / 20));
+
+  if (u.failAt && u.p >= u.failAt) {      // 중간에 끊기는 경우
+    u.p = u.failAt; u.failed = true;
+    upPaint();
+    setTimeout(() => {
+      if (!S.up || !S.up.failed) return;
+      S.upFailed = true; S.up = null;
+      // 보고 있으면 실패 화면으로, 딴 데 있으면 알림으로 — 몰래 죽지 않는다
+      if (S.route === '2c') go('uf');
+      else toast('업로드가 끊겼어요', { label: '다시 하기', fn: () => go('uf') });
+    }, 620);
+    return;
+  }
+
+  if (u.p >= 100) {
+    upPaint();
+    setTimeout(() => {
+      if (!S.up || S.up.failed) return;
+      S.up.done = true; S.upDone = true;
+      upPaint();
+      // 올리고 끝이면 첫 사용자는 여기서 앱을 끈다. 다음 걸음을 붙여준다.
+      toast('스윙을 올렸어요 · 이제 AI가 봐줄 수 있어요',
+            { label: 'AI 분석 하기', fn: () => go('04') });
+    }, 420);
+    return;
+  }
+
+  upPaint();
+  setTimeout(upTick, 260);
+}
+
+function upCancel() { S.up = null; upPaint(); toast('올리기를 취소했어요'); }
+
+/* 지금 화면에 업로드 칸이 있으면 상태대로 그린다. 없으면 아무 일도 안 한다 —
+   업로드는 계속 돌고 있고, 돌아오면 그때 그린다. */
+function upPaint() {
+  const box = root().querySelector('[data-up-box]');
+  if (!box) return;
+  if (!box.dataset.upBase) box.dataset.upBase = box.getAttribute('style') || '';
+  const base = box.dataset.upBase;
+  const u = S.up;
+
+  if (!u) {                                // 아직 안 올림 / 취소함
+    box.setAttribute('style', base);
+    box.innerHTML = '<span style="font-size:13px;font-weight:600;color:#4A4638">영상 추가하기</span>';
+    return;
+  }
+
+  if (u.done) {
+    box.setAttribute('style', base + ';border-style:solid;border-color:#21402F;background:#F2F8F4');
+    box.innerHTML =
+      '<span style="display:flex;align-items:center;gap:9px">'
+      + '<span style="width:24px;height:24px;border-radius:50%;background:#21402F;flex:none;'
+      + 'display:flex;align-items:center;justify-content:center">'
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" '
+      + 'stroke-linejoin="round" style="width:11px;height:11px"><path d="m5 12.5 5 5 9-10"></path></svg>'
+      + '</span><span style="font-size:13px;font-weight:600;color:#1D2420">'
+      + UP_FILE + ' 올렸어요</span></span>';
+    return;
+  }
+
+  const bad = u.failed;
   box.setAttribute('style', base + ';border-color:#21402F;background:#F2F8F4');
   box.innerHTML =
     '<div style="display:flex;flex-direction:column;gap:9px;width:100%">'
     + '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">'
     + '<span style="flex:1;min-width:0;font-size:12.5px;font-weight:600;color:#1D2420;'
-    + 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + filename + '</span>'
-    + '<span style="font-size:12.5px;font-weight:700;color:#21402F;font-family:var(--font-num)"'
-    + ' data-up-pct>0%</span></div>'
-    + '<span style="display:block;height:5px;border-radius:99px;background:#E4DED2;overflow:hidden">'
-    + '<span style="display:block;height:100%;width:0%;background:#21402F;transition:width .28s"'
-    + ' data-up-bar></span></span>'
+    + 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + UP_FILE + '</span>'
+    + '<span style="font-size:12.5px;font-weight:700;font-family:var(--font-num);color:'
+    + (bad ? '#C0392B' : '#21402F') + '">' + u.p + '%</span></div>'
+    + '<div style="height:5px;border-radius:99px;background:#DCE7DE;overflow:hidden">'
+    + '<span style="display:block;height:100%;border-radius:99px;width:' + u.p + '%;'
+    + 'background:' + (bad ? '#C0392B' : '#21402F') + '"></span></div>'
     + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-    + '<span style="font-size:11px;font-weight:400;color:#4A4638" data-up-msg>올리는 중이에요</span>'
-    + '<span data-up-cancel style="font-size:11px;font-weight:600;color:#686253">취소</span></div></div>';
-  const bar = box.querySelector('[data-up-bar]');
-  const pct = box.querySelector('[data-up-pct]');
-  const msg = box.querySelector('[data-up-msg]');
-  let p = 0, stopped = false;
-  box.querySelector('[data-up-cancel]').addEventListener('click', ev => {
-    ev.stopPropagation();
-    stopped = true;
-    box.dataset.uploading = '';
-    box.setAttribute('style', base);
-    box.innerHTML = '<span style="font-size:13px;font-weight:600;color:#4A4638">영상 추가하기</span>';
-    toast('올리기를 취소했어요');
-  });
-  const step = () => {
-    if (stopped || !box.isConnected) return;
-    p = Math.min(100, p + 12 + Math.round(p / 20));
-    bar.style.width = p + '%'; pct.textContent = p + '%';
-    if (fail && p >= fail.at) {                 // 중간에 끊기는 경우
-      p = fail.at;
-      bar.style.width = p + '%'; pct.textContent = p + '%';
-      bar.style.background = '#C0392B'; pct.style.color = '#C0392B';
-      msg.textContent = '연결이 끊겼어요';
-      setTimeout(() => { if (!stopped && box.isConnected) fail.fn(); }, 620);
-      return;
-    }
-    if (p >= 100) {
-      msg.textContent = '올리기 끝났어요';
-      box.querySelector('[data-up-cancel]').remove();
-      setTimeout(() => {
-        if (stopped) return;
-        box.setAttribute('style', base + ';border-style:solid;border-color:#21402F;background:#F2F8F4');
-        box.innerHTML =
-          '<span style="display:flex;align-items:center;gap:9px">'
-          + '<span style="width:24px;height:24px;border-radius:50%;background:#21402F;flex:none;'
-          + 'display:flex;align-items:center;justify-content:center">'
-          + '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" '
-          + 'stroke-linejoin="round" style="width:11px;height:11px"><path d="m5 12.5 5 5 9-10"></path></svg>'
-          + '</span><span style="font-size:13px;font-weight:600;color:#1D2420">'
-          + filename + ' 올렸어요</span></span>';
-        onDone && onDone();
-      }, 420);
-      return;
-    }
-    setTimeout(step, 260);
-  };
-  setTimeout(step, 200);
+    + '<span style="font-size:11px;font-weight:400;color:#4A4638">'
+    + (bad ? '연결이 끊겼어요'
+           : (u.p >= 100 ? '올리기 끝났어요' : '올리는 중이에요 · 나가 있어도 계속 올라가요')) + '</span>'
+    + (bad || u.p >= 100 ? ''
+       : '<span data-up-cancel style="font-size:11px;font-weight:600;color:#686253">취소</span>')
+    + '</div></div>';
+  const c = box.querySelector('[data-up-cancel]');
+  if (c) c.addEventListener('click', ev => { ev.stopPropagation(); upCancel(); });
 }
 
 /* ── 결과지 공통 배선 ──────────────────────────────────────────── */
@@ -5832,26 +5900,11 @@ const WIRE = {
     // 올라가는 동안 무슨 일이 벌어지는지, 취소할 수 있는지를 보여준다.
     // 점선 박스 자체를 잡아야 한다. 한 단계 위는 섹션 제목까지 품고 있어서
     // 거기에 진행률을 그리면 '오늘 스윙 올리기' 제목이 사라진다.
-    const drop = byText('영상 추가하기')[0] && byText('영상 추가하기')[0].parentElement;
-    if (drop && /dashed/.test(drop.getAttribute('style') || '')) {
-      tap(drop.parentElement, () => {
-        if (drop.dataset.uploading || drop.dataset.done) return;
-        drop.dataset.uploading = '1';
-        S.upTry += 1;
-        // 두 번째 시도는 일부러 끊는다. 실패 화면(uf)이 앱 안에 실제로 있다는 걸
-        // 보여주려면 실패가 한 번은 일어나야 한다. 실서비스에선 진짜 실패일 때만.
-        const fail = (S.upTry === 2 && !S.upFailed)
-          ? { at: 58, fn: () => { S.upFailed = true; go('uf'); } } : null;
-        uploadInto(drop, '드라이버_0722.mp4', () => {
-          drop.dataset.uploading = '';
-          drop.dataset.done = '1';
-          S.upDone = true;
-          // 올리고 끝이면 첫 사용자는 여기서 앱을 끈다. 다음 걸음을 붙여준다.
-          toast('스윙을 올렸어요 · 이제 AI가 봐줄 수 있어요',
-                { label: 'AI 분석 하기', fn: () => go('04') });
-        }, fail);
-      });
-    } else miss('2c 업로드 점선 박스');
+    const drop = root().querySelector('[data-up-box]');
+    if (drop) {
+      upPaint();                       // 나갔다 왔으면 하던 데서 이어 그린다
+      tap(drop.parentElement, upStart);
+    } else miss('2c 업로드 칸');
     selectGroup(['좋았음', '보통', '안 됐음'], ON_SOFT);
     selectGroup(['30분 이하', '30~60분', '1시간 이상'], ON_SOFT);
     // 요청할 수 없는 등급인데 체크가 켜져 있으면 '이미 신청됨'으로 읽힌다. 꺼둔다.
@@ -6172,7 +6225,7 @@ const WIRE = {
   /* ── 없던 상태 화면 ─────────────────────────────────────────────── */
   uf() {   // 업로드 실패 — 실패는 막다른 길이 아니라 갈림길이어야 한다
     const R = (sel, fn) => { const e = root().querySelector(sel); e ? tap(e, fn) : miss('uf ' + sel); };
-    R('[data-uf-retry]', () => { S.upTry = 0; replaceWith('2c'); toast('다시 올려볼게요'); });
+    R('[data-uf-retry]', () => { S.upTry = 0; S.up = null; replaceWith('2c'); toast('다시 올려볼게요'); });
     R('[data-uf-later]', () => replaceWith('2b'));
     R('[data-uf-help]', () => go('cs'));
     backArrow('[data-st-back]');
