@@ -4486,8 +4486,8 @@ const P_KO = { P1: '어드레스', P2: '테이크어웨이', P3: '왼팔 수평'
                P6: '클럽 수평', P7: '임팩트', P8: '릴리즈', P9: '폴로스루', P10: '피니시' };
 /* 엔진 경고 → 회원이 알아들을 말. 여기 없는 경고는 화면에 안 띄운다. */
 const WARN_KO = {
-  object_engine_absent: '클럽과 공은 이번 영상에서 못 잡았어요. 몸의 각도만 보고 판단했습니다.',
-  view_mismatch: '찍은 각도와 분석 각도가 달라서 일부 항목은 건너뛰었어요.',
+  object_engine_absent: '이번 영상에선 클럽과 공도 못 잡았어요.',
+  view_mismatch: '찍은 각도 때문에 건너뛴 항목도 있어요.',
 };
 const confWord = c => (c >= 0.85 ? '높음' : c >= 0.7 ? '보통' : '낮음');
 const ruleName = r => (RULE_KO[r.id] || [r.nm])[0];
@@ -4616,11 +4616,11 @@ function renderEngineResult(host, data, rules) {
 
   // 엔진 경고를 우리말로. 사전에 없는 경고는 아예 안 띄운다 —
   // 'object_engine_absent: club/ball features unavailable' 이 그대로 나가면 고장으로 읽힌다.
+  // 엔진 경고는 따로 늘어놓지 않고 '틀릴 수 있다' 문장에 붙인다.
+  // 'object_engine_absent: club/ball features unavailable' 이 그대로 나가면 고장으로 읽힌다.
   const warn = (data.quality.warnings || [])
     .map(w => WARN_KO[String(w).split(':')[0].trim()])
-    .filter(Boolean)
-    .map(t => `<div style="font-size:11px;font-weight:400;color:${E.INK2};line-height:1.6;padding:2px 0">· ${esc(t)}</div>`)
-    .join('');
+    .filter(Boolean).map(t => ' ' + esc(t)).join('');
 
   const capBar = t => `<div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 1px 9px">
     <span style="font-size:9.5px;font-weight:600;letter-spacing:.18em;color:${E.INK3}">${t}</span></div>`;
@@ -4644,25 +4644,18 @@ function renderEngineResult(host, data, rules) {
 
     <div style="margin-top:20px">${capBar('무엇을 봤나')}
       ${judged.map(ruleCard).join('')}
-      ${nas.length ? `<div style="background:${E.SAND};border-radius:11px;padding:11px 13px;margin-top:2px">
-        <div style="display:flex;align-items:center;gap:8px" data-na-head>
-          <span style="flex:1;font-size:11.5px;font-weight:500;color:${E.INK3}">이번 영상에서 못 본 항목 ${nas.length}가지</span>
-          <span style="font-size:10.5px;font-weight:600;color:${E.INK2}">펼치기</span></div>
-        <div style="display:none;margin-top:9px" data-na-body>${nas.map(ruleCard).join('')}</div></div>` : ''}
     </div>
 
-    <div style="margin-top:20px">${capBar('이번 분석에 대해')}
-      <div style="background:${E.CARD};border:1px solid ${E.LINE};border-radius:12px;padding:12px 13px">
-        <div style="font-size:11.5px;font-weight:600;color:${E.INK};padding-bottom:6px">
-          분석 신뢰도 ${confWord(data.quality.overall_confidence)} · 몸이 잘 보였어요</div>
-        ${warn}
-        <div style="font-size:11px;font-weight:400;color:${E.INK3};line-height:1.6;padding-top:6px">
-          AI는 영상에 보이는 각도만 봅니다. 왜 그렇게 되는지는 사람이 봐야 알아요.</div>
-      </div></div>
-
-    <div style="margin-top:20px;padding-bottom:4px">
-      <span style="display:block;background:${E.FOREST};color:#fff;border-radius:12px;padding:15px;
-        text-align:center;font-size:14px;font-weight:600;letter-spacing:-.02em" data-e3-pro>이 결과 프로에게 보내기</span>
+    <div style="margin-top:22px;padding-bottom:4px;background:${E.CARD};border:1px solid ${E.LINE};
+                border-radius:14px;padding:16px 16px 15px">
+      <div style="font-size:14px;font-weight:700;letter-spacing:-.025em;color:${E.INK}">
+        AI 분석은 여기까지예요</div>
+      <div style="margin-top:8px;font-size:12px;font-weight:400;color:${E.INK2};line-height:1.7">
+        영상에 보이는 각도만 보기 때문에 틀릴 수 있어요.${warn}
+        왜 그렇게 되는지는 사람이 봐야 압니다.</div>
+      <span style="display:block;margin-top:15px;background:${E.FOREST};color:#fff;border-radius:12px;
+        padding:15px;text-align:center;font-size:14px;font-weight:600;letter-spacing:-.02em"
+        data-e3-pro>프로에게 확인받기</span>
     </div>`;
 
   // 진단 카드 펼치기
@@ -4674,17 +4667,6 @@ function renderEngineResult(host, data, rules) {
       d.style.display = d.style.display === 'none' ? 'block' : 'none';
     });
   });
-  const naHead = host.querySelector('[data-na-head]');
-  if (naHead) {
-    naHead.style.cursor = 'pointer';
-    naHead.dataset.tapped = '1';
-    naHead.addEventListener('click', () => {
-      const b = host.querySelector('[data-na-body]');
-      const open = b.style.display !== 'none';
-      b.style.display = open ? 'none' : 'block';
-      naHead.lastElementChild.textContent = open ? '펼치기' : '접기';
-    });
-  }
   return { res, judged, nas };
 }
 
@@ -5931,10 +5913,9 @@ const WIRE = {
   e3() {
     const host = root().querySelector('[data-e3-body]');
     const out = renderEngineResult(host, __DOH.example, __DOH.rules);
-    // 'conf 0.80' 은 회원이 알 이유가 없다. 높음 / 보통 / 낮음이면 충분하다.
-    const c = __DOH.example.quality.overall_confidence;
+    // 신뢰도는 마무리 카드 한 곳에서만 말한다. 여기저기 흩으면 '못 믿겠다'만 남는다.
     const conf = root().querySelector('[data-e3-conf]');
-    if (conf) conf.textContent = '신뢰도 ' + (c >= 0.85 ? '높음' : c >= 0.7 ? '보통' : '낮음');
+    if (conf) conf.style.display = 'none';
     // P 구간 칩 → 프레임 이동
     host.querySelectorAll('[data-p-chip]').forEach(ch => {
       ch.style.cursor = 'pointer';
@@ -5942,14 +5923,10 @@ const WIRE = {
       ch.addEventListener('click', () => toast(ch.textContent.trim().split(' ')[0]
         + ' 구간 (' + ch.dataset.frame + '프레임)으로 이동했어요'));
     });
-    // 무료 회원은 프로에게 못 보낸다. 눌러놓고 신청 화면이 나오면 거기서 막힌다.
+    // 결론은 하나다 — AI로는 여기까지고, 정확한 건 프로가 본다.
+    // 문구는 등급과 무관하게 하나, 가는 곳만 갈린다.
     const pro = host.querySelector('[data-e3-pro]');
-    if (pro) {
-      if (!can('fb') && !can('cm')) {
-        pro.textContent = '프로가 직접 봐주는 건 어떤 건가요';
-        tap(pro, () => go('fx'));
-      } else tap(pro, () => go('01'));
-    }
+    if (pro) tap(pro, () => ((can('fb') || can('cm')) ? go('01') : go('fx')));
   },
 
   /* ── 정규레슨 결과지 (카카오 알림톡 링크로 진입) ────────────────── */
