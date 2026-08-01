@@ -34,6 +34,9 @@ jobs:
       - name: 설문 ↔ KB 결선 검증 (죽은 문항·유령 노드 차단)
         run: python3 tools/check_survey.py -v
 
+      - name: 설문 문항표 동기화 (정본 JSON ↔ docs 표)
+        run: python3 tools/build_survey_doc.py --check
+
       - name: 엔진 통합 스모크 (합성 스윙 → build_v1 → 스키마 검증)
         run: |
           pip -q install numpy

@@ -19,6 +19,7 @@
       "covers": "클럽페이스 (엔진이 클럽을 못 봐서 원리적으로 측정 불가)",
       "options": [
         {
+          "id": "SLICE",
           "label": "오른쪽으로 휘어 나간다 (슬라이스)",
           "activates": [
             "Club Face Open (P7)",
@@ -30,6 +31,7 @@
           "w": 0.8
         },
         {
+          "id": "HOOK",
           "label": "왼쪽으로 감긴다 (훅)",
           "activates": [
             "Club Face Closed (P7)",
@@ -41,11 +43,13 @@
           "w": 0.8
         },
         {
+          "id": "STRAIGHT",
           "label": "거의 곧게 간다",
           "activates": [],
           "w": 0
         },
         {
+          "id": "MIXED",
           "label": "그때그때 다르다",
           "activates": [
             "Club Face Open (P7)",
@@ -56,6 +60,7 @@
           "w": 0.3
         },
         {
+          "id": "UNKNOWN",
           "label": "잘 모르겠다",
           "activates": [],
           "w": 0,
@@ -75,6 +80,7 @@
       "covers": "압력 이동 (지면반력 — 매트/센서 없이는 측정 불가). 느낌 대신 결과로 역추론한다.",
       "options": [
         {
+          "id": "FAT",
           "label": "뒤땅 (공 앞 지면을 먼저 친다)",
           "activates": [
             "Casting (캐스팅)",
@@ -85,6 +91,7 @@
           "w": 0.7
         },
         {
+          "id": "THIN",
           "label": "탑볼 (공 윗부분을 친다)",
           "activates": [
             "Early Pressure Shift (조기 압력 이동)",
@@ -93,6 +100,7 @@
           "w": 0.6
         },
         {
+          "id": "SHANK",
           "label": "생크 (클럽 목에 맞아 오른쪽으로 튄다)",
           "activates": [
             "Hands Too Far From Body (손이 몸에서 멀어짐)",
@@ -102,6 +110,7 @@
           "w": 0.8
         },
         {
+          "id": "WEAK",
           "label": "힘이 안 실린다 / 거리가 안 난다",
           "activates": [
             "Pelvis Rotation Insufficient (골반 회전 부족)",
@@ -111,6 +120,7 @@
           "w": 0.5
         },
         {
+          "id": "NONE",
           "label": "특별한 미스 패턴은 없다",
           "activates": [],
           "w": 0
@@ -129,6 +139,7 @@
       "note": "'그립이 스트롱인가요?'라고 물으면 회원은 모른다. 너클 개수는 지금 눈으로 셀 수 있다.",
       "options": [
         {
+          "id": "KNUCKLE_0_1",
           "label": "0~1개 (손등이 거의 안 보인다)",
           "activates": [
             "Weak Grip Match (P1)"
@@ -136,11 +147,13 @@
           "w": 0.85
         },
         {
+          "id": "KNUCKLE_2",
           "label": "2개",
           "activates": [],
           "w": 0
         },
         {
+          "id": "KNUCKLE_3PLUS",
           "label": "3개 이상 (손등이 많이 보인다)",
           "activates": [
             "Strong Grip Match (P1)",
@@ -150,6 +163,7 @@
           "w": 0.85
         },
         {
+          "id": "UNKNOWN",
           "label": "지금 확인이 어렵다",
           "activates": [],
           "w": 0,
@@ -169,6 +183,7 @@
       "why_matters": "가동범위가 원인이면 스윙 교정이 아니라 몸 준비가 처방이다. 처방 자체가 바뀐다.",
       "options": [
         {
+          "id": "TRAIL_HIP",
           "label": "의자에 앉아 무릎을 붙이고 오른발을 바깥으로 벌릴 때, 오른쪽 골반이 뻣뻣하다",
           "activates": [
             "Limited Trail Hip Internal Rotation",
@@ -179,6 +194,7 @@
           "w": 0.8
         },
         {
+          "id": "THORAX",
           "label": "팔짱 끼고 앉아 상체만 오른쪽으로 돌릴 때, 45도도 안 돌아간다",
           "activates": [
             "Limited Thoracic Rotation",
@@ -189,6 +205,7 @@
           "w": 0.8
         },
         {
+          "id": "ANKLE",
           "label": "벽 앞에 서서 발을 붙인 채 무릎을 벽에 대기 어렵다 (발목)",
           "activates": [
             "Limited Trail Ankle Mobility / Stability"
@@ -196,6 +213,7 @@
           "w": 0.75
         },
         {
+          "id": "SHOULDER",
           "label": "만세하듯 두 팔을 귀 옆까지 올리기가 어렵다",
           "activates": [
             "Limited Trail Arm Flexibility (Mobility Ref)",
@@ -204,6 +222,7 @@
           "w": 0.7
         },
         {
+          "id": "NONE",
           "label": "네 개 다 무리 없이 된다",
           "activates": [],
           "w": 0
@@ -222,6 +241,7 @@
       "why_matters": "동작이 '고장'이 아니라 '지시를 따른 결과'인 경우가 있다. 이걸 모르면 회원이 일부러 하는 걸 결함으로 지적하게 된다.",
       "options": [
         {
+          "id": "HEAD_BACK",
           "label": "\"머리를 뒤에 두고 쳐라\"",
           "activates": [
             "'Keep The Head Back' Image (머리를 뒤에 남기려는 이미지)"
@@ -229,6 +249,7 @@
           "w": 0.9
         },
         {
+          "id": "HIP_BACK_CHEST_UP",
           "label": "\"엉덩이 빼고 가슴 세워라\"",
           "activates": [
             "[Movement Intent / Habit] '엉덩이 빼고 가슴 세워라' 셋업 이미지"
@@ -236,6 +257,7 @@
           "w": 0.9
         },
         {
+          "id": "TRAIL_ARM_TIGHT",
           "label": "\"트레일 팔(오른팔)을 몸에 붙여라\"",
           "activates": [
             "[Movement Intent / Habit] '트레일 팔을 몸에 붙여라' 셋업 이미지"
@@ -243,6 +265,7 @@
           "w": 0.9
         },
         {
+          "id": "LOWER_BODY_FIX",
           "label": "\"하체 고정하고 상체만 돌려라\"",
           "activates": [
             "[Movement Intent / Habit] 하체를 고정하려는 셋업 습관",
@@ -251,6 +274,7 @@
           "w": 0.9
         },
         {
+          "id": "HIT_DOWN",
           "label": "\"눌러 쳐라 / 뒤땅 내지 마라\"",
           "activates": [
             "[Movement Intent] '뒤땅 방지·눌러치기' 이미지"
@@ -258,6 +282,7 @@
           "w": 0.9
         },
         {
+          "id": "CLOSE_FACE",
           "label": "\"슬라이스 안 나게 페이스 닫아라\"",
           "activates": [
             "[Movement Intent] '페이스를 열어 두려는' 또는 슬라이스 방지 오해"
@@ -265,6 +290,7 @@
           "w": 0.9
         },
         {
+          "id": "NONE",
           "label": "특별히 의식하는 말은 없다",
           "activates": [],
           "w": 0
@@ -283,6 +309,7 @@
       "note": "스윙 중 압력 이동 타이밍은 묻지 않는다(회원이 답할 수 없다). 정적 셋업 압력만 묻고, 동적인 부분은 Q2 미스샷으로 받는다.",
       "options": [
         {
+          "id": "TOE",
           "label": "앞꿈치 쪽 (발가락)",
           "activates": [
             "Foot Pressure Anterior Excessive (P1)"
@@ -290,11 +317,13 @@
           "w": 0.75
         },
         {
+          "id": "CENTER",
           "label": "발 한가운데",
           "activates": [],
           "w": 0
         },
         {
+          "id": "HEEL",
           "label": "뒤꿈치 쪽",
           "activates": [
             "Foot Pressure Posterior Excessive (P1)"
@@ -302,6 +331,7 @@
           "w": 0.75
         },
         {
+          "id": "LEAD_PRELOAD",
           "label": "왼발(타깃 쪽)에 미리 많이 실려 있다",
           "activates": [
             "[Setup / Habit] 리드측 선(先)하중 셋업 습관",
@@ -321,12 +351,30 @@
     "scored": false,
     "purpose": "판정에 쓰지 않는다. 가동범위·강도 처방을 막는 안전장치일 뿐이다.",
     "options": [
-      "허리",
-      "목/어깨",
-      "팔꿈치/손목",
-      "무릎",
-      "고관절",
-      "없다"
+      {
+        "id": "BACK",
+        "label": "허리"
+      },
+      {
+        "id": "NECK_SHOULDER",
+        "label": "목/어깨"
+      },
+      {
+        "id": "ELBOW_WRIST",
+        "label": "팔꿈치/손목"
+      },
+      {
+        "id": "KNEE",
+        "label": "무릎"
+      },
+      {
+        "id": "HIP",
+        "label": "고관절"
+      },
+      {
+        "id": "NONE",
+        "label": "없다"
+      }
     ],
     "effect": "'없다' 외의 답이 있으면 Q4 기반 가동범위 처방을 출력하지 않고 '전문가 확인 권장'으로 대체한다."
   },
