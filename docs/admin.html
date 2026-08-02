@@ -90,7 +90,7 @@ textarea::placeholder{color:#A9A392}
 const M = {
   kim: {
     name: '골프러버', real: '김도현', plan: 'Elite', months: 5, join: '2025.03.14', pay1: '2025.03.20', days: 12, daysPrev: 9,
-    quota: [2, 6],
+    quota: [2, 6], lastUp: '7월 22일',
     program: 'No.06 · 톱에서 왼팔 각', week: '3주 프로그램 · 2주차',
     journey: ['3월 슬라이스', '4월 뒤땅', '5월 하체 리드', '6월 왼팔 각'],
     homework: ['톱에서 3초 멈추기 15회', '거울 앞 톱 자세 사진 찍기', '발 모으고 스윙 20회'],
@@ -110,7 +110,7 @@ const M = {
   },
   park: {
     name: '박프로지망', real: '박서준', plan: 'Coaching', months: 2, join: '2026.05.30', pay1: '2026.05.30', days: 7, daysPrev: 10,
-    quota: [3, 5],
+    quota: [3, 5], lastUp: '7월 26일',
     program: null, week: null,
     journey: ['6월 그립', '7월 셋업'],
     homework: [],
@@ -126,7 +126,7 @@ const M = {
   },
   lee: {
     name: '주말골퍼', real: '이수민', plan: 'Basic', months: 1, join: '2026.06.28', pay1: '2026.07.02', days: 4, daysPrev: 0,
-    quota: [1, 2],
+    quota: [1, 2], lastUp: '7월 26일',
     program: null, week: null,
     journey: [],
     homework: [],
@@ -137,6 +137,41 @@ const M = {
       { d: '7월 26일', view: '정면', club: '7번 아이언', today: 1 },
       { d: '7월 10일', view: '정면', club: '7번 아이언' },
     ],
+  },
+  jung: {
+    name: '정확히치자', real: '정민재', plan: 'Elite', months: 3, join: '2026.04.02',
+    pay1: '2026.04.02', days: 2, daysPrev: 11,
+    quota: [0, 6], lastUp: '6월 24일',
+    program: 'No.03 · 임팩트에서 상체 세우기', week: '3주 프로그램 · 끝',
+    journey: ['5월 셋업', '6월 임팩트'],
+    homework: [],
+    past: [
+      { d: '6월 24일', club: '드라이버', txt: '임팩트에서 상체가 일어나는 게 많이 줄었어요. 이 느낌을 기억해 두세요.\n\n다음 영상 올리실 때 같은 각도로 찍어주시면 나란히 놓고 볼 수 있습니다.', photo: 1 },
+    ],
+    vids: [{ d: '6월 24일', view: '정면', club: '드라이버' }],
+  },
+  han: {
+    name: '한결같이', real: '한지우', plan: 'Coaching', months: 4, join: '2026.03.18',
+    pay1: '2026.03.18', days: 15, daysPrev: 13,
+    quota: [5, 5], lastUp: '7월 21일',
+    program: null, week: null,
+    journey: ['4월 그립', '5월 백스윙', '6월 템포', '7월 임팩트'],
+    homework: [],
+    past: [
+      { d: '7월 21일', club: '7번 아이언', txt: '이번 달 다섯 번 다 쓰셨네요. 매번 좋아지는 게 보입니다.\n\n다음 달엔 드라이버도 한 번 올려보세요. 아이언에서 잡은 걸 드라이버로 옮기는 게 다음 단계입니다.', photo: 0 },
+      { d: '7월 14일', club: '7번 아이언', txt: '템포가 안정됐습니다. 이제 임팩트를 봅시다.', photo: 1 },
+    ],
+    vids: [{ d: '7월 21일', view: '정면', club: '7번 아이언' }, { d: '7월 14일', view: '측면', club: '7번 아이언' }],
+  },
+  seo: {
+    name: '주말에만', real: '서지훈', plan: 'Basic', months: 2, join: '2026.05.11',
+    pay1: '2026.05.15', days: 3, daysPrev: 5,
+    quota: [0, 2], lastUp: '7월 3일',
+    program: null, week: null,
+    journey: [],
+    homework: [],
+    past: [],
+    vids: [{ d: '7월 3일', view: '정면', club: '드라이버' }],
   },
 };
 
@@ -166,18 +201,19 @@ const SNIP = [
 /* ── CRM 껍데기 ────────────────────────────────────────────────────
    상단 카테고리 + 메인 대시보드. 왼쪽 세로줄 대신 위에서 뻗어나간다.
    대시보드가 집이고, 네모 카드가 각 방으로 들어가는 문이다. */
-const TOP = [
-  ['home',    '대시보드'],
-  ['queue',   '답변'],
-  ['members', '회원'],
-  ['stats',   '통계'],
-];
-/* 위에 다 걸면 줄이 넘친다. 자주 안 쓰는 건 '그 외' 안으로. */
-const MORE = [
-  ['fb',    '정기 피드백'],
-  ['sched', '일정 · 예약'],
-  ['pay',   '쿠폰 · 결제'],
-  ['set',   '설정'],
+const NAV = [
+  ['', [
+    ['home',    '대시보드',    'M4 11 12 4l8 7v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19z'],
+    ['queue',   '답변 요청함', 'M20 14.5A2.5 2.5 0 0 1 17.5 17H9l-4 3.5V7A2.5 2.5 0 0 1 7.5 4.5h10A2.5 2.5 0 0 1 20 7z'],
+    ['members', '회원 관리',   'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20c1-4 4-6 8-6s7 2 8 6'],
+    ['stats',   '통계',        'M5 20V10M12 20V4M19 20v-7'],
+  ]],
+  ['그 외', [
+    ['fb',    '정기 피드백', 'M5 4h14v16l-7-3.5L5 20z'],
+    ['sched', '일정 · 예약', 'M4 6h16v14H4zM8 3v4M16 3v4M4 10h16'],
+    ['pay',   '쿠폰 · 결제', 'M3 8h18v10H3zM3 12h18'],
+    ['set',   '설정',        'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM4.5 12l-1.2-2 1.6-2.4 2.3.4 1.7-1.6.5-2.3h2.9l.5 2.3 1.7 1.6 2.3-.4 1.6 2.4-1.2 2 1.2 2-1.6 2.4-2.3-.4-1.7 1.6-.5 2.3h-2.9l-.5-2.3-1.7-1.6-2.3.4L3.3 14z'],
+  ]],
 ];
 
 /* 대시보드에서 들어가는 네모 카드 */
@@ -204,7 +240,7 @@ const TODAY = [
   { k: 'urgent', t: '오늘 안에 답해야 할 것', go: 'queue' },
   { k: 'wait',   t: '답을 기다리는 사람',      go: 'queue' },
   { k: 'fb',     t: '이번 달 정기 피드백',     go: 'fb', sub: '7월 27일 도착 예정 · D-5' },
-  { k: 'new',    t: '이번 주 새 회원',         go: 'members', sub: '주말골퍼 님' },
+  { k: 'sleep',  t: '이번 달 한마디를 안 쓴 회원', go: 'members' },
 ];
 
 /* ── 통계 ──────────────────────────────────────────────────────────
@@ -222,6 +258,8 @@ const STAT = {
   cmUsed: 74, cmGiven: 108,                 // 준 한마디 횟수 대비 쓴 횟수
   quiet: 6,                                 // 30일 넘게 안 올린 유료 회원
   churn: 2, joined: 5,
+  monthLeft: 9,          // 이번 달 남은 날
+
 };
 
 /* ── 알림 ──────────────────────────────────────────────────────────
@@ -299,6 +337,48 @@ function alerts() {
   return out.sort((a, b) => a.q.left - b.q.left);
 }
 const unread = () => alerts().filter(a => !S.read[a.id]).length;
+
+/* ── 소진율 ────────────────────────────────────────────────────────
+   등급에 맞는 횟수를 쓰고 있느냐 — 이게 이 장사의 이탈 신호다.
+   안 쓰는 사람은 다음 결제일에 조용히 해지한다. 숫자보다 이걸 먼저 봐야 한다. */
+function usage(m) {
+  const [used, all] = m.quota;
+  const p = all ? Math.round(used / all * 100) : 0;
+  // 이번 달이 얼마나 지났는지와 견준다. 달 초에 0% 인 건 정상이다.
+  const gone = Math.round((31 - STAT.monthLeft) / 31 * 100);
+  const state = used === 0 ? 'none' : p >= 100 ? 'full' : p >= gone - 15 ? 'ok' : 'low';
+  const col = { none: 'var(--ns-danger)', low: 'var(--ns-bronze)',
+                ok: 'var(--ns-green)', full: 'var(--ns-green2)' }[state];
+  const word = { none: '한 번도 안 썼어요', low: '덜 쓰고 있어요',
+                 ok: '잘 쓰고 있어요', full: '다 썼어요' }[state];
+  return { used, all, p, gone, state, col, word };
+}
+/* 이번 달 한 번도 안 쓴 유료 회원 — 먼저 연락할 사람들 */
+const sleeping = () => Object.entries(M).filter(([, m]) => m.plan !== '무료' && m.quota[0] === 0);
+
+/* 퍼센트 바 하나 */
+function usageBar(m, big) {
+  const u = usage(m);
+  return `<div style="display:flex;flex-direction:column;gap:${big ? 6 : 5}px;min-width:0">
+    <div style="display:flex;align-items:baseline;gap:7px">
+      <span style="font-size:${big ? 12.5 : 11.5}px;font-weight:700;font-family:var(--font-num);
+        color:${u.col}">${u.used}/${u.all}회</span>
+      <span style="flex:1;font-size:${big ? 11.5 : 10.5}px;font-weight:600;color:${u.col};
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.word}</span>
+      <span style="font-size:${big ? 11.5 : 10.5}px;font-weight:700;font-family:var(--font-num);
+        color:var(--ns-ink3)">${u.p}%</span>
+    </div>
+    <div style="position:relative;height:${big ? 8 : 6}px;border-radius:9px;background:var(--ns-sand);
+      overflow:hidden">
+      <span style="display:block;height:100%;width:${u.p}%;border-radius:9px;background:${u.col}"></span>
+      <span title="오늘까지 지난 만큼" style="position:absolute;top:-2px;bottom:-2px;left:${u.gone}%;
+        width:1.5px;background:rgba(29,36,32,.32)"></span>
+    </div>
+    ${big ? `<span style="font-size:11px;font-weight:500;color:var(--ns-ink3);line-height:1.6">
+      세로선이 오늘입니다. 이번 달 ${STAT.monthLeft}일 남았고 ${u.all - u.used}회 남았어요.
+      ${u.state === 'none' ? ' 먼저 연락해볼 자리입니다.' : ''}</span>` : ''}
+  </div>`;
+}
 
 /* ── 조각들 ─────────────────────────────────────────────────────── */
 
@@ -490,6 +570,7 @@ function history(q) {
 
   return `<div style="display:flex;flex-direction:column;gap:${z(16, 20)}px">
     ${who}
+    ${box('이번 달 한마디를 쓰고 있나', usageBar(m, 1))}
     ${box('지금 하는 것', prog)}
     ${box(`내가 지난번에 한 말 ${m.past.length}개`,
       `<div style="display:flex;flex-direction:column;gap:${z(8, 10)}px">${past}</div>`)}
@@ -572,44 +653,67 @@ function qrow(q, on) {
 /* ── CRM 껍데기 ─────────────────────────────────────────────────
    왼쪽 세로줄 대신 위에서 뻗어나간다. 대시보드가 집이고,
    네모 카드가 각 방으로 들어가는 문이다. */
-function topbar() {
-  const cnt = k => k === 'queue' ? waiting().length : 0;
-  const inMore = MORE.some(([k]) => k === S.nav);
-  const tab = ([k, n], more) => {
+/* 왼쪽 세로줄 — 어디에 있든 전체 지도가 보인다.
+   대시보드의 네모 카드는 그대로 둔다. 둘은 서로 안 부딪친다 —
+   세로줄은 '어디로 갈 수 있나', 대시보드는 '지금 뭘 해야 하나' 다. */
+function sidebar() {
+  const badge = k => k === 'queue' ? waiting().length
+                   : k === 'members' ? sleeping().length
+                   : k === 'fb' ? 1 : 0;
+  const item = ([k, name, d]) => {
     const on = S.nav === k;
-    const c = cnt(k);
-    return `<span data-nav="${k}" style="position:relative;display:flex;align-items:center;gap:6px;
-      padding:${more ? '10px 12px' : '0 3px'};height:${more ? 'auto' : '100%'};cursor:pointer;
-      ${more ? 'border-radius:8px;' : 'border-bottom:2px solid ' + (on ? 'var(--ns-green)' : 'transparent') + ';'}
-      ${more && on ? 'background:var(--ns-soft);' : ''}">
-      <span style="font-size:13.5px;font-weight:${on ? 700 : 500};
-        color:${on ? 'var(--ns-ink)' : 'var(--ns-ink3)'};white-space:nowrap">${n}</span>
-      ${c ? `<span style="font-size:10.5px;font-weight:700;font-family:var(--font-num);color:#FFF;
-        background:${urgentN() ? 'var(--ns-danger)' : 'var(--ns-bronze)'};border-radius:8px;
-        padding:1px 6px">${c}</span>` : ''}
-    </span>`;
+    const n = badge(k);
+    const hot = (k === 'queue' && urgentN()) || (k === 'members' && sleeping().length);
+    return `<div data-nav="${k}" style="display:flex;align-items:center;gap:10px;padding:9px 11px;
+      border-radius:9px;cursor:pointer;background:${on ? 'rgba(237,237,232,.13)' : 'transparent'}">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+        style="flex:none;color:${on ? '#EDEDE8' : 'rgba(237,237,232,.5)'}"><path d="${d}"/></svg>
+      <span style="flex:1;font-size:13px;font-weight:${on ? 700 : 500};
+        color:${on ? '#EDEDE8' : 'rgba(237,237,232,.72)'}">${name}</span>
+      ${n ? `<span style="flex:none;font-size:10.5px;font-weight:700;font-family:var(--font-num);
+        color:${hot ? '#FFF' : 'rgba(237,237,232,.6)'};
+        background:${hot ? 'var(--ns-danger)' : 'rgba(237,237,232,.13)'};
+        border-radius:8px;padding:2px 7px">${n}</span>` : ''}
+    </div>`;
   };
-  return `<div style="flex:none;height:56px;display:flex;align-items:stretch;gap:22px;padding:0 26px;
-      background:var(--ns-card);border-bottom:1px solid var(--ns-line);position:relative;z-index:5">
-    <span data-nav="home" style="display:flex;flex-direction:column;justify-content:center;gap:1px;
-      cursor:pointer;padding-right:8px">
-      <span style="font-size:13px;font-weight:700;letter-spacing:.05em;color:var(--ns-ink)">NEXT SWING</span>
-      <span style="font-size:10px;font-weight:400;color:var(--ns-ink3)">관리자</span></span>
-    <div style="display:flex;align-items:stretch;gap:20px">${TOP.map(x => tab(x)).join('')}</div>
-    <div style="position:relative;display:flex;align-items:stretch">
-      <span data-more style="display:flex;align-items:center;gap:5px;cursor:pointer;
-        border-bottom:2px solid ${inMore ? 'var(--ns-green)' : 'transparent'}">
-        <span style="font-size:13.5px;font-weight:${inMore ? 700 : 500};
-          color:${inMore ? 'var(--ns-ink)' : 'var(--ns-ink3)'}">그 외</span>
-        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
-          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-          style="color:var(--ns-ink3);transform:rotate(${S.more ? 180 : 0}deg)"><path d="m6 9 6 6 6-6"/></svg>
-      </span>
-      ${S.more ? `<div style="position:absolute;top:50px;left:-10px;min-width:168px;background:var(--ns-card);
-        border:1px solid var(--ns-line);border-radius:11px;padding:6px;display:flex;flex-direction:column;
-        gap:2px;box-shadow:0 14px 32px -18px rgba(38,40,42,.55);z-index:9">
-        ${MORE.map(x => tab(x, 1)).join('')}</div>` : ''}
+  return `<div style="flex:none;width:216px;background:#1F2A22;display:flex;flex-direction:column;
+      padding:16px 11px 12px;gap:18px;overflow-y:auto">
+    <div data-nav="home" style="display:flex;flex-direction:column;gap:2px;padding:2px 11px 4px;cursor:pointer">
+      <span style="font-size:13.5px;font-weight:700;letter-spacing:.05em;color:#EDEDE8">NEXT SWING</span>
+      <span style="font-size:11px;font-weight:400;color:rgba(237,237,232,.5)">관리자</span></div>
+    ${NAV.map(([g, items]) => `<div style="display:flex;flex-direction:column;gap:3px">
+      ${g ? `<span style="font-size:9.5px;font-weight:700;letter-spacing:.16em;
+        color:rgba(237,237,232,.36);padding:0 11px 5px">${g}</span>` : ''}
+      ${items.map(item).join('')}</div>`).join('')}
+    <span style="flex:1"></span>
+    <div style="display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;
+      background:rgba(237,237,232,.07)">
+      <span style="width:28px;height:28px;border-radius:50%;background:var(--ns-green);color:#FFF;
+        flex:none;display:flex;align-items:center;justify-content:center;font-size:11.5px;
+        font-weight:700">이</span>
+      <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+        <span style="font-size:12px;font-weight:600;color:#EDEDE8">이도형 프로</span>
+        <span style="font-size:10px;font-weight:400;color:rgba(237,237,232,.5)">KPGA</span></span>
     </div>
+  </div>`;
+}
+
+/* 위 줄은 얇게 — 지금 어디인지 · 검색 · 알림만 */
+function topbar() {
+  const TITLE = { home: '대시보드', queue: '답변 요청함', members: '회원 관리',
+                  stats: '통계', fb: '정기 피드백', sched: '일정 · 예약',
+                  pay: '쿠폰 · 결제', set: '설정' };
+  return `<div style="flex:none;height:56px;display:flex;align-items:center;gap:16px;padding:0 22px;
+      background:var(--ns-card);border-bottom:1px solid var(--ns-line);position:relative;z-index:5">
+    <span style="font-size:15px;font-weight:700;letter-spacing:-.02em;color:var(--ns-ink)">
+      ${TITLE[S.nav] || ''}</span>
+    <span data-search style="flex:1;max-width:380px;display:flex;align-items:center;gap:8px;
+      background:var(--ns-bg);border:1px solid var(--ns-line);border-radius:9px;padding:8px 12px;
+      cursor:pointer">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--ns-ink3)"
+        stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <span style="font-size:12.5px;font-weight:400;color:var(--ns-ink3)">회원 이름으로 찾기</span></span>
     <span style="flex:1"></span>
     <div style="position:relative;display:flex;align-items:center">
       <span data-bell style="position:relative;width:34px;height:34px;border-radius:9px;display:flex;
@@ -625,11 +729,6 @@ function topbar() {
       </span>
       ${S.bell ? bellBox() : ''}
     </div>
-    <span style="display:flex;align-items:center;gap:9px">
-      <span style="font-size:12.5px;font-weight:600;color:var(--ns-ink2)">이도형 프로</span>
-      <span style="width:30px;height:30px;border-radius:50%;background:var(--ns-green);color:#FFF;
-        display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">이</span>
-    </span>
   </div>`;
 }
 
@@ -741,9 +840,11 @@ function pageSet() {
 /* 대시보드 — 여기서 각 방으로 들어간다 */
 function pageHome() {
   const u = urgentN(), w = waiting().length;
-  const val = { urgent: u + '건', wait: w + '명', fb: 'D-5', new: '1명' };
+  const sl = sleeping().length;
+  const val = { urgent: u + '건', wait: w + '명', fb: 'D-5', sleep: sl + '명' };
   const sub = { urgent: u ? '12시간 안에 답해야 해요' : '급한 건 없어요',
-                wait: '48시간 안에 답하면 됩니다' };
+                wait: '48시간 안에 답하면 됩니다',
+                sleep: '안 쓰면 다음 결제일에 조용히 해지합니다' };
   const badge = k => k === 'queue' ? (w ? w + '건 대기' : '다 답했어요')
                    : k === 'members' ? Object.keys(M).length + '명'
                    : k === 'stats' ? STAT.month + ' 기준'
@@ -771,7 +872,7 @@ function pageHome() {
         <span style="font-size:13.5px;font-weight:400;color:var(--ns-ink3)">7월 22일 수요일</span></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(206px,1fr));gap:12px">
         ${TODAY.map(t => {
-          const hot = t.k === 'urgent' && u > 0;
+          const hot = (t.k === 'urgent' && u > 0) || (t.k === 'sleep' && sl > 0);
           return `<div data-nav="${t.go}" style="cursor:pointer;background:var(--ns-card);
             border:1px solid ${hot ? 'rgba(192,57,43,.35)' : 'var(--ns-line)'};border-radius:13px;
             padding:17px 18px;display:flex;flex-direction:column;gap:7px">
@@ -792,6 +893,26 @@ function pageHome() {
         <div style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:13px;
           overflow:hidden">${[...waiting()].sort((a, b) => a.left - b.left).map(x => qrow(x, false)).join('')}</div>
       </div>
+      ${sl ? `<div style="display:flex;flex-direction:column;gap:11px">
+        <div style="display:flex;align-items:baseline;gap:9px">
+          <span style="font-size:15px;font-weight:700;color:var(--ns-ink)">먼저 연락할 사람</span>
+          <span style="font-size:12px;font-weight:500;color:var(--ns-ink3)">
+            돈은 내는데 이번 달 한마디를 한 번도 안 썼어요</span></div>
+        <div style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:13px;
+          overflow:hidden">
+          ${sleeping().map(([id, m]) => `<div data-mem="${id}" style="display:flex;align-items:center;
+            gap:13px;padding:14px 18px;border-bottom:1px solid #F2ECE2;cursor:pointer">
+            <span style="width:36px;height:36px;border-radius:50%;background:var(--ns-green);color:#FFF;
+              flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;
+              font-weight:700">${esc(m.name[0])}</span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+              <span style="font-size:13.5px;font-weight:700;color:var(--ns-ink)">${esc(m.name)}
+                <span style="font-size:11.5px;font-weight:500;color:var(--ns-ink3)">${esc(m.plan)} · ${m.months}개월째</span></span>
+              <span style="font-size:11.5px;font-weight:500;color:var(--ns-ink3)">
+                마지막 영상 ${esc(m.lastUp)} · 이번 달 연습 ${m.days}일</span></span>
+            <span style="flex:none;width:200px">${usageBar(m)}</span>
+          </div>`).join('')}</div>
+      </div>` : ''}
     </div></div>`;
 }
 
@@ -868,6 +989,21 @@ function pageStats() {
 
       ${sect('회원이 남았나', '등급이 곧 이 앱의 값어치입니다', tiers)}
 
+      ${sect('등급값을 쓰고 있나', '준 횟수를 안 쓰는 사람이 다음 달에 해지합니다',
+        `<div style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:13px;
+          padding:6px 18px">
+          ${Object.entries(M).filter(([, m]) => m.plan !== '무료')
+            .sort((a, b) => usage(a[1]).p - usage(b[1]).p)
+            .map(([id, m], i, arr) => `<div data-mem="${id}" style="display:flex;align-items:center;
+              gap:14px;padding:13px 0;cursor:pointer;${i === arr.length - 1 ? '' : 'border-bottom:1px solid #F2ECE2'}">
+              <span style="flex:none;width:110px;font-size:12.5px;font-weight:600;color:var(--ns-ink)">
+                ${esc(m.name)}</span>
+              <span style="flex:none;width:74px;font-size:11.5px;font-weight:500;color:var(--ns-ink3)">
+                ${esc(m.plan)}</span>
+              <span style="flex:1;min-width:0">${usageBar(m)}</span>
+            </div>`).join('')}
+        </div>`)}
+
       ${sect('영상이 올라오나', '올라오는 영상이 줄면 다음 달 해지가 옵니다', bars)}
 
       ${sect('돈이 도나', '',
@@ -885,7 +1021,11 @@ function pageStats() {
 /* 회원 관리 — 목록에서 이름을 누르면 그 사람 카드가 열린다.
    어느 도구에 있든 사람으로 이어지는 게 CRM 의 뼈대다. */
 function pageMembers() {
-  const rows = Object.entries(M).map(([id, m]) => {
+  // 안 쓰는 사람이 위로. 목록의 목적이 '누구에게 먼저 연락하나' 다.
+  const order = { none: 0, low: 1, ok: 2, full: 3 };
+  const rows = Object.entries(M)
+    .sort((a, b) => order[usage(a[1]).state] - order[usage(b[1]).state])
+    .map(([id, m]) => {
     const q = Q.find(x => x.m === id && !S.done[x.id]);
     return `<div data-mem="${id}" style="display:flex;align-items:center;gap:13px;padding:15px 18px;
       border-bottom:1px solid #F2ECE2;cursor:pointer">
@@ -899,22 +1039,37 @@ function pageMembers() {
           ${esc(m.plan)} · ${m.months}개월째</span></span>
       <span style="flex:1;font-size:12.5px;font-weight:500;color:var(--ns-ink2)">
         ${m.program ? esc(m.program) : '<span style="color:var(--ns-ink3)">정기 피드백 없음</span>'}</span>
-      <span style="flex:none;width:88px;font-size:12.5px;font-weight:600;color:var(--ns-ink2);
-        font-family:var(--font-num)">한마디 ${m.quota[0]}/${m.quota[1]}</span>
+      <span style="flex:none;width:190px">${usageBar(m)}</span>
       <span style="flex:none;width:104px;text-align:right;font-size:11.5px;font-weight:700;
         color:${q ? (urgent(q.left) ? 'var(--ns-danger)' : 'var(--ns-green)') : 'var(--ns-ink3)'}">
-        ${q ? left(q.left) : '기다리는 것 없음'}</span>
+        ${q ? left(q.left) : '마지막 ' + esc(m.lastUp)}</span>
     </div>`;
   }).join('');
   return `<div style="flex:1;overflow-y:auto;background:var(--ns-bg)">
     <div style="max-width:1120px;margin:0 auto;padding:30px 30px 44px;display:flex;flex-direction:column;gap:18px">
       <div style="display:flex;align-items:baseline;gap:10px">
         <span style="font-size:24px;font-weight:700;letter-spacing:-.03em;color:var(--ns-ink)">회원 관리</span>
-        <span style="font-size:13.5px;font-weight:500;color:var(--ns-ink3)">${Object.keys(M).length}명</span></div>
+        <span style="font-size:13.5px;font-weight:500;color:var(--ns-ink3)">${Object.keys(M).length}명</span>
+        <span style="flex:1"></span>
+        ${sleeping().length ? `<span style="font-size:12px;font-weight:700;color:var(--ns-danger);
+          background:rgba(192,57,43,.08);border-radius:8px;padding:6px 11px">
+          이번 달 한 번도 안 쓴 유료 회원 ${sleeping().length}명</span>` : ''}
+      </div>
       <div style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:13px;
-        overflow:hidden">${rows}</div>
-      <span style="font-size:12px;font-weight:500;color:var(--ns-ink3)">
-        이름을 누르면 그 회원 카드가 열립니다.</span>
+        overflow:hidden">
+        <div style="display:flex;align-items:center;gap:13px;padding:11px 18px;
+          border-bottom:1px solid var(--ns-line);font-size:11px;font-weight:700;
+          letter-spacing:.06em;color:var(--ns-ink3)">
+          <span style="flex:none;width:40px"></span>
+          <span style="flex:2">회원</span>
+          <span style="flex:1">지금 하는 것</span>
+          <span style="flex:none;width:190px">이번 달 한마디를 쓰고 있나</span>
+          <span style="flex:none;width:104px;text-align:right">기다리는 것</span>
+        </div>${rows}</div>
+      <span style="font-size:12px;font-weight:500;color:var(--ns-ink3);line-height:1.7">
+        이름을 누르면 그 회원 카드가 열립니다.
+        <b style="font-weight:700;color:var(--ns-ink2)">막대의 세로선이 오늘</b>입니다 —
+        선보다 막대가 짧으면 이번 달을 흘려보내고 있다는 뜻이고, 그게 다음 결제일의 해지로 옵니다.</span>
     </div></div>`;
 }
 
@@ -1004,8 +1159,9 @@ function renderPC() {
              : S.nav === 'stats' ? pageStats()
              : S.nav === 'set' ? pageSet()
              : pageSoon(S.nav);
-  return `<div style="display:flex;flex-direction:column;height:100%;background:var(--ns-bg)">
-    ${topbar()}<div style="flex:1;min-height:0;display:flex">${page}</div></div>`;
+  return `<div style="display:flex;height:100%;background:var(--ns-bg)">${sidebar()}
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+      ${topbar()}<div style="flex:1;min-height:0;display:flex">${page}</div></div></div>`;
 }
 
 /* ── 모바일 ─────────────────────────────────────────────────────
@@ -1342,7 +1498,7 @@ function wire() {
     if (S.view === 'mo' && S.nav === 'queue') S.mo = 'q';
     render();
   });
-  on('[data-more]', 'click', () => { S.more = !S.more; S.bell = false; render(); });
+  on('[data-search]', 'click', () => { S.nav = 'members'; render(); toast('회원 관리에서 찾아보세요'); });
   on('[data-bell]', 'click', () => { S.bell = !S.bell; S.more = false; render(); });
   on('[data-alert]', 'click', e => {
     const id = e.currentTarget.dataset.alert;
