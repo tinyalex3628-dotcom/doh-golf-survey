@@ -276,6 +276,49 @@ const ALERT_HOW = [
 ];
 const QUIET = ['밤 10시', '아침 8시'];
 
+/* ── 회원 세부 ─────────────────────────────────────────────────────
+   회원 하나를 열면 그 사람의 전부가 한 페이지에 있어야 한다.
+   달마다: 연습일 · 올린 영상 · 쓴 한마디 · 앱을 연 날. */
+const HIST = {
+  kim:  [['3월', 14, 11, 5, 22], ['4월', 11, 9, 6, 19], ['5월', 13, 12, 6, 24],
+         ['6월', 9, 8, 4, 16], ['7월', 12, 12, 2, 21]],
+  park: [['5월', 6, 4, 1, 9], ['6월', 10, 7, 4, 15], ['7월', 7, 5, 3, 11]],
+  lee:  [['6월', 2, 1, 0, 4], ['7월', 4, 3, 1, 9]],
+  jung: [['4월', 12, 10, 5, 20], ['5월', 14, 13, 6, 25], ['6월', 11, 9, 3, 17],
+         ['7월', 2, 1, 0, 3]],
+  han:  [['3월', 9, 6, 3, 14], ['4월', 12, 9, 5, 18], ['5월', 13, 11, 5, 21],
+         ['6월', 14, 12, 5, 23], ['7월', 15, 13, 5, 26]],
+  seo:  [['5월', 5, 3, 1, 8], ['6월', 5, 4, 1, 9], ['7월', 3, 1, 0, 5]],
+};
+/* 결제 이력 — 언제부터 얼마를 냈나 */
+const PAY = {
+  kim:  [['2025.03.20', 'Basic', 19000], ['2025.06.20', 'Coaching', 39000],
+         ['2025.11.20', 'Elite', 79000], ['2026.07.20', 'Elite', 79000]],
+  park: [['2026.05.30', 'Basic', 19000], ['2026.06.30', 'Coaching', 39000],
+         ['2026.07.30', 'Coaching', 39000]],
+  lee:  [['2026.07.02', 'Basic', 19000]],
+  jung: [['2026.04.02', 'Elite', 79000], ['2026.05.02', 'Elite', 79000],
+         ['2026.06.02', 'Elite', 79000], ['2026.07.02', 'Elite', 79000]],
+  han:  [['2026.03.18', 'Basic', 19000], ['2026.04.18', 'Coaching', 39000],
+         ['2026.05.18', 'Coaching', 39000], ['2026.06.18', 'Coaching', 39000],
+         ['2026.07.18', 'Coaching', 39000]],
+  seo:  [['2026.05.15', 'Basic', 19000], ['2026.06.15', 'Basic', 19000],
+         ['2026.07.15', 'Basic', 19000]],
+};
+/* 정기 피드백(월간 리포트) 이력 — Elite 만 */
+const FB = {
+  kim:  [['No.06', '6월 27일', '톱에서 왼팔 각'], ['No.05', '5월 27일', '하체 리드로 시작하기'],
+         ['No.04', '4월 27일', '상체 정렬과 임팩트 타이밍'], ['No.03', '3월 27일', '그립과 셋업 재정비']],
+  jung: [['No.03', '6월 27일', '임팩트에서 상체 세우기'], ['No.02', '5월 27일', '셋업 다시 잡기'],
+         ['No.01', '4월 27일', '첫 리포트 · 스윙 전체 보기']],
+};
+/* 프로가 남기는 개인 메모 — 회원에겐 안 보인다 */
+const MEMO = {
+  kim:  '왼손잡이 아님. 어깨 부상 이력 있어서 톱을 무리해서 올리지 말 것.\n말이 빠른 편이라 글은 짧게 끊어 쓰는 게 잘 읽힘.',
+  jung: '6월까지 아주 성실했는데 7월 들어 뚝 끊김. 바쁜 시기라고 했었음 — 8월 초에 한 번 먼저 연락.',
+  seo:  '주말에만 침. 평일 알림은 안 보는 듯.',
+};
+
 </script>
 <script>
 "use strict";
@@ -317,6 +360,7 @@ const urgent = h => h <= 12;
 const waiting = () => Q.filter(q => !S.done[q.id]);
 const urgentN = () => waiting().filter(q => urgent(q.left)).length;
 const won = n => n.toLocaleString('ko-KR');
+const PRICE_OF = { '무료': 0, Basic: 19000, Coaching: 39000, Elite: 79000 };
 const shots = id => (S.shots[id] = S.shots[id] || []);
 /* 편집 중인 장면 */
 const editing = () => S.mark && shots(S.mark.qid)[S.mark.i];
@@ -722,7 +766,7 @@ function sidebar() {
 /* 위 줄은 얇게 — 지금 어디인지 · 검색 · 알림만 */
 function topbar() {
   const TITLE = { home: '대시보드', queue: '답변 요청함', members: '회원 관리',
-                  stats: '통계', fb: '정기 피드백', sched: '일정 · 예약',
+                  stats: '통계', member: '회원 카드', fb: '정기 피드백', sched: '일정 · 예약',
                   pay: '쿠폰 · 결제', set: '설정' };
   return `<div style="flex:none;height:56px;display:flex;align-items:center;gap:16px;padding:0 22px;
       background:var(--ns-card);border-bottom:1px solid var(--ns-line);position:relative;z-index:5">
@@ -1182,7 +1226,7 @@ function pageQueue() {
     <div style="flex:none;padding:16px 18px 14px;border-bottom:1px solid var(--ns-line);
       display:flex;align-items:center">
       <span style="flex:1;font-size:16px;font-weight:700;color:var(--ns-ink)">이 회원을 아는 데 필요한 것</span>
-      <span data-mem="${q.m}" style="font-size:12.5px;font-weight:700;color:var(--ns-green);cursor:pointer">회원 카드 ›</span>
+      <span data-mem="${q.m}" style="font-size:12.5px;font-weight:700;color:var(--ns-green);cursor:pointer">회원 카드 전체 보기 ›</span>
     </div>
     <div style="flex:1;overflow-y:auto;padding:18px">${history(q)}</div>
   </div>`;
@@ -1195,6 +1239,7 @@ function renderPC() {
              : S.nav === 'queue' ? pageQueue()
              : S.nav === 'members' ? pageMembers()
              : S.nav === 'stats' ? pageStats()
+             : S.nav === 'member' ? pageMember()
              : S.nav === 'set' ? pageSet()
              : pageSoon(S.nav);
   return `<div style="display:flex;height:100%;background:var(--ns-bg)">${sidebar()}
@@ -1293,6 +1338,11 @@ function renderMO() {
               color:${oq ? (urgent(oq.left) ? 'var(--ns-danger)' : 'var(--ns-green)') : 'var(--ns-ink3)'}">
               ${oq ? left(oq.left) : '—'}</span></div>`;
         }).join('')}</div>`);
+  }
+
+  if (S.nav === 'member') {
+    const m = M[S.card];
+    return page(`${bar(esc(m ? m.name : '') + ' 님', 1)}${pageMember()}`);
   }
 
   if (S.nav === 'stats') {
@@ -1440,35 +1490,166 @@ function renderMark() {
     </div></div>`;
 }
 
-/* ── 회원 카드 ────────────────────────────────────────────────────
-   어느 도구에 있든 이름을 누르면 열린다. 도구는 갈려도 사람은 하나로 이어진다. */
-function renderCard() {
-  if (!S.card) return '';
-  const m = M[S.card];
-  const q = Q.find(x => x.m === S.card) || cur();
-  const open = Q.find(x => x.m === S.card && !S.done[x.id]);
-  return `<div data-cardbg style="position:fixed;inset:0;background:rgba(18,22,15,.5);z-index:50;
-    display:flex;align-items:center;justify-content:center;padding:26px">
-    <div style="width:min(600px,94vw);max-height:88vh;background:var(--ns-bg);border-radius:16px;
-      display:flex;flex-direction:column;overflow:hidden">
-      <div style="flex:none;padding:16px 20px;border-bottom:1px solid var(--ns-line);
-        display:flex;align-items:center;background:var(--ns-card)">
-        <span style="flex:1;font-size:16px;font-weight:700;color:var(--ns-ink)">${esc(m.name)} 님 회원 카드</span>
-        <span data-cardx style="font-size:12.5px;font-weight:600;color:var(--ns-ink3);cursor:pointer">닫기</span></div>
-      <div style="flex:1;overflow-y:auto;padding:20px">
-        ${history(q)}
-        <div style="padding-top:18px;display:flex;flex-direction:column;gap:7px">
-          <span style="font-size:10.5px;font-weight:700;letter-spacing:.14em;color:var(--ns-ink3)">가입</span>
-          <span style="font-size:13px;font-weight:500;color:var(--ns-ink2)">
-            ${esc(m.join)} · ${m.months}개월째 · ${esc(m.plan)}</span></div>
+/* ── 회원 세부 페이지 ──────────────────────────────────────────────
+   작은 창이 아니라 한 페이지다. 이 사람의 전부가 여기 있어야
+   '이 사람에게 지금 뭘 해야 하나'가 나온다. */
+function pageMember() {
+  const id = S.card;
+  const m = M[id];
+  if (!m) return pageMembers();
+  const u = usage(m);
+  const hist = HIST[id] || [];
+  const pay = PAY[id] || [];
+  const fbs = FB[id] || [];
+  const open = Q.find(x => x.m === id && !S.done[x.id]);
+  const total = pay.reduce((a, x) => a + x[2], 0);
+  const maxD = Math.max(1, ...hist.map(h => h[1]));
+
+  const sect = (t, note, body) => `<div style="display:flex;flex-direction:column;gap:11px">
+    <div style="display:flex;align-items:baseline;gap:9px">
+      <span style="font-size:15px;font-weight:700;color:var(--ns-ink)">${t}</span>
+      ${note ? `<span style="font-size:11.5px;font-weight:500;color:var(--ns-ink3)">${note}</span>` : ''}</div>
+    ${body}</div>`;
+  const card = body => `<div style="background:var(--ns-card);border:1px solid var(--ns-line);
+    border-radius:13px;overflow:hidden">${body}</div>`;
+  const fact = (k, v, note, col) => `<div style="background:var(--ns-card);border:1px solid var(--ns-line);
+    border-radius:12px;padding:15px 16px;display:flex;flex-direction:column;gap:5px">
+    <span style="font-size:11.5px;font-weight:600;color:var(--ns-ink3)">${k}</span>
+    <span style="font-size:17px;font-weight:700;letter-spacing:-.02em;font-family:var(--font-num);
+      color:${col || 'var(--ns-ink)'}">${v}</span>
+    ${note ? `<span style="font-size:11px;font-weight:500;color:var(--ns-ink3);line-height:1.55">${note}</span>` : ''}
+  </div>`;
+
+  /* 머리 — 이름과 지금 상태, 그리고 바로 할 수 있는 것 */
+  const head = `<div style="display:flex;align-items:flex-start;gap:16px">
+    <span style="width:60px;height:60px;border-radius:50%;background:var(--ns-green);color:#FFF;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700">
+      ${esc(m.name[0])}</span>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap">
+        <span style="font-size:23px;font-weight:700;letter-spacing:-.03em;color:var(--ns-ink)">${esc(m.name)}</span>
+        <span style="font-size:14px;font-weight:500;color:var(--ns-ink3)">${esc(m.real)}</span>
+        <span style="font-size:11.5px;font-weight:700;color:${u.col};background:${u.state === 'none'
+          ? 'rgba(192,57,43,.09)' : u.state === 'low' ? 'rgba(166,124,61,.1)' : 'var(--ns-soft)'};
+          border-radius:8px;padding:5px 10px">${u.word}</span>
       </div>
-      ${open ? `<div style="flex:none;padding:13px 20px;border-top:1px solid var(--ns-line);
-        background:var(--ns-card);display:flex;align-items:center;gap:10px">
-        <span style="flex:1;font-size:12.5px;font-weight:500;color:var(--ns-ink2)">
-          답을 기다리는 스윙이 있어요 · ${left(open.left)}</span>
-        <span data-cardgo="${open.id}" style="font-size:13px;font-weight:700;color:#FFF;
-          background:var(--ns-green);border-radius:10px;padding:11px 18px;cursor:pointer">
-          한마디 쓰러 가기</span></div>` : ''}
+      <span style="font-size:13px;font-weight:500;color:var(--ns-ink2)">
+        ${esc(m.plan)} · ${m.months}개월째 · ${esc(m.join)} 가입</span>
+    </div>
+    <div style="flex:none;display:flex;gap:8px">
+      ${open ? `<span data-cardgo="${open.id}" style="font-size:13px;font-weight:700;color:#FFF;
+        background:var(--ns-green);border-radius:10px;padding:11px 18px;cursor:pointer">
+        한마디 쓰러 가기</span>` : ''}
+      <span data-poke style="font-size:13px;font-weight:600;color:var(--ns-ink2);border:1px solid var(--ns-line);
+        background:var(--ns-card);border-radius:10px;padding:11px 16px;cursor:pointer">먼저 연락하기</span>
+    </div>
+  </div>`;
+
+  /* 언제부터 · 얼마를 냈나 */
+  const money = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:11px">
+    ${fact('처음 온 날', esc(m.join), '가입')}
+    ${fact('첫 결제', esc(m.pay1), m.join === m.pay1 ? '가입한 날 바로' : '가입 뒤 결제')}
+    ${fact('지금까지 낸 돈', won(total) + '원', pay.length + '번 결제')}
+    ${fact('다음 결제일', pay.length ? '8월 ' + pay[pay.length - 1][0].split('.')[2] + '일' : '—',
+      esc(m.plan) + ' · ' + won(PRICE_OF[m.plan] || 0) + '원')}
+  </div>`;
+
+  /* 달마다 얼마나 썼나 — 이 사람의 그래프가 이 장사의 온도계다 */
+  const bars = card(`<div style="padding:20px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:flex-end;gap:12px;height:150px">
+      ${hist.map(([mo, d, v, cm], i) => {
+        const on = i === hist.length - 1;
+        const drop = i && d < hist[i - 1][1] * 0.6;
+        return `<span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;
+          height:100%;justify-content:flex-end">
+          <span style="font-size:11.5px;font-weight:700;font-family:var(--font-num);
+            color:${drop ? 'var(--ns-danger)' : on ? 'var(--ns-green)' : 'var(--ns-ink3)'}">${d}</span>
+          <span style="width:100%;max-width:52px;height:${Math.round(d / maxD * 96)}px;
+            border-radius:6px 6px 3px 3px;background:${drop ? 'var(--ns-danger)'
+              : on ? 'var(--ns-green)' : 'var(--ns-sand)'}"></span>
+          <span style="font-size:11px;font-weight:500;color:var(--ns-ink3)">${mo}</span></span>`;
+      }).join('')}
+    </div>
+    <div style="border-top:1px solid #F2ECE2;padding-top:13px;display:flex;flex-direction:column;gap:7px">
+      ${[['연습한 날', 1, '일'], ['올린 영상', 2, '개'], ['쓴 한마디', 3, '회'], ['앱을 연 날', 4, '일']]
+        .map(([lab, ix, unit]) => `<div style="display:flex;align-items:center;gap:10px">
+          <span style="flex:none;width:76px;font-size:11.5px;font-weight:600;color:var(--ns-ink3)">${lab}</span>
+          ${hist.map(h => `<span style="flex:1;text-align:center;font-size:12px;font-weight:${
+            h === hist[hist.length - 1] ? 700 : 500};font-family:var(--font-num);
+            color:var(--ns-ink${h === hist[hist.length - 1] ? '' : '2'})">${h[ix]}${unit}</span>`).join('')}
+        </div>`).join('')}
+    </div>
+  </div>`);
+
+  /* 올린 스윙 */
+  const vids = card(`<div style="padding:16px 18px;display:flex;gap:10px;overflow-x:auto">
+    ${m.vids.map(v => `<span style="flex:none;width:82px;display:flex;flex-direction:column;gap:5px">
+      <span style="height:104px;border-radius:9px;background:#1B2019;
+        border:${v.today ? '2px solid var(--ns-green)' : '1px solid var(--ns-line)'};
+        display:flex;align-items:center;justify-content:center">${FIG('72%')}</span>
+      <span style="font-size:10.5px;font-weight:600;color:var(--ns-ink2);text-align:center">${esc(v.d)}</span>
+      <span style="font-size:9.5px;font-weight:500;color:var(--ns-ink3);text-align:center">
+        ${esc(v.view)} · ${esc(v.club)}</span></span>`).join('')}
+  </div>`);
+
+  /* 내가 달아준 한마디 전부 */
+  const past = m.past.length
+    ? `<div style="display:flex;flex-direction:column;gap:10px">${m.past.map((pp, i) => {
+        const key = 'D' + id + i, op = !!S.open[key], lines = pp.txt.split('\n\n');
+        return `<div data-past="${key}" style="background:var(--ns-card);border:1px solid var(--ns-line);
+          border-radius:12px;padding:15px 17px;display:flex;flex-direction:column;gap:8px;cursor:pointer">
+          <div style="display:flex;align-items:baseline;gap:9px">
+            <span style="font-size:12.5px;font-weight:700;color:var(--ns-bronze);
+              font-family:var(--font-num)">${esc(pp.d)}</span>
+            <span style="flex:1;font-size:11.5px;font-weight:500;color:var(--ns-ink3)">${esc(pp.club)}</span>
+            ${pp.photo ? `<span style="font-size:11px;font-weight:600;color:var(--ns-ink3)">사진 ${pp.photo}</span>` : ''}
+          </div>
+          <span style="font-size:13.5px;font-weight:400;color:var(--ns-ink2);line-height:1.85;
+            ${op ? 'white-space:pre-wrap' : 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden'}"
+            >${esc(op ? pp.txt : lines[0])}</span>
+          ${lines.length > 1 || pp.txt.length > 60 ? `<span style="font-size:11.5px;font-weight:700;
+            color:var(--ns-green)">${op ? '접기' : `더 보기 · ${lines.length}문단`}</span>` : ''}
+        </div>`;
+      }).join('')}</div>`
+    : card(`<div style="padding:22px;text-align:center;font-size:12.5px;font-weight:500;
+        color:var(--ns-ink3);line-height:1.7">아직 한마디를 보낸 적이 없어요.<br>
+        이 사람에게 첫 말이 무엇이 될지가 남습니다.</div>`);
+
+  const payRows = card(pay.slice().reverse().map((x, i) => `<div style="display:flex;align-items:center;
+    gap:14px;padding:13px 18px;${i === pay.length - 1 ? '' : 'border-bottom:1px solid #F2ECE2'}">
+    <span style="flex:none;width:110px;font-size:12.5px;font-weight:600;color:var(--ns-ink2);
+      font-family:var(--font-num)">${esc(x[0])}</span>
+    <span style="flex:1;font-size:12.5px;font-weight:600;color:var(--ns-ink)">${esc(x[1])}</span>
+    <span style="flex:none;font-size:12.5px;font-weight:700;color:var(--ns-ink);
+      font-family:var(--font-num)">${won(x[2])}원</span></div>`).join(''));
+
+  const fbRows = fbs.length ? card(fbs.map((x, i) => `<div style="display:flex;align-items:center;gap:14px;
+    padding:13px 18px;${i === fbs.length - 1 ? '' : 'border-bottom:1px solid #F2ECE2'}">
+    <span style="flex:none;width:56px;font-size:12.5px;font-weight:700;color:var(--ns-green);
+      font-family:var(--font-num)">${esc(x[0])}</span>
+    <span style="flex:1;font-size:12.5px;font-weight:600;color:var(--ns-ink)">${esc(x[2])}</span>
+    <span style="flex:none;font-size:11.5px;font-weight:500;color:var(--ns-ink3);
+      font-family:var(--font-num)">${esc(x[1])}</span></div>`).join(''))
+    : card(`<div style="padding:20px;text-align:center;font-size:12.5px;font-weight:500;color:var(--ns-ink3);
+        line-height:1.7">정기 피드백을 안 받는 등급이에요.<br>프로 한마디가 이 사람이 받는 전부입니다.</div>`);
+
+  const memo = card(`<div style="padding:16px 18px;font-size:13px;font-weight:400;color:var(--ns-ink2);
+    line-height:1.85;white-space:pre-wrap">${esc(MEMO[id] || '아직 남긴 메모가 없어요.')}</div>`);
+
+  return `<div style="flex:1;overflow-y:auto;background:var(--ns-bg)">
+    <div style="max-width:1000px;margin:0 auto;padding:${z(14, 22)}px ${z(14, 30)}px 46px;
+      display:flex;flex-direction:column;gap:${z(20, 26)}px">
+      ${B() ? `<span data-back-mem style="align-self:flex-start;font-size:12.5px;font-weight:600;
+        color:var(--ns-ink3);cursor:pointer">‹ 회원 관리</span>` : ''}
+      ${head}
+      ${sect('이번 달 한마디를 쓰고 있나', '', card(`<div style="padding:18px">${usageBar(m, 1)}</div>`))}
+      ${sect('언제부터 · 얼마를 냈나', '', money)}
+      ${sect('달마다 얼마나 썼나', '연습한 날이 뚝 떨어지면 빨강입니다', bars)}
+      ${sect('올린 스윙', m.vids.length + '개', vids)}
+      ${sect('내가 달아준 한마디', m.past.length + '개', past)}
+      ${sect('정기 피드백', fbs.length ? fbs.length + '개' : '', fbRows)}
+      ${sect('결제 이력', '', payRows)}
+      ${sect('내 메모', '회원에겐 안 보여요', memo)}
     </div></div>`;
 }
 
@@ -1479,7 +1660,7 @@ function render() {
   $('#frame').innerHTML = pc
     ? `<div class="pcbox">${renderPC()}</div>`
     : `<div class="mobox">${renderMO()}</div>`;
-  $('#over').innerHTML = renderCard() + renderMark();
+  $('#over').innerHTML = renderMark();
   document.querySelectorAll('.vtab').forEach(b => b.classList.toggle('on', b.dataset.v === S.view));
   wire();
 }
@@ -1552,20 +1733,26 @@ function wire() {
   on('[data-how]', 'click', e => { const k = e.currentTarget.dataset.how; S.how[k] = !S.how[k]; render(); });
   on('[data-quiet]', 'click', () => { S.quiet = !S.quiet; render(); });
   on('[data-go]', 'click', e => { S.nav = e.currentTarget.dataset.go; render(); });
-  on('[data-mem]', 'click', e => { S.card = e.currentTarget.dataset.mem; render(); });
-  on('[data-cardgo]', 'click', e => {
-    S.pick = e.currentTarget.dataset.cardgo;
-    S.card = null; S.nav = 'queue';
-    if (S.view === 'mo') S.mo = 'w';
+  on('[data-mem]', 'click', e => {
+    S.card = e.currentTarget.dataset.mem; S.nav = 'member'; S.bell = false;
+    if (S.view === 'mo') S.mo = 'q';
     render();
   });
-  on('[data-cardx],[data-cardbg]', 'click', e => {
-    if (e.target === e.currentTarget || e.currentTarget.dataset.cardx !== undefined) { S.card = null; render(); }
+  on('[data-back-mem]', 'click', () => { S.nav = 'members'; render(); });
+  on('[data-poke]', 'click', () => toast('카카오 알림톡으로 안부를 보냅니다'));
+  on('[data-cardgo]', 'click', e => {
+    S.pick = e.currentTarget.dataset.cardgo;
+    S.nav = 'queue';
+    if (S.view === 'mo') S.mo = 'w';
+    render();
   });
   on('[data-open]', 'click', () => { S.mo = 'h'; render(); });
   on('[data-toW]', 'click', () => { S.mo = 'w'; render(); });
   on('[data-toQ]', 'click', () => { S.mo = 'q'; render(); });
-  on('[data-back]', 'click', () => { S.mo = S.mo === 'h' ? 'w' : 'q'; render(); });
+  on('[data-back]', 'click', () => {
+    if (S.nav === 'member') { S.nav = 'members'; return render(); }
+    S.mo = S.mo === 'h' ? 'w' : 'q'; render();
+  });
   on('[data-play]', 'click', () => toast('영상을 재생합니다'));
   on('[data-speed]', 'click', e => toast(e.currentTarget.dataset.speed + ' 로 봅니다'));
   on('[data-past]', 'click', e => {
