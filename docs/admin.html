@@ -173,6 +173,30 @@ const M = {
     past: [],
     vids: [{ d: '7월 3일', view: '정면', club: '드라이버' }],
   },
+  yoon: {
+    name: '이제시작', real: '윤도현', plan: '무료', months: 1, join: '2026.07.19',
+    pay1: null, days: 5, daysPrev: 0,
+    quota: [0, 0], lastUp: '7월 24일',
+    program: null, week: null, journey: [], homework: [], past: [],
+    vids: [{ d: '7월 24일', view: '정면', club: '7번 아이언' },
+           { d: '7월 21일', view: '정면', club: '7번 아이언' }],
+  },
+  oh: {
+    name: '구경만', real: '오세진', plan: '무료', months: 2, join: '2026.06.11',
+    pay1: null, days: 1, daysPrev: 3,
+    quota: [0, 0], lastUp: '6월 30일',
+    program: null, week: null, journey: [], homework: [], past: [],
+    vids: [{ d: '6월 30일', view: '측면', club: '드라이버' }],
+  },
+  bae: {
+    name: '드라이버만', real: '배준호', plan: '무료', months: 1, join: '2026.07.06',
+    pay1: null, days: 8, daysPrev: 0,
+    quota: [0, 0], lastUp: '7월 25일',
+    program: null, week: null, journey: [], homework: [], past: [],
+    vids: [{ d: '7월 25일', view: '정면', club: '드라이버' },
+           { d: '7월 17일', view: '정면', club: '드라이버' },
+           { d: '7월 9일', view: '측면', club: '드라이버' }],
+  },
 };
 
 /* 요청함 — 회원이 '프로 한마디'를 눌러 보낸 것들.
@@ -280,6 +304,9 @@ const QUIET = ['밤 10시', '아침 8시'];
    회원 하나를 열면 그 사람의 전부가 한 페이지에 있어야 한다.
    달마다: 연습일 · 올린 영상 · 쓴 한마디 · 앱을 연 날. */
 const HIST = {
+  yoon: [['7월', 5, 2, 0, 8]],
+  oh:   [['6월', 3, 1, 0, 5], ['7월', 1, 0, 0, 2]],
+  bae:  [['7월', 8, 3, 0, 12]],
   kim:  [['3월', 14, 11, 5, 22], ['4월', 11, 9, 6, 19], ['5월', 13, 12, 6, 24],
          ['6월', 9, 8, 4, 16], ['7월', 12, 12, 2, 21]],
   park: [['5월', 6, 4, 1, 9], ['6월', 10, 7, 4, 15], ['7월', 7, 5, 3, 11]],
@@ -338,6 +365,7 @@ const S = {
   how: Object.fromEntries(ALERT_HOW.map(([k, , , on]) => [k, on])),
   quiet: true,         // 조용한 시간
   fold: false,         // 요청함 접기 (영상에 집중할 때)
+  mview: 'board',      // 회원 관리 보기: 등급별 | 목록
   pick: 'q2',          // 지금 고른 요청
   done: {},            // 답을 보낸 요청
   draft: {},           // 요청별로 쓰던 글 (사람 바꿔도 안 날아간다)
@@ -388,6 +416,11 @@ const unread = () => alerts().filter(a => !S.read[a.id]).length;
    안 쓰는 사람은 다음 결제일에 조용히 해지한다. 숫자보다 이걸 먼저 봐야 한다. */
 function usage(m) {
   const [used, all] = m.quota;
+  // 무료는 줄 횟수가 없다. 이 사람들에게 볼 것은 '올리고는 있나' 다.
+  if (m.plan === '무료') return { free: true, used: 0, all: 0, p: 0, gone: 0,
+    state: m.vids.length >= 2 ? 'ok' : 'low',
+    col: m.vids.length >= 2 ? 'var(--ns-green)' : 'var(--ns-ink3)',
+    word: m.vids.length >= 2 ? '올리고는 있어요' : '거의 안 써요' };
   const p = all ? Math.round(used / all * 100) : 0;
   // 이번 달이 얼마나 지났는지와 견준다. 달 초에 0% 인 건 정상이다.
   const gone = Math.round((31 - STAT.monthLeft) / 31 * 100);
@@ -404,6 +437,15 @@ const sleeping = () => Object.entries(M).filter(([, m]) => m.plan !== '무료' &
 /* 퍼센트 바 하나 */
 function usageBar(m, big) {
   const u = usage(m);
+  if (u.free) return `<div style="display:flex;flex-direction:column;gap:${big ? 6 : 4}px;min-width:0">
+    <div style="display:flex;align-items:baseline;gap:7px">
+      <span style="font-size:${big ? 12.5 : 11.5}px;font-weight:700;color:${u.col}">무료</span>
+      <span style="flex:1;font-size:${big ? 11.5 : 10.5}px;font-weight:600;color:${u.col}">${u.word}</span>
+      <span style="font-size:${big ? 11.5 : 10.5}px;font-weight:700;font-family:var(--font-num);
+        color:var(--ns-ink3)">영상 ${m.vids.length}</span></div>
+    <span style="font-size:${big ? 11 : 10.5}px;font-weight:500;color:var(--ns-ink3);line-height:1.6">
+      ${m.vids.length >= 2 ? '결제로 넘어올 수 있는 사람입니다' : '아직 앱에 자리를 안 잡았어요'}</span>
+  </div>`;
   return `<div style="display:flex;flex-direction:column;gap:${big ? 6 : 5}px;min-width:0">
     <div style="display:flex;align-items:baseline;gap:7px">
       <span style="font-size:${big ? 12.5 : 11.5}px;font-weight:700;font-family:var(--font-num);
@@ -1082,58 +1124,136 @@ function pageStats() {
     </div></div>`;
 }
 
-/* 회원 관리 — 목록에서 이름을 누르면 그 사람 카드가 열린다.
-   어느 도구에 있든 사람으로 이어지는 게 CRM 의 뼈대다. */
+/* 회원 관리 — 등급별 세로줄로 본다.
+   등급이 곧 이 장사의 단계다. 무료가 몇이고 Elite 가 몇인지,
+   어느 줄에 사람이 고여 있는지가 한눈에 보여야 한다.
+   순서는 최신 등록순 — 새로 온 사람이 맨 위다. */
+const TIERS = [
+  ['무료', '결제로 넘어올 사람들'],
+  ['Basic', '프로 한마디 월 2회'],
+  ['Coaching', '프로 한마디 월 5회'],
+  ['Elite', '정기 피드백 + 월 6회'],
+];
+const byJoin = arr => arr.slice().sort((a, b) => b[1].join.localeCompare(a[1].join));
+
+function memCard(id, m) {
+  const q = Q.find(x => x.m === id && !S.done[x.id]);
+  const u = usage(m);
+  return `<div data-mem="${id}" style="background:var(--ns-card);border:1px solid var(--ns-line);
+    border-radius:12px;padding:13px 14px;display:flex;flex-direction:column;gap:9px;cursor:pointer">
+    <div style="display:flex;align-items:center;gap:9px">
+      <span style="width:32px;height:32px;border-radius:50%;background:var(--ns-green);color:#FFF;
+        flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;
+        font-weight:700">${esc(m.name[0])}</span>
+      <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+        <span style="font-size:13px;font-weight:700;color:var(--ns-ink);white-space:nowrap;
+          overflow:hidden;text-overflow:ellipsis">${esc(m.name)}</span>
+        <span style="font-size:10.5px;font-weight:500;color:var(--ns-ink3);font-family:var(--font-num)">
+          ${esc(m.join)} 등록 · ${m.months}개월째</span></span>
+      ${q ? `<span style="flex:none;font-size:10px;font-weight:700;font-family:var(--font-num);
+        color:${urgent(q.left) ? '#FFF' : 'var(--ns-green)'};
+        background:${urgent(q.left) ? 'var(--ns-danger)' : 'var(--ns-soft)'};
+        border-radius:7px;padding:3px 7px">${left(q.left)}</span>` : ''}
+    </div>
+    ${usageBar(m)}
+    ${m.program ? `<span style="font-size:10.5px;font-weight:500;color:var(--ns-ink3);
+      border-top:1px solid #F2ECE2;padding-top:8px;white-space:nowrap;overflow:hidden;
+      text-overflow:ellipsis">${esc(m.program)}</span>` : ''}
+  </div>`;
+}
+
 function pageMembers() {
-  // 안 쓰는 사람이 위로. 목록의 목적이 '누구에게 먼저 연락하나' 다.
+  const all = Object.entries(M);
+  const board = S.mview !== 'list';
+
+  const col = ([tier, note]) => {
+    const list = byJoin(all.filter(([, m]) => m.plan === tier));
+    const money = tier === '무료' ? 0 : list.length * (PRICE_OF[tier] || 0);
+    const risk = list.filter(([, m]) => tier !== '무료' && m.quota[0] === 0).length;
+    return `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;flex-direction:column;gap:5px;padding:0 2px">
+        <div style="display:flex;align-items:baseline;gap:7px">
+          <span style="font-size:13.5px;font-weight:700;color:var(--ns-ink)">${tier}</span>
+          <span style="font-size:12px;font-weight:700;font-family:var(--font-num);
+            color:var(--ns-ink3)">${list.length}</span>
+          <span style="flex:1"></span>
+          ${risk ? `<span style="font-size:10px;font-weight:700;color:#FFF;background:var(--ns-danger);
+            border-radius:7px;padding:2px 6px">안 씀 ${risk}</span>` : ''}
+        </div>
+        <span style="font-size:10.5px;font-weight:500;color:var(--ns-ink3)">
+          ${money ? won(money) + '원 / 월' : note}</span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:9px;background:rgba(29,36,32,.035);
+        border-radius:13px;padding:10px;min-height:120px">
+        ${list.length ? list.map(([id, m]) => memCard(id, m)).join('')
+          : `<div style="padding:22px 8px;text-align:center;font-size:11.5px;font-weight:500;
+              color:var(--ns-ink3)">아직 없어요</div>`}
+      </div></div>`;
+  };
+
+  // 목록 보기 — 안 쓰는 사람이 위로. '누구에게 먼저 연락하나' 를 볼 때 쓴다.
   const order = { none: 0, low: 1, ok: 2, full: 3 };
-  const rows = Object.entries(M)
+  const rows = all.slice()
     .sort((a, b) => order[usage(a[1]).state] - order[usage(b[1]).state])
     .map(([id, m]) => {
-    const q = Q.find(x => x.m === id && !S.done[x.id]);
-    return `<div data-mem="${id}" style="display:flex;align-items:center;gap:13px;padding:15px 18px;
-      border-bottom:1px solid #F2ECE2;cursor:pointer">
-      <span style="width:40px;height:40px;border-radius:50%;background:var(--ns-green);color:#FFF;
-        flex:none;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">
-        ${esc(m.name[0])}</span>
-      <span style="flex:2;min-width:0;display:flex;flex-direction:column;gap:3px">
-        <span style="font-size:14px;font-weight:700;color:var(--ns-ink)">${esc(m.name)}
-          <span style="font-size:11.5px;font-weight:500;color:var(--ns-ink3)">${esc(m.real)}</span></span>
-        <span style="font-size:11.5px;font-weight:500;color:var(--ns-ink3)">
-          ${esc(m.plan)} · ${m.months}개월째</span></span>
-      <span style="flex:1;font-size:12.5px;font-weight:500;color:var(--ns-ink2)">
-        ${m.program ? esc(m.program) : '<span style="color:var(--ns-ink3)">정기 피드백 없음</span>'}</span>
-      <span style="flex:none;width:190px">${usageBar(m)}</span>
-      <span style="flex:none;width:104px;text-align:right;font-size:11.5px;font-weight:700;
-        color:${q ? (urgent(q.left) ? 'var(--ns-danger)' : 'var(--ns-green)') : 'var(--ns-ink3)'}">
-        ${q ? left(q.left) : '마지막 ' + esc(m.lastUp)}</span>
-    </div>`;
-  }).join('');
+      const q = Q.find(x => x.m === id && !S.done[x.id]);
+      return `<div data-mem="${id}" style="display:flex;align-items:center;gap:13px;padding:15px 18px;
+        border-bottom:1px solid #F2ECE2;cursor:pointer">
+        <span style="width:40px;height:40px;border-radius:50%;background:var(--ns-green);color:#FFF;
+          flex:none;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">
+          ${esc(m.name[0])}</span>
+        <span style="flex:2;min-width:0;display:flex;flex-direction:column;gap:3px">
+          <span style="font-size:14px;font-weight:700;color:var(--ns-ink)">${esc(m.name)}
+            <span style="font-size:11.5px;font-weight:500;color:var(--ns-ink3)">${esc(m.real)}</span></span>
+          <span style="font-size:11.5px;font-weight:500;color:var(--ns-ink3)">
+            ${esc(m.plan)} · ${m.months}개월째 · ${esc(m.join)} 등록</span></span>
+        <span style="flex:1;font-size:12.5px;font-weight:500;color:var(--ns-ink2)">
+          ${m.program ? esc(m.program) : '<span style="color:var(--ns-ink3)">정기 피드백 없음</span>'}</span>
+        <span style="flex:none;width:190px">${usageBar(m)}</span>
+        <span style="flex:none;width:104px;text-align:right;font-size:11.5px;font-weight:700;
+          color:${q ? (urgent(q.left) ? 'var(--ns-danger)' : 'var(--ns-green)') : 'var(--ns-ink3)'}">
+          ${q ? left(q.left) : '마지막 ' + esc(m.lastUp)}</span>
+      </div>`;
+    }).join('');
+
+  const tab = (k, n) => `<span data-mview="${k}" style="font-size:12px;font-weight:${board === (k === 'board') ? 700 : 500};
+    color:${board === (k === 'board') ? 'var(--ns-ink)' : 'var(--ns-ink3)'};
+    background:${board === (k === 'board') ? 'var(--ns-card)' : 'transparent'};
+    border-radius:8px;padding:7px 13px;cursor:pointer;
+    ${board === (k === 'board') ? 'box-shadow:0 1px 3px rgba(29,36,32,.12)' : ''}">${n}</span>`;
+
   return `<div style="flex:1;overflow-y:auto;background:var(--ns-bg)">
-    <div style="max-width:1120px;margin:0 auto;padding:30px 30px 44px;display:flex;flex-direction:column;gap:18px">
-      <div style="display:flex;align-items:baseline;gap:10px">
+    <div style="padding:26px 30px 44px;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <span style="font-size:24px;font-weight:700;letter-spacing:-.03em;color:var(--ns-ink)">회원 관리</span>
-        <span style="font-size:13.5px;font-weight:500;color:var(--ns-ink3)">${Object.keys(M).length}명</span>
+        <span style="font-size:13.5px;font-weight:500;color:var(--ns-ink3)">${all.length}명</span>
+        <span style="display:flex;gap:3px;background:var(--ns-sand);border-radius:10px;padding:3px;
+          margin-left:6px">${tab('board', '등급별')}${tab('list', '목록')}</span>
         <span style="flex:1"></span>
         ${sleeping().length ? `<span style="font-size:12px;font-weight:700;color:var(--ns-danger);
           background:rgba(192,57,43,.08);border-radius:8px;padding:6px 11px">
           이번 달 한 번도 안 쓴 유료 회원 ${sleeping().length}명</span>` : ''}
       </div>
-      <div style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:13px;
-        overflow:hidden">
-        <div style="display:flex;align-items:center;gap:13px;padding:11px 18px;
-          border-bottom:1px solid var(--ns-line);font-size:11px;font-weight:700;
-          letter-spacing:.06em;color:var(--ns-ink3)">
-          <span style="flex:none;width:40px"></span>
-          <span style="flex:2">회원</span>
-          <span style="flex:1">지금 하는 것</span>
-          <span style="flex:none;width:190px">이번 달 한마디를 쓰고 있나</span>
-          <span style="flex:none;width:104px;text-align:right">기다리는 것</span>
-        </div>${rows}</div>
-      <span style="font-size:12px;font-weight:500;color:var(--ns-ink3);line-height:1.7">
-        이름을 누르면 그 회원 카드가 열립니다.
-        <b style="font-weight:700;color:var(--ns-ink2)">막대의 세로선이 오늘</b>입니다 —
-        선보다 막대가 짧으면 이번 달을 흘려보내고 있다는 뜻이고, 그게 다음 결제일의 해지로 옵니다.</span>
+      ${board
+        ? `<div style="display:flex;gap:14px;align-items:stretch">${TIERS.map(col).join('')}</div>
+           <span style="font-size:12px;font-weight:500;color:var(--ns-ink3);line-height:1.7">
+             줄마다 <b style="font-weight:700;color:var(--ns-ink2)">최신 등록순</b>입니다.
+             칸을 누르면 그 회원 페이지로 갑니다.
+             무료 줄에서 <b style="font-weight:700;color:var(--ns-ink2)">영상을 두 개 넘게 올린 사람</b>이
+             결제로 넘어올 다음 사람입니다.</span>`
+        : `<div style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:13px;
+             overflow:hidden">
+             <div style="display:flex;align-items:center;gap:13px;padding:11px 18px;
+               border-bottom:1px solid var(--ns-line);font-size:11px;font-weight:700;
+               letter-spacing:.06em;color:var(--ns-ink3)">
+               <span style="flex:none;width:40px"></span><span style="flex:2">회원</span>
+               <span style="flex:1">지금 하는 것</span>
+               <span style="flex:none;width:190px">이번 달 한마디를 쓰고 있나</span>
+               <span style="flex:none;width:104px;text-align:right">기다리는 것</span>
+             </div>${rows}</div>
+           <span style="font-size:12px;font-weight:500;color:var(--ns-ink3);line-height:1.7">
+             <b style="font-weight:700;color:var(--ns-ink2)">안 쓰는 사람이 맨 위</b>입니다 —
+             막대의 세로선이 오늘이고, 선보다 막대가 짧으면 이번 달을 흘려보내고 있다는 뜻입니다.</span>`}
     </div></div>`;
 }
 
@@ -1320,24 +1440,32 @@ function renderMO() {
   }
 
   if (S.nav === 'members') {
+    // 모바일에선 세로줄을 나란히 못 놓는다. 등급별로 위아래로 쌓는다 — 순서는 같다.
     return page(`${bar('회원 관리', 0, `<span style="font-size:11.5px;font-weight:600;
       color:var(--ns-ink3)">${Object.keys(M).length}명</span>`)}
-      <div style="flex:1;overflow-y:auto;background:var(--ns-card)">
-        ${Object.entries(M).map(([id, mm]) => {
-          const oq = Q.find(x => x.m === id && !S.done[x.id]);
-          return `<div data-mem="${id}" style="display:flex;align-items:center;gap:11px;padding:14px;
-            border-bottom:1px solid #F2ECE2;cursor:pointer">
-            <span style="width:36px;height:36px;border-radius:50%;background:var(--ns-green);color:#FFF;
-              flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;
-              font-weight:700">${esc(mm.name[0])}</span>
-            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
-              <span style="font-size:13px;font-weight:700;color:var(--ns-ink)">${esc(mm.name)}</span>
-              <span style="font-size:11px;font-weight:500;color:var(--ns-ink3)">
-                ${esc(mm.plan)} · ${mm.months}개월째 · 한마디 ${mm.quota[0]}/${mm.quota[1]}</span></span>
-            <span style="flex:none;font-size:10.5px;font-weight:700;
-              color:${oq ? (urgent(oq.left) ? 'var(--ns-danger)' : 'var(--ns-green)') : 'var(--ns-ink3)'}">
-              ${oq ? left(oq.left) : '—'}</span></div>`;
-        }).join('')}</div>`);
+      <div style="flex:1;overflow-y:auto;padding:12px 12px 18px;display:flex;flex-direction:column;gap:16px">
+        ${TIERS.map(([tier, note]) => {
+          const list = byJoin(Object.entries(M).filter(([, m]) => m.plan === tier));
+          const money = tier === '무료' ? 0 : list.length * (PRICE_OF[tier] || 0);
+          const risk = list.filter(([, m]) => tier !== '무료' && m.quota[0] === 0).length;
+          return `<div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:baseline;gap:7px;padding:0 3px">
+              <span style="font-size:13px;font-weight:700;color:var(--ns-ink)">${tier}</span>
+              <span style="font-size:11.5px;font-weight:700;font-family:var(--font-num);
+                color:var(--ns-ink3)">${list.length}</span>
+              <span style="flex:1"></span>
+              ${risk ? `<span style="font-size:9.5px;font-weight:700;color:#FFF;
+                background:var(--ns-danger);border-radius:7px;padding:2px 6px">안 씀 ${risk}</span>` : ''}
+              <span style="font-size:10.5px;font-weight:500;color:var(--ns-ink3)">
+                ${money ? won(money) + '원 / 월' : note}</span>
+            </div>
+            ${list.length ? list.map(([id, m]) => memCard(id, m)).join('')
+              : `<div style="padding:14px;text-align:center;font-size:11.5px;font-weight:500;
+                  color:var(--ns-ink3);background:var(--ns-card);border:1px solid var(--ns-line);
+                  border-radius:12px">아직 없어요</div>`}
+          </div>`;
+        }).join('')}
+      </div>`);
   }
 
   if (S.nav === 'member') {
@@ -1738,6 +1866,7 @@ function wire() {
     if (S.view === 'mo') S.mo = 'q';
     render();
   });
+  on('[data-mview]', 'click', e => { S.mview = e.currentTarget.dataset.mview; render(); });
   on('[data-back-mem]', 'click', () => { S.nav = 'members'; render(); });
   on('[data-poke]', 'click', () => toast('카카오 알림톡으로 안부를 보냅니다'));
   on('[data-cardgo]', 'click', e => {
