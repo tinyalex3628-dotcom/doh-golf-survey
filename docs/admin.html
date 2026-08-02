@@ -60,6 +60,12 @@ html.demo .pcbox{height:100vh}
 /* 모바일 — 회원 앱 프로토타입과 같은 크기 */
 .mobox{width:390px;margin:14px auto;height:760px;background:var(--ns-bg);border:1px solid #DDD6C8;
   border-radius:30px;overflow:hidden;box-shadow:0 18px 44px -26px rgba(38,40,42,.4)}
+/* 진짜 폰에서 열면 이 틀 자체가 화면보다 넓어 가로로 밀린다.
+   폰에서는 액자를 걷고 화면을 통째로 쓴다. */
+@media (max-width:430px){
+  .wrap{padding:0}
+  .mobox{width:100%;margin:0;height:100vh;height:100dvh;border:0;border-radius:0;box-shadow:none}
+}
 
 #toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,14px);z-index:80;
   background:#1F2A22;color:#EDEDE8;font-size:12.5px;font-weight:500;border-radius:11px;
@@ -367,6 +373,7 @@ const S = {
   fold: false,         // 요청함 접기 (영상에 집중할 때)
   mview: 'board',      // 회원 관리 보기: 등급별 | 목록
   mtab: 'sum',         // 회원 세부 안의 부제목
+  back: [],            // 어디서 왔는지 (뒤로 가기)
   pick: 'q2',          // 지금 고른 요청
   done: {},            // 답을 보낸 요청
   draft: {},           // 요청별로 쓰던 글 (사람 바꿔도 안 날아간다)
@@ -811,8 +818,14 @@ function topbar() {
   const TITLE = { home: '대시보드', queue: '답변 요청함', members: '회원 관리',
                   stats: '통계', member: '회원 카드', fb: '정기 피드백', sched: '일정 · 예약',
                   pay: '쿠폰 · 결제', set: '설정' };
-  return `<div style="flex:none;height:56px;display:flex;align-items:center;gap:16px;padding:0 22px;
+  return `<div style="flex:none;height:56px;display:flex;align-items:center;gap:12px;padding:0 22px 0 14px;
       background:var(--ns-card);border-bottom:1px solid var(--ns-line);position:relative;z-index:5">
+    <span data-goback title="뒤로" style="width:34px;height:34px;border-radius:9px;flex:none;
+      display:flex;align-items:center;justify-content:center;
+      color:var(--ns-ink${S.back.length ? '2' : '3'});cursor:${S.back.length ? 'pointer' : 'default'};
+      opacity:${S.back.length ? 1 : .35};background:transparent">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg></span>
     <span style="font-size:15px;font-weight:700;letter-spacing:-.02em;color:var(--ns-ink)">
       ${TITLE[S.nav] || ''}</span>
     <span data-search style="flex:1;max-width:380px;display:flex;align-items:center;gap:8px;
@@ -1623,8 +1636,10 @@ function renderMark() {
    작은 창이 아니라 한 페이지다. 다만 전부를 한 줄로 쌓으면 스크롤이 너무 길다.
    머리(이름 · 지금 상태 · 할 수 있는 것)만 늘 붙여 두고,
    나머지는 부제목으로 갈라서 필요한 것만 연다. */
-const MTABS = [['sum', '요약'], ['act', '활동'], ['cm', '한마디 · 피드백'],
-               ['pay', '결제'], ['memo', '내 메모']];
+/* 세 번째 칸은 모바일용 짧은 이름이다. 폰에서 한 칸이 72px 밖에 안 되는데
+   `한마디 · 피드백` 을 그대로 쓰면 `한마디 · …` 로 잘려서 뭘 누르는지 모른다. */
+const MTABS = [['sum', '요약'], ['act', '활동'], ['cm', '한마디 · 피드백', '한마디'],
+               ['pay', '결제'], ['memo', '내 메모', '메모']];
 
 function pageMember() {
   const id = S.card;
@@ -1638,11 +1653,14 @@ function pageMember() {
   const total = pay.reduce((a, x) => a + x[2], 0);
   const maxD = Math.max(1, ...hist.map(h => h[1]));
 
-  const sect = (t, note, body) => `<div style="display:flex;flex-direction:column;gap:11px">
+  const sect = (t, note, body) => `<section data-sect style="display:flex;flex-direction:column;gap:12px;
+      padding-bottom:${z(18, 22)}px;border-bottom:1px solid var(--ns-line)">
     <div style="display:flex;align-items:baseline;gap:9px">
+      <span style="width:3px;height:14px;border-radius:2px;background:var(--ns-green);
+        display:inline-block;transform:translateY(2px)"></span>
       <span style="font-size:14.5px;font-weight:700;color:var(--ns-ink)">${t}</span>
       ${note ? `<span style="font-size:11.5px;font-weight:500;color:var(--ns-ink3)">${note}</span>` : ''}</div>
-    ${body}</div>`;
+    ${body}</section>`;
   const card = body => `<div style="background:var(--ns-card);border:1px solid var(--ns-line);
     border-radius:13px;overflow:hidden">${body}</div>`;
   const fact = (k, v, note, col) => `<div style="background:var(--ns-card);border:1px solid var(--ns-line);
@@ -1702,17 +1720,24 @@ function pageMember() {
   /* 부제목 — 여기서 갈라 들어간다 */
   const badge = k => k === 'cm' ? m.past.length : k === 'pay' ? pay.length
                    : k === 'memo' && MEMO[id] ? 1 : 0;
-  const tabs = `<div style="display:flex;gap:2px;border-bottom:1px solid var(--ns-line);
-      overflow-x:auto;margin:0 -2px">
-    ${MTABS.map(([k, n]) => {
+  /* 칸을 가로로 꽉 채운다. 좁게 몰아 놓으면 눌러야 할 것처럼 안 보인다.
+     칸마다 세로 구분선을 둬서 어디까지가 한 칸인지 눈으로 끊어준다. */
+  const tabs = `<div style="display:flex;background:var(--ns-card);border:1px solid var(--ns-line);
+      border-radius:12px;overflow:hidden">
+    ${MTABS.map(([k, n, mn], i) => {
       const on = S.mtab === k;
-      return `<span data-mtab="${k}" style="flex:none;display:flex;align-items:center;gap:6px;
-        padding:11px 14px;cursor:pointer;white-space:nowrap;
-        border-bottom:2px solid ${on ? 'var(--ns-green)' : 'transparent'};margin-bottom:-1px">
-        <span style="font-size:13px;font-weight:${on ? 700 : 500};
-          color:${on ? 'var(--ns-ink)' : 'var(--ns-ink3)'}">${n}</span>
-        ${badge(k) ? `<span style="font-size:10px;font-weight:700;font-family:var(--font-num);
-          color:${on ? 'var(--ns-green)' : 'var(--ns-ink3)'};background:${on ? 'var(--ns-soft)' : 'var(--ns-sand)'};
+      if (!B() && mn) n = mn;
+      return `<span data-mtab="${k}" style="flex:1;min-width:0;display:flex;align-items:center;
+        justify-content:center;gap:7px;padding:${z(11, 14)}px ${z(6, 10)}px;cursor:pointer;
+        min-height:44px;box-sizing:border-box;white-space:nowrap;position:relative;
+        ${i ? 'border-left:1px solid var(--ns-line);' : ''}
+        background:${on ? 'var(--ns-soft)' : 'transparent'};
+        box-shadow:${on ? 'inset 0 -2.5px 0 var(--ns-green)' : 'none'}">
+        <span style="font-size:${z(12, 13.5)}px;font-weight:${on ? 700 : 500};
+          color:${on ? 'var(--ns-ink)' : 'var(--ns-ink3)'};overflow:hidden;
+          text-overflow:ellipsis">${n}</span>
+        ${badge(k) ? `<span style="flex:none;font-size:10px;font-weight:700;font-family:var(--font-num);
+          color:${on ? '#FFF' : 'var(--ns-ink3)'};background:${on ? 'var(--ns-green)' : 'var(--ns-sand)'};
           border-radius:7px;padding:1px 6px">${badge(k)}</span>` : ''}
       </span>`;
     }).join('')}
@@ -1813,20 +1838,24 @@ function pageMember() {
     card(`<div style="padding:16px 18px;font-size:13px;font-weight:400;color:var(--ns-ink2);
       line-height:1.85;white-space:pre-wrap">${esc(MEMO[id] || '아직 남긴 메모가 없어요.')}</div>`))}`;
 
-  const body = { sum, act, cm, pay: payTab, memo }[S.mtab] || sum;
+  let body = { sum, act, cm, pay: payTab, memo }[S.mtab] || sum;
+  /* 마지막 마디엔 밑줄이 필요 없다 — 그 아래엔 아무것도 없어서
+     선만 덩그러니 떠 있으면 아직 뭐가 더 있는 것처럼 보인다. */
+  const lastSect = body.lastIndexOf('<section data-sect');
+  if (lastSect >= 0) body = body.slice(0, lastSect)
+    + body.slice(lastSect).replace('border-bottom:1px solid var(--ns-line)', 'border-bottom:none');
 
   return `<div style="flex:1;min-height:0;display:flex;flex-direction:column;background:var(--ns-bg)">
-    <div style="flex:none;padding:${z(14, 20)}px ${z(14, 30)}px 0">
+    <div style="flex:none;padding:${z(14, 20)}px ${z(14, 30)}px ${z(12, 16)}px;
+      background:var(--ns-bg);border-bottom:1px solid var(--ns-line)">
       <div style="max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:${z(14, 18)}px">
-        ${B() ? `<span data-back-mem style="align-self:flex-start;font-size:12.5px;font-weight:600;
-          color:var(--ns-ink3);cursor:pointer">‹ 회원 관리</span>` : ''}
         ${head}
         ${tabs}
       </div>
     </div>
     <div style="flex:1;min-height:0;overflow-y:auto;padding:${z(16, 22)}px ${z(14, 30)}px 44px">
-      <div style="max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:${z(20, 24)}px">
-        ${body}</div>
+      <div style="max-width:1000px;margin:0 auto;display:flex;flex-direction:column;
+        gap:${z(18, 22)}px">${body}</div>
     </div></div>`;
 }
 
@@ -1890,7 +1919,9 @@ function wire() {
     render();
   });
   on('[data-nav]', 'click', e => {
-    S.nav = e.currentTarget.dataset.nav; S.card = null; S.more = false; S.bell = false;
+    const to = e.currentTarget.dataset.nav;
+    if (to !== S.nav) S.back.push({ nav: S.nav, card: S.card, mtab: S.mtab });
+    S.nav = to; S.card = null; S.more = false; S.bell = false;
     if (S.view === 'mo' && S.nav === 'queue') S.mo = 'q';
     render();
   });
@@ -1901,6 +1932,7 @@ function wire() {
     const id = e.currentTarget.dataset.alert;
     S.read[id] = true;
     S.pick = id.split('@')[0];
+    if (S.nav !== 'queue') S.back.push({ nav: S.nav, card: S.card, mtab: S.mtab });
     S.nav = 'queue'; S.bell = false;
     if (S.view === 'mo') S.mo = 'w';
     render();
@@ -1911,16 +1943,23 @@ function wire() {
   on('[data-quiet]', 'click', () => { S.quiet = !S.quiet; render(); });
   on('[data-go]', 'click', e => { S.nav = e.currentTarget.dataset.go; render(); });
   on('[data-mem]', 'click', e => {
+    S.back.push({ nav: S.nav, card: S.card, mtab: S.mtab });
     S.card = e.currentTarget.dataset.mem; S.nav = 'member'; S.bell = false; S.mtab = 'sum';
     if (S.view === 'mo') S.mo = 'q';
     render();
   });
   on('[data-mtab]', 'click', e => { S.mtab = e.currentTarget.dataset.mtab; render(); });
   on('[data-mview]', 'click', e => { S.mview = e.currentTarget.dataset.mview; render(); });
-  on('[data-back-mem]', 'click', () => { S.nav = 'members'; render(); });
+  on('[data-back-mem],[data-goback]', 'click', () => {
+    const p = S.back.pop();
+    if (p) { S.nav = p.nav; S.card = p.card; S.mtab = p.mtab || 'sum'; }
+    else S.nav = 'home';
+    render();
+  });
   on('[data-poke]', 'click', () => toast('카카오 알림톡으로 안부를 보냅니다'));
   on('[data-cardgo]', 'click', e => {
     S.pick = e.currentTarget.dataset.cardgo;
+    S.back.push({ nav: S.nav, card: S.card, mtab: S.mtab });
     S.nav = 'queue';
     if (S.view === 'mo') S.mo = 'w';
     render();
