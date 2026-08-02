@@ -366,6 +366,7 @@ const S = {
   quiet: true,         // 조용한 시간
   fold: false,         // 요청함 접기 (영상에 집중할 때)
   mview: 'board',      // 회원 관리 보기: 등급별 | 목록
+  mtab: 'sum',         // 회원 세부 안의 부제목
   pick: 'q2',          // 지금 고른 요청
   done: {},            // 답을 보낸 요청
   draft: {},           // 요청별로 쓰던 글 (사람 바꿔도 안 날아간다)
@@ -1619,8 +1620,12 @@ function renderMark() {
 }
 
 /* ── 회원 세부 페이지 ──────────────────────────────────────────────
-   작은 창이 아니라 한 페이지다. 이 사람의 전부가 여기 있어야
-   '이 사람에게 지금 뭘 해야 하나'가 나온다. */
+   작은 창이 아니라 한 페이지다. 다만 전부를 한 줄로 쌓으면 스크롤이 너무 길다.
+   머리(이름 · 지금 상태 · 할 수 있는 것)만 늘 붙여 두고,
+   나머지는 부제목으로 갈라서 필요한 것만 연다. */
+const MTABS = [['sum', '요약'], ['act', '활동'], ['cm', '한마디 · 피드백'],
+               ['pay', '결제'], ['memo', '내 메모']];
+
 function pageMember() {
   const id = S.card;
   const m = M[id];
@@ -1635,7 +1640,7 @@ function pageMember() {
 
   const sect = (t, note, body) => `<div style="display:flex;flex-direction:column;gap:11px">
     <div style="display:flex;align-items:baseline;gap:9px">
-      <span style="font-size:15px;font-weight:700;color:var(--ns-ink)">${t}</span>
+      <span style="font-size:14.5px;font-weight:700;color:var(--ns-ink)">${t}</span>
       ${note ? `<span style="font-size:11.5px;font-weight:500;color:var(--ns-ink3)">${note}</span>` : ''}</div>
     ${body}</div>`;
   const card = body => `<div style="background:var(--ns-card);border:1px solid var(--ns-line);
@@ -1647,45 +1652,95 @@ function pageMember() {
       color:${col || 'var(--ns-ink)'}">${v}</span>
     ${note ? `<span style="font-size:11px;font-weight:500;color:var(--ns-ink3);line-height:1.55">${note}</span>` : ''}
   </div>`;
+  const cmCard = (pp, i) => {
+    const key = 'D' + id + i, op = !!S.open[key], lines = pp.txt.split('\n\n');
+    return `<div data-past="${key}" style="background:var(--ns-card);border:1px solid var(--ns-line);
+      border-radius:12px;padding:15px 17px;display:flex;flex-direction:column;gap:8px;cursor:pointer">
+      <div style="display:flex;align-items:baseline;gap:9px">
+        <span style="font-size:12.5px;font-weight:700;color:var(--ns-bronze);
+          font-family:var(--font-num)">${esc(pp.d)}</span>
+        <span style="flex:1;font-size:11.5px;font-weight:500;color:var(--ns-ink3)">${esc(pp.club)}</span>
+        ${pp.photo ? `<span style="font-size:11px;font-weight:600;color:var(--ns-ink3)">사진 ${pp.photo}</span>` : ''}
+      </div>
+      <span style="font-size:13.5px;font-weight:400;color:var(--ns-ink2);line-height:1.85;
+        ${op ? 'white-space:pre-wrap' : 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden'}"
+        >${esc(op ? pp.txt : lines[0])}</span>
+      ${lines.length > 1 || pp.txt.length > 60 ? `<span style="font-size:11.5px;font-weight:700;
+        color:var(--ns-green)">${op ? '접기' : `더 보기 · ${lines.length}문단`}</span>` : ''}
+    </div>`;
+  };
 
-  /* 머리 — 이름과 지금 상태, 그리고 바로 할 수 있는 것 */
-  const head = `<div style="display:flex;align-items:flex-start;gap:16px">
-    <span style="width:60px;height:60px;border-radius:50%;background:var(--ns-green);color:#FFF;flex:none;
-      display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700">
-      ${esc(m.name[0])}</span>
-    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+  /* 늘 붙어 있는 머리 */
+  const head = `<div style="display:flex;align-items:flex-start;gap:${z(12, 16)}px;flex-wrap:wrap">
+    <span style="width:${z(48, 60)}px;height:${z(48, 60)}px;border-radius:50%;background:var(--ns-green);
+      color:#FFF;flex:none;display:flex;align-items:center;justify-content:center;
+      font-size:${z(18, 22)}px;font-weight:700">${esc(m.name[0])}</span>
+    <div style="flex:1;min-width:${B() ? '0' : '150px'};display:flex;flex-direction:column;gap:6px">
       <div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap">
-        <span style="font-size:23px;font-weight:700;letter-spacing:-.03em;color:var(--ns-ink)">${esc(m.name)}</span>
-        <span style="font-size:14px;font-weight:500;color:var(--ns-ink3)">${esc(m.real)}</span>
+        <span style="font-size:${z(19, 23)}px;font-weight:700;letter-spacing:-.03em;
+          white-space:nowrap;color:var(--ns-ink)">${esc(m.name)}</span>
+        <span style="font-size:${z(12.5, 14)}px;font-weight:500;color:var(--ns-ink3)">${esc(m.real)}</span>
         <span style="font-size:11.5px;font-weight:700;color:${u.col};background:${u.state === 'none'
           ? 'rgba(192,57,43,.09)' : u.state === 'low' ? 'rgba(166,124,61,.1)' : 'var(--ns-soft)'};
           border-radius:8px;padding:5px 10px">${u.word}</span>
       </div>
-      <span style="font-size:13px;font-weight:500;color:var(--ns-ink2)">
+      <span style="font-size:${z(12, 13)}px;font-weight:500;color:var(--ns-ink2)">
         ${esc(m.plan)} · ${m.months}개월째 · ${esc(m.join)} 가입</span>
     </div>
-    <div style="flex:none;display:flex;gap:8px">
-      ${open ? `<span data-cardgo="${open.id}" style="font-size:13px;font-weight:700;color:#FFF;
+    <div style="${B() ? 'flex:none;' : 'flex-basis:100%;'}display:flex;gap:8px">
+      ${open ? `<span data-cardgo="${open.id}" style="${B() ? '' : 'flex:1;text-align:center;'}
+        font-size:${z(12.5, 13)}px;font-weight:700;color:#FFF;
         background:var(--ns-green);border-radius:10px;padding:11px 18px;cursor:pointer">
         한마디 쓰러 가기</span>` : ''}
-      <span data-poke style="font-size:13px;font-weight:600;color:var(--ns-ink2);border:1px solid var(--ns-line);
-        background:var(--ns-card);border-radius:10px;padding:11px 16px;cursor:pointer">먼저 연락하기</span>
+      <span data-poke style="${B() ? '' : 'flex:1;text-align:center;'}
+        font-size:${z(12.5, 13)}px;font-weight:600;color:var(--ns-ink2);
+        border:1px solid var(--ns-line);background:var(--ns-card);border-radius:10px;
+        padding:11px 16px;cursor:pointer">먼저 연락하기</span>
     </div>
   </div>`;
 
-  /* 언제부터 · 얼마를 냈나 */
-  const money = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:11px">
-    ${fact('처음 온 날', esc(m.join), '가입')}
-    ${fact('첫 결제', esc(m.pay1), m.join === m.pay1 ? '가입한 날 바로' : '가입 뒤 결제')}
-    ${fact('지금까지 낸 돈', won(total) + '원', pay.length + '번 결제')}
-    ${fact('다음 결제일', pay.length ? '8월 ' + pay[pay.length - 1][0].split('.')[2] + '일' : '—',
-      esc(m.plan) + ' · ' + won(PRICE_OF[m.plan] || 0) + '원')}
+  /* 부제목 — 여기서 갈라 들어간다 */
+  const badge = k => k === 'cm' ? m.past.length : k === 'pay' ? pay.length
+                   : k === 'memo' && MEMO[id] ? 1 : 0;
+  const tabs = `<div style="display:flex;gap:2px;border-bottom:1px solid var(--ns-line);
+      overflow-x:auto;margin:0 -2px">
+    ${MTABS.map(([k, n]) => {
+      const on = S.mtab === k;
+      return `<span data-mtab="${k}" style="flex:none;display:flex;align-items:center;gap:6px;
+        padding:11px 14px;cursor:pointer;white-space:nowrap;
+        border-bottom:2px solid ${on ? 'var(--ns-green)' : 'transparent'};margin-bottom:-1px">
+        <span style="font-size:13px;font-weight:${on ? 700 : 500};
+          color:${on ? 'var(--ns-ink)' : 'var(--ns-ink3)'}">${n}</span>
+        ${badge(k) ? `<span style="font-size:10px;font-weight:700;font-family:var(--font-num);
+          color:${on ? 'var(--ns-green)' : 'var(--ns-ink3)'};background:${on ? 'var(--ns-soft)' : 'var(--ns-sand)'};
+          border-radius:7px;padding:1px 6px">${badge(k)}</span>` : ''}
+      </span>`;
+    }).join('')}
   </div>`;
 
-  /* 달마다 얼마나 썼나 — 이 사람의 그래프가 이 장사의 온도계다 */
-  const bars = card(`<div style="padding:20px;display:flex;flex-direction:column;gap:16px">
-    <div style="display:flex;align-items:flex-end;gap:12px;height:150px">
-      ${hist.map(([mo, d, v, cm], i) => {
+  /* ── 요약 ── 여기만 봐도 지금 뭘 해야 하는지 나와야 한다 */
+  const paySum = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:11px">
+    ${fact('처음 온 날', esc(m.join), '가입')}
+    ${fact('첫 결제', m.pay1 ? esc(m.pay1) : '아직 없어요',
+      m.pay1 ? (m.join === m.pay1 ? '가입한 날 바로' : '가입 뒤 결제') : '무료로 쓰는 중')}
+    ${fact('지금까지 낸 돈', total ? won(total) + '원' : '0원', pay.length + '번 결제')}
+    ${fact('다음 결제일', pay.length ? '8월 ' + pay[pay.length - 1][0].split('.')[2] + '일' : '—',
+      esc(m.plan) + (PRICE_OF[m.plan] ? ' · ' + won(PRICE_OF[m.plan]) + '원' : ''))}
+  </div>`;
+  const lastCm = m.past.length
+    ? sect('내가 마지막으로 한 말', esc(m.past[0].d), cmCard(m.past[0], 0)
+        + `<span data-mtab="cm" style="align-self:flex-start;font-size:12px;font-weight:700;
+            color:var(--ns-green);cursor:pointer;padding-top:2px">한마디 ${m.past.length}개 전부 보기 ›</span>`)
+    : '';
+  const sum = `${sect('이번 달 한마디를 쓰고 있나', '',
+      card(`<div style="padding:18px">${usageBar(m, 1)}</div>`))}
+    ${sect('언제부터 · 얼마를 냈나', '', paySum)}
+    ${lastCm}`;
+
+  /* ── 활동 ── */
+  const bars = card(`<div style="padding:${z(14, 20)}px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:flex-end;gap:${z(8, 12)}px;height:150px">
+      ${hist.map(([mo, d], i) => {
         const on = i === hist.length - 1;
         const drop = i && d < hist[i - 1][1] * 0.6;
         return `<span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;
@@ -1700,16 +1755,15 @@ function pageMember() {
     </div>
     <div style="border-top:1px solid #F2ECE2;padding-top:13px;display:flex;flex-direction:column;gap:7px">
       ${[['연습한 날', 1, '일'], ['올린 영상', 2, '개'], ['쓴 한마디', 3, '회'], ['앱을 연 날', 4, '일']]
-        .map(([lab, ix, unit]) => `<div style="display:flex;align-items:center;gap:10px">
-          <span style="flex:none;width:76px;font-size:11.5px;font-weight:600;color:var(--ns-ink3)">${lab}</span>
-          ${hist.map(h => `<span style="flex:1;text-align:center;font-size:12px;font-weight:${
+        .map(([lab, ix, unit]) => `<div style="display:flex;align-items:center;gap:8px">
+          <span style="flex:none;width:${z(62, 76)}px;font-size:11.5px;font-weight:600;
+            color:var(--ns-ink3)">${lab}</span>
+          ${hist.map(h => `<span style="flex:1;text-align:center;font-size:${z(11, 12)}px;font-weight:${
             h === hist[hist.length - 1] ? 700 : 500};font-family:var(--font-num);
             color:var(--ns-ink${h === hist[hist.length - 1] ? '' : '2'})">${h[ix]}${unit}</span>`).join('')}
         </div>`).join('')}
     </div>
   </div>`);
-
-  /* 올린 스윙 */
   const vids = card(`<div style="padding:16px 18px;display:flex;gap:10px;overflow-x:auto">
     ${m.vids.map(v => `<span style="flex:none;width:82px;display:flex;flex-direction:column;gap:5px">
       <span style="height:104px;border-radius:9px;background:#1B2019;
@@ -1719,38 +1773,15 @@ function pageMember() {
       <span style="font-size:9.5px;font-weight:500;color:var(--ns-ink3);text-align:center">
         ${esc(v.view)} · ${esc(v.club)}</span></span>`).join('')}
   </div>`);
+  const act = `${sect('달마다 얼마나 썼나', '연습한 날이 뚝 떨어지면 빨강입니다', bars)}
+    ${sect('올린 스윙', m.vids.length + '개 · 마지막 ' + esc(m.lastUp), vids)}`;
 
-  /* 내가 달아준 한마디 전부 */
+  /* ── 한마디 · 피드백 ── */
   const past = m.past.length
-    ? `<div style="display:flex;flex-direction:column;gap:10px">${m.past.map((pp, i) => {
-        const key = 'D' + id + i, op = !!S.open[key], lines = pp.txt.split('\n\n');
-        return `<div data-past="${key}" style="background:var(--ns-card);border:1px solid var(--ns-line);
-          border-radius:12px;padding:15px 17px;display:flex;flex-direction:column;gap:8px;cursor:pointer">
-          <div style="display:flex;align-items:baseline;gap:9px">
-            <span style="font-size:12.5px;font-weight:700;color:var(--ns-bronze);
-              font-family:var(--font-num)">${esc(pp.d)}</span>
-            <span style="flex:1;font-size:11.5px;font-weight:500;color:var(--ns-ink3)">${esc(pp.club)}</span>
-            ${pp.photo ? `<span style="font-size:11px;font-weight:600;color:var(--ns-ink3)">사진 ${pp.photo}</span>` : ''}
-          </div>
-          <span style="font-size:13.5px;font-weight:400;color:var(--ns-ink2);line-height:1.85;
-            ${op ? 'white-space:pre-wrap' : 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden'}"
-            >${esc(op ? pp.txt : lines[0])}</span>
-          ${lines.length > 1 || pp.txt.length > 60 ? `<span style="font-size:11.5px;font-weight:700;
-            color:var(--ns-green)">${op ? '접기' : `더 보기 · ${lines.length}문단`}</span>` : ''}
-        </div>`;
-      }).join('')}</div>`
+    ? `<div style="display:flex;flex-direction:column;gap:10px">${m.past.map(cmCard).join('')}</div>`
     : card(`<div style="padding:22px;text-align:center;font-size:12.5px;font-weight:500;
         color:var(--ns-ink3);line-height:1.7">아직 한마디를 보낸 적이 없어요.<br>
         이 사람에게 첫 말이 무엇이 될지가 남습니다.</div>`);
-
-  const payRows = card(pay.slice().reverse().map((x, i) => `<div style="display:flex;align-items:center;
-    gap:14px;padding:13px 18px;${i === pay.length - 1 ? '' : 'border-bottom:1px solid #F2ECE2'}">
-    <span style="flex:none;width:110px;font-size:12.5px;font-weight:600;color:var(--ns-ink2);
-      font-family:var(--font-num)">${esc(x[0])}</span>
-    <span style="flex:1;font-size:12.5px;font-weight:600;color:var(--ns-ink)">${esc(x[1])}</span>
-    <span style="flex:none;font-size:12.5px;font-weight:700;color:var(--ns-ink);
-      font-family:var(--font-num)">${won(x[2])}원</span></div>`).join(''));
-
   const fbRows = fbs.length ? card(fbs.map((x, i) => `<div style="display:flex;align-items:center;gap:14px;
     padding:13px 18px;${i === fbs.length - 1 ? '' : 'border-bottom:1px solid #F2ECE2'}">
     <span style="flex:none;width:56px;font-size:12.5px;font-weight:700;color:var(--ns-green);
@@ -1760,24 +1791,42 @@ function pageMember() {
       font-family:var(--font-num)">${esc(x[1])}</span></div>`).join(''))
     : card(`<div style="padding:20px;text-align:center;font-size:12.5px;font-weight:500;color:var(--ns-ink3);
         line-height:1.7">정기 피드백을 안 받는 등급이에요.<br>프로 한마디가 이 사람이 받는 전부입니다.</div>`);
+  const cm = `${sect('내가 달아준 한마디', m.past.length + '개', past)}
+    ${sect('정기 피드백', fbs.length ? fbs.length + '개' : '', fbRows)}`;
 
-  const memo = card(`<div style="padding:16px 18px;font-size:13px;font-weight:400;color:var(--ns-ink2);
-    line-height:1.85;white-space:pre-wrap">${esc(MEMO[id] || '아직 남긴 메모가 없어요.')}</div>`);
+  /* ── 결제 ── */
+  const payRows = pay.length ? card(pay.slice().reverse().map((x, i) => `<div style="display:flex;
+    align-items:center;gap:14px;padding:13px 18px;${i === pay.length - 1 ? '' : 'border-bottom:1px solid #F2ECE2'}">
+    <span style="flex:none;width:110px;font-size:12.5px;font-weight:600;color:var(--ns-ink2);
+      font-family:var(--font-num)">${esc(x[0])}</span>
+    <span style="flex:1;font-size:12.5px;font-weight:600;color:var(--ns-ink)">${esc(x[1])}</span>
+    <span style="flex:none;font-size:12.5px;font-weight:700;color:var(--ns-ink);
+      font-family:var(--font-num)">${won(x[2])}원</span></div>`).join(''))
+    : card(`<div style="padding:22px;text-align:center;font-size:12.5px;font-weight:500;
+        color:var(--ns-ink3);line-height:1.7">아직 결제한 적이 없어요.<br>
+        무료로 쓰면서 지켜보는 중입니다.</div>`);
+  const payTab = `${sect('언제부터 · 얼마를 냈나', '', paySum)}
+    ${sect('결제 이력', pay.length ? pay.length + '번' : '', payRows)}`;
 
-  return `<div style="flex:1;overflow-y:auto;background:var(--ns-bg)">
-    <div style="max-width:1000px;margin:0 auto;padding:${z(14, 22)}px ${z(14, 30)}px 46px;
-      display:flex;flex-direction:column;gap:${z(20, 26)}px">
-      ${B() ? `<span data-back-mem style="align-self:flex-start;font-size:12.5px;font-weight:600;
-        color:var(--ns-ink3);cursor:pointer">‹ 회원 관리</span>` : ''}
-      ${head}
-      ${sect('이번 달 한마디를 쓰고 있나', '', card(`<div style="padding:18px">${usageBar(m, 1)}</div>`))}
-      ${sect('언제부터 · 얼마를 냈나', '', money)}
-      ${sect('달마다 얼마나 썼나', '연습한 날이 뚝 떨어지면 빨강입니다', bars)}
-      ${sect('올린 스윙', m.vids.length + '개', vids)}
-      ${sect('내가 달아준 한마디', m.past.length + '개', past)}
-      ${sect('정기 피드백', fbs.length ? fbs.length + '개' : '', fbRows)}
-      ${sect('결제 이력', '', payRows)}
-      ${sect('내 메모', '회원에겐 안 보여요', memo)}
+  /* ── 메모 ── */
+  const memo = `${sect('내 메모', '회원에겐 안 보여요',
+    card(`<div style="padding:16px 18px;font-size:13px;font-weight:400;color:var(--ns-ink2);
+      line-height:1.85;white-space:pre-wrap">${esc(MEMO[id] || '아직 남긴 메모가 없어요.')}</div>`))}`;
+
+  const body = { sum, act, cm, pay: payTab, memo }[S.mtab] || sum;
+
+  return `<div style="flex:1;min-height:0;display:flex;flex-direction:column;background:var(--ns-bg)">
+    <div style="flex:none;padding:${z(14, 20)}px ${z(14, 30)}px 0">
+      <div style="max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:${z(14, 18)}px">
+        ${B() ? `<span data-back-mem style="align-self:flex-start;font-size:12.5px;font-weight:600;
+          color:var(--ns-ink3);cursor:pointer">‹ 회원 관리</span>` : ''}
+        ${head}
+        ${tabs}
+      </div>
+    </div>
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:${z(16, 22)}px ${z(14, 30)}px 44px">
+      <div style="max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:${z(20, 24)}px">
+        ${body}</div>
     </div></div>`;
 }
 
@@ -1862,10 +1911,11 @@ function wire() {
   on('[data-quiet]', 'click', () => { S.quiet = !S.quiet; render(); });
   on('[data-go]', 'click', e => { S.nav = e.currentTarget.dataset.go; render(); });
   on('[data-mem]', 'click', e => {
-    S.card = e.currentTarget.dataset.mem; S.nav = 'member'; S.bell = false;
+    S.card = e.currentTarget.dataset.mem; S.nav = 'member'; S.bell = false; S.mtab = 'sum';
     if (S.view === 'mo') S.mo = 'q';
     render();
   });
+  on('[data-mtab]', 'click', e => { S.mtab = e.currentTarget.dataset.mtab; render(); });
   on('[data-mview]', 'click', e => { S.mview = e.currentTarget.dataset.mview; render(); });
   on('[data-back-mem]', 'click', () => { S.nav = 'members'; render(); });
   on('[data-poke]', 'click', () => toast('카카오 알림톡으로 안부를 보냅니다'));
