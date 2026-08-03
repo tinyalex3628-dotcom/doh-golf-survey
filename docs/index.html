@@ -146,10 +146,8 @@ html.demo body{background:#EDEAE3}
 .bgate-tag{display:inline-block;margin-top:12px;padding:3.5px 10px;border-radius:999px;
   font-family:Pretendard,-apple-system,sans-serif;font-size:10px;font-weight:600;letter-spacing:.09em;
   color:#7D5D2E;background:rgba(125,93,46,.10);border:1px solid rgba(125,93,46,.3)}
-.bgate-lead{font-family:Hahmlet,serif;font-size:15px;line-height:1.68;color:var(--ns-ink);
-  margin-top:18px;letter-spacing:-.005em}
 /* 베타에 열려 있는 한 칸 — 고를 게 하나뿐이니 카드 하나로 세운다 */
-.bgate-plan{margin-top:18px;padding:15px 15px 14px;border-radius:14px;
+.bgate-plan{margin-top:20px;padding:15px 15px 14px;border-radius:14px;
   background:var(--ns-soft);border:1px solid #DCE7DE}
 .bgate-pt{font-family:Pretendard,-apple-system,sans-serif;font-size:12.5px;font-weight:500;
   letter-spacing:-.01em;color:var(--ns-green)}
@@ -157,10 +155,6 @@ html.demo body{background:#EDEAE3}
 .bgate-ul-p{margin-top:9px}
 .bgate-ul-p li{color:var(--ns-ink2)}
 .bgate-ul-p li b{font-weight:700;color:var(--ns-ink)}
-.bgate-pn{margin-top:11px;padding-top:10px;border-top:1px solid #DCE7DE;
-  font-family:Pretendard,-apple-system,sans-serif;font-size:11px;font-weight:400;
-  line-height:1.6;color:var(--ns-ink3)}
-.bgate-pn b{font-weight:700;color:var(--ns-ink2)}
 .bgate-ul-x li b{font-weight:700;color:var(--ns-ink2)}
 .bgate-sect{margin-top:19px}
 .bgate-st{font-family:Pretendard,-apple-system,sans-serif;font-size:11px;font-weight:600;
@@ -192,10 +186,7 @@ html.demo body{background:#EDEAE3}
 .bgate-back:active{opacity:.7}
 .bgate-h2{font-family:Hahmlet,serif;font-size:15px;font-weight:500;color:var(--ns-ink);
   letter-spacing:.02em}
-.bgate-note{margin-top:15px;font-family:Hahmlet,serif;font-size:13px;line-height:1.72;
-  color:var(--ns-ink3)}
-.bgate-note b{font-weight:500;color:var(--ns-ink2)}
-.bgate-plans{display:flex;flex-direction:column;gap:9px;margin-top:15px}
+.bgate-plans{display:flex;flex-direction:column;gap:9px;margin-top:16px}
 .bplan{padding:13px 14px;border-radius:13px;border:1px solid var(--ns-line);
   background:var(--ns-card);opacity:.62}
 .bplan.on{opacity:1;border:1.5px solid var(--ns-green);background:var(--ns-soft)}
@@ -7407,8 +7398,6 @@ render();
     <div class="bgate-tag">베타 · 시험판</div>
   </div>
 
-  <p class="bgate-lead">지금은 여기까지 만들었습니다.</p>
-
   <div class="bgate-plan">
     <div class="bgate-pt">베타는 <b>Coaching 모드</b>로 열립니다</div>
     <ul class="bgate-ul bgate-ul-p">
@@ -7417,7 +7406,6 @@ render();
       <li>스윙 갤러리 &middot; 연습 기록 &middot; 기간 비교 전부 열려 있어요</li>
       <li><b>원포인트 레슨 할인권 20%</b> 매달 1장</li>
     </ul>
-    <div class="bgate-pn">베타 기간에는 결제 없이 열어드립니다. <b>가격은 아직 정하지 않았습니다.</b></div>
   </div>
 
   <div class="bgate-sect">
@@ -7455,13 +7443,7 @@ render();
     <span class="bgate-h2">구독 안내</span>
   </div>
 
-  <p class="bgate-note">정식으로 열 때 이렇게 나눌 생각입니다.<br>
-    <b>가격은 아직 정하지 않았습니다.</b></p>
-
   <div class="bgate-plans">${PLANS.map(planCard).join('')}</div>
-
-  <p class="bgate-ask">베타에서는 <b>Coaching 모드</b>만 열어드립니다.<br>
-    정기 피드백은 조금 뒤에 열립니다.</p>
 
   <button class="bgate-btn" type="button" data-bgate-close>둘러보기 시작</button>`;
 
