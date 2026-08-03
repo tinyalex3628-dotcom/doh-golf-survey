@@ -1,7 +1,10 @@
 <script>
+/* ?demo=1 · ?demo=elite 등 — 값 상관없이 demo 파라미터만 있으면 데모 모드 */
 /* 공개 데모 사본 — 항상 데모 모드로 연다 (개발자 패널 없음) */
 document.documentElement.classList.add('demo');
 </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>NEXT SWING · 동작 프로토타입</title>
 <style>
 
@@ -88,6 +91,15 @@ body{font-family:var(--font-base);background:var(--pg);color:var(--ct);-webkit-f
    폰 화면만 남긴다. 같은 파일 안의 querystring 분기라 URL 링크가 두 개로 안 늘어난다. */
 html.demo .legend{display:none}
 html.demo .wrap{padding:26px 16px}
+/* 진짜 폰에서 열면 — 액자를 걷고 화면을 통째로 쓴다.
+   화면 틀(360×740)은 각 화면 HTML 안에 박혀 있어서 여기서 덮어쓴다. */
+@media (max-width:440px){
+  html.demo .wrap{padding:0}
+  html.demo #stage{width:100%}
+  html.demo #stage>div{width:100vw !important;height:100dvh !important;height:100vh;
+    border:0 !important;border-radius:0 !important;box-shadow:none !important;margin:0 !important}
+  html.demo #toastbox{bottom:104px}
+}
 html.demo body{background:#EDEAE3}
 #toastbox{position:absolute;left:50%;bottom:92px;transform:translateX(-50%) translateY(6px);z-index:80;
   background:#1D2420;color:#fff;padding:10px 18px;border-radius:10px;font-size:12.5px;
