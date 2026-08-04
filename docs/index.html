@@ -5042,7 +5042,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
-      .select('id,owner,view,path,size,note,created_at,comments(id,body,created_at,read_at)')
+      .select('id,owner,view,path,size,note,want_comment,created_at,comments(id,body,created_at,read_at)')
       .order('created_at', { ascending: false }).limit(200);
     return r.error ? [] : (r.data || []);
   }
@@ -5130,6 +5130,14 @@ const NS = (() => {
     return me;
   }
 
+  /* 한마디 요청 표시 — CRM 이 「답 기다림」과 「그냥 올림」을 가른다 */
+  async function want(swingId) {
+    const c = client();
+    await ready();
+    const r = await c.from('swings').update({ want_comment: true }).eq('id', swingId);
+    if (r.error) throw r.error;
+  }
+
   /* 오늘 기록의 메모를 스윙에 붙인다 — 프로가 영상 옆에서 같이 본다 */
   async function note(swingId, text) {
     const c = client();
@@ -5147,7 +5155,7 @@ const NS = (() => {
   }
 
   return {
-    ready, push, mine, all, comment, markRead, link, remove, people, setName, note,
+    ready, push, mine, all, comment, markRead, link, remove, people, setName, note, want,
     signUp, signIn,
     nick: () => nickname,
     named: () => !!(me && !me.is_anonymous),
@@ -5892,6 +5900,14 @@ function joinSheet(required) {
       .then(() => done('계정을 만들었어요 · 폰을 바꿔도 이어서 쓸 수 있어요')).catch(fail);
   });
   document.body.appendChild(box);
+}
+
+/* 한마디 요청 표시를 오늘 스윙에 붙인다 */
+function sendWant() {
+  if (!window.NS) return;
+  const today = new Date().setHours(0, 0, 0, 0);
+  window.__SWINGS.filter(r => r.remoteId && r.at >= today)
+    .forEach(r => NS.want(r.remoteId).catch(() => {}));
 }
 
 /* 오늘 기록의 메모를 서버의 오늘 스윙에 붙인다 — CRM 이 영상 옆에서 같이 본다 */
@@ -7464,6 +7480,7 @@ const WIRE = {
       if (can('cm') && req && req.dataset.off !== '1') {
         if (S.cm !== 'arrived') { S.cm = 'wait'; S.cmAt = Date.now(); S.cmUsed += 1; }
         sendNote();                      // 적은 메모를 서버의 오늘 스윙에 붙여 보낸다
+        sendWant();                      // 「한마디 요청함」 표시도 같이 — CRM 이 이걸로 가른다
         toast('기록을 저장하고 프로 한마디를 요청했어요');
         S.route = 'pc2'; return render();
       }

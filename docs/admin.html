@@ -121,7 +121,7 @@ const SB_KEY = 'sb_publishable_OLQpZsz7HK7sDG3tsXb6ug_MEw-CbCN';
 const SB_BUCKET = 'swings';
 
 const NS = (() => {
-  let db = null, me = null, pro = false, failed = false;
+  let db = null, me = null, pro = false, failed = false, nickname = null;
 
   function client() {
     if (db) return db;
@@ -150,6 +150,7 @@ const NS = (() => {
       me = user;
       const p = await c.from('profiles').select('is_pro,nickname').eq('id', me.id).maybeSingle();
       pro = !!(p.data && p.data.is_pro);
+      nickname = (p.data && p.data.nickname) || null;
       return me;
     } catch (e) {
       failed = true;
@@ -159,16 +160,34 @@ const NS = (() => {
 
   /* 영상 한 편을 서버로. 파일은 창고에, 「누가·언제·어느 각도」는 표에.
      경로 앞자리가 회원 ID 다 — 접근 규칙이 그 앞자리로 남의 영상을 막는다. */
-  async function push(file, view, note) {
+  async function push(file, view, note, onStep) {
     const c = client();
     const u = await ready();
     if (!c || !u) throw new Error('offline');
     const ext = (file.name || '').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4';
     const path = u.id + '/' + Date.now() + '-' + Math.round(Math.random() * 1e6) + '.' + ext;
 
-    const up = await c.storage.from(SB_BUCKET)
-      .upload(path, file, { contentType: file.type || 'video/mp4', upsert: false });
-    if (up.error) throw up.error;
+    /* supabase-js 의 upload 는 진행률을 안 준다. 40MB 짜리를 데이터로 올리면
+       1분 넘게 걸리는데 화면이 멈춘 것처럼 보인다. 창고에 넣는 부분만 XHR 로
+       직접 올려서 몇 %인지 그대로 보여준다. */
+    const { data: sess } = await c.auth.getSession();
+    const token = sess && sess.session && sess.session.access_token;
+    await new Promise((ok, no) => {
+      const x = new XMLHttpRequest();
+      x.open('POST', SB_URL + '/storage/v1/object/' + SB_BUCKET + '/' + path);
+      x.setRequestHeader('authorization', 'Bearer ' + token);
+      x.setRequestHeader('apikey', SB_KEY);
+      x.setRequestHeader('x-upsert', 'false');
+      if (file.type) x.setRequestHeader('content-type', file.type);
+      if (onStep) x.upload.onprogress = e => {
+        if (e.lengthComputable) onStep(Math.round(e.loaded / e.total * 100));
+      };
+      x.onload = () => (x.status >= 200 && x.status < 300)
+        ? ok() : no(new Error('창고에 못 넣었어요 (' + x.status + ')'));
+      x.onerror = () => no(new Error('연결이 끊겼어요'));
+      x.ontimeout = () => no(new Error('시간이 너무 오래 걸려요'));
+      x.send(file);
+    });
 
     const row = await c.from('swings').insert({
       owner: u.id, view: view, path: path, size: file.size, note: note || null,
@@ -198,7 +217,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
-      .select('id,owner,view,path,size,note,created_at,comments(id,body,created_at,read_at)')
+      .select('id,owner,view,path,size,note,want_comment,created_at,comments(id,body,created_at,read_at)')
       .order('created_at', { ascending: false }).limit(200);
     return r.error ? [] : (r.data || []);
   }
@@ -243,6 +262,65 @@ const NS = (() => {
     return Object.fromEntries((r.data || []).map(p => [p.id, p.nickname]));
   }
 
+  /* ── 가입 · 로그인 ────────────────────────────────────────────────
+     아이디 · 비밀번호 방식이다. 서버는 이메일 꼴을 요구하므로 아이디 뒤에
+     우리 도메인을 붙여 이메일처럼 만든다 — 진짜 메일은 오가지 않는다.
+     (Supabase 의 Confirm email 을 꺼야 돌아간다)
+
+     핵심은 「이어붙이기」다. 지금 익명 계정에 아이디·비번을 얹는 것이라,
+     가입해도 그동안 올린 스윙과 받은 한마디가 그대로 남는다.
+     다른 폰에서 로그인하면 같은 계정으로 들어온다. */
+  const fakeMail = id => id.toLowerCase() + '@beta.nextswing.app';
+
+  async function signUp(id, pw, nick, realName) {
+    const c = client();
+    const u = await ready();
+    if (!c) throw new Error('offline');
+    if (!/^[a-z0-9_]{4,20}$/i.test(id)) throw new Error('아이디는 영문·숫자 4~20자');
+    if ((pw || '').length < 6) throw new Error('비밀번호는 6자 이상');
+    if (u && u.is_anonymous) {
+      const r = await c.auth.updateUser({ email: fakeMail(id), password: pw });
+      if (r.error) throw r.error;
+    } else {
+      const r = await c.auth.signUp({ email: fakeMail(id), password: pw });
+      if (r.error) throw r.error;
+      me = r.data.user;
+    }
+    const uid = (me && me.id) || (u && u.id);
+    await c.from('profiles').update({ nickname: nick || null, real_name: realName || null })
+      .eq('id', uid);
+    nickname = nick || null;
+    return true;
+  }
+
+  async function signIn(id, pw) {
+    const c = client();
+    if (!c) throw new Error('offline');
+    const r = await c.auth.signInWithPassword({ email: fakeMail(id), password: pw });
+    if (r.error) throw r.error;
+    me = r.data.user;
+    const p = await c.from('profiles').select('is_pro,nickname').eq('id', me.id).maybeSingle();
+    pro = !!(p.data && p.data.is_pro);
+    nickname = (p.data && p.data.nickname) || null;
+    return me;
+  }
+
+  /* 한마디 요청 표시 — CRM 이 「답 기다림」과 「그냥 올림」을 가른다 */
+  async function want(swingId) {
+    const c = client();
+    await ready();
+    const r = await c.from('swings').update({ want_comment: true }).eq('id', swingId);
+    if (r.error) throw r.error;
+  }
+
+  /* 오늘 기록의 메모를 스윙에 붙인다 — 프로가 영상 옆에서 같이 본다 */
+  async function note(swingId, text) {
+    const c = client();
+    await ready();
+    const r = await c.from('swings').update({ note: text }).eq('id', swingId);
+    if (r.error) throw r.error;
+  }
+
   async function setName(nickname) {
     const c = client();
     const u = await ready();
@@ -252,7 +330,10 @@ const NS = (() => {
   }
 
   return {
-    ready, push, mine, all, comment, markRead, link, remove, people, setName,
+    ready, push, mine, all, comment, markRead, link, remove, people, setName, note, want,
+    signUp, signIn,
+    nick: () => nickname,
+    named: () => !!(me && !me.is_anonymous),
     who: () => me,
     isPro: () => pro,
     down: () => failed,
@@ -613,7 +694,9 @@ function inRow(s, on) {
       <span style="font-size:10.5px;font-weight:600;color:var(--ns-ink2);background:var(--ns-sand);
         border-radius:6px;padding:2px 7px">${esc(s.view)}</span>
       ${c ? `<span style="font-size:10.5px;font-weight:700;color:var(--ns-green)">한마디 ${c}</span>`
-          : `<span style="font-size:10.5px;font-weight:700;color:var(--ns-bronze)">답 기다림</span>`}
+        : s.want_comment
+          ? `<span style="font-size:10.5px;font-weight:700;color:var(--ns-bronze)">답 기다림</span>`
+          : `<span style="font-size:10.5px;font-weight:600;color:var(--ns-ink3)">새 스윙</span>`}
     </span></div>`;
 }
 
