@@ -72,6 +72,13 @@ html.demo .pcbox{height:100vh}
   padding:12px 18px;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 
+.vbtn{flex:none;padding:8px 12px;border-radius:9px;border:1px solid var(--ns-line);
+  background:var(--ns-card);font-size:11.5px;font-weight:700;color:var(--ns-ink2);
+  cursor:pointer;user-select:none}
+.vbtn:active{opacity:.7}
+.vbtn-on{background:var(--ns-green);border-color:var(--ns-green);color:#fff}
+input[type=range]{height:26px}
+
 textarea::placeholder{color:#A9A392}
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-thumb{background:#D5CEC0;border-radius:9px;border:2px solid transparent;
@@ -206,7 +213,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
-      .select('id,view,path,size,note,created_at,comments(id,body,created_at,read_at)')
+      .select('id,view,path,size,note,created_at,comments(id,body,photos,created_at,read_at)')
       .order('created_at', { ascending: false });
     return r.error ? [] : (r.data || []);
   }
@@ -217,15 +224,18 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
-      .select('id,owner,view,path,size,note,want_comment,created_at,comments(id,body,created_at,read_at)')
+      .select('id,owner,view,path,size,note,want_comment,created_at,comments(id,body,photos,created_at,read_at)')
       .order('created_at', { ascending: false }).limit(200);
     return r.error ? [] : (r.data || []);
   }
 
-  async function comment(swingId, body) {
+  async function comment(swingId, body, photos) {
     const c = client();
     await ready();
-    const r = await c.from('comments').insert({ swing_id: swingId, body: body }).select().single();
+    const r = await c.from('comments').insert({
+      swing_id: swingId, body: body,
+      photos: (photos && photos.length) ? photos : null,
+    }).select().single();
     if (r.error) throw r.error;
     return r.data;
   }
@@ -615,12 +625,14 @@ const MEMO = {
    여기만 진짜다. 나머지 화면은 아직 더미로 그린 설계도고, 이 화면은
    회원이 방금 올린 영상을 서버에서 그대로 읽어 온다.
 
-   한 바퀴 —  회원이 올림 → 여기 뜸 → 영상 보고 한마디 씀 → 회원 앱에 뜸.
-   그게 베타에서 확인해야 할 전부다. */
+   프로의 작업대다 — 스윙 영상은 거의 다 세로라, 영상을 왼쪽에 세로로
+   세우고 답장 기둥을 오른쪽에 길게 붙인다.
+   영상 위에 선을 긋고, 그 장면을 캡처하면 답장에 사진으로 붙는다. */
 
 const IN = {
   busy: false, ready: false, err: null,
-  list: [], who: {}, sel: null, draft: {}, url: null, uid: null, pro: false,
+  list: [], who: {}, sel: null, draft: {}, photos: {}, urlCache: {},
+  uid: null, pro: false,
 };
 
 function inLoad(force) {
@@ -654,8 +666,7 @@ const inWhen = t => {
   return (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
 };
 
-/* 프로로 표시되기 전에는 남의 영상이 안 보인다 — 접근 규칙이 그렇게 막는다.
-   무엇을 해야 하는지 화면에서 그대로 알려준다. 자기 ID 를 어디서 찾나 헤매면 안 된다. */
+/* 프로로 표시되기 전에는 남의 영상이 안 보인다 — 접근 규칙이 그렇게 막는다. */
 function inSetup() {
   return `<div style="flex:1;display:flex;align-items:center;justify-content:center;
       background:var(--ns-bg);padding:30px">
@@ -671,8 +682,8 @@ function inSetup() {
         word-break:break-all;user-select:all">update public.profiles set is_pro = true
 where id = '${esc(IN.uid || '')}';</code>
       <span style="font-size:11.5px;color:var(--ns-ink3);line-height:1.7">
-        이 브라우저에서 열 때만 프로로 인정됩니다. 다른 기기에서 열면
-        그 기기의 ID 로 한 번 더 해주세요.</span>
+        아이디로 가입한 계정이면 이 자격이 계정에 붙습니다 —
+        다른 기기에서도 같은 아이디로 로그인하면 그대로 프로입니다.</span>
       <span data-in-reload style="align-self:flex-start;margin-top:4px;padding:10px 15px;
         border-radius:10px;background:var(--ns-green);color:#fff;font-size:12.5px;font-weight:700;
         cursor:pointer">다 했어요 · 다시 불러오기</span>
@@ -700,43 +711,93 @@ function inRow(s, on) {
     </span></div>`;
 }
 
+/* ── 상세 = 작업대 ──────────────────────────────────────────────────
+   왼쪽: 세로 영상 + 슬라이더 + 선 긋기 + 캡처.  오른쪽: 답장 기둥. */
 function inDetail() {
   const s = inPick();
   if (!s) return `<div style="flex:1;display:flex;align-items:center;justify-content:center;
     color:var(--ns-ink3);font-size:13px">왼쪽에서 스윙을 고르세요</div>`;
+  const mo = S.view === 'mo';
   const past = (s.comments || []).slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  return `<div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto">
-    <div style="flex:none;padding:15px 22px 12px;border-bottom:1px solid var(--ns-line);
+  const shots = IN.photos[s.id] || [];
+
+  const video = `
+  <div style="flex:none;${mo ? 'width:100%' : 'width:clamp(300px,32vw,420px)'};
+      display:flex;flex-direction:column;gap:9px;padding:16px;
+      ${mo ? '' : 'border-right:1px solid var(--ns-line);overflow-y:auto'}">
+    <div data-v-box style="position:relative;border-radius:13px;overflow:hidden;background:#000;
+        aspect-ratio:9/16;max-height:${mo ? '64vh' : 'calc(100vh - 230px)'};touch-action:none">
+      <video data-vid playsinline style="position:absolute;inset:0;width:100%;height:100%;
+        object-fit:contain"></video>
+      <canvas data-v-ink style="position:absolute;inset:0;width:100%;height:100%;
+        cursor:crosshair"></canvas>
+      <span data-v-wait style="position:absolute;inset:0;display:flex;align-items:center;
+        justify-content:center;color:rgba(255,255,255,.6);font-size:12.5px">여는 중…</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span data-v-play class="vbtn" title="재생/멈춤">▶</span>
+      <input data-v-bar type="range" min="0" max="1000" value="0" step="1"
+        style="flex:1;accent-color:var(--ns-green);min-width:0">
+      <span data-v-time style="flex:none;font-size:10.5px;color:var(--ns-ink3);
+        font-family:var(--font-num);min-width:66px;text-align:right">0:00 / 0:00</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:7px">
+      <span data-v-b1 class="vbtn" title="한 컷 뒤로">−1컷</span>
+      <span data-v-f1 class="vbtn" title="한 컷 앞으로">+1컷</span>
+      <span style="flex:1"></span>
+      <span data-v-clear class="vbtn">선 지우기</span>
+      <span data-v-shot class="vbtn vbtn-on">📷 캡처</span>
+    </div>
+    <span style="font-size:10.5px;color:var(--ns-ink3);line-height:1.6">
+      영상 위에 손가락이나 마우스로 선을 그을 수 있어요. 캡처하면 답장에 사진으로 붙습니다.</span>
+  </div>`;
+
+  const reply = `
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto">
+    <div style="flex:none;padding:15px 20px 12px;border-bottom:1px solid var(--ns-line);
       display:flex;align-items:baseline;gap:9px">
       <span style="font-size:15px;font-weight:700;color:var(--ns-ink)">${esc(inName(s.owner))}</span>
       <span style="font-size:11.5px;color:var(--ns-ink3)">${esc(s.view)} ·
         ${esc(inWhen(s.created_at))} · ${Math.round((s.size || 0) / 1024 / 1024 * 10) / 10}MB</span>
     </div>
-    <div style="flex:none;padding:16px 22px">
-      <div data-in-video style="border-radius:13px;overflow:hidden;background:#000;
-        min-height:190px;display:flex;align-items:center;justify-content:center">
-        <span style="color:rgba(255,255,255,.6);font-size:12.5px;cursor:pointer">▶ 영상 열기</span>
-      </div>
-      ${s.note ? `<div style="margin-top:12px;padding:12px 14px;border-radius:11px;
-        background:var(--ns-sand);font-size:12.5px;line-height:1.7;color:var(--ns-ink2);
-        white-space:pre-wrap">${esc(s.note)}</div>` : ''}
-    </div>
-    <div style="flex:none;padding:0 22px 20px;display:flex;flex-direction:column;gap:9px">
+    ${s.note ? `<div style="flex:none;margin:14px 20px 0;padding:12px 14px;border-radius:11px;
+      background:var(--ns-sand);font-size:12.5px;line-height:1.7;color:var(--ns-ink2);
+      white-space:pre-wrap">${esc(s.note)}</div>` : ''}
+    <div style="flex:none;padding:14px 20px 20px;display:flex;flex-direction:column;gap:9px">
       <span style="font-size:12px;font-weight:700;color:var(--ns-ink2)">프로 한마디</span>
-      <textarea data-in-txt rows="5" placeholder="이 스윙에 대해 한마디 남겨주세요"
+      <textarea data-in-txt rows="6" placeholder="이 스윙에 대해 한마디 남겨주세요"
         style="width:100%;padding:13px 14px;border:1px solid var(--ns-line);border-radius:11px;
         background:var(--ns-card);font-family:inherit;font-size:13px;line-height:1.75;
         color:var(--ns-ink);resize:vertical">${esc(IN.draft[s.id] || '')}</textarea>
-      <span data-in-send style="align-self:flex-end;padding:11px 18px;border-radius:10px;
-        background:var(--ns-green);color:#fff;font-size:12.5px;font-weight:700;cursor:pointer">
-        보내기</span>
-      ${past.map(cm => `<div style="padding:12px 14px;border-radius:11px;border:1px solid var(--ns-line);
-        background:var(--ns-card);display:flex;flex-direction:column;gap:5px">
+      ${shots.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap">${shots.map((u, i) =>
+        `<span style="position:relative;display:block;width:74px">
+          <img src="${u}" style="width:74px;border-radius:9px;display:block;
+            border:1px solid var(--ns-line)">
+          <span data-in-shot-x="${i}" style="position:absolute;right:-6px;top:-6px;width:20px;
+            height:20px;border-radius:50%;background:var(--ns-ink);color:#fff;display:flex;
+            align-items:center;justify-content:center;font-size:11px;cursor:pointer">×</span>
+        </span>`).join('')}</div>` : ''}
+      <div style="display:flex;align-items:center;gap:9px">
+        <span style="flex:1;font-size:10.5px;color:var(--ns-ink3)">
+          ${shots.length ? '사진 ' + shots.length + '장이 같이 갑니다' : ''}</span>
+        <span data-in-send style="flex:none;padding:11px 18px;border-radius:10px;
+          background:var(--ns-green);color:#fff;font-size:12.5px;font-weight:700;cursor:pointer">
+          보내기</span>
+      </div>
+      ${past.map(cm => `<div style="padding:12px 14px;border-radius:11px;
+        border:1px solid var(--ns-line);background:var(--ns-card);display:flex;
+        flex-direction:column;gap:6px">
         <span style="font-size:10.5px;color:var(--ns-ink3);font-family:var(--font-num)">
           ${esc(inWhen(cm.created_at))}${cm.read_at ? ' · 읽음' : ' · 아직 안 읽음'}</span>
         <span style="font-size:12.5px;line-height:1.75;color:var(--ns-ink2);white-space:pre-wrap"
-          >${esc(cm.body)}</span></div>`).join('')}
+          >${esc(cm.body)}</span>
+        ${(cm.photos || []).map(u => `<img src="${u}" style="width:120px;border-radius:9px;
+          border:1px solid var(--ns-line);display:block">`).join('')}
+      </div>`).join('')}
     </div></div>`;
+
+  return `<div style="flex:1;min-width:0;display:flex;
+    ${mo ? 'flex-direction:column;overflow-y:auto' : ''}">${video}${reply}</div>`;
 }
 
 function pageInbox() {
@@ -754,10 +815,13 @@ function pageInbox() {
   if (!IN.pro) return inSetup();
 
   const list = IN.list;
-  const wait = list.filter(s => !(s.comments || []).length).length;
-  return `<div style="flex:1;display:flex;min-width:0;background:var(--ns-bg)">
-    <div style="flex:none;width:clamp(228px,18vw,300px);display:flex;flex-direction:column;
-      border-right:1px solid var(--ns-line);background:var(--ns-card)">
+  const mo = S.view === 'mo';
+  const wait = list.filter(s => !(s.comments || []).length && s.want_comment).length;
+  return `<div style="flex:1;display:flex;min-width:0;background:var(--ns-bg);
+      ${mo ? 'flex-direction:column;overflow-y:auto' : ''}">
+    <div style="flex:none;${mo ? 'width:100%;max-height:34vh' : 'width:clamp(200px,15vw,260px)'};
+      display:flex;flex-direction:column;
+      ${mo ? 'border-bottom' : 'border-right'}:1px solid var(--ns-line);background:var(--ns-card)">
       <div style="flex:none;height:47px;display:flex;align-items:center;gap:7px;padding:0 13px;
         border-bottom:1px solid var(--ns-line)">
         <span style="font-size:13px;font-weight:700;color:var(--ns-ink)">도착함</span>
@@ -775,37 +839,123 @@ function pageInbox() {
     ${inDetail()}</div>`;
 }
 
-/* 영상은 비공개 창고에 있다 — 한 시간짜리 열쇠를 받아서 연다 */
-function inPlay() {
+/* ── 작업대 배선 — 렌더마다 다시 붙는다 ───────────────────────────── */
+function inMount() {
   const s = inPick();
-  if (!s) return;
-  const box = document.querySelector('[data-in-video]');
-  if (!box || box.dataset.on) return;
-  box.dataset.on = '1';
-  box.innerHTML = '<span style="color:rgba(255,255,255,.6);font-size:12.5px">여는 중…</span>';
-  NS.link(s.path).then(u => {
-    if (!u) { box.innerHTML = '<span style="color:#E6A79B;font-size:12.5px">영상을 열지 못했어요</span>'; return; }
-    box.innerHTML = '<video src="' + u + '" controls playsinline '
-      + 'style="width:100%;max-height:58vh;display:block"></video>';
+  /* [data-v] 는 상단 PC/모바일 전환 버튼이 이미 쓰고 있다 — 그걸 잡으면
+     버튼에 src 를 꽂는 촌극이 벌어진다. 실제로 벌어졌다. */
+  const v = document.querySelector('[data-vid]');
+  if (!s || !v) return;
+
+  // 영상 열기 — 서명 주소는 1시간짜리라 한 번 받아 두고 다시 쓴다
+  const waitEl = document.querySelector('[data-v-wait]');
+  const setSrc = u => {
+    if (!u) { if (waitEl) waitEl.textContent = '영상을 열지 못했어요'; return; }
+    v.src = u;
+    v.addEventListener('loadeddata', () => { if (waitEl) waitEl.remove(); }, { once: true });
+  };
+  if (IN.urlCache[s.id]) setSrc(IN.urlCache[s.id]);
+  else NS.link(s.path).then(u => { IN.urlCache[s.id] = u; setSrc(u); });
+
+  // 재생 조종 — 슬라이더가 곧 시간이다
+  const bar = document.querySelector('[data-v-bar]');
+  const tEl = document.querySelector('[data-v-time]');
+  const play = document.querySelector('[data-v-play]');
+  const mmss = x => Math.floor(x / 60) + ':' + String(Math.floor(x % 60)).padStart(2, '0');
+  const paint = () => {
+    if (!v.duration) return;
+    bar.value = Math.round(v.currentTime / v.duration * 1000);
+    tEl.textContent = mmss(v.currentTime) + ' / ' + mmss(v.duration);
+  };
+  v.addEventListener('timeupdate', paint);
+  v.addEventListener('loadedmetadata', paint);
+  v.addEventListener('play', () => { play.textContent = '⏸'; });
+  v.addEventListener('pause', () => { play.textContent = '▶'; });
+  play.addEventListener('click', () => { v.paused ? v.play() : v.pause(); });
+  bar.addEventListener('input', () => {
+    if (v.duration) v.currentTime = bar.value / 1000 * v.duration;
+  });
+  const FRAME = 1 / 30;
+  document.querySelector('[data-v-b1]').addEventListener('click', () => {
+    v.pause(); v.currentTime = Math.max(0, v.currentTime - FRAME);
+  });
+  document.querySelector('[data-v-f1]').addEventListener('click', () => {
+    v.pause(); v.currentTime = Math.min(v.duration || 0, v.currentTime + FRAME);
+  });
+
+  // 선 긋기 — 화면 좌표로 긋고, 캡처할 때 영상 좌표로 옮겨 앉힌다
+  const ink = document.querySelector('[data-v-ink]');
+  const box = document.querySelector('[data-v-box]');
+  const fit = () => {
+    const r = box.getBoundingClientRect();
+    if (ink.width !== Math.round(r.width)) {
+      ink.width = Math.round(r.width); ink.height = Math.round(r.height);
+    }
+  };
+  fit();
+  const ctx = ink.getContext('2d');
+  ctx.strokeStyle = '#E4573D'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  let down = false;
+  const pos = e => {
+    const r = ink.getBoundingClientRect();
+    return [e.clientX - r.left, e.clientY - r.top];
+  };
+  ink.addEventListener('pointerdown', e => {
+    e.preventDefault(); fit(); down = true;
+    ink.setPointerCapture(e.pointerId);
+    const [x, y] = pos(e); ctx.beginPath(); ctx.moveTo(x, y);
+  });
+  ink.addEventListener('pointermove', e => {
+    if (!down) return;
+    const [x, y] = pos(e); ctx.lineTo(x, y); ctx.stroke();
+  });
+  ink.addEventListener('pointerup', () => { down = false; });
+  document.querySelector('[data-v-clear]').addEventListener('click', () =>
+    ctx.clearRect(0, 0, ink.width, ink.height));
+
+  // 캡처 — 지금 화면(영상 프레임 + 그은 선)을 사진 한 장으로
+  document.querySelector('[data-v-shot]').addEventListener('click', () => {
+    if (!v.videoWidth) return toast('영상이 아직 안 열렸어요');
+    const vw = v.videoWidth, vh = v.videoHeight;
+    const c = document.createElement('canvas'); c.width = vw; c.height = vh;
+    const g = c.getContext('2d');
+    g.drawImage(v, 0, 0, vw, vh);
+    // object-fit:contain 이 만든 여백을 빼고, 선을 영상 위 제자리에 얹는다
+    const scale = Math.min(ink.width / vw, ink.height / vh);
+    const dw = vw * scale, dh = vh * scale;
+    const ox = (ink.width - dw) / 2, oy = (ink.height - dh) / 2;
+    g.drawImage(ink, ox, oy, dw, dh, 0, 0, vw, vh);
+    const shot = c.toDataURL('image/jpeg', 0.85);
+    const arr = IN.photos[s.id] = IN.photos[s.id] || [];
+    if (arr.length >= 3) return toast('사진은 3장까지 붙일 수 있어요');
+    arr.push(shot);
+    toast('캡처했어요 · 답장에 붙습니다');
+    render();
   });
 }
 
 function inWire() {
   on('[data-in-row]', 'click', e => { IN.sel = e.currentTarget.dataset.inRow; render(); });
   on('[data-in-reload]', 'click', () => { IN.ready = false; inLoad(true); });
-  on('[data-in-video]', 'click', inPlay);
   on('[data-in-txt]', 'input', e => { const s = inPick(); if (s) IN.draft[s.id] = e.target.value; });
+  on('[data-in-shot-x]', 'click', e => {
+    const s = inPick(); if (!s) return;
+    (IN.photos[s.id] || []).splice(+e.currentTarget.dataset.inShotX, 1);
+    render();
+  });
   on('[data-in-send]', 'click', () => {
     const s = inPick();
     if (!s) return;
     const body = (IN.draft[s.id] || '').trim();
-    if (!body) return toast('한마디를 적어주세요');
-    NS.comment(s.id, body).then(() => {
-      IN.draft[s.id] = '';
-      toast(inName(s.owner) + '님에게 한마디를 보냈어요');
+    const shots = IN.photos[s.id] || [];
+    if (!body && !shots.length) return toast('한마디나 사진을 넣어주세요');
+    NS.comment(s.id, body || '(사진)', shots).then(() => {
+      IN.draft[s.id] = ''; IN.photos[s.id] = [];
+      toast(inName(s.owner) + '님에게 보냈어요');
       IN.ready = false; inLoad(true);
     }).catch(e => toast('보내지 못했어요 · ' + ((e && e.message) || '')));
   });
+  if (S.nav === 'inbox') inMount();
 }
 
 </script>

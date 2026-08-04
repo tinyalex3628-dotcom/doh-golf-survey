@@ -5031,7 +5031,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
-      .select('id,view,path,size,note,created_at,comments(id,body,created_at,read_at)')
+      .select('id,view,path,size,note,created_at,comments(id,body,photos,created_at,read_at)')
       .order('created_at', { ascending: false });
     return r.error ? [] : (r.data || []);
   }
@@ -5042,15 +5042,18 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
-      .select('id,owner,view,path,size,note,want_comment,created_at,comments(id,body,created_at,read_at)')
+      .select('id,owner,view,path,size,note,want_comment,created_at,comments(id,body,photos,created_at,read_at)')
       .order('created_at', { ascending: false }).limit(200);
     return r.error ? [] : (r.data || []);
   }
 
-  async function comment(swingId, body) {
+  async function comment(swingId, body, photos) {
     const c = client();
     await ready();
-    const r = await c.from('comments').insert({ swing_id: swingId, body: body }).select().single();
+    const r = await c.from('comments').insert({
+      swing_id: swingId, body: body,
+      photos: (photos && photos.length) ? photos : null,
+    }).select().single();
     if (r.error) throw r.error;
     return r.data;
   }
@@ -6248,7 +6251,10 @@ function applyFresh() {
         + '<span style="' + P_FONT + 'font-size:11px;color:var(--ns-ink3)">이도형 프로 · '
         + c.view + '</span></span>'
         + '<span style="display:block;' + P_FONT + 'font-size:12.5px;line-height:1.7;'
-        + 'color:var(--ns-ink2);white-space:pre-wrap">' + safe(c.body) + '</span></div>').join('');
+        + 'color:var(--ns-ink2);white-space:pre-wrap">' + safe(c.body) + '</span>'
+        + (c.photos || []).map(u => '<img src="' + u + '" style="width:100%;max-width:220px;'
+            + 'border-radius:10px;margin-top:8px;display:block;border:1px solid var(--ns-line)">')
+          .join('') + '</div>').join('');
     } else {
       holder.setAttribute('style', (holder.getAttribute('style') || '')
         + ';padding:22px 16px;text-align:center');
@@ -7062,7 +7068,8 @@ function loadComments() {
   return NS.mine().then(list => {
     const out = [];
     list.forEach(sw => (sw.comments || []).forEach(c =>
-      out.push({ id: c.id, body: c.body, at: c.created_at, read: c.read_at, view: sw.view })));
+      out.push({ id: c.id, body: c.body, photos: c.photos || [],
+                 at: c.created_at, read: c.read_at, view: sw.view })));
     out.sort((a, b) => new Date(b.at) - new Date(a.at));
     const had = window.__COMMENTS.length;
     window.__COMMENTS = out;
