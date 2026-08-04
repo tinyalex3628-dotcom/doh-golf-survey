@@ -632,6 +632,7 @@ const MEMO = {
 const IN = {
   busy: false, ready: false, err: null,
   list: [], who: {}, sel: null, draft: {}, photos: {}, lines: {}, urlCache: {},
+  blobCache: {}, at: {},
   uid: null, pro: false,
 };
 
@@ -853,15 +854,48 @@ function inMount() {
   const v = document.querySelector('[data-vid]');
   if (!s || !v) return;
 
-  // 영상 열기 — 서명 주소는 1시간짜리라 한 번 받아 두고 다시 쓴다
+  /* 영상 열기 — 서명 주소는 1시간짜리라 한 번 받아 두고 다시 쓴다.
+     그리고 그 주소를 <video src> 에 그대로 꽂지 않고 「내려받아서」 연다.
+     서명 주소는 서버가 다른 출처라, 그대로 꽂으면 캔버스가 오염된 것으로
+     취급되어 캡처(toDataURL)가 통째로 막힌다 — 눌러도 아무 일이 안 일어난다.
+     한 번 받아 두면 컷 단위로 앞뒤 넘기는 것도 즉시 된다. */
   const waitEl = document.querySelector('[data-v-wait]');
+  const say = t => { if (waitEl && waitEl.isConnected) waitEl.textContent = t; };
+  v.addEventListener('loadeddata', () => {
+    if (waitEl && waitEl.isConnected) waitEl.remove();
+  }, { once: true });
+
+  const fetchBlob = url => new Promise((ok, no) => {
+    const x = new XMLHttpRequest();
+    x.open('GET', url);
+    x.responseType = 'blob';
+    x.onprogress = e => {
+      if (e.lengthComputable) say('여는 중… ' + Math.round(e.loaded / e.total * 100) + '%');
+    };
+    x.onload = () => (x.status >= 200 && x.status < 300)
+      ? ok(URL.createObjectURL(x.response)) : no(new Error(String(x.status)));
+    x.onerror = () => no(new Error('net'));
+    x.send();
+  });
+
   const setSrc = u => {
-    if (!u) { if (waitEl) waitEl.textContent = '영상을 열지 못했어요'; return; }
-    v.src = u;
-    v.addEventListener('loadeddata', () => { if (waitEl) waitEl.remove(); }, { once: true });
+    if (!u) return say('영상을 열지 못했어요');
+    if (IN.blobCache[s.id]) { v.src = IN.blobCache[s.id]; return; }
+    fetchBlob(u).then(b => { IN.blobCache[s.id] = b; v.src = b; })
+      .catch(() => { v.src = u; });   // 못 받으면 보이게라도 — 이때는 캡처가 막힌다
   };
   if (IN.urlCache[s.id]) setSrc(IN.urlCache[s.id]);
   else NS.link(s.path).then(u => { IN.urlCache[s.id] = u; setSrc(u); });
+
+  /* 캡처할 때마다 화면을 다시 그리는데, 그때 영상이 맨 앞으로 돌아가면
+     같은 자리에서 두 장을 못 찍는다. 보던 지점을 기억했다가 되돌린다. */
+  const keepAt = () => { if (v.currentTime) IN.at[s.id] = v.currentTime; };
+  v.addEventListener('timeupdate', keepAt);
+  v.addEventListener('seeked', keepAt);
+  v.addEventListener('loadedmetadata', () => {
+    const t = IN.at[s.id];
+    if (t && Math.abs(v.currentTime - t) > 0.05) { try { v.currentTime = t; } catch (e) {} }
+  });
 
   // 재생 조종 — 슬라이더가 곧 시간이다
   const bar = document.querySelector('[data-v-bar]');
@@ -948,6 +982,8 @@ function inMount() {
   // 캡처 — 지금 화면(영상 프레임 + 그은 선)을 사진 한 장으로
   document.querySelector('[data-v-shot]').addEventListener('click', () => {
     if (!v.videoWidth) return toast('영상이 아직 안 열렸어요');
+    const arr = IN.photos[s.id] = IN.photos[s.id] || [];
+    if (arr.length >= 3) return toast('사진은 3장까지 붙일 수 있어요');
     const vw = v.videoWidth, vh = v.videoHeight;
     const c = document.createElement('canvas'); c.width = vw; c.height = vh;
     const g = c.getContext('2d');
@@ -957,9 +993,16 @@ function inMount() {
     const dw = vw * scale, dh = vh * scale;
     const ox = (ink.width - dw) / 2, oy = (ink.height - dh) / 2;
     g.drawImage(ink, ox, oy, dw, dh, 0, 0, vw, vh);
-    const shot = c.toDataURL('image/jpeg', 0.85);
-    const arr = IN.photos[s.id] = IN.photos[s.id] || [];
-    if (arr.length >= 3) return toast('사진은 3장까지 붙일 수 있어요');
+    let shot;
+    try {
+      shot = c.toDataURL('image/jpeg', 0.85);
+    } catch (err) {
+      // 내려받기가 막혀 서명 주소로 직접 열린 경우다. 지금이라도 받아서 다시 연다.
+      toast('영상을 다시 받는 중이에요 · 잠시 후 캡처해주세요');
+      const u = IN.urlCache[s.id];
+      if (u) fetchBlob(u).then(b => { IN.blobCache[s.id] = b; v.src = b; }).catch(() => {});
+      return;
+    }
     arr.push(shot);
     toast('캡처했어요 · 답장에 붙습니다');
     render();
