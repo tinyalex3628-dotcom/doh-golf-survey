@@ -50,6 +50,12 @@ cp nextswing-admin.html ../docs/admin.html
 사실의 전부는 상태(`S`)와 보관함과 서버다. `applyMyFacts()` 가 매 렌더마다
 그 사실을 화면에 찍는다. 화면마다 지우러 다니면 반드시 하나를 빠뜨린다.
 
+홈 첫 화면(히어로)은 **프로 한마디 한 바퀴가 지금 어디까지 왔는지**를 그린다 —
+`homeHero()` 한 곳에서 네 갈래로 갈린다: 아직 안 올림 → 오늘 올림(요청 유도)
+→ 답을 기다리는 중 → 한마디 도착. 「기다리는 중」의 근거는 서버의
+`swings.want_comment` 라서 새로고침해도 폰을 바꿔도 남는다.
+홈의 숫자(연습일 · 영상 · 연속)는 `myStats()` 가 올린 날짜에서 직접 센다.
+
 `render()` 의 층 순서 — 앞 층이 만든 것을 뒤 층이 지울 수 있다:
 
 ```
@@ -76,6 +82,7 @@ node test/_arrive.mjs         # 프로 한마디가 회원에게 닿는가 (7단
 node test/_xshot.mjs          # 관리자 영상 캡처 — 다른 출처 / 확대 / 선
 node test/_beta_overlap.mjs   # 55개 화면 전수 — JS 오류·「베타」표식 겹침
 node test/_gallery_remote.mjs # 폰을 바꿔도 갤러리가 서버에서 보이는가
+node test/_home_hero.mjs      # 홈 첫 화면이 한마디 한 바퀴를 따라가는가
 ```
 
 > **테스트는 서버를 흉내 낸다.** 이 실행 환경의 프록시가 `*.supabase.co` 를

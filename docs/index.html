@@ -5069,7 +5069,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
-      .select('id,view,path,size,note,created_at,comments(id,body,photos,created_at,read_at)')
+      .select('id,view,path,size,note,want_comment,created_at,comments(id,body,photos,created_at,read_at)')
       .order('created_at', { ascending: false });
     return r.error ? [] : (r.data || []);
   }
@@ -5650,7 +5650,7 @@ function playSwing(rec) {
                   return NS.remove(rec.remoteId, rec.path).catch(() => {});
               });
           clean.then(window.__vaultSync)
-            .then(l => { S.mine.vids = l.length; render(); toast('스윙을 지웠어요'); });
+            .then(() => { applyStats(); render(); toast('스윙을 지웠어요'); });
         });
       }
     });
@@ -6033,12 +6033,23 @@ function joinSheet(required) {
   document.body.appendChild(box);
 }
 
-/* 한마디 요청 표시를 오늘 스윙에 붙인다 */
+/* 한마디 요청 표시를 오늘 스윙에 붙인다.
+   오늘 올린 게 없으면 마지막에 올린 한 편에 붙인다 — 어제 찍어두고 오늘
+   부르는 사람이 실제로 있고, 그때 아무 데도 안 붙으면 요청이 사라진다. */
 function sendWant() {
   if (!window.NS) return;
   const today = new Date().setHours(0, 0, 0, 0);
-  window.__SWINGS.filter(r => r.remoteId && r.at >= today)
-    .forEach(r => NS.want(r.remoteId).catch(() => {}));
+  const up = window.__SWINGS.filter(r => r.remoteId);
+  const pick = up.filter(r => r.at >= today);
+  const send = pick.length ? pick : up.slice(0, 1);
+  send.forEach(r => NS.want(r.remoteId).catch(() => {}));
+  /* 화면은 서버를 기다리지 않는다 — 눌렀으면 바로 「기다리는 중」이 돼야 한다.
+     다음 확인(loadComments)이 서버 것으로 덮어쓴다. */
+  const known = new Set(window.__WAIT.map(w => w.id));
+  send.forEach(r => {
+    if (!known.has(r.remoteId))
+      window.__WAIT.push({ id: r.remoteId, view: r.view, at: r.at });
+  });
 }
 
 /* 오늘 기록의 메모를 서버의 오늘 스윙에 붙인다 — CRM 이 영상 옆에서 같이 본다 */
@@ -6051,6 +6062,34 @@ function sendNote() {
 
 /* 아직 한 개도 안 올린 계정. 스윙 탭이 빈 갤러리로 갈리는 것과 같은 기준이다. */
 const fresh = () => S.acct === 'new' && !S.mine.vids;
+
+/* ── 내 기록 숫자 ────────────────────────────────────────────────────
+   홈의 「연습 N일 · 영상 N개 · 연속 N일」과 마이의 이번 달 통계가 읽는 값이다.
+   전에는 스윙이 하나라도 있으면 days·streak 를 그냥 1로 올려뒀다 — 열흘을
+   나눠 올린 사람도 「연습 1일」이었다. 올린 날짜에서 그대로 센다.
+   연속은 오늘(또는 어제)부터 거슬러 하루도 안 빈 날수다 — 어제까지 세는 건
+   오늘 아직 안 올렸다고 어제 쌓은 연속이 0 이 되면 안 되기 때문이다. */
+function myStats() {
+  const list = window.__SWINGS || [];
+  const days = Array.from(new Set(list.map(r => dkey(new Date(r.at)))));
+  if (!days.length) return { vids: 0, days: 0, streak: 0 };
+  const has = new Set(days);
+  const walk = new Date(TODAY);
+  if (!has.has(dkey(walk))) walk.setDate(walk.getDate() - 1);   // 오늘은 아직일 수 있다
+  let streak = 0;
+  while (has.has(dkey(walk))) { streak++; walk.setDate(walk.getDate() - 1); }
+  return { vids: list.length, days: days.length, streak };
+}
+
+/* 보관함·서버에서 읽은 것을 화면이 읽는 자리(S.mine)에 옮긴다.
+   숫자가 바뀌었을 때만 다시 그린다 — 60초마다 도는 확인이 화면을 흔들지 않게. */
+function applyStats() {
+  const n = myStats(), o = S.mine;
+  const same = o.vids === n.vids && o.days === n.days && o.streak === n.streak;
+  S.mine = n;
+  if (n.vids) S.upDone = true;
+  return !same;
+}
 
 /* 계정 상태 두 벌 ─────────────────────────────────────────────────
    기본은 new — 링크를 받고 방금 들어온 사람이 보는 앱이다.
@@ -6307,7 +6346,8 @@ function planTable() {
    박혀 있다. 잠금 띠를 얹어 '예시'라고 적어도, 저건 기능 소개가 아니라
    내 기록인 척하는 숫자다. 오늘 할 수 있는 일 하나로 갈아끼운다. */
 const P_FONT = "font-family:'Pretendard',-apple-system,sans-serif;";
-const heroHTML = (kick, title, body, cta) =>
+/* mid 는 본문과 버튼 사이에 끼우는 것(프로 카드)이다. 없으면 붙는 게 없다. */
+const heroHTML = (kick, title, body, cta, mid) =>
     '<div style="flex:none;padding:2px 0 14px"><span style="' + P_FONT + 'font-size:12px;'
   + 'font-weight:700;letter-spacing:-.01em;color:var(--ns-green2)">' + kick + '</span></div>'
   + '<div style="flex:none;' + P_FONT + 'font-size:30px;font-weight:700;'
@@ -6315,8 +6355,10 @@ const heroHTML = (kick, title, body, cta) =>
   + title + '</div>'
   + '<div style="flex:none;' + P_FONT + 'font-size:13px;font-weight:400;color:#4A503F;'
   + 'line-height:1.75;padding-bottom:16px">' + body + '</div>'
+  + (mid || '')
   + '<div data-fresh-go style="flex:none;display:flex;align-items:center;justify-content:center;'
   + 'gap:8px;min-height:54px;border-radius:16px;background:var(--ns-green);color:#fff;'
+  + (mid ? 'margin-top:12px;' : '')
   + 'box-shadow:0 10px 26px rgba(29,69,52,.18)">'
   + '<span style="' + P_FONT + 'font-size:15px;font-weight:700;letter-spacing:-.02em">'
   + cta + '</span><span style="font-size:15px">→</span></div>';
@@ -6324,9 +6366,113 @@ const heroHTML = (kick, title, body, cta) =>
 const FRESH_HERO = heroHTML('시작하기', '첫 스윙을<br>올려보세요',
   '영상 하나면 됩니다. 올린 스윙은 날짜별로 쌓이고, 나중에 예전 스윙과 나란히 놓고 볼 수 있어요.',
   '첫 스윙 올리기');
-const MINE_HERO = v => heroHTML('내 기록', '스윙 ' + v + '개를<br>올렸어요',
-  '올린 스윙은 스윙 탭에 날짜별로 쌓여요. 오늘 하나 더 올리면 어제 것과 나란히 놓고 볼 수 있어요.',
-  '오늘 스윙 올리기');
+
+/* 프로 카드 — 원래 히어로 안에 있던 것과 같은 모양이다(유리판 · 이니셜 · 이름).
+   Coaching 은 「이도형 프로가 직접 본다」를 사는 것이라, 홈 첫 화면에 프로가
+   있어야 산 것이 보인다. 원본은 정기 피드백 전용이라 재생시간이 붙어 있었다 —
+   한마디에는 그런 게 없으니 오른쪽은 상태 글씨로 바꾼다. */
+function proCard(right) {
+  return '<div style="flex:none;background:rgba(255,255,255,.68);'
+    + 'border:1px solid rgba(255,255,255,.85);border-radius:16px;padding:14px 15px;'
+    + 'box-shadow:0 10px 26px rgba(29,69,52,.10);backdrop-filter:blur(12px);'
+    + '-webkit-backdrop-filter:blur(12px)">'
+    + '<div style="display:flex;align-items:center;gap:11px">'
+    + '<span style="flex:none;width:36px;height:36px;border-radius:50%;'
+    + 'background:rgba(29,69,52,.09);color:var(--ns-green2);display:flex;'
+    + 'align-items:center;justify-content:center;' + P_FONT
+    + 'font-size:13px;font-weight:700">이</span>'
+    + '<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">'
+    + '<span style="' + P_FONT + 'font-size:13px;font-weight:700;letter-spacing:-.02em;'
+    + 'color:var(--ns-ink-g)">이도형 프로</span>'
+    + '<span style="' + P_FONT + 'font-size:11px;font-weight:400;color:var(--ns-sub-g)">'
+    + 'KPGA · 내 스윙을 직접 봐주는 프로</span></span>'
+    + (right ? '<span style="flex:none;' + P_FONT + 'font-size:11px;font-weight:700;'
+        + 'color:var(--ns-green2);background:rgba(29,69,52,.09);border-radius:8px;'
+        + 'padding:6px 10px;white-space:nowrap">' + right + '</span>' : '')
+    + '</div></div>';
+}
+
+/* 히어로 한 벌 = 머리말 · 제목 · 본문 · 프로 카드 · 버튼 */
+const heroPro = (kick, title, body, right, cta) =>
+  heroHTML(kick, title, body, cta, proCard(right));
+
+const cut = (t, n) => {
+  const one = String(t).replace(/\s+/g, ' ').trim();
+  return safe(one.length > n ? one.slice(0, n) + '…' : one);
+};
+
+/* ── 홈 히어로 ───────────────────────────────────────────────────────
+   Coaching 이 파는 건 「프로 한마디」 한 가지다. 그래서 홈 첫 화면은
+   그 한 바퀴가 지금 어디까지 왔는지를 보여준다 —
+     ① 아직 안 올림      → 첫 스윙을 올려보세요
+     ② 한마디가 왔다     → 프로가 쓴 글을 그대로, 눌러서 펼친다
+     ③ 답을 기다리는 중  → 요청한 것이 몇 개고 보통 얼마나 걸리는지
+     ④ 그 외(올려둠)     → 오늘 할 일 하나. 오늘 올렸으면 한마디를 부르고,
+                          아직이면 오늘 스윙을 올린다.
+   전에는 ①과 ④뿐이라, 몇 개를 올리든 홈이 계속 「스윙 올리기」 카드였다. */
+function homeHero() {
+  const v = S.mine.vids;
+  if (!v) return { html: FRESH_HERO, go: () => go('2c') };
+
+  const got = window.__COMMENTS || [];
+  const unread = got.filter(c => !c.read);
+  const waiting = window.__WAIT || [];
+  const today = new Date().setHours(0, 0, 0, 0);
+  const upToday = (window.__SWINGS || []).filter(r => r.at >= today).length;
+  const { left, cap } = quota();
+
+  // ② 한마디가 왔다 — 홈에서 제일 먼저 보여야 하는 것
+  if (unread.length) {
+    const c = unread[0];
+    return {
+      html: heroPro('프로 한마디 · 도착',
+        '이도형 프로가<br>한마디를 남겼어요',
+        '“' + cut(c.body, 68) + '”',
+        cmWhen(c.at),
+        unread.length > 1 ? '한마디 ' + unread.length + '개 확인하기' : '한마디 확인하기'),
+      go: () => cmSheet(),
+    };
+  }
+
+  // ③ 요청해두고 기다리는 중
+  if (waiting.length) {
+    return {
+      html: heroPro('프로 한마디 · 확인 중',
+        '이도형 프로가<br>스윙을 보고 있어요',
+        '스윙 ' + waiting.length + '개를 봐주는 중이에요. 보통 하루 안에 한마디가 도착해요.',
+        ago(waiting[0].at) + ' 요청',
+        '올린 스윙 보기'),
+      go: () => go(S.acct === 'new' ? 'ge' : '09'),
+    };
+  }
+
+  // ④ 오늘 올렸다 — 다음 걸음은 한마디를 부르는 것
+  if (upToday && left) {
+    return {
+      html: heroPro('오늘',
+        '오늘 스윙 ' + upToday + '개를<br>올렸어요',
+        '이도형 프로에게 보여주고 한마디를 받아보세요. 이번 달 ' + left + '회 남았어요.',
+        '이번 달 ' + left + '/' + cap + '회',
+        '프로 한마디 요청하기'),
+      go: () => go('2b'),
+    };
+  }
+
+  // ④ 그 외 — 쌓인 기록을 보여주고 오늘 한 편을 부른다
+  const last = (window.__SWINGS || [])[0];
+  const gap = last ? Math.floor((today - new Date(last.at).setHours(0, 0, 0, 0)) / 864e5) : 0;
+  return {
+    html: heroPro('내 기록',
+      gap > 0 ? '마지막 스윙에서<br>' + gap + '일 지났어요' : '스윙 ' + v + '개를<br>올렸어요',
+      got.length
+        ? '지금까지 받은 한마디 ' + got.length + '개는 레슨기록에 모아뒀어요. '
+          + (left ? '이번 달 ' + left + '회 더 받을 수 있어요.' : '이번 달 횟수는 다 쓰셨어요.')
+        : '오늘 한 편을 올리면 이도형 프로가 직접 보고 한마디를 남겨드려요.',
+      '스윙 ' + v + '개',
+      '오늘 스윙 올리기'),
+    go: () => go('2c'),
+  };
+}
 
 function applyFresh() {
   if (S.acct !== 'new') return;
@@ -6337,8 +6483,9 @@ function applyFresh() {
   const hero = root().querySelector('[data-h-hero]');
   if (hero) {
     hero.removeAttribute('data-lock');
-    hero.innerHTML = v ? MINE_HERO(v) : FRESH_HERO;
-    tap(hero.querySelector('[data-fresh-go]'), () => go('2c'));
+    const h = homeHero();
+    hero.innerHTML = h.html;
+    tap(hero.querySelector('[data-fresh-go]'), h.go);
   }
 
   // 남은 횟수 — 새 계정은 아직 한 번도 안 썼으니 등급이 주는 만큼 그대로다.
@@ -6354,12 +6501,13 @@ function applyFresh() {
     if (quota) quota.remove();
   }
 
-  // 「최근 프로 한마디 — 이번 달 2회」 — 받은 적이 없으니 '최근'도 '2회'도 없다
+  // 「최근 프로 한마디 — 이번 달 2회」 — 받은 만큼만 적는다. 없으면 머리말도 없다.
   const cmHead = byText('최근 프로 한마디')[0];
   if (cmHead) {
-    cmHead.textContent = '프로 한마디';
+    const n = (window.__COMMENTS || []).length;
     const cnt = cmHead.nextElementSibling;
-    if (cnt) cnt.remove();
+    if (n) { if (cnt) cnt.textContent = '이번 달 ' + n + '회'; }
+    else { cmHead.textContent = '프로 한마디'; if (cnt) cnt.remove(); }
   }
 
   /* 예시 한마디를 걷어낸다.
@@ -6471,24 +6619,35 @@ function applyFresh() {
   const prm = root().querySelector('[data-pr-month]');
   if (prm) prm.textContent = (TODAY.getMonth() + 1) + '월 · ' + S.mine.days + '일';
 
-  // 홈 — 12일 연습 · 12개 영상 · 5일 연속
+  /* 홈 한 줄 통계 — 「12일 연습 · 12개 영상 · 5일 연속」이 박혀 있다.
+     전에는 이 줄을 통째로 글 한 줄로 갈아끼웠는데, 그러면 올린 사람에게도
+     설계된 홈이 안 나온다. 세 칸은 그대로 두고 내 숫자만 넣는다 —
+     아직 한 개도 없을 때만 대신 한 줄을 적는다(0일·0개는 볼 이유가 없다). */
   const stats = root().querySelector('[data-h-stats]');
-  if (stats) stats.innerHTML = '<span style="font-family:Pretendard,-apple-system,sans-serif;'
-    + 'font-size:12px;font-weight:600;color:var(--ns-sub-g)">'
-    + (v ? '연습 ' + S.mine.days + '일 · 영상 ' + v + '개'
-         : '기록은 첫 스윙을 올린 날부터 쌓입니다') + '</span>';
+  if (stats && !v) {
+    stats.innerHTML = '<span style="' + P_FONT
+      + 'font-size:12px;font-weight:600;color:var(--ns-sub-g)">'
+      + '기록은 첫 스윙을 올린 날부터 쌓입니다</span>';
+  } else if (stats) {
+    const NUM = { 연습: S.mine.days + '일', 영상: v + '개', 연속: S.mine.streak + '일' };
+    stats.querySelectorAll('[data-h-stat]').forEach(e => {
+      const n = NUM[e.dataset.hStat];
+      if (n && e.firstElementChild) e.firstElementChild.textContent = n;
+    });
+  }
 
   // 오늘 기록하기 — '최근 기록 · 7월 20일 · 🔥 3일 연속'
   root().querySelectorAll('[data-fresh-hide]').forEach(e => { e.style.display = 'none'; });
 
   // 마이 — 이번 달 한눈에 보기
+  const cmGot = (window.__COMMENTS || []).length;
   const z = (sel, t) => root().querySelectorAll(sel).forEach(e => { e.textContent = t; });
   z('[data-pl-days-m]', S.mine.days + '일');
   z('[data-pl-vids]', v + '개');
-  z('[data-pl-cms]', '0회');
+  z('[data-pl-cms]', cmGot + '회');
 
   // 이번 달 통계 4칸 (연습일 · 영상 · 한마디 · 최장 연속)
-  const FOUR = [S.mine.days, v, 0, S.mine.streak];
+  const FOUR = [S.mine.days, v, cmGot, S.mine.streak];
   const ms = root().querySelector('[data-month-stats]');
   if (ms) Array.from(ms.children).forEach((col, i) => {
     const num = col.firstElementChild && col.firstElementChild.firstChild;
@@ -7206,6 +7365,7 @@ window.__posterDone = () => { if (S.route === 'ge' || S.route === '2b') render()
    기기와 서버를 합쳐 담는다. 같은 스윙이 양쪽에 있으면(이 기기에서 올린 것)
    기기 것이 이긴다 — 영상 원본과 썸네일이 거기 있다. */
 window.__REMOTE = [];
+window.__WAIT = [];                 // 한마디를 요청해놓고 답을 기다리는 스윙
 const RPOSTER = {};                 // 서버 스윙 썸네일 — 세션 동안 한 번만 뽑는다
 const dropRemote = rid => {
   if (rid) window.__REMOTE = window.__REMOTE.filter(x => x.remoteId !== rid);
@@ -7225,23 +7385,34 @@ window.__vaultSync = () => vaultOnly().then(local => {
    구분해 주지 않아서, 이미 알고 있는 것을 지우면서까지 따르지는 않는다. */
 function syncRemote(list) {
   if (!list.length && window.__REMOTE.length) return;
+  /* 답을 기다리는 스윙 — 한마디를 요청했는데 아직 안 온 것.
+     서버가 기억하니 새로고침해도 폰을 바꿔도 그대로 남는다. */
+  window.__WAIT = list.filter(sw => sw.want_comment && !(sw.comments || []).length)
+    .map(sw => ({ id: sw.id, view: sw.view, at: new Date(sw.created_at).getTime() }));
+
+  /* 이번 달 쓴 횟수 — 받은 한마디 + 아직 답을 기다리는 요청.
+     전에는 「요청하기」를 누른 세션에서만 세서, 새로고침하면 다시 5회로 돌아갔다.
+
+     세는 단위는 「날」이다. 한 번 올릴 때 정면·측면 두 편을 올리고 한 번
+     요청하는데, 편수로 세면 그 한 번이 2회로 깎인다. 프로는 영상마다 답을
+     쓰지만 회원이 부른 건 한 번이다 — 부른 쪽 기준으로 센다. */
+  const mStart = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1).getTime();
+  const days = new Set();
+  const mark = t => {
+    const d = new Date(t);
+    if (d.getTime() >= mStart) days.add(dkey(d));
+  };
+  list.forEach(sw => (sw.comments || []).forEach(c => mark(c.created_at)));
+  window.__WAIT.forEach(w => mark(w.at));
+  S.cmUsed = days.size;
   window.__REMOTE = list.map(sw => ({
     id: 'sv-' + sw.id, remoteId: sw.id, path: sw.path,
     view: sw.view || '스윙', size: sw.size || 0, name: '',
     at: new Date(sw.created_at).getTime() || Date.now(),
     poster: RPOSTER[sw.id] || null, sent: true, remote: true, err: null,
   }));
-  const before = (window.__SWINGS || []).length;
   window.__vaultSync().then(all => {
-    if (all.length !== before) {
-      S.mine.vids = all.length;
-      if (all.length) {
-        S.mine.days = Math.max(1, S.mine.days);
-        S.mine.streak = Math.max(1, S.mine.streak);
-        S.upDone = true;
-      }
-      render();
-    }
+    if (applyStats()) render();
     all.filter(r => r.remote && !r.poster).forEach(remotePoster);
   });
 }
@@ -7300,6 +7471,12 @@ function loadComments() {
     S.unread = fresh.length;
     if (fresh.length) S.stripOff = false;
     cmAnnounce(fresh);
+    /* 한 번이라도 확인을 마쳤으면 「앱을 막 연 참」이 아니다.
+       전에는 cmAnnounce 안에서만 이 표시를 세웠는데, 거기는 알릴 것이
+       있을 때만 지나간다. 그래서 한마디 없이 앱을 연 사람은 표시가 안 서고,
+       한 시간 뒤 답이 와도 앱을 막 연 것으로 쳐서 시트가 화면을 끊고 올라왔다.
+       쓰는 도중에 오는 것은 아래쪽 알림이어야 한다. */
+    window.__cmBooted = true;
     if (out.length !== had || fresh.length) render();
     return out;
   }).catch(() => []);
@@ -7423,13 +7600,10 @@ function resendAll() {
 }
 
 function upFinish() {
-  window.__vaultSync().then(list => {
+  window.__vaultSync().then(() => {
     if (!S.up) return;
     S.up.done = true; S.up.p = 100;
-    S.upDone = true;
-    S.mine.vids = list.length;
-    S.mine.days = Math.max(1, S.mine.days);
-    S.mine.streak = Math.max(1, S.mine.streak);
+    applyStats();
     upPaint();
     const n = S.up.n;
     toast('스윙 ' + n + '개를 올렸어요',
@@ -7683,6 +7857,10 @@ const WIRE = {
     // 프로 한마디 카드
     onBtn('프로 한마디 요청하기', () => {
       S.cm = 'wait'; S.cmAt = Date.now(); S.cmUsed += 1;
+      /* 서버에도 표시를 남긴다 — 이게 빠져 있어서, 이 버튼으로 부른 요청은
+         화면만 「기다리는 중」이 되고 프로 도착함에는 뜨지 않았다.
+         2c(오늘 기록하기)로 부른 요청만 서버로 갔다. */
+      sendWant();
       toast('프로 한마디를 요청했어요'); go('pc2');
     });
     const waitCard = root().querySelector('[data-cm="wait"]');
@@ -8910,10 +9088,7 @@ if (window.NS) NS.ready().then(u => {
 
 window.__vaultSync().then(l => {
   if (!l.length) return;
-  S.mine.vids = l.length;
-  S.mine.days = Math.max(1, S.mine.days);
-  S.mine.streak = Math.max(1, S.mine.streak);
-  S.upDone = true;
+  applyStats();
   render();
 }).catch(() => {});
 

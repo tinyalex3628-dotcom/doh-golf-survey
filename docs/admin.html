@@ -213,7 +213,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
-      .select('id,view,path,size,note,created_at,comments(id,body,photos,created_at,read_at)')
+      .select('id,view,path,size,note,want_comment,created_at,comments(id,body,photos,created_at,read_at)')
       .order('created_at', { ascending: false });
     return r.error ? [] : (r.data || []);
   }
