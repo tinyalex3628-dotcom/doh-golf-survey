@@ -17,8 +17,18 @@
 - 두 파일 모두 **빌드 산출물**입니다. 고칠 땐 원본(`build_v3.py` · `build_admin.py`)을
   돌려서 다시 만들어 넣습니다. HTML 을 직접 손대면 다음 빌드에 지워집니다.
 - `?dev=1` 을 붙이면 화면 점프 · 등급 전환 패널이 나옵니다. 안 붙이면 폰 화면만 보입니다.
-- 배포는 **Vercel 정적 호스팅**. `vercel.json` 이 루트의 Next.js 를 건너뛰고
-  `docs/` 만 그대로 올리게 합니다. 링크가 검색에 걸리지 않도록 `noindex` 를 걸어뒀습니다.
+### 배포 (Vercel 정적 호스팅)
+
+- Production Branch 는 `claude/doh-golf-survey-app-g9kxk2` 입니다. 이 브랜치에
+  푸시하면 Vercel 이 알아서 다시 올립니다.
+- `vercel.json` 이 하는 일 — 이 저장소 루트에는 예전에 만들다 만 Next.js 앱이
+  남아 있어서, 그대로 두면 Vercel 이 그걸 빌드합니다. `framework` 를 비우고
+  빌드를 건너뛰어 `docs/` 안의 HTML 두 개만 그대로 올립니다.
+  베타 링크가 검색에 걸리면 안 되므로 `noindex`, 화면을 고칠 때마다 새로 받아가야
+  하므로 `must-revalidate` 를 겁니다.
+- **`vercel.json` 에 주석을 넣지 마세요.** `"//"` 같은 키를 넣으면 Vercel 스키마
+  검사가 「should NOT have additional property」로 빌드를 통째로 떨어뜨립니다.
+  설명은 이 문서에 씁니다.
 
 ---
 

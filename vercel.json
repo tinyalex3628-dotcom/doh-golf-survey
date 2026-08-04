@@ -1,30 +1,19 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-
-  "//": "이 저장소 루트에는 예전에 만들다 만 Next.js 앱이 남아 있다. 그대로 두면 Vercel 이 그걸 빌드하려다 실패한다. framework 를 비우고 빌드를 건너뛰어 docs/ 안의 단일 HTML 두 개만 그대로 올린다.",
-
   "framework": null,
-  "installCommand": "echo '설치할 것 없음 — 정적 HTML'",
-  "buildCommand": "echo '빌드할 것 없음 — docs/ 를 그대로 올린다'",
+  "installCommand": "echo skip",
+  "buildCommand": "echo static",
   "outputDirectory": "docs",
-
   "cleanUrls": true,
   "trailingSlash": false,
-
   "headers": [
     {
-      "//": "베타 링크는 검색에 걸리면 안 된다 — 링크 받은 사람만 들어온다.",
       "source": "/(.*)",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" }
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]
-    },
-    {
-      "//": "화면을 고칠 때마다 새로 받아가야 한다 — 캐시가 남으면 옛 화면을 계속 본다.",
-      "source": "/(.*).html",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     }
   ]
 }
