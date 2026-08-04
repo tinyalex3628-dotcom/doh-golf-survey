@@ -631,7 +631,7 @@ const MEMO = {
 
 const IN = {
   busy: false, ready: false, err: null,
-  list: [], who: {}, sel: null, draft: {}, photos: {}, urlCache: {},
+  list: [], who: {}, sel: null, draft: {}, photos: {}, lines: {}, urlCache: {},
   uid: null, pro: false,
 };
 
@@ -749,7 +749,7 @@ function inDetail() {
       <span data-v-shot class="vbtn vbtn-on">📷 캡처</span>
     </div>
     <span style="font-size:10.5px;color:var(--ns-ink3);line-height:1.6">
-      영상 위에 손가락이나 마우스로 선을 그을 수 있어요. 캡처하면 답장에 사진으로 붙습니다.</span>
+      영상 위를 끌면 곧은 선이 그어져요. 캡처하면 오른쪽 답장에 사진으로 붙습니다.</span>
   </div>`;
 
   const reply = `
@@ -769,17 +769,23 @@ function inDetail() {
         style="width:100%;padding:13px 14px;border:1px solid var(--ns-line);border-radius:11px;
         background:var(--ns-card);font-family:inherit;font-size:13px;line-height:1.75;
         color:var(--ns-ink);resize:vertical">${esc(IN.draft[s.id] || '')}</textarea>
-      ${shots.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap">${shots.map((u, i) =>
-        `<span style="position:relative;display:block;width:74px">
-          <img src="${u}" style="width:74px;border-radius:9px;display:block;
-            border:1px solid var(--ns-line)">
-          <span data-in-shot-x="${i}" style="position:absolute;right:-6px;top:-6px;width:20px;
-            height:20px;border-radius:50%;background:var(--ns-ink);color:#fff;display:flex;
-            align-items:center;justify-content:center;font-size:11px;cursor:pointer">×</span>
-        </span>`).join('')}</div>` : ''}
+      ${shots.length ? `<div style="display:flex;flex-direction:column;gap:8px;
+          padding:11px 12px;border:1.5px solid var(--ns-green);border-radius:12px;
+          background:var(--ns-soft)">
+        <span style="font-size:11.5px;font-weight:700;color:var(--ns-green)">
+          📷 캡처 사진 ${shots.length}장 — 답장과 같이 갑니다</span>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">${shots.map((u, i) =>
+          `<span style="position:relative;display:block;width:88px">
+            <img src="${u}" style="width:88px;border-radius:9px;display:block;
+              border:1px solid var(--ns-line)">
+            <span data-in-shot-x="${i}" title="이 사진 빼기" style="position:absolute;right:-7px;
+              top:-7px;width:22px;height:22px;border-radius:50%;background:var(--ns-danger);
+              color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;
+              font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3)">×</span>
+          </span>`).join('')}</div></div>` : ''}
       <div style="display:flex;align-items:center;gap:9px">
         <span style="flex:1;font-size:10.5px;color:var(--ns-ink3)">
-          ${shots.length ? '사진 ' + shots.length + '장이 같이 갑니다' : ''}</span>
+          ${shots.length ? '' : '왼쪽 영상에서 📷 캡처를 누르면 여기에 사진이 붙어요'}</span>
         <span data-in-send style="flex:none;padding:11px 18px;border-radius:10px;
           background:var(--ns-green);color:#fff;font-size:12.5px;font-weight:700;cursor:pointer">
           보내기</span>
@@ -883,35 +889,61 @@ function inMount() {
     v.pause(); v.currentTime = Math.min(v.duration || 0, v.currentTime + FRAME);
   });
 
-  // 선 긋기 — 화면 좌표로 긋고, 캡처할 때 영상 좌표로 옮겨 앉힌다
+  /* 선 긋기 — 곧은 선만. 손으로 그린 곡선은 스윙 지도에 안 쓴다.
+     누른 자리가 시작점, 끌다 놓은 자리가 끝점이다 (고무줄처럼 미리 보인다).
+     선은 스윙별로 기억한다 — 캡처하면 화면을 다시 그리는데, 그때 선이
+     날아가면 두 장째 캡처를 못 한다. */
   const ink = document.querySelector('[data-v-ink]');
-  const box = document.querySelector('[data-v-box]');
+  const boxEl = document.querySelector('[data-v-box]');
   const fit = () => {
-    const r = box.getBoundingClientRect();
+    const r = boxEl.getBoundingClientRect();
     if (ink.width !== Math.round(r.width)) {
       ink.width = Math.round(r.width); ink.height = Math.round(r.height);
     }
   };
   fit();
   const ctx = ink.getContext('2d');
-  ctx.strokeStyle = '#E4573D'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-  let down = false;
-  const pos = e => {
+  const lines = IN.lines[s.id] = IN.lines[s.id] || [];   // 0~1 정규화 좌표
+  const drawL = L => {
+    ctx.beginPath();
+    ctx.moveTo(L.x1 * ink.width, L.y1 * ink.height);
+    ctx.lineTo(L.x2 * ink.width, L.y2 * ink.height);
+    ctx.stroke();
+  };
+  const redraw = preview => {
+    ctx.clearRect(0, 0, ink.width, ink.height);
+    ctx.strokeStyle = '#E4573D'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    lines.forEach(drawL);
+    if (preview) drawL(preview);
+  };
+  redraw();
+  let start = null;
+  const norm = e => {
     const r = ink.getBoundingClientRect();
-    return [e.clientX - r.left, e.clientY - r.top];
+    return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
   };
   ink.addEventListener('pointerdown', e => {
-    e.preventDefault(); fit(); down = true;
+    e.preventDefault(); fit();
     ink.setPointerCapture(e.pointerId);
-    const [x, y] = pos(e); ctx.beginPath(); ctx.moveTo(x, y);
+    const [x, y] = norm(e); start = { x, y };
   });
   ink.addEventListener('pointermove', e => {
-    if (!down) return;
-    const [x, y] = pos(e); ctx.lineTo(x, y); ctx.stroke();
+    if (!start) return;
+    const [x, y] = norm(e);
+    redraw({ x1: start.x, y1: start.y, x2: x, y2: y });
   });
-  ink.addEventListener('pointerup', () => { down = false; });
-  document.querySelector('[data-v-clear]').addEventListener('click', () =>
-    ctx.clearRect(0, 0, ink.width, ink.height));
+  ink.addEventListener('pointerup', e => {
+    if (!start) return;
+    const [x, y] = norm(e);
+    // 제자리 탭은 선이 아니다 — 실수로 점이 찍히는 걸 막는다
+    if (Math.hypot((x - start.x) * ink.width, (y - start.y) * ink.height) > 6) {
+      lines.push({ x1: start.x, y1: start.y, x2: x, y2: y });
+    }
+    start = null; redraw();
+  });
+  document.querySelector('[data-v-clear]').addEventListener('click', () => {
+    lines.length = 0; redraw();
+  });
 
   // 캡처 — 지금 화면(영상 프레임 + 그은 선)을 사진 한 장으로
   document.querySelector('[data-v-shot]').addEventListener('click', () => {
