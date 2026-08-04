@@ -5029,9 +5029,15 @@ const buying = () => BETA.on ? BETA.plan : (S.buy || NEXT(S.plan));
    흐리게 두고 부제를 「베타 이후」로 바꾼 다음, 눌러도 안 들어가게 막는다.
    직접 분석은 그대로 연다 — 진짜 엔진이 붙어 있어 지금도 돌아간다. */
 const TOOL_GO = { ai: () => go('04'), draw: () => go('08'), cmp: goSwCompare };
-const TOOL_LATER = { ai: 'AI 분석', cmp: '프로와 비교' };
+/* 프로와 비교는 견줄 프로 스윙이 있어야 성립한다. 아직 한 편도 안 찍었다.
+   빈 화면으로 들여보내느니 문 앞에서 이유를 말하는 게 낫다. */
+const NO_PRO = '비교할 프로 스윙 영상이 아직 없어요';
+const TOOL_LATER = {
+  ai:  'AI 분석 \u2014 베타 이후에 열어드릴게요',
+  cmp: NO_PRO,
+};
 
-function laterMark(el, nm) {
+function laterMark(el, msg, label) {
   if (el.dataset.later) return;
   el.dataset.later = '1';
   el.style.opacity = '.55';
@@ -5039,11 +5045,18 @@ function laterMark(el, nm) {
   const leaves = Array.from(el.querySelectorAll('span'))
     .filter(e => !e.childElementCount && e.textContent.trim());
   const sub = leaves[leaves.length - 1];
-  if (sub) sub.textContent = '베타 이후';
+  if (sub) sub.textContent = label || '베타 이후';
   el.addEventListener('click', ev => {
     ev.preventDefault(); ev.stopImmediatePropagation();
-    toast(nm + ' \u2014 베타 이후에 열어드릴게요');
+    toast(msg);
   }, true);
+}
+
+/* 화면 어디에 있든 「제목 + 부제」로 카드를 찾아 같은 표시를 붙인다.
+   없으면 조용히 지나간다 — 이 층은 55개 화면에서 다 돈다. */
+function laterEntry(title, sub, msg) {
+  const card = cardUpTo(title, sub);
+  if (card) laterMark(card, msg);
 }
 
 function wireTools() {
@@ -5057,10 +5070,10 @@ function wireTools() {
 
   if (!BETA.on) return;
   root().querySelectorAll('[data-swtool]').forEach(t => {
-    const nm = TOOL_LATER[t.dataset.swtool];
-    if (nm) laterMark(t, nm);
+    const msg = TOOL_LATER[t.dataset.swtool];
+    if (msg) laterMark(t, msg);
   });
-  if (cmp) laterMark(cmp, '기간 비교');
+  if (cmp) laterMark(cmp, '기간 비교 \u2014 베타 이후에 열어드릴게요');
 }
 
 /* 한 번에 한 칸만 펼친다 — 무엇을 눌러도 화면 높이가 크게 안 변해서 스크롤이 안 생긴다.
@@ -5159,6 +5172,13 @@ function applyPlanMarks() {
   if (BETA.on) els().filter(e => !e.childElementCount
       && /^(월\s*)?\d{1,3}(,\d{3})*\s*원$/.test(e.textContent.trim()))
     .forEach(e => { e.style.display = 'none'; });
+
+  /* 프로와 비교로 들어가는 입구들 — 막는 건 goCompare · goSwCompare 가 이미 한다.
+     여기서는 눌리기 전에 보이게만 한다. 헛손질을 두 번 하게 두지 않는다. */
+  if (BETA.on) {
+    laterEntry('프로와 비교', '나란히 보기', NO_PRO);                 // 홈 퀵메뉴
+    laterEntry('프로와 비교하기', 'Next Swing 핵심 차별화', NO_PRO);   // 분석 허브(03)
+  }
 
   // 정기 피드백 설명 — 잠금 띠가 「베타가 끝난 뒤에」라고 해놓고
   // 들어오면 「ELITE 플랜」이라 적혀 있으면 앞뒤가 안 맞는다
@@ -5830,7 +5850,10 @@ function jump(id) { keepScroll(); S.hist = []; S.route = id; render(); }
 /* 프로와 비교 진입 — 첫 진입 안내 팝업(13)은 딱 한 번만 뜬다.
    두 번째부터는 팝업 없는 허브(12)로 바로 들어간다.
    15번의 "프로와 똑같이 해야 하나요?" 는 사용자가 일부러 여는 FAQ라 이 규칙과 무관하다. */
-function goCompare() { go(S.seenIntro ? '12' : '13'); }
+function goCompare() {
+  if (BETA.on) return toast(NO_PRO);
+  go(S.seenIntro ? '12' : '13');
+}
 /* 안내 팝업(13)은 지나가는 관문이지 목적지가 아니다.
    여기서 go('12') 로 넘기면 히스토리에 13 이 남아, 나중에 뒤로 나갈 때
    팝업이 길목에서 다시 튀어나온다. 그래서 밀어넣지 않고 갈아끼운다. */
@@ -5874,7 +5897,10 @@ function swSetCompare(tries) {
   }
   if (!btns[1].classList.contains('on')) btns[1].click();
 }
-function goSwCompare() { S.swCompare = true; go('sw'); }
+function goSwCompare() {
+  if (BETA.on) return toast(NO_PRO);
+  S.swCompare = true; go('sw');
+}
 /* 정기 피드백 요청 — Elite 만 갈 수 있다. 나머지는 구독 안내로 보낸다. */
 function feedbackCTA() { can('fb') ? go('01') : go('fx'); }   // 못 받는 등급엔 가격표보다 설명이 먼저다
 
