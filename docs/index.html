@@ -4953,16 +4953,34 @@ const NS = (() => {
 
   /* 영상 한 편을 서버로. 파일은 창고에, 「누가·언제·어느 각도」는 표에.
      경로 앞자리가 회원 ID 다 — 접근 규칙이 그 앞자리로 남의 영상을 막는다. */
-  async function push(file, view, note) {
+  async function push(file, view, note, onStep) {
     const c = client();
     const u = await ready();
     if (!c || !u) throw new Error('offline');
     const ext = (file.name || '').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4';
     const path = u.id + '/' + Date.now() + '-' + Math.round(Math.random() * 1e6) + '.' + ext;
 
-    const up = await c.storage.from(SB_BUCKET)
-      .upload(path, file, { contentType: file.type || 'video/mp4', upsert: false });
-    if (up.error) throw up.error;
+    /* supabase-js 의 upload 는 진행률을 안 준다. 40MB 짜리를 데이터로 올리면
+       1분 넘게 걸리는데 화면이 멈춘 것처럼 보인다. 창고에 넣는 부분만 XHR 로
+       직접 올려서 몇 %인지 그대로 보여준다. */
+    const { data: sess } = await c.auth.getSession();
+    const token = sess && sess.session && sess.session.access_token;
+    await new Promise((ok, no) => {
+      const x = new XMLHttpRequest();
+      x.open('POST', SB_URL + '/storage/v1/object/' + SB_BUCKET + '/' + path);
+      x.setRequestHeader('authorization', 'Bearer ' + token);
+      x.setRequestHeader('apikey', SB_KEY);
+      x.setRequestHeader('x-upsert', 'false');
+      if (file.type) x.setRequestHeader('content-type', file.type);
+      if (onStep) x.upload.onprogress = e => {
+        if (e.lengthComputable) onStep(Math.round(e.loaded / e.total * 100));
+      };
+      x.onload = () => (x.status >= 200 && x.status < 300)
+        ? ok() : no(new Error('창고에 못 넣었어요 (' + x.status + ')'));
+      x.onerror = () => no(new Error('연결이 끊겼어요'));
+      x.ontimeout = () => no(new Error('시간이 너무 오래 걸려요'));
+      x.send(file);
+    });
 
     const row = await c.from('swings').insert({
       owner: u.id, view: view, path: path, size: file.size, note: note || null,
@@ -5131,17 +5149,31 @@ const VAULT = (() => {
     list: () => run('readonly', s => s.getAll())
       .then(all => (all || []).map(meta).sort((a, b) => b.at - a.at)),
 
+    /* 먼저 넣고, 그림은 나중에.
+       썸네일 뽑기는 영상을 열어 한 프레임 그리는 일이라 큰 영상에선 몇 초씩 걸린다.
+       그걸 앞에 두면 「올리기」를 누르고 몇 초를 멍하니 기다리게 된다.
+       저장은 즉시 끝내고 화면을 띄운 다음, 그림은 뒤에서 채워 넣는다. */
     add(file, view) {
       if (file.size > MAX) return Promise.reject(new Error('too-big'));
-      return poster(file).then(pos => {
-        const rec = {
-          id: 'sw-' + Date.now() + '-' + Math.round(performance.now() * 1000),
-          name: file.name || '스윙.mp4',
-          size: file.size, type: file.type || 'video/mp4',
-          view: view, at: Date.now(), poster: pos, sent: false, blob: file,
-          remoteId: null, path: null, err: null,
-        };
-        return run('readwrite', s => s.put(rec)).then(() => meta(rec));
+      const rec = {
+        id: 'sw-' + Date.now() + '-' + Math.round(performance.now() * 1000),
+        name: file.name || '스윙.mp4',
+        size: file.size, type: file.type || 'video/mp4',
+        view: view, at: Date.now(), poster: null, sent: false, blob: file,
+        remoteId: null, path: null, err: null,
+      };
+      return run('readwrite', s => s.put(rec)).then(() => {
+        poster(file).then(pos => {
+          if (!pos) return;
+          run('readwrite', s => s.get(rec.id)).then(r => {
+            if (!r) return;
+            r.poster = pos;
+            run('readwrite', s => s.put(r))
+              .then(() => window.__vaultSync())
+              .then(() => { if (window.__posterDone) window.__posterDone(); });
+          });
+        });
+        return meta(rec);
       });
     },
 
@@ -5508,7 +5540,10 @@ function paintGallery(host) {
       + 'text-shadow:0 1px 3px rgba(0,0,0,.6)">'
       + '<span>' + new Date(r.at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })
       + '</span><span style="font-weight:700;color:' + (r.sent ? '#8FBFA3' : '#E8C07A') + '">'
-      + (r.sent ? '전달됨' : (r.err ? '재전송 필요' : '보내는 중')) + '</span></span>';
+      + (r.sent ? '전달됨'
+         : (r.err ? '재전송 필요'
+         : (UPPCT[r.id] != null ? '보내는 중 ' + UPPCT[r.id] + '%' : '대기 중')))
+      + '</span></span>';
     tap(cell, () => playSwing(r));
     grid.appendChild(cell);
   });
@@ -6701,6 +6736,11 @@ function upTake(files) {
            names: take.map(f => f.name || '스윙.mp4') };
   upPaint();
   if (over) toast('한 번에 두 개까지 올릴 수 있어요');
+  else {
+    // 40MB 짜리는 데이터로 1분 넘게 걸린다. 멈춘 줄 알기 전에 미리 말해준다.
+    const mb = take.reduce((a, f) => a + f.size, 0) / 1024 / 1024;
+    if (mb > 25) toast(Math.round(mb) + 'MB · 프로에게 보내는 데 조금 걸려요');
+  }
 
   let i = 0;
   const next = () => {
@@ -6732,12 +6772,21 @@ function upTake(files) {
    기기에 넣는 것과 서버로 보내는 것은 따로 논다.
    타석은 지하가 많고 데이터가 자주 끊긴다 — 전송이 실패해도 찍은 건 남아야 하고,
    나중에 다시 보낼 수 있어야 한다. 그래서 「보냈다/못 보냈다」를 기기에 적어둔다. */
+const UPPCT = {};                       // 지금 몇 % 올라갔는지 (칸마다)
 function sendUp(rec, file) {
   if (!window.NS) return;
-  NS.push(file, rec.view).then(row => {
+  UPPCT[rec.id] = 0;
+  let last = 0;
+  NS.push(file, rec.view, null, pct => {
+    UPPCT[rec.id] = pct;
+    // 10% 단위로만 다시 그린다 — 매 프레임 그리면 올리는 것보다 그리는 게 무겁다
+    if (pct - last >= 10 || pct === 100) { last = pct; if (S.route === 'ge') render(); }
+  }).then(row => {
+    delete UPPCT[rec.id];
     VAULT.mark(rec.id, { sent: true, remoteId: row.id, path: row.path, err: null })
       .then(window.__vaultSync).then(() => { if (S.route === 'ge') render(); });
   }).catch(e => {
+    delete UPPCT[rec.id];
     VAULT.mark(rec.id, { sent: false, err: (e && e.message) || '전송 실패' })
       .then(window.__vaultSync).then(() => { if (S.route === 'ge') render(); });
   });
@@ -6745,6 +6794,9 @@ function sendUp(rec, file) {
 
 /* 프로가 남긴 한마디를 받아 온다. 서버에 있는 그대로다.
    앱을 열 때마다 다시 받는다 — 밤사이 왔을 수 있다. */
+/* 썸네일은 저장이 끝난 뒤 뒤에서 만들어진다 — 다 되면 보고 있는 화면을 고쳐 그린다 */
+window.__posterDone = () => { if (S.route === 'ge' || S.route === '2b') render(); };
+
 window.__COMMENTS = [];
 function loadComments() {
   if (!window.NS) return Promise.resolve([]);
