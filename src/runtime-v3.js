@@ -272,9 +272,14 @@ function paintCalendar() {
 
 /* ── 올린 스윙 보기 ─────────────────────────────────────────────────
    보관함에 든 진짜 파일을 연다. 다 보고 닫을 때 주소를 돌려줘야 한다 —
-   안 그러면 열 때마다 메모리에 영상이 한 편씩 쌓인다. */
+   안 그러면 열 때마다 메모리에 영상이 한 편씩 쌓인다.
+   서버에만 있는 스윙(다른 폰에서 올린 것)은 파일이 이 기기에 없다 —
+   한 시간짜리 서명 링크를 받아 연다. */
 function playSwing(rec) {
-  VAULT.url(rec.id).then(u => {
+  const open = rec.remote
+    ? (window.NS ? NS.link(rec.path) : Promise.resolve(null))
+    : VAULT.url(rec.id);
+  open.then(u => {
     if (!u) return toast('영상을 열지 못했어요');
     const box = document.createElement('div');
     box.id = 'swplay';
@@ -286,14 +291,25 @@ function playSwing(rec) {
       + '<video class="swp-v" src="' + u + '" controls autoplay playsinline></video>'
       + '<div class="swp-foot"><span class="swp-sz">' + Math.round(rec.size / 1024 / 1024 * 10) / 10
       + 'MB</span><button class="swp-del" type="button" data-del>삭제</button></div></div>';
-    const shut = () => { VAULT.free(u); box.remove(); };
+    const shut = () => { if (!rec.remote) VAULT.free(u); box.remove(); };
     box.addEventListener('click', ev => {
       if (ev.target === box || ev.target.closest('[data-x]')) return shut();
       if (ev.target.closest('[data-del]')) {
+        /* 영상 창(z 210)이 확인 시트(프레임 안 z 90)를 덮는다 —
+           창을 먼저 닫아야 시트가 보이고 눌린다 */
+        shut();
         confirmSheet('이 스윙을 지울까요?', '지우면 되돌릴 수 없어요.', '지우기', () => {
-          VAULT.del(rec.id)
-            .then(window.__vaultSync)
-            .then(l => { S.mine.vids = l.length; shut(); render(); toast('스윙을 지웠어요'); });
+          /* 서버에 올라간 스윙은 서버에서도 지운다 — 기기 것만 지우면
+             다음 동기화 때 서버 복사본이 갤러리에 되살아난다 */
+          dropRemote(rec.remoteId);
+          const clean = rec.remote
+            ? NS.remove(rec.remoteId, rec.path).catch(() => {})
+            : VAULT.del(rec.id).then(() => {
+                if (rec.remoteId && window.NS)
+                  return NS.remove(rec.remoteId, rec.path).catch(() => {});
+              });
+          clean.then(window.__vaultSync)
+            .then(l => { S.mine.vids = l.length; render(); toast('스윙을 지웠어요'); });
         });
       }
     });
@@ -1843,10 +1859,94 @@ function sendUp(rec, file) {
 /* 썸네일은 저장이 끝난 뒤 뒤에서 만들어진다 — 다 되면 보고 있는 화면을 고쳐 그린다 */
 window.__posterDone = () => { if (S.route === 'ge' || S.route === '2b') render(); };
 
+/* ── 서버에 있는 내 스윙 ─────────────────────────────────────────────
+   보관함은 이 기기 것만 안다. 폰을 바꾸면 보관함이 비어서 갤러리도 비어
+   보인다 — 실제로는 서버에 다 있다. 그래서 갤러리 거울(__SWINGS)에는
+   기기와 서버를 합쳐 담는다. 같은 스윙이 양쪽에 있으면(이 기기에서 올린 것)
+   기기 것이 이긴다 — 영상 원본과 썸네일이 거기 있다. */
+window.__REMOTE = [];
+const RPOSTER = {};                 // 서버 스윙 썸네일 — 세션 동안 한 번만 뽑는다
+const dropRemote = rid => {
+  if (rid) window.__REMOTE = window.__REMOTE.filter(x => x.remoteId !== rid);
+};
+const vaultOnly = window.__vaultSync;
+window.__vaultSync = () => vaultOnly().then(local => {
+  const have = new Set(local.map(r => r.remoteId).filter(Boolean));
+  const merged = local
+    .concat(window.__REMOTE.filter(r => !have.has(r.remoteId)))
+    .sort((a, b) => b.at - a.at);
+  window.__SWINGS = merged;
+  return merged;
+});
+
+/* NS.mine() 이 준 목록을 거울에 담고 갤러리를 맞춘다.
+   빈 목록은 못 믿는다 — 정말 다 지운 것과 잠깐 연결이 끊긴 것을 서버 층이
+   구분해 주지 않아서, 이미 알고 있는 것을 지우면서까지 따르지는 않는다. */
+function syncRemote(list) {
+  if (!list.length && window.__REMOTE.length) return;
+  window.__REMOTE = list.map(sw => ({
+    id: 'sv-' + sw.id, remoteId: sw.id, path: sw.path,
+    view: sw.view || '스윙', size: sw.size || 0, name: '',
+    at: new Date(sw.created_at).getTime() || Date.now(),
+    poster: RPOSTER[sw.id] || null, sent: true, remote: true, err: null,
+  }));
+  const before = (window.__SWINGS || []).length;
+  window.__vaultSync().then(all => {
+    if (all.length !== before) {
+      S.mine.vids = all.length;
+      if (all.length) {
+        S.mine.days = Math.max(1, S.mine.days);
+        S.mine.streak = Math.max(1, S.mine.streak);
+        S.upDone = true;
+      }
+      render();
+    }
+    all.filter(r => r.remote && !r.poster).forEach(remotePoster);
+  });
+}
+
+/* 서버 스윙의 썸네일 — 파일이 이 기기에 없으니 서명 링크에서 한 프레임만
+   뽑는다. crossOrigin 을 붙여야 캔버스가 오염되지 않는다(창고가 CORS 를
+   열어준다). 못 뽑아도 그만 — 각도 표는 있으니 갤러리는 돈다. */
+const RBUSY = {};
+function remotePoster(r) {
+  if (!window.NS || RBUSY[r.remoteId] || RPOSTER[r.remoteId]) return;
+  RBUSY[r.remoteId] = true;
+  NS.link(r.path).then(u => new Promise(ok => {
+    if (!u) return ok(null);
+    const v = document.createElement('video');
+    let done = false;
+    const fin = out => { if (!done) { done = true; ok(out); } };
+    v.crossOrigin = 'anonymous';
+    v.preload = 'metadata'; v.muted = true; v.playsInline = true; v.src = u;
+    v.onloadeddata = () => { try { v.currentTime = Math.min(0.3, (v.duration || 1) / 3); }
+                             catch (e) { fin(null); } };
+    v.onseeked = () => {
+      try {
+        const c = document.createElement('canvas');
+        const w = 240, h = Math.round(w * (v.videoHeight || 16) / (v.videoWidth || 9));
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(v, 0, 0, w, h);
+        fin(c.toDataURL('image/jpeg', 0.7));
+      } catch (e) { fin(null); }
+    };
+    v.onerror = () => fin(null);
+    setTimeout(() => fin(null), 8000);
+  })).then(pos => {
+    delete RBUSY[r.remoteId];
+    if (!pos) return;
+    RPOSTER[r.remoteId] = pos;
+    const rec = (window.__SWINGS || []).find(x => x.remoteId === r.remoteId);
+    if (rec && !rec.poster) rec.poster = pos;
+    if (window.__posterDone) window.__posterDone();
+  }).catch(() => { delete RBUSY[r.remoteId]; });
+}
+
 window.__COMMENTS = [];
 function loadComments() {
   if (!window.NS) return Promise.resolve([]);
   return NS.mine().then(list => {
+    syncRemote(list);
     const out = [];
     list.forEach(sw => (sw.comments || []).forEach(c =>
       out.push({ id: c.id, body: c.body, photos: c.photos || [],

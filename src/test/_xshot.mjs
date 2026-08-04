@@ -10,9 +10,9 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const HERE = '/tmp/claude-0/-home-user-doh-golf-survey/d3216ad2-682b-54dc-9e94-3ee7aa248ea5/scratchpad';
+const HERE = path.dirname(new URL(import.meta.url).pathname);   // src/test
 const VIDEO = fs.readFileSync(path.join(HERE, '_swtest.webm'));
-const RAW = fs.readFileSync(path.join(HERE, 'nextswing-admin.html'), 'utf8');
+const RAW = fs.readFileSync(path.join(HERE, '..', 'nextswing-admin.html'), 'utf8');
 
 /* sb.js 는 최상위 `const NS` 라 window.NS 를 덮어써도 안 바뀐다.
    그래서 서버 붙는 부분만 통째로 가짜로 갈아 끼운 페이지를 만든다.

@@ -63,13 +63,19 @@ cp nextswing-admin.html ../docs/admin.html
 영상은 IndexedDB 에 먼저 들어가고 그다음 서버로 간다. 타석은 지하가 많고
 데이터가 자주 끊긴다. 전송이 실패해도 찍은 건 남아 있어야 하고 나중에 다시 간다.
 
+읽기는 합쳐 읽는다 — 갤러리 거울(`__SWINGS`)에는 보관함과 서버(`NS.mine()`)를
+합쳐 담는다. 폰을 바꾸면 보관함이 비어 있어도 서버 것이 보인다. 같은 스윙이
+양쪽에 있으면 `remoteId` 로 겹침을 걸러 기기 것이 이긴다(원본과 썸네일이 거기
+있다). 서버에만 있는 스윙은 서명 링크로 재생하고, 지우면 서버에서도 지운다.
+
 ## 시험
 
 ```bash
 cd src && python3 build_v3.py && python3 build_admin.py
-node test/_arrive.mjs        # 프로 한마디가 회원에게 닿는가 (7단계)
-node test/_xshot.mjs         # 관리자 영상 캡처 — 다른 출처 / 확대 / 선
-node test/_beta_overlap.mjs  # 55개 화면 전수 — JS 오류·「베타」표식 겹침
+node test/_arrive.mjs         # 프로 한마디가 회원에게 닿는가 (7단계)
+node test/_xshot.mjs          # 관리자 영상 캡처 — 다른 출처 / 확대 / 선
+node test/_beta_overlap.mjs   # 55개 화면 전수 — JS 오류·「베타」표식 겹침
+node test/_gallery_remote.mjs # 폰을 바꿔도 갤러리가 서버에서 보이는가
 ```
 
 > **테스트는 서버를 흉내 낸다.** 이 실행 환경의 프록시가 `*.supabase.co` 를

@@ -10,3 +10,6 @@ next-env.d.ts
 # 빌드 산출물 — docs/ 에 있는 것이 정본이다
 src/nextswing-v3.html
 src/nextswing-admin.html
+
+# 테스트가 남기는 화면 사진
+src/_*.png

@@ -1,6 +1,6 @@
 /* 「베타」 표식이 55개 화면 중 어디서든 글자·아이콘과 겹치는지 전수 확인 */
 import { chromium } from 'playwright-core';
-const URL = 'file:///tmp/claude-0/-home-user-doh-golf-survey/d3216ad2-682b-54dc-9e94-3ee7aa248ea5/scratchpad/nextswing-v3.html';
+const URL = new globalThis.URL('../nextswing-v3.html', import.meta.url).href;
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } });
 const p = await ctx.newPage();
