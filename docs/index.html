@@ -5026,8 +5026,27 @@ const NS = (() => {
     await c.from('swings').delete().eq('id', id);
   }
 
+  /* 회원 이름표 — swings.owner 는 auth.users 를 가리켜서 profiles 와 자동으로
+     이어지지 않는다. 따로 받아서 id 로 맞춘다. */
+  async function people() {
+    const c = client();
+    await ready();
+    if (!c) return {};
+    const r = await c.from('profiles').select('id,nickname');
+    if (r.error) return {};
+    return Object.fromEntries((r.data || []).map(p => [p.id, p.nickname]));
+  }
+
+  async function setName(nickname) {
+    const c = client();
+    const u = await ready();
+    if (!c || !u) return null;
+    await c.from('profiles').update({ nickname: nickname }).eq('id', u.id);
+    return nickname;
+  }
+
   return {
-    ready, push, mine, all, comment, markRead, link, remove,
+    ready, push, mine, all, comment, markRead, link, remove, people, setName,
     who: () => me,
     isPro: () => pro,
     down: () => failed,
@@ -5323,6 +5342,14 @@ const buying = () => BETA.on ? BETA.plan : (S.buy || NEXT(S.plan));
    오늘은 진짜 오늘이어야 하고, 달력은 이번 달을 그려야 한다.
    점이 찍히는 날은 내가 실제로 스윙을 올린 날뿐이다. */
 const TODAY = new Date();
+/* 엔진 번들에 이미 esc 가 있다 — 이름을 비켜 쓴다 */
+const safe = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const cmWhen = t => {
+  const d = new Date(t), gap = Math.floor((Date.now() - d) / 36e5);
+  if (gap < 1) return '방금';
+  if (gap < 24) return gap + '시간 전';
+  return (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
+};
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 const dkey = d => d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
 const md = d => (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
@@ -5917,14 +5944,28 @@ function applyFresh() {
   const tl = root().querySelectorAll('[data-tl-row]');
   if (tl.length) {
     const holder = tl[0].parentElement;
-    holder.setAttribute('style', (holder.getAttribute('style') || '')
-      + ';padding:22px 16px;text-align:center');
-    holder.innerHTML =
-      '<div style="display:flex;flex-direction:column;gap:6px">'
-      + '<span style="' + P_FONT + 'font-size:12.5px;font-weight:600;color:var(--ns-ink2)">'
-      + '아직 받은 한마디가 없어요</span>'
-      + '<span style="' + P_FONT + 'font-size:11.5px;line-height:1.6;color:var(--ns-ink3)">'
-      + '스윙을 올리면 이도형 프로가 직접 남겨드려요</span></div>';
+    const got = window.__COMMENTS;
+    if (got.length) {
+      holder.innerHTML = got.slice(0, 3).map((c, i) =>
+        '<div data-cm-row="' + c.id + '" style="padding:12px 2px'
+        + (i ? ';border-top:1px solid var(--ns-line)' : '') + '">'
+        + '<span style="display:flex;align-items:baseline;gap:7px;padding-bottom:4px">'
+        + '<span style="' + P_FONT + 'font-size:11px;font-weight:700;color:var(--ns-bronze)">'
+        + cmWhen(c.at) + '</span>'
+        + '<span style="' + P_FONT + 'font-size:11px;color:var(--ns-ink3)">이도형 프로 · '
+        + c.view + '</span></span>'
+        + '<span style="display:block;' + P_FONT + 'font-size:12.5px;line-height:1.7;'
+        + 'color:var(--ns-ink2);white-space:pre-wrap">' + safe(c.body) + '</span></div>').join('');
+    } else {
+      holder.setAttribute('style', (holder.getAttribute('style') || '')
+        + ';padding:22px 16px;text-align:center');
+      holder.innerHTML =
+        '<div style="display:flex;flex-direction:column;gap:6px">'
+        + '<span style="' + P_FONT + 'font-size:12.5px;font-weight:600;color:var(--ns-ink2)">'
+        + '아직 받은 한마디가 없어요</span>'
+        + '<span style="' + P_FONT + 'font-size:11.5px;line-height:1.6;color:var(--ns-ink3)">'
+        + '스윙을 올리면 이도형 프로가 직접 남겨드려요</span></div>';
+    }
   }
 
   // 레슨기록 · 정기 피드백 탭 — 베타엔 아직 없는 기능이라 예시 리포트를 걷어낸다
@@ -5935,7 +5976,7 @@ function applyFresh() {
               '한 달치 스윙을 모아 프로가 리포트로 만들어드릴 거예요',
               { label: '어떤 리포트인지 미리 보기 ›', go: () => goResult('r1') });
   }
-  if (S.route === '2i') {
+  if (S.route === '2i' && !window.__COMMENTS.length) {
     emptyBody('아직 받은 한마디가 없어요', '스윙을 올리면 이도형 프로가 직접 남겨드려요');
   }
 
@@ -5967,7 +6008,14 @@ function applyFresh() {
       + 'padding:9px 16px;background:var(--ns-bronze);color:#fff;' + P_FONT
       + 'font-size:11.5px;font-weight:700;letter-spacing:-.01em');
     bar.textContent = '예시 리포트 · 베타 이후에 이렇게 받게 됩니다';
-    if (top && top.parentElement) top.parentElement.insertBefore(bar, top.nextSibling);
+    /* 상태바 바로 아래에 넣는다. 맨 위에 넣으면 「베타」 표식과 겹친다 —
+       표식은 상태바 가운데에 떠 있다. */
+    const status = Array.from(root().children).find(e => /9:41/.test(e.textContent));
+    /* 결과지의 상태바만 31px 로 낮아서, 그 아래에 넣어도 표식(11~32px)에 1px 닿는다.
+       다른 화면과 같은 42px 로 맞춘다 — 겹침도 없어지고 높이도 통일된다. */
+    if (status) status.style.minHeight = '42px';
+    const anchor = status || top;
+    if (anchor && anchor.parentElement) anchor.parentElement.insertBefore(bar, anchor.nextSibling);
   }
 
   // 알림함 — 방금 가입한 사람 앞으로 온 알림이 있을 수 없다
@@ -6693,6 +6741,23 @@ function sendUp(rec, file) {
     VAULT.mark(rec.id, { sent: false, err: (e && e.message) || '전송 실패' })
       .then(window.__vaultSync).then(() => { if (S.route === 'ge') render(); });
   });
+}
+
+/* 프로가 남긴 한마디를 받아 온다. 서버에 있는 그대로다.
+   앱을 열 때마다 다시 받는다 — 밤사이 왔을 수 있다. */
+window.__COMMENTS = [];
+function loadComments() {
+  if (!window.NS) return Promise.resolve([]);
+  return NS.mine().then(list => {
+    const out = [];
+    list.forEach(sw => (sw.comments || []).forEach(c =>
+      out.push({ id: c.id, body: c.body, at: c.created_at, read: c.read_at, view: sw.view })));
+    out.sort((a, b) => new Date(b.at) - new Date(a.at));
+    const had = window.__COMMENTS.length;
+    window.__COMMENTS = out;
+    if (out.length !== had) render();
+    return out;
+  }).catch(() => []);
 }
 
 /* 앱을 열 때 · 「다시 보내기」를 누를 때 — 아직 안 간 것을 밀어 보낸다 */
@@ -8089,7 +8154,11 @@ render();
 /* 보관함은 비동기라 첫 그림보다 한 박자 늦게 온다.
    오면 개수를 맞추고 다시 그린다 — 앱을 껐다 켜도 올린 스윙이 그대로 있어야 한다. */
 /* 서버에 붙는다. 실패해도 앱은 그대로 돈다 — 영상은 기기에 남고 나중에 다시 간다. */
-if (window.NS) NS.ready().then(u => { if (u) resendAll(); }).catch(() => {});
+if (window.NS) NS.ready().then(u => {
+  if (!u) return;
+  resendAll();
+  loadComments();
+}).catch(() => {});
 
 window.__vaultSync().then(l => {
   if (!l.length) return;
