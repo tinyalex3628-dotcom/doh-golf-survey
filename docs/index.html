@@ -241,6 +241,44 @@ html.demo body{background:#EDEAE3}
   font-family:Pretendard,-apple-system,sans-serif;font-size:12px;font-weight:600;
   color:var(--ns-green)}
 
+/* 프로 한마디 도착 — 서버에 진짜로 온 것만 뜬다.
+   아래에서 올라오는 시트다. 위에서 덮는 창은 「닫아야 하는 일」로 읽히고,
+   이건 닫을 일이 아니라 읽을 일이다. */
+#cmnew{position:fixed;inset:0;z-index:230;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(20,24,22,0);transition:background .2s}
+#cmnew.on{background:rgba(20,24,22,.6)}
+.cmn-card{width:100%;max-width:390px;background:var(--ns-card);border-radius:20px 20px 0 0;
+  padding:20px 20px 18px;display:flex;flex-direction:column;gap:10px;max-height:88vh;
+  overflow-y:auto;box-shadow:0 -20px 54px -22px rgba(20,24,22,.55);
+  transform:translateY(100%);transition:transform .24s cubic-bezier(.2,.8,.3,1)}
+#cmnew.on .cmn-card{transform:none}
+.cmn-tag{align-self:flex-start;font-family:Pretendard,-apple-system,sans-serif;font-size:9.5px;
+  font-weight:700;letter-spacing:.12em;color:#fff;background:var(--ns-bronze);
+  border-radius:6px;padding:3px 8px}
+.cmn-t{font-family:Hahmlet,serif;font-size:17px;font-weight:600;color:var(--ns-ink);
+  letter-spacing:-.025em;padding-bottom:2px}
+.cmn-one{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;
+  border:1px solid var(--ns-line);background:#FBFAF6}
+.cmn-meta{font-family:Pretendard,-apple-system,sans-serif;font-size:11px;font-weight:600;
+  color:var(--ns-ink3)}
+.cmn-body{font-family:Pretendard,-apple-system,sans-serif;font-size:13.5px;line-height:1.8;
+  color:var(--ns-ink);white-space:pre-wrap;word-break:break-word}
+/* 스윙 캡처는 세로로 길다. 폭에 맞추면 한 장이 화면을 다 먹어서
+   두 장째와 「확인」 버튼이 저 아래로 밀린다 — 높이로 맞춘다. */
+.cmn-img{max-width:100%;max-height:42vh;width:auto;margin:0 auto;border-radius:11px;
+  display:block;border:1px solid var(--ns-line)}
+/* 버튼은 늘 손닿는 곳에 — 사진이 길어도 스크롤을 끝까지 내리게 하지 않는다 */
+.cmn-foot{position:sticky;bottom:0;margin:2px -20px -18px;padding:11px 20px 16px;
+  background:var(--ns-card);border-top:1px solid var(--ns-line);
+  display:flex;flex-direction:column;gap:2px}
+.cmn-btn{width:100%;min-height:48px;border:0;border-radius:12px;cursor:pointer;
+  background:var(--ns-green);color:#fff;font-family:Pretendard,-apple-system,sans-serif;
+  font-size:14px;font-weight:700}
+.cmn-btn:active{opacity:.8}
+.cmn-alt{border:0;background:none;cursor:pointer;padding:7px 0 0;
+  font-family:Pretendard,-apple-system,sans-serif;font-size:12px;font-weight:600;
+  color:var(--ns-green)}
+
 /* 올린 스윙 보기 — 진짜 영상을 여는 창 */
 #swplay{position:fixed;inset:0;z-index:210;display:flex;align-items:center;justify-content:center;
   background:rgba(12,15,14,.86);padding:18px}
@@ -5816,6 +5854,80 @@ function applyMyFacts() {
       + 'font-family:var(--font-num)">' + ago(S.cmAt) + '</b> 요청 · 보통 하루 안에 와요';
   }
 
+  /* ── 받은 한마디 ────────────────────────────────────────────────
+     서버에 있는 것만 진짜다. 예시로 박아둔 한마디가 한 줄이라도 섞이면
+     어느 것이 프로가 정말 보낸 것인지 알 수 없게 된다. */
+  const got = window.__COMMENTS || [];
+  const unread = got.filter(c => !c.read);
+
+  // 종 배지
+  const bdot = root().querySelector('[data-bell-dot]');
+  if (bdot) {
+    bdot.textContent = unread.length;
+    bdot.style.display = unread.length ? 'flex' : 'none';
+  }
+
+  /* 홈 도착 줄 — 화면에 박혀 있는 「오늘 도착 · 정기 피드백 No.06」띠를 고쳐
+     쓰려 했지만, 새 계정은 홈 히어로가 통째로 갈리면서 그 띠도 같이 사라진다.
+     남의 화면을 빌리지 말고 우리 띠를 세운다. */
+  const heroEl = root().querySelector('[data-h-hero]');
+  if (heroEl && heroEl.parentElement && unread.length
+      && !root().querySelector('[data-cm-bar]')) {
+    const bar = document.createElement('div');
+    bar.setAttribute('data-cm-bar', '');
+    bar.setAttribute('style', 'display:flex;align-items:center;gap:8px;margin-bottom:11px;'
+      + 'padding:12px 14px;border-radius:13px;background:var(--ns-green);'
+      + 'box-shadow:0 9px 22px -13px rgba(33,64,47,.8)');
+    bar.innerHTML = '<span style="flex:none;width:7px;height:7px;border-radius:50%;'
+      + 'background:#E8B85F"></span>'
+      + '<span style="flex:1;min-width:0;' + P_FONT + 'font-size:12.5px;font-weight:700;'
+      + 'color:#fff;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;'
+      + 'white-space:nowrap">이도형 프로 한마디 도착'
+      + (unread.length > 1 ? ' · ' + unread.length + '개' : '') + '</span>'
+      + '<span style="flex:none;' + P_FONT + 'font-size:11px;font-weight:600;'
+      + 'color:rgba(255,255,255,.7)">' + cmWhen(unread[0].at) + '</span>'
+      + '<span style="flex:none;' + P_FONT + 'font-size:11.5px;font-weight:700;color:#fff">'
+      + '보기 ›</span>';
+    heroEl.parentElement.insertBefore(bar, heroEl);
+    tap(bar, () => cmSheet());
+  }
+
+  // 연습기록 말풍선 — 예시 문구 자리에 진짜 한마디를 넣고, 눌러서 펼치게
+  const bub = root().querySelector('[data-cm="arrived"]');
+  if (bub && got.length) {
+    const c = got[0];
+    const inner = Array.from(bub.querySelectorAll('span')).filter(e => !e.childElementCount);
+    const when = inner.find(e => /전$|방금/.test(e.textContent.trim()));
+    if (when) when.textContent = cmWhen(c.at);
+    const body = inner[inner.length - 1];
+    if (body) {
+      const one = c.body.replace(/\s+/g, ' ');
+      body.textContent = one.length > 46 ? one.slice(0, 46) + '…' : one;
+    }
+    const hit = bub.firstElementChild || bub;
+    hit.removeAttribute('data-tapped');
+    tap(hit, () => cmSheet());
+  }
+
+  // 레슨기록 › 프로 한마디 목록 — 예시 세 줄을 받은 것으로 갈아 끼운다
+  const cmRows = root().querySelectorAll('[data-cmrow]');
+  if (cmRows.length && got.length) {
+    const holder = cmRows[0].parentElement;
+    holder.innerHTML = got.map(cmCard).join('');
+    holder.querySelectorAll('[data-cm-open]').forEach(r =>
+      tap(r, () => cmSheet(r.getAttribute('data-cm-open'))));
+  }
+  // 「6월에 받은 한마디 5개」 — 6월엔 앱이 없었다
+  const older = root().querySelector('[data-cm-older]');
+  if (older && older.parentElement) older.parentElement.remove();
+  // 「2회 받음 · 3회 남음」
+  const qbox = root().querySelector('[data-cm-quota]');
+  if (qbox) {
+    const line = Array.from(qbox.querySelectorAll('span'))
+      .filter(e => !e.childElementCount && /회 받음/.test(e.textContent)).pop();
+    if (line) line.textContent = got.length + '회 받음 · ' + quota().left + '회 남음';
+  }
+
   // 남은 횟수 — 「4 / 6회 남음」 「5회 남음」 「n / n」 전부 상태에서 계산한다
   if (can('cm')) {
     const { cap, left } = quota();
@@ -6255,6 +6367,8 @@ function applyFresh() {
         + (c.photos || []).map(u => '<img src="' + u + '" style="width:100%;max-width:220px;'
             + 'border-radius:10px;margin-top:8px;display:block;border:1px solid var(--ns-line)">')
           .join('') + '</div>').join('');
+      holder.querySelectorAll('[data-cm-row]').forEach(r =>
+        tap(r, () => cmSheet(r.getAttribute('data-cm-row'))));
     } else {
       holder.setAttribute('style', (holder.getAttribute('style') || '')
         + ';padding:22px 16px;text-align:center');
@@ -6796,6 +6910,13 @@ function render() {
   if (S.route === 'ar' && !can('fb')) S.route = '2a';
   // 오늘 카드는 배선(showVariant)이 먼저 읽으므로 그리기 전에 정해야 한다
   if (fresh()) S.today = 'empty';   // 오늘 카드의 빈 상태 이름은 empty 다
+  /* 안 읽은 한마디 수는 세어 두는 값이 아니라 서버에서 나오는 값이다.
+     홈의 도착 줄은 배선 단계에서 이 수를 보고 지울지 말지 정하므로,
+     「내 사실」층까지 기다리면 이미 지워진 뒤다. */
+  if ((window.__COMMENTS || []).length) {
+    S.unread = window.__COMMENTS.filter(c => !c.read).length;
+    if (S.unread) S.stripOff = false;
+  }
   const tpl = document.querySelector('template[data-scr="' + S.route + '"]');
   if (swHost && swHost.parentElement) swHost.remove();   // 지우지 말고 떼어만 둔다
   stage.innerHTML = '';
@@ -6885,6 +7006,7 @@ const LOCK_ICON =
   + '<path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"></path></svg>';
 function applyLock() {
   // 도착 띠는 '사건 알림'이다. 안 일어나는 사건을 흐리게 보여줄 이유가 없다 — 지운다.
+  // (진짜 온 한마디를 알리는 띠는 따로 세운다 — [data-cm-bar])
   const strip = root().querySelector('[data-strip]');
   if (strip && !can('fb')) strip.remove();
 
@@ -7073,10 +7195,123 @@ function loadComments() {
     out.sort((a, b) => new Date(b.at) - new Date(a.at));
     const had = window.__COMMENTS.length;
     window.__COMMENTS = out;
-    if (out.length !== had) render();
+    if (out.length) S.cm = 'arrived';
+    const fresh = out.filter(c => !c.read);
+    S.unread = fresh.length;
+    if (fresh.length) S.stripOff = false;
+    cmAnnounce(fresh);
+    if (out.length !== had || fresh.length) render();
     return out;
   }).catch(() => []);
 }
+
+/* ── 프로 한마디가 왔다 ──────────────────────────────────────────────
+   여기까지 와야 한 바퀴가 돈다 — 올리고, 프로가 답하고, 그게 회원에게 닿는다.
+   답이 서버에만 있고 아무도 안 알려주면 아무 일도 안 일어난 것과 같다.
+
+   네 군데서 알린다 —
+     ① 앱을 열 때 시트로 바로 펼친다 (읽을 것이 있는데 접어둘 이유가 없다)
+     ② 쓰는 도중에 오면 아래쪽 알림으로 (보던 것을 끊지 않는다)
+     ③ 홈 도착 줄 · 종 배지 · 연습기록 말풍선
+     ④ 레슨기록 › 프로 한마디 목록
+   읽으면 서버에 읽음으로 적는다 — 폰을 바꿔도 다시 뜨지 않는다. */
+const cmTold = new Set();          // 이 세션에서 이미 알린 것
+
+// 안내나 가입 관문이 떠 있는 동안은 끼어들지 않는다 — 순서가 있다
+const cmGated = () => {
+  if (document.getElementById('join')) return true;
+  const g = document.getElementById('bgate');
+  return !!(g && !g.hidden);
+};
+
+function cmAnnounce(fresh) {
+  const unseen = fresh.filter(c => !cmTold.has(c.id));
+  if (!unseen.length) return;
+  unseen.forEach(c => cmTold.add(c.id));
+  const first = !window.__cmBooted;
+  window.__cmBooted = true;
+  if (!first) {
+    return toast('이도형 프로가 한마디를 남겼어요', { label: '바로 보기', fn: () => cmSheet() });
+  }
+  // 앱을 막 연 참이다 — 관문이 걷히면 바로 펼친다
+  const t = setInterval(() => {
+    if (cmGated()) return;
+    clearInterval(t);
+    cmSheet();
+  }, 700);
+  setTimeout(() => clearInterval(t), 90000);
+}
+
+/* 목록 한 줄 — 안 읽은 것은 테두리가 초록이고 NEW 가 붙는다 */
+function cmCard(c) {
+  const n = (c.photos || []).length;
+  return '<div data-cm-open="' + c.id + '" style="background:var(--ns-card);border:1px solid '
+    + (c.read ? 'var(--ns-line)' : 'var(--ns-green)') + ';border-radius:13px;padding:12px 13px;'
+    + 'display:flex;flex-direction:column;gap:6px;margin-bottom:8px">'
+    + '<span style="display:flex;align-items:center;gap:6px">'
+    + '<span style="' + P_FONT + 'font-size:12px;font-weight:600;color:var(--ns-ink)">'
+    + cmWhen(c.at) + ' · ' + safe(c.view) + '</span>'
+    + (c.read ? '' : '<span style="' + P_FONT + 'font-size:9px;font-weight:700;letter-spacing:.06em;'
+        + 'color:var(--ns-green);background:rgba(33,64,47,.12);border-radius:4px;padding:2px 5px">'
+        + 'NEW</span>')
+    + '<span style="flex:1"></span>'
+    + (n ? '<span style="' + P_FONT + 'font-size:10px;font-weight:600;color:var(--ns-ink3)">사진 '
+        + n + '</span>' : '')
+    + '</span>'
+    + '<span style="' + P_FONT + 'font-size:12px;line-height:1.65;color:var(--ns-ink2);'
+    + 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'
+    + safe(c.body) + '</span></div>';
+}
+
+/* 펼친 한마디 — 프로가 보낸 글과 사진이 그대로 나온다 */
+function cmSheet(id) {
+  const all = window.__COMMENTS || [];
+  if (!all.length) return;
+  const fresh = all.filter(c => !c.read);
+  const show = id ? all.filter(c => c.id === id)
+             : fresh.length ? fresh : all.slice(0, 1);
+  if (!show.length) return;
+  const old = document.getElementById('cmnew');
+  if (old) old.remove();
+
+  const box = document.createElement('div');
+  box.id = 'cmnew';
+  box.innerHTML = '<div class="cmn-card">'
+    + '<span class="cmn-tag">프로 한마디</span>'
+    + '<span class="cmn-t">이도형 프로가 한마디를 남겼어요</span>'
+    + show.map(c => '<div class="cmn-one">'
+        + '<span class="cmn-meta">' + cmWhen(c.at) + ' · ' + safe(c.view) + ' 스윙</span>'
+        + '<span class="cmn-body">' + safe(c.body) + '</span>'
+        + (c.photos || []).map(u => '<img class="cmn-img" src="' + u + '" alt="">').join('')
+        + '</div>').join('')
+    + '<div class="cmn-foot">'
+    + '<button class="cmn-btn" type="button" data-cm-ok>확인했어요</button>'
+    + '<button class="cmn-alt" type="button" data-cm-list>받은 한마디 모두 보기</button>'
+    + '</div></div>';
+
+  const shut = go2i => {
+    box.remove();
+    // 펼친 것은 읽은 것이다 — 서버에도 적어 둔다
+    show.filter(c => !c.read).forEach(c => {
+      c.read = new Date().toISOString();
+      if (window.NS) NS.markRead(c.id);
+    });
+    S.unread = (window.__COMMENTS || []).filter(c => !c.read).length;
+    if (!S.unread) S.stripOff = true;
+    if (go2i) jump('2i'); else render();
+  };
+  box.addEventListener('click', ev => {
+    if (ev.target.closest('[data-cm-list]')) return shut(true);
+    if (ev.target === box || ev.target.closest('[data-cm-ok]')) shut(false);
+  });
+  document.body.appendChild(box);
+  requestAnimationFrame(() => box.classList.add('on'));
+}
+window.__cmSheet = cmSheet;
+
+/* 앱을 보고 있는 동안에도 계속 확인한다 — 프로는 아무 때나 답한다 */
+setInterval(() => { if (!document.hidden) loadComments(); }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) loadComments(); });
 
 /* 앱을 열 때 · 「다시 보내기」를 누를 때 — 아직 안 간 것을 밀어 보낸다 */
 function resendAll() {
