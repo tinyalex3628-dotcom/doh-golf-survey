@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet><link rel="stylesheet" href="board-fonts.css"><script src="./image-slot.js"></script></helmet>
+<div style="min-height:100vh;background:#EDEAE3;color:#1D2420;font-family:Hahmlet,serif;display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px 24px 64px">
+  <div style="display:flex;align-items:baseline;gap:10px">
+    <b style="font-family:Pretendard,sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;color:#21402F">2G · C</b>
+    <span style="font-size:13px;color:#6E6858">스윙기록 — 캘린더 그룹 리스트</span>
+    <span style="font-size:11px;color:#A39C8C;letter-spacing:.12em">메인 5탭</span>
+  </div>
+  <div style="width:360px;height:740px;background:#FFFFFF;border:1px solid #DDD6C8;border-radius:34px;box-shadow:0 18px 44px -26px rgba(38,40,42,.4);overflow:hidden;display:flex;flex-direction:column;font-family:Pretendard,sans-serif">
+    <div style="flex:none;background:#FFFFFF;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-size:12px;font-weight:400;color:#1D2420"><span style="font-family:var(--font-num)">9:41</span><span style="display:flex;gap:4px;align-items:center"><span style="width:15px;height:9px;border:1px solid #1D2420;border-radius:2px;opacity:.6"></span><span style="width:15px;height:9px;background:#1D2420;border-radius:2px"></span></span></div>
+
+    <div style="flex:none;background:#FFFFFF;padding:10px 20px 12px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:11px">
+        <span style="color:#1D2420"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" style="width:20px;height:20px"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></span>
+        <b style="font-size:19px;font-weight:700;letter-spacing:-.03em;color:#1D2420">스윙기록</b>
+      </div>
+      <div style="display:flex;background:#F1EDE4;border-radius:10px;padding:3px;gap:2px">
+        <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="2">
+          <span style="{{ tab.style }}" onClick="{{ tab.onClick }}">
+            {{ tab.label }}<span style="{{ tab.countStyle }}">{{ tab.count }}</span>
+          </span>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:none;background:#FFFFFF;border-bottom:1px solid #EFEBE2;padding:2px 20px 14px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="color:#B8B0A0;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="m14 6-6 6 6 6"></path></svg></span>
+        <b style="font-size:13.5px;font-weight:700;color:#1D2420;letter-spacing:-.01em;font-family:var(--font-num)">2026년 7월</b>
+        <span style="color:#B8B0A0;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="m10 6 6 6-6 6"></path></svg></span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">
+        <sc-for list="{{ weekdays }}" as="wd" hint-placeholder-count="7">
+          <span style="{{ wd.style }}">{{ wd.label }}</span>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">
+        <sc-for list="{{ days }}" as="day" hint-placeholder-count="7">
+          <span style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer" onClick="{{ day.onClick }}">
+            <span style="{{ day.style }}">{{ day.n }}</span>
+            <span style="{{ day.dotStyle }}"></span>
+          </span>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;background:#F6F3EC;padding:16px 20px 24px;display:flex;flex-direction:column;gap:20px">
+      <sc-for list="{{ groups }}" as="group" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px">
+            <span style="{{ group.titleStyle }}">{{ group.title }}</span>
+            <span style="display:flex;align-items:center;gap:8px">
+              <span style="min-width:19px;height:19px;padding:0 6px;border-radius:999px;background:#E7E2D6;color:#6E6858;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--font-num)">{{ group.count }}</span>
+              <span style="color:#B8B0A0;display:flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="m6 14.5 6-6 6 6"></path></svg></span>
+            </span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ group.items }}" as="item" hint-placeholder-count="2">
+              <div style="position:relative;background:#FFFFFF;border:1px solid #EDE8DC;border-radius:12px;padding:9px;display:flex;gap:10px;box-shadow:0 4px 12px -10px rgba(20,22,24,.3)">
+                <span style="position:absolute;top:11px;right:11px;color:#C6BFB0"><svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg></span>
+                <div style="flex:none;width:66px;height:66px;border-radius:9px;overflow:hidden;position:relative;background:#E7E2D6">
+                  <image-slot id="{{ item.slotId }}" shape="rect" placeholder=""></image-slot>
+                  <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none"><span style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.94);display:flex;align-items:center;justify-content:center;color:#1D2420"><svg viewBox="0 0 24 24" fill="currentColor" style="width:10px;height:10px"><path d="M8 5.5v13l11-6.5z"></path></svg></span></span>
+                  <span style="position:absolute;left:5px;bottom:5px;font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;background:rgba(0,0,0,.66);color:#fff;font-size:9.5px;border-radius:4px;padding:2px 5px;pointer-events:none">{{ item.duration }}</span>
+                </div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:5px;padding-right:16px">
+                  <span style="font-size:11px;color:#A39C8C;font-weight:500;font-family:var(--font-num)">{{ item.time }}</span>
+                  <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                    <span style="font-size:13.5px;font-weight:700;color:#1D2420;letter-spacing:-.01em">{{ item.club }}</span>
+                    <span style="{{ item.tagStyle }}">{{ item.tag }}</span>
+                  </span>
+                  <span style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+                    <sc-for list="{{ item.marks }}" as="mark" hint-placeholder-count="2">
+                      <span style="{{ mark.style }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;flex:none"><path d="m5 12.5 4.5 4.5L19 7"></path></svg>{{ mark.label }}
+                      </span>
+                    </sc-for>
+                  </span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="flex:none;height:66px;background:#FFFFFF;border-top:1px solid #EAE4D6;display:flex;align-items:center;padding:6px 4px 0">
+      <span style="flex:1;display:flex;align-items:center;justify-content:center"><span style="{{ navStyles.home.wrap }}"><svg viewBox="0 0 24 24" fill="none" stroke="{{ navStyles.home.color }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19z"></path></svg><span style="{{ navStyles.home.label }}">홈</span></span></span>
+      <span style="flex:1;display:flex;align-items:center;justify-content:center"><span style="{{ navStyles.practice.wrap }}"><svg viewBox="0 0 24 24" fill="none" stroke="{{ navStyles.practice.color }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><rect x="4" y="6" width="16" height="14" rx="2"></rect><path d="M8 4v4M16 4v4M4 11h16"></path><path d="m9.5 15.5 1.8 1.8 3.2-3.6"></path></svg><span style="{{ navStyles.practice.label }}">연습기록</span></span></span>
+      <span style="flex:1;display:flex;align-items:center;justify-content:center" onClick="{{ selectSwingTab }}"><span style="{{ navStyles.swing.wrap }}"><svg viewBox="0 0 24 24" fill="none" stroke="{{ navStyles.swing.color }}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><rect x="3" y="4" width="18" height="6" rx="1.5"></rect><rect x="3" y="14" width="18" height="6" rx="1.5"></rect></svg><span style="{{ navStyles.swing.label }}">스윙기록</span></span></span>
+      <span style="flex:1;display:flex;align-items:center;justify-content:center"><span style="{{ navStyles.analysis.wrap }}"><svg viewBox="0 0 24 24" fill="none" stroke="{{ navStyles.analysis.color }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><rect x="3" y="6" width="13" height="12" rx="2"></rect><path d="m16 11 5-3v8l-5-3z"></path></svg><span style="{{ navStyles.analysis.label }}">스윙분석</span></span></span>
+      <span style="flex:1;display:flex;align-items:center;justify-content:center"><span style="{{ navStyles.my.wrap }}"><svg viewBox="0 0 24 24" fill="none" stroke="{{ navStyles.my.color }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="8.5" r="3.4"></circle><path d="M5 20c1.2-4 4-5.8 7-5.8s5.8 1.8 7 5.8"></path></svg><span style="{{ navStyles.my.label }}">마이</span></span></span>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:420,&quot;height&quot;:880}}">
+
+class Component extends DCLogic {
+  state = { activeTab: '스윙기록', activeNav: 'swing', selectedDay: 26 };
+
+  renderVals() {
+    const tabs = [{ label: '스윙기록', count: 12 }, { label: '정규레슨', count: 6 }].map(t => {
+      const active = this.state.activeTab === t.label;
+      return {
+        label: t.label, count: t.count,
+        onClick: () => this.setState({ activeTab: t.label }),
+        style: {
+          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+          padding: '9px 6px', borderRadius: '8px',
+          fontSize: '13px', fontWeight: active ? 700 : 500, cursor: 'pointer',
+          background: active ? '#21402F' : 'transparent', color: active ? '#FFFFFF' : '#6E6858'
+        },
+        countStyle: {
+          minWidth: '18px', height: '18px', padding: '0 5px', borderRadius: '999px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'var(--font-num)', fontSize: '10.5px', fontWeight: 700, letterSpacing: '-.02em',
+          background: active ? 'rgba(255,255,255,.2)' : '#E4DECE',
+          color: active ? '#FFFFFF' : '#8A8375'
+        }
+      };
+    });
+
+    const weekdays = ['일', '월', '화', '수', '목', '금', '토'].map((label, i) => ({
+      label,
+      style: { textAlign: 'center', fontSize: '10.5px', fontWeight: 600, color: i === 0 ? '#B08A7A' : '#A39C8C' }
+    }));
+
+    // week containing Sun 2026-07-26 → 일~토 = 26,27,28,29,30,31,1(8월)
+    const weekStart = new Date(2026, 6, 26);
+    const hasRecord = { '7-20': true, '7-22': true, '7-26': true };
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + i);
+      const n = d.getDate();
+      const key = (d.getMonth() + 1) + '-' + n;
+      const otherMonth = d.getMonth() !== 6;
+      const active = !otherMonth && n === this.state.selectedDay;
+      return {
+        n,
+        onClick: () => { if (!otherMonth) this.setState({ selectedDay: n }); },
+        style: {
+          width: '30px', height: '30px', borderRadius: '50%', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-num)',
+          fontSize: '13px', fontWeight: active ? 700 : 500, letterSpacing: '-.02em',
+          background: active ? '#21402F' : 'transparent',
+          color: active ? '#FFFFFF' : (otherMonth ? '#C6BFB0' : '#4A4B44')
+        },
+        dotStyle: {
+          width: '4px', height: '4px', borderRadius: '50%',
+          background: hasRecord[key] ? (active ? '#21402F' : '#A9B79E') : 'transparent'
+        }
+      };
+    });
+
+    const tag = (kind) => kind === 'basic'
+      ? { fontSize: '10.5px', fontWeight: 600, color: '#2F6B45', background: 'rgba(47,107,69,.1)', borderRadius: '5px', padding: '2px 7px', lineHeight: 1, height: '19px', display: 'flex', alignItems: 'center' }
+      : { fontSize: '10.5px', fontWeight: 600, color: '#A67C3D', background: 'rgba(166,124,61,.12)', borderRadius: '5px', padding: '2px 7px', lineHeight: 1, height: '19px', display: 'flex', alignItems: 'center' };
+
+    const mark = (done) => ({
+      display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10.5px',
+      fontWeight: 500, color: done ? '#2F6B45' : '#A39C8C'
+    });
+
+    const groups = [
+      {
+        title: '오늘 · 7월 26일', count: 2,
+        titleStyle: { fontSize: '13.5px', fontWeight: 700, color: '#1D2420', letterSpacing: '-.01em' },
+        items: [
+          { slotId: 'swing-c-1', slotHint: '드라이버 스윙', duration: '0:27', time: '오후 7:24', club: '드라이버', tag: '드라이버 영상', tagStyle: tag('driver'),
+            marks: [{ label: 'AI 분석 완료', style: mark(true) }, { label: '프로 코멘트', style: mark(true) }] },
+          { slotId: 'swing-c-2', slotHint: '7번 아이언 스윙', duration: '0:11', time: '오후 6:02', club: '7번 아이언', tag: '기본동작', tagStyle: tag('basic'),
+            marks: [{ label: 'AI 분석 완료', style: mark(true) }, { label: '코멘트 대기', style: mark(false) }] }
+        ]
+      },
+      {
+        title: '7월 22일 (수)', count: 1, // Wed 2026-07-22
+        titleStyle: { fontSize: '13.5px', fontWeight: 700, color: '#1D2420', letterSpacing: '-.01em' },
+        items: [
+          { slotId: 'swing-c-3', slotHint: '7번 아이언 그린피', duration: '1:08', time: '오전 11:08', club: '7번 아이언', tag: '그린피 영상', tagStyle: tag('driver'),
+            marks: [{ label: 'AI 분석 완료', style: mark(true) }, { label: '코멘트 대기', style: mark(false) }] }
+        ]
+      },
+      {
+        title: '7월 20일 (월)', count: 1,
+        titleStyle: { fontSize: '13.5px', fontWeight: 700, color: '#1D2420', letterSpacing: '-.01em' },
+        items: [
+          { slotId: 'swing-c-4', slotHint: '웨지 스윙', duration: '0:35', time: '오후 5:41', club: '웨지', tag: '기본동작', tagStyle: tag('basic'),
+            marks: [{ label: 'AI 분석 완료', style: mark(true) }, { label: '프로 코멘트', style: mark(true) }] }
+        ]
+      }
+    ];
+
+    const navStyles = {};
+    ['home', 'practice', 'swing', 'analysis', 'my'].forEach(key => {
+      const active = key === this.state.activeNav;
+      const color = active ? '#21402F' : '#A39C8C';
+      navStyles[key] = {
+        wrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: active ? '5px 14px' : '5px 2px', borderRadius: '12px', background: active ? '#E7EFE7' : 'transparent' },
+        color,
+        label: { fontSize: '11px', fontWeight: active ? 600 : 400, color, marginTop: '2px' }
+      };
+    });
+
+    return { tabs, weekdays, days, groups, navStyles, selectSwingTab: () => this.setState({ activeNav: 'swing' }) };
+  }
+}
+
+</script>
+</body>
+</html>

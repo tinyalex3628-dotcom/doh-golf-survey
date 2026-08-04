@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2B · 연습기록 — 당월 달력</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="board-fonts.css"></helmet>
+<div style="min-height:100vh;background:#EDEAE3;color:#1D2420;font-family:Hahmlet,serif;display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px 24px 64px">
+  <div style="display:flex;align-items:baseline;gap:10px">
+    <b style="font-family:Pretendard,sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;color:#21402F">2B</b>
+    <span style="font-size:13px;color:#6E6858">연습기록 — 당월 달력</span>
+    <span style="font-size:11px;color:#A39C8C;letter-spacing:.12em">메인 5탭</span>
+  </div>
+  <div style="width:360px;height:740px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:34px;box-shadow:0 18px 44px -26px rgba(38,40,42,.4);overflow:hidden;display:flex;flex-direction:column">
+          <div style="flex:none;background:#F3EFE8;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-size:12px;font-weight:400;color:#1D2420"><span style="font-family:var(--font-num)">9:41</span><span style="display:flex;gap:4px;align-items:center"><span style="width:15px;height:9px;border:1px solid #1D2420;border-radius:2px;opacity:.6"></span><span style="width:15px;height:9px;background:#1D2420;border-radius:2px"></span></span></div>
+          <div style="flex:1;overflow-y:auto;background:#F3EFE8;padding:10px 16px 0;display:flex;flex-direction:column;gap:10px">
+            <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 4px">
+              <span style="display:flex;align-items:center;gap:10px"><span style="color:#6E6858"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" style="width:21px;height:21px"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></span><span style="font-size:20px;font-weight:400;letter-spacing:-.03em;color:#1D2420;line-height:1.45;position:relative;top:-2px">연습기록</span></span>
+              <span style="display:flex;align-items:center;gap:6px;color:#8A8375">
+                <span style="width:30px;height:30px;border-radius:50%;background:#EFE9DE;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="m15 5-7 7 7 7"></path></svg></span>
+                <span style="width:30px;height:30px;border-radius:50%;background:#EFE9DE;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="m9 5 7 7-7 7"></path></svg></span>
+              </span>
+            </div>
+            <div style="flex:none;background:#FFFDF9;border-radius:14px;box-shadow:0 1px 2px rgba(38,40,42,.04),0 6px 16px -10px rgba(38,40,42,.16);margin:0 2px">
+              <div style="display:flex;align-items:center;gap:13px;padding:12px 16px;border-bottom:1px solid #F2ECE2">
+                <span style="flex:none;color:#8A8375;display:flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><rect x="4" y="6" width="16" height="14" rx="2"></rect><path d="M8 4v4M16 4v4M4 11h16"></path></svg></span>
+                <span style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font-size:10px;font-weight:400;letter-spacing:.02em;color:#8A8375">이번 달 정식 피드백 · 월 1회</span><span style="font-size:15px;font-weight:600;letter-spacing:-.045em;color:#1D2420;line-height:1;font-variant-numeric:tabular-nums">7월 27일 (월)</span></span>
+                <span style="flex:none;align-self:center;background:rgba(31,61,43,.10);color:#21402F;border-radius:7px;padding:4px 8px;font-size:11px;font-weight:400;letter-spacing:0;font-variant-numeric:tabular-nums">5일 남음</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:11px;padding:11px 16px 4px">
+                <span style="flex:none;color:#8A8375;display:flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><path d="M20 14.5A2.5 2.5 0 0 1 17.5 17H9l-4 3.5V7A2.5 2.5 0 0 1 7.5 4.5h10A2.5 2.5 0 0 1 20 7z"></path></svg></span>
+                <span style="flex:1;font-size:12.5px;font-weight:600;letter-spacing:0;color:#1D2420">프로 한마디 코멘트</span>
+                <span style="flex:none;font-size:12.5px;font-weight:600;color:#1D2420;font-variant-numeric:tabular-nums">3 <span style="color:#8A8375;font-weight:500">/ 5회</span></span>
+              </div>
+              <div style="padding:6px 14px 11px"><span style="display:flex;align-items:center;justify-content:center;gap:5px;background:#21402F;border-radius:9px;padding:7px;font-size:11.5px;font-weight:600;color:#fff">오늘 기록하기<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="m9 5 7 7-7 7"></path></svg></span></div>
+            </div>
+
+            <div style="flex:none;background:#FFFDF9;border:1px solid #E4DED2;border-radius:12px;padding:12px 10px 10px;margin:0 2px">
+              <span style="display:block;font-size:12.5px;font-weight:600;color:#1D2420;padding:0 4px 8px">7월</span>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">
+              <span style="text-align:center;font-size:12px;font-weight:400;color:#A39C8C;padding-bottom:4px">일</span>
+              <span style="text-align:center;font-size:12px;font-weight:400;color:#8A8375;padding-bottom:4px">월</span>
+              <span style="text-align:center;font-size:12px;font-weight:400;color:#8A8375;padding-bottom:4px">화</span>
+              <span style="text-align:center;font-size:12px;font-weight:400;color:#8A8375;padding-bottom:4px">수</span>
+              <span style="text-align:center;font-size:12px;font-weight:400;color:#8A8375;padding-bottom:4px">목</span>
+              <span style="text-align:center;font-size:12px;font-weight:400;color:#8A8375;padding-bottom:4px">금</span>
+              <span style="text-align:center;font-size:12px;font-weight:400;color:#8A8375;padding-bottom:4px">토</span>
+
+              <span></span><span></span><span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">1</span><span style="height:6px"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">2</span><span style="height:6px"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;background:#EFE9DE;border-radius:9px"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">3</span><span style="width:6px;height:6px;border-radius:50%;background:#A39C8C;display:block"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">4</span><span style="height:6px"></span></span>
+
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;background:#EFE9DE;border-radius:9px"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#A39C8C">5</span><span style="width:6px;height:6px;border-radius:50%;background:#A39C8C;display:block"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;background:#EFE9DE;border-radius:9px"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">6</span><span style="width:6px;height:6px;border-radius:50%;background:#A39C8C;display:block"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">7</span><span style="height:6px"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;background:#EFE9DE;border-radius:9px"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">8</span><span style="width:6px;height:6px;border-radius:50%;background:#A39C8C;display:block"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">9</span><span style="height:6px"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;background:#EFE9DE;border-radius:9px"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">10</span><span style="width:6px;height:6px;border-radius:50%;background:#A39C8C;display:block"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">11</span><span style="height:6px"></span></span>
+
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;background:#EFE9DE;border-radius:9px"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#A39C8C">12</span><span style="width:6px;height:6px;border-radius:50%;background:#A39C8C;display:block"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;background:#EFE9DE;border-radius:9px"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">13</span><span style="display:flex;gap:3px"><span style="width:6px;height:6px;border-radius:50%;background:#A39C8C;display:block"></span><span style="width:6px;height:6px;border-radius:50%;background:#A67C3D;display:block"></span></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">14</span><span style="height:6px"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;background:#EFE9DE;border-radius:9px"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">15</span><span style="width:6px;height:6px;border-radius:50%;background:#A39C8C;display:block"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">16</span><span style="height:6px"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;background:#EFE9DE;border-radius:9px"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">17</span><span style="width:6px;height:6px;border-radius:50%;background:#A39C8C;display:block"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">18</span><span style="height:6px"></span></span>
+
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;background:#EFE9DE;border-radius:9px"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#A39C8C">19</span><span style="width:6px;height:6px;border-radius:50%;background:#A39C8C;display:block"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;background:#EFE9DE;border-radius:9px"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">20</span><span style="display:flex;gap:3px"><span style="width:6px;height:6px;border-radius:50%;background:#A39C8C;display:block"></span><span style="width:6px;height:6px;border-radius:50%;border:1.5px solid #A67C3D;display:block"></span></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#6E6858">21</span><span style="height:6px"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;width:26px;height:26px;border-radius:50%;background:#1D2420;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">22</span><span style="width:6px;height:6px;border-radius:50%;background:#A39C8C;display:block"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#CFC8B8">23</span><span style="height:6px"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#CFC8B8">24</span><span style="height:6px"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#CFC8B8">25</span><span style="height:6px"></span></span>
+
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#E4DED2">26</span><span style="height:6px"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;width:26px;height:26px;border-radius:50%;background:#21402F;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;box-shadow:0 0 0 3px #E6EDE7">27</span><span style="font-size:10px;font-weight:400;color:#17301F;line-height:6px">피드백</span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#CFC8B8">28</span><span style="height:6px"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#CFC8B8">29</span><span style="height:6px"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#CFC8B8">30</span><span style="height:6px"></span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0"><span style="font-family:var(--font-num);font-weight:700;letter-spacing:-.03em;font-size:13px;font-weight:400;color:#CFC8B8">31</span><span style="height:6px"></span></span>
+              <span></span>
+            </div></div>
+
+            <div style="flex:none;display:flex;padding:0 4px;justify-content:space-between">
+              <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#8A8375"><span style="width:6px;height:6px;border-radius:50%;background:#A39C8C;display:block"></span>스윙</span>
+              <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#8A8375"><span style="width:6px;height:6px;border-radius:50%;background:#A67C3D;display:block"></span>코멘트</span>
+              <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#8A8375"><span style="width:8px;height:8px;border-radius:50%;border:1.5px solid #A67C3D;display:block"></span>대기</span>
+              <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#8A8375"><span style="width:14px;height:14px;border-radius:50%;background:#21402F;display:block"></span>피드백일</span>
+            </div>
+
+            <div style="flex:none;background:#FBF8F2;border-radius:12px;padding:11px 13px;display:flex;flex-direction:column;gap:10px;margin:0 2px">
+              <span style="font-size:13px;font-weight:600;color:#1D2420">7월 22일 · 오늘</span>
+              <div style="display:flex;gap:11px;align-items:center">
+                <span style="flex:none;width:32px;height:42px;border-radius:7px;background:linear-gradient(150deg,#3A3B33,#1D2420)"></span>
+                <span style="flex:1;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#1D2420">스윙 업로드 완료<span style="font-size:16px;line-height:1">😐</span></span>
+              </div>
+            </div>
+            <div style="flex:none;background:#F2F8F4;border-radius:12px;padding:12px 13px;display:flex;align-items:center;gap:11px;margin:-5px 2px 0">
+              <span style="flex:none;width:30px;height:30px;border-radius:50%;background:#21402F;color:#fff;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M20 14.5A2.5 2.5 0 0 1 17.5 17H9l-4 3.5V7A2.5 2.5 0 0 1 7.5 4.5h10A2.5 2.5 0 0 1 20 7z"></path></svg></span>
+              <span style="flex:1;display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.08em;color:#21402F">NEW</span>
+                <span style="font-size:12.5px;font-weight:600;color:#1D2420">프로 코멘트가 도착했습니다</span>
+              </span>
+              <span style="flex:none;display:flex;align-items:center;gap:3px;font-size:12px;font-weight:600;color:#21402F">지금 확인하기<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="m9 5 7 7-7 7"></path></svg></span>
+            </div>
+          </div>
+          <div style="flex:none;height:62px;background:#FFFDF9;border-top:1px solid #E4DED2;display:flex;align-items:flex-start;padding:9px 4px 0"><span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;color:#A39C8C"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:21px;height:21px"><path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19z"></path></svg><span style="font-size:11px;font-weight:400;letter-spacing:0">홈</span></span><span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;color:#21402F"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="width:21px;height:21px"><rect x="4" y="6" width="16" height="14" rx="2"></rect><path d="M8 4v4M16 4v4M4 11h16"></path><path d="m9.5 15.5 1.8 1.8 3.2-3.6"></path></svg><span style="font-size:11px;font-weight:400;letter-spacing:0">연습기록</span></span><span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;color:#A39C8C"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:21px;height:21px"><rect x="3" y="4" width="18" height="6" rx="1.5"></rect><rect x="3" y="14" width="18" height="6" rx="1.5"></rect></svg><span style="font-size:11px;font-weight:400;letter-spacing:0">스윙기록</span></span><span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;color:#A39C8C"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:21px;height:21px"><rect x="3" y="6" width="13" height="12" rx="2"></rect><path d="m16 11 5-3v8l-5-3z"></path></svg><span style="font-size:11px;font-weight:400;letter-spacing:0">스윙분석</span></span><span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;color:#A39C8C"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:21px;height:21px"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"></path></svg><span style="font-size:11px;font-weight:400;letter-spacing:0">마이</span></span></div>
+        </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>23 · 웹 결제 페이지 (포트원)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="board-fonts.css"></helmet>
+<div style="min-height:100vh;background:#EDEAE3;color:#1D2420;font-family:Hahmlet,serif;display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px 24px 64px">
+  <div style="display:flex;align-items:baseline;gap:10px">
+    <b style="font-family:Pretendard,sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;color:#21402F">23</b>
+    <span style="font-size:13px;color:#6E6858">웹 결제 페이지 (포트원)</span>
+    <span style="font-size:11px;color:#A39C8C;letter-spacing:.12em">구독 결제</span>
+  </div>
+  <div style="width:360px;height:740px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:34px;box-shadow:0 18px 44px -26px rgba(38,40,42,.4);overflow:hidden;display:flex;flex-direction:column">
+          <div style="flex:none;background:#F3EFE8;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-size:12px;font-weight:400;color:#1D2420"><span style="font-family:var(--font-num)">9:41</span><span style="display:flex;gap:4px;align-items:center"><span style="width:15px;height:9px;border:1px solid #1D2420;border-radius:2px;opacity:.6"></span><span style="width:15px;height:9px;background:#1D2420;border-radius:2px"></span></span></div>
+          <div style="flex:none;background:#EFE9DE;padding:8px 12px 10px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid #E4DED2">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:#6E6858"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><path d="M6 6l12 12M18 6 6 18"></path></svg></span>
+              <span style="flex:1;display:flex;align-items:center;gap:7px;background:#FFFDF9;border-radius:9px;padding:7px 10px">
+                <span style="color:#A67C3D"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><rect x="5" y="10.5" width="14" height="9" rx="2"></rect><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"></path></svg></span>
+                <span style="flex:1;font-size:12px;color:#6E6858">pay.nextswing.kr</span>
+              </span>
+              <span style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:#6E6858"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8"></path><path d="M20 4v4h-4"></path></svg></span>
+            </div>
+          </div>
+          <div style="flex:1;overflow-y:auto;background:#F3EFE8;padding:18px 20px 0;display:flex;flex-direction:column;gap:16px;mask-image:linear-gradient(#000 96%,transparent)">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-size:11px;font-weight:400;letter-spacing:.16em;color:#8A8375">NEXT SWING</span>
+              <span style="font-size:18px;font-weight:400;letter-spacing:-.03em;color:#1D2420;line-height:1.45">구독 결제</span>
+            </div>
+            <div style="border:1px solid #E4DED2;border-radius:11px;padding:14px 16px;display:flex;flex-direction:column;gap:9px">
+              <div style="display:flex;align-items:baseline"><span style="flex:1;font-size:12.5px;color:#6E6858">Coaching</span><span style="font-size:12.5px;color:#6E6858">월 39,000원</span></div>
+              <span style="height:1px;background:#EFE9DE;display:block"></span>
+              <div style="display:flex;align-items:baseline"><span style="flex:1;font-size:14px;font-weight:600;color:#1D2420">총 결제 금액</span><span style="font-size:16.5px;font-weight:600;letter-spacing:-.02em;color:#1D2420">39,000원</span></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font-size:13px;font-weight:600;letter-spacing:0;color:#1D2420">결제 수단</span>
+              <div style="display:flex;align-items:center;gap:10px;border:1.5px solid #21402F;background:#F7FAF7;border-radius:10px;padding:12px 14px">
+                <span style="flex:none;width:30px;height:30px;border-radius:7px;background:#1D2420;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:400">toss</span>
+                <span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;font-weight:600;color:#1D2420">토스페이</span><span style="font-size:12px;color:#8A8375">간편결제 · 자동결제 등록</span></span>
+                <span style="flex:none;width:19px;height:19px;border-radius:50%;background:#21402F;color:#fff;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg></span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;border:1px solid #E4DED2;border-radius:10px;padding:12px 14px">
+                <span style="flex:none;width:30px;height:30px;border-radius:7px;background:#EFE9DE;color:#6E6858;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><rect x="3.5" y="6" width="17" height="12" rx="2.5"></rect><path d="M3.5 10h17"></path></svg></span>
+                <span style="flex:1;font-size:13px;font-weight:600;color:#1D2420">신용 · 체크카드</span>
+                <span style="flex:none;width:19px;height:19px;border-radius:50%;border:1.5px solid #CFC8B8"></span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;border:1px solid #E4DED2;border-radius:10px;padding:12px 14px">
+                <span style="flex:none;width:30px;height:30px;border-radius:7px;background:#EFE9DE;color:#6E6858;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><path d="M4 9.5h16v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path><path d="M4 9.5 12 4l8 5.5"></path></svg></span>
+                <span style="flex:1;font-size:13px;font-weight:600;color:#1D2420">계좌 자동이체</span>
+                <span style="flex:none;width:19px;height:19px;border-radius:50%;border:1.5px solid #CFC8B8"></span>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <span style="flex:none;width:19px;height:19px;border-radius:6px;background:#21402F;color:#fff;display:flex;align-items:center;justify-content:center;margin-top:1px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg></span>
+              <span style="flex:1;font-size:12.5px;color:#8A8375;line-height:1.6">정기결제 약관 및 개인정보 제3자 제공에 동의합니다.</span>
+            </div>
+          </div>
+          <div style="flex:none;padding:10px 18px 22px;display:flex;flex-direction:column;gap:8px">
+            <span style="display:block;background:#21402F;border-radius:12px;padding:15px;text-align:center;font-size:14.5px;font-weight:600;font-family:var(--font-num);letter-spacing:-.03em;color:#fff;box-shadow:0 8px 18px -10px rgba(31,61,43,.48)">39,000원 결제하기</span>
+            <span style="display:block;text-align:center;font-size:11.5px;color:#A39C8C">결제 대행 : 포트원 (PortOne) · PG : 토스페이먼츠</span>
+          </div>
+        </div>
+</div>
+</x-dc>
+</body>
+</html>

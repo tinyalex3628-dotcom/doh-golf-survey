@@ -6,3 +6,7 @@ node_modules/
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+
+# 빌드 산출물 — docs/ 에 있는 것이 정본이다
+src/nextswing-v3.html
+src/nextswing-admin.html
