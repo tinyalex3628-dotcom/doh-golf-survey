@@ -275,10 +275,24 @@ html.demo body{background:#EDEAE3}
   color:var(--ns-ink3)}
 .cmn-body{font-family:Pretendard,-apple-system,sans-serif;font-size:13.5px;line-height:1.8;
   color:var(--ns-ink);white-space:pre-wrap;word-break:break-word}
-/* 스윙 캡처는 세로로 길다. 폭에 맞추면 한 장이 화면을 다 먹어서
-   두 장째와 「확인」 버튼이 저 아래로 밀린다 — 높이로 맞춘다. */
-.cmn-img{max-width:100%;max-height:42vh;width:auto;margin:0 auto;border-radius:11px;
-  display:block;border:1px solid var(--ns-line)}
+/* 스윙 캡처는 세로로 길다. 크게 놓으면 한 장이 화면을 다 먹고 프로가 쓴 글이
+   위로 밀려난다 — 읽으러 온 화면인데 사진부터 보게 된다. 작은 썸네일 줄로
+   눕히고, 크게 보고 싶으면 눌러서 전체화면으로 연다. */
+.cmn-shots{display:flex;gap:7px;flex-wrap:wrap}
+.cmn-img{width:52px;height:70px;object-fit:cover;border-radius:9px;display:block;
+  border:1px solid var(--ns-line);cursor:pointer;background:#1D2420}
+.cmn-img:active{opacity:.75}
+.cmn-more{align-self:center;font-family:Pretendard,-apple-system,sans-serif;
+  font-size:10.5px;font-weight:600;color:var(--ns-ink3)}
+
+/* 사진 크게 보기 — 어디서 눌렀든 이 한 겹이 뜬다 */
+#shotbig{position:fixed;inset:0;z-index:260;background:rgba(12,15,14,.94);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}
+#shotbig img{max-width:100%;max-height:78vh;object-fit:contain;border-radius:12px;display:block}
+.sb-x{border:0;border-radius:11px;cursor:pointer;padding:12px 26px;background:rgba(255,255,255,.14);
+  color:#fff;font-family:Pretendard,-apple-system,sans-serif;font-size:13px;font-weight:700}
+.sb-n{font-family:Pretendard,-apple-system,sans-serif;font-size:11.5px;font-weight:600;
+  color:rgba(255,255,255,.66)}
 /* 버튼은 늘 손닿는 곳에 — 사진이 길어도 스크롤을 끝까지 내리게 하지 않는다 */
 .cmn-foot{position:sticky;bottom:0;margin:2px -20px -18px;padding:11px 20px 16px;
   background:var(--ns-card);border-top:1px solid var(--ns-line);

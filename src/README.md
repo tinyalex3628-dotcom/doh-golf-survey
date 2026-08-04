@@ -83,6 +83,7 @@ node test/_xshot.mjs          # 관리자 영상 캡처 — 다른 출처 / 확�
 node test/_beta_overlap.mjs   # 55개 화면 전수 — JS 오류·「베타」표식 겹침
 node test/_gallery_remote.mjs # 폰을 바꿔도 갤러리가 서버에서 보이는가
 node test/_home_hero.mjs      # 홈 첫 화면이 한마디 한 바퀴를 따라가는가
+node test/_shots.mjs          # 프로가 붙인 사진 — 글이 먼저 · 스크롤 없이 · 눌러서 크게
 ```
 
 > **테스트는 서버를 흉내 낸다.** 이 실행 환경의 프록시가 `*.supabase.co` 를

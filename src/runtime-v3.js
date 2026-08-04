@@ -1187,11 +1187,16 @@ function applyFresh() {
         + c.view + '</span></span>'
         + '<span style="display:block;' + P_FONT + 'font-size:12.5px;line-height:1.7;'
         + 'color:var(--ns-ink2);white-space:pre-wrap">' + safe(c.body) + '</span>'
-        + (c.photos || []).map(u => '<img src="' + u + '" style="width:100%;max-width:220px;'
-            + 'border-radius:10px;margin-top:8px;display:block;border:1px solid var(--ns-line)">')
-          .join('') + '</div>').join('');
-      holder.querySelectorAll('[data-cm-row]').forEach(r =>
-        tap(r, () => cmSheet(r.getAttribute('data-cm-row'))));
+        /* 사진은 작은 줄로. 전에는 폭을 다 쓰는 큰 사진이라 홈에서 한마디
+           한 개가 화면을 통째로 먹고, 그 아래 바로가기까지 밀려났다. */
+        + (c.photos && c.photos.length
+            ? '<div style="margin-top:8px">' + shotStrip(c.photos) + '</div>' : '')
+        + '</div>').join('');
+      holder.querySelectorAll('[data-cm-row]').forEach(r => {
+        const c = got.find(x => x.id === r.getAttribute('data-cm-row'));
+        wireShots(r, (c && c.photos) || []);
+        tap(r, () => cmSheet(r.getAttribute('data-cm-row')));
+      });
     } else {
       holder.setAttribute('style', (holder.getAttribute('style') || '')
         + ';padding:22px 16px;text-align:center');
@@ -2178,6 +2183,69 @@ function cmAnnounce(fresh) {
   setTimeout(() => clearInterval(t), 90000);
 }
 
+/* ── 프로가 붙인 사진 ────────────────────────────────────────────────
+   스윙 캡처는 세로로 길다. 글 사이에 크게 놓으면 한 장이 화면을 다 먹어서
+   정작 프로가 쓴 글이 위로 밀려난다. 읽으러 온 화면이니 글이 먼저다.
+   작은 썸네일 줄로 눕히고, 크게 볼 사람만 눌러서 전체화면으로 연다. */
+function shotStrip(photos) {
+  const n = (photos || []).length;
+  if (!n) return '';
+  return '<div class="cmn-shots">'
+    + photos.map((u, i) => '<img class="cmn-img" src="' + u + '" alt="캡처 ' + (i + 1)
+        + '" data-shot="' + i + '">').join('')
+    + '<span class="cmn-more">눌러서 크게</span></div>';
+}
+
+/* 전체화면 한 장. 여러 장이면 좌우로 넘긴다 — 다시 목록으로 나갔다
+   들어오게 하면 읽던 자리를 잃는다. */
+function shotBig(photos, at) {
+  const list = photos || [];
+  if (!list.length) return;
+  let i = Math.max(0, Math.min(at || 0, list.length - 1));
+  const old = document.getElementById('shotbig');
+  if (old) old.remove();
+  const box = document.createElement('div');
+  box.id = 'shotbig';
+  const draw = () => {
+    box.innerHTML = '<img src="' + list[i] + '" alt="">'
+      + (list.length > 1
+          ? '<span class="sb-n" data-sb-n>' + (i + 1) + ' / ' + list.length
+            + ' · 좌우로 넘기세요</span>' : '')
+      + '<button class="sb-x" type="button" data-sb-x>닫기</button>';
+  };
+  draw();
+  const step = d => { i = (i + d + list.length) % list.length; draw(); };
+  box.addEventListener('click', ev => {
+    if (ev.target.closest('[data-sb-x]') || ev.target === box) return box.remove();
+    if (list.length > 1 && ev.target.tagName === 'IMG') {
+      // 왼쪽 3분의 1을 누르면 앞으로, 나머지는 뒤로
+      const r = ev.target.getBoundingClientRect();
+      step(ev.clientX - r.left < r.width / 3 ? -1 : 1);
+    }
+  });
+  let x0 = null;
+  box.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  box.addEventListener('touchend', e => {
+    if (x0 == null || list.length < 2) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    x0 = null;
+    if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1);
+  }, { passive: true });
+  document.body.appendChild(box);
+}
+window.__shotBig = shotBig;
+
+/* 썸네일 줄에 배선을 건다 — 누른 장부터 전체화면으로 */
+function wireShots(host, photos) {
+  if (!host) return;
+  host.querySelectorAll('[data-shot]').forEach(im => {
+    im.addEventListener('click', ev => {
+      ev.preventDefault(); ev.stopPropagation();
+      shotBig(photos, +im.dataset.shot);
+    });
+  });
+}
+
 /* 목록 한 줄 — 안 읽은 것은 테두리가 초록이고 NEW 가 붙는다 */
 function cmCard(c) {
   const n = (c.photos || []).length;
@@ -2215,11 +2283,10 @@ function cmSheet(id) {
   box.innerHTML = '<div class="cmn-card">'
     + '<span class="cmn-tag">프로 한마디</span>'
     + '<span class="cmn-t">이도형 프로가 한마디를 남겼어요</span>'
-    + show.map(c => '<div class="cmn-one">'
+    + show.map((c, i) => '<div class="cmn-one" data-cm-one="' + i + '">'
         + '<span class="cmn-meta">' + cmWhen(c.at) + ' · ' + safe(c.view) + ' 스윙</span>'
         + '<span class="cmn-body">' + safe(c.body) + '</span>'
-        + (c.photos || []).map(u => '<img class="cmn-img" src="' + u + '" alt="">').join('')
-        + '</div>').join('')
+        + shotStrip(c.photos) + '</div>').join('')
     + '<div class="cmn-foot">'
     + '<button class="cmn-btn" type="button" data-cm-ok>확인했어요</button>'
     + '<button class="cmn-alt" type="button" data-cm-list>받은 한마디 모두 보기</button>'
@@ -2237,10 +2304,13 @@ function cmSheet(id) {
     if (go2i) jump('2i'); else render();
   };
   box.addEventListener('click', ev => {
+    if (ev.target.closest('[data-shot]')) return;      // 사진은 크게 보기가 먼저 잡는다
     if (ev.target.closest('[data-cm-list]')) return shut(true);
     if (ev.target === box || ev.target.closest('[data-cm-ok]')) shut(false);
   });
   document.body.appendChild(box);
+  box.querySelectorAll('[data-cm-one]').forEach(one =>
+    wireShots(one, show[+one.dataset.cmOne].photos || []));
   requestAnimationFrame(() => box.classList.add('on'));
 }
 window.__cmSheet = cmSheet;
