@@ -5055,6 +5055,14 @@ const NS = (() => {
     return Object.fromEntries((r.data || []).map(p => [p.id, p.nickname]));
   }
 
+  /* 오늘 기록의 메모를 스윙에 붙인다 — 프로가 영상 옆에서 같이 본다 */
+  async function note(swingId, text) {
+    const c = client();
+    await ready();
+    const r = await c.from('swings').update({ note: text }).eq('id', swingId);
+    if (r.error) throw r.error;
+  }
+
   async function setName(nickname) {
     const c = client();
     const u = await ready();
@@ -5064,7 +5072,7 @@ const NS = (() => {
   }
 
   return {
-    ready, push, mine, all, comment, markRead, link, remove, people, setName,
+    ready, push, mine, all, comment, markRead, link, remove, people, setName, note,
     who: () => me,
     isPro: () => pro,
     down: () => failed,
@@ -5262,6 +5270,8 @@ const S = { route: '2a', hist: [], step: 1, picked: null, vids: 0, viaLoading: f
             cal: { y: new Date().getFullYear(), m: new Date().getMonth() },
             // 오늘 기록에 실제로 적어 넣은 것 — 대기 화면(pc2)이 이걸 그대로 보여준다
             log: { feel: null, mins: null, memo: '', at: null },
+            // 한마디 요청 — 언제 했고, 이번 달 몇 번 썼는지. 「6시간 전」 같은 건 전부 여기서 계산한다
+            cmAt: null, cmUsed: 0,
             // 구독 등급. 정기 피드백은 Elite 전용, 프로 한마디는 Basic 부터.
             // 베타는 Coaching 한 칸으로 고정한다 (BETA 참고) — 프로가 지금
             // 실제로 해줄 수 있는 게 「프로 한마디」뿐이다.
@@ -5655,6 +5665,87 @@ function planAccordion() {
   open(BETA.on ? BETA.plan : S.plan);
 }
 
+/* ── 내 사실 찍기 ──────────────────────────────────────────────────
+   화면 HTML 에는 설계 때 넣은 예시 인물의 기록이 곳곳에 박혀 있다.
+   원칙은 하나다 — 화면은 아무것도 기억하지 않는다. 내 상태(S.log · S.cmAt ·
+   보관함)가 사실의 전부고, 이 층이 매번 그 사실을 화면에 찍는다.
+   화면마다 지우러 다니면 반드시 하나를 빠뜨린다. */
+const quota = () => {
+  const cap = PLAN[S.plan].cm;
+  return { cap, left: Math.max(0, cap - S.cmUsed) };
+};
+const ago = t => {
+  if (!t) return '방금';
+  const h = Math.floor((Date.now() - t) / 36e5);
+  return h < 1 ? '방금' : h + '시간 전';
+};
+
+function applyMyFacts() {
+  // 오늘 카드(기록 저장 뒤) — 시간·느낌·클럽·메모가 예시 인물의 것이다
+  const done = root().querySelector('[data-today="done"]');
+  if (done) {
+    const put = (label, v) => {
+      const key = Array.from(done.querySelectorAll('span'))
+        .find(e => !e.childElementCount && e.textContent.trim() === label);
+      if (!key) return;
+      const cell = key.parentElement;
+      if (v) { if (key.nextElementSibling) key.nextElementSibling.textContent = v; }
+      else cell.remove();
+    };
+    put('시간', S.log.mins);
+    put('느낌', S.log.feel);
+    put('클럽', null);                      // 안 물어보는 항목이다
+    const q = Array.from(done.querySelectorAll('span, div'))
+      .find(e => !e.childElementCount && /^[“"].*[”"]$/.test(e.textContent.trim()));
+    if (q) {
+      if (S.log.memo && S.log.memo.trim()) q.textContent = '“' + S.log.memo.trim() + '”';
+      else q.remove();
+    }
+    const dur = Array.from(done.querySelectorAll('span'))
+      .find(e => !e.childElementCount && /^\d+:\d{2}$/.test(e.textContent.trim()));
+    if (dur) dur.remove();                  // 길이는 재보지 않으면 모른다
+  }
+
+  // 한마디 대기 카드 — 「6시간 전 요청 · 보통 9시간쯤 걸려요」가 박혀 있다
+  const wait = root().querySelector('[data-cm="wait"]');
+  if (wait) {
+    const line = Array.from(wait.querySelectorAll('span'))
+      .find(e => /전 요청|시간쯤 걸려요/.test(e.textContent) && e.children.length);
+    if (line) line.innerHTML = '<b style="font-weight:600;color:var(--ns-ink2);'
+      + 'font-family:var(--font-num)">' + ago(S.cmAt) + '</b> 요청 · 보통 하루 안에 와요';
+  }
+
+  // 남은 횟수 — 「4 / 6회 남음」 「5회 남음」 「n / n」 전부 상태에서 계산한다
+  if (can('cm')) {
+    const { cap, left } = quota();
+    els().filter(e => !e.childElementCount && /\d+\s*\/\s*\d+회 남음/.test(e.textContent.trim()))
+      .forEach(e => { e.textContent = left + ' / ' + cap + '회 남음'; });
+    els().filter(e => !e.childElementCount && /^\d+회 남음$/.test(e.textContent.trim()))
+      .forEach(e => { e.textContent = left + '회 남음'; });
+    els().filter(e => e.children.length === 1 && e.firstChild && e.firstChild.nodeType === 3
+        && /^\d+\s*$/.test(e.firstChild.textContent)
+        && /^\/\s*\d+(회)?$/.test(e.firstElementChild.textContent.trim()))
+      .forEach(e => {
+        const unit = /회/.test(e.firstElementChild.textContent) ? '회' : '';
+        e.firstChild.textContent = left + ' ';
+        e.firstElementChild.textContent = '/ ' + cap + unit;
+      });
+    // 남은 칸 게이지 (청동 = 남음)
+    root().querySelectorAll('[data-cm="wait"] span[style*="height:4px"]').forEach((seg, i, all) => {
+      if (all.length !== cap) return;       // 칸 수가 다르면 손대지 않는다
+      seg.style.background = i < left ? 'var(--ns-bronze)' : 'var(--ns-line)';
+    });
+  }
+}
+
+/* 오늘 기록의 메모를 서버의 오늘 스윙에 붙인다 — CRM 이 영상 옆에서 같이 본다 */
+function sendNote() {
+  if (!window.NS || !S.log.memo || !S.log.memo.trim()) return;
+  const today = new Date().setHours(0, 0, 0, 0);
+  window.__SWINGS.filter(r => r.remoteId && r.at >= today)
+    .forEach(r => NS.note(r.remoteId, S.log.memo.trim()).catch(() => {}));
+}
+
 /* 아직 한 개도 안 올린 계정. 스윙 탭이 빈 갤러리로 갈리는 것과 같은 기준이다. */
 const fresh = () => S.acct === 'new' && !S.mine.vids;
 
@@ -5950,23 +6041,9 @@ function applyFresh() {
   // 남은 횟수 — 새 계정은 아직 한 번도 안 썼으니 등급이 주는 만큼 그대로다.
   // 못 받는 등급이면 위(!can('cm'))에서 이미 줄째 지웠고, 여기는 받는 등급만 온다.
   if (can('cm')) {
-    const n = PLAN[S.plan].cm;
-    els().filter(e => !e.childElementCount && /회 남음$/.test(e.textContent.trim()))
-      .forEach(e => {
-        e.textContent = e.textContent
-          .replace(/\d+\s*\/\s*\d+회 남음/, n + ' / ' + n + '회 남음')
-          .replace(/(^|[^\/\d])\d+회 남음/, '$1' + n + '회 남음');
-      });
-    // 게이지도 0 에서 시작한다 — 쓴 적이 없다
+    // 게이지 — 쓴 만큼만 찬다
     const gauge = root().querySelector('[data-h-quota] span[style*="width:33%"]');
-    if (gauge) gauge.style.width = '0%';
-    // 「4 / 6」 처럼 분수로 적힌 자리도 같이 맞춘다
-    els().filter(e => /^\d+$/.test((e.firstChild && e.firstChild.textContent || '').trim())
-        && e.children.length === 1 && /^\/\s*\d+$/.test(e.firstElementChild.textContent.trim()))
-      .forEach(e => {
-        e.firstChild.textContent = n + ' ';
-        e.firstElementChild.textContent = '/ ' + n;
-      });
+    if (gauge) { const { cap } = quota(); gauge.style.width = Math.round(S.cmUsed / cap * 100) + '%'; }
   } else {
     // 못 받는 등급이면 홈의 횟수 카드 자체가 설 자리가 없다.
     // (잠금 띠는 이 카드 대신 밑의 한마디 예시 목록에 붙는다 — 거기가 제자리다)
@@ -6557,6 +6634,7 @@ function render() {
   layer('공통 배선', wireCommon);
   layer('화면 배선', WIRE[S.route] || (() => {}));
   layer('등급 표시', applyPlanMarks);
+  layer('내 사실', applyMyFacts);
   layer('잠금', applyLock);
   layer('터치 영역', applyHits);
   layer('범례', renderLegend);
@@ -7089,7 +7167,10 @@ const WIRE = {
     onText('수정', () => go('2c'));
 
     // 프로 한마디 카드
-    onBtn('프로 한마디 요청하기', () => { S.cm = 'wait'; toast('프로 한마디를 요청했어요'); go('pc2'); });
+    onBtn('프로 한마디 요청하기', () => {
+      S.cm = 'wait'; S.cmAt = Date.now(); S.cmUsed += 1;
+      toast('프로 한마디를 요청했어요'); go('pc2');
+    });
     const waitCard = root().querySelector('[data-cm="wait"]');
     waitCard ? tap(waitCard, () => go('pc2')) : miss('코멘트 대기 카드');
     const bubble = root().querySelector('[data-cm="arrived"]');
@@ -7225,10 +7306,12 @@ const WIRE = {
          이미 낸 것을 또 내게 된다. 돌아갈 자리는 연습기록이다. */
       S.hist = ['2b'];
       if (can('cm') && req && req.dataset.off !== '1') {
-        if (S.cm !== 'arrived') S.cm = 'wait';
+        if (S.cm !== 'arrived') { S.cm = 'wait'; S.cmAt = Date.now(); S.cmUsed += 1; }
+        sendNote();                      // 적은 메모를 서버의 오늘 스윙에 붙여 보낸다
         toast('기록을 저장하고 프로 한마디를 요청했어요');
         S.route = 'pc2'; return render();
       }
+      sendNote();
       if (S.cm !== 'arrived' && S.cm !== 'wait') S.cm = 'ask';
       toast('오늘 기록을 저장했어요');
       S.route = '2b'; render();
@@ -7340,16 +7423,7 @@ const WIRE = {
     const t1 = byText('오후 6:02'), t2 = byText('오후 6:03');
     t1.forEach(e => { e.textContent = upAt; });
     t2.forEach(e => { e.textContent = reqAt; });
-    // 「3 / 6회」 — 등급이 주는 만큼에서 이번 것 하나를 뺀다.
-    // 앞 숫자가 텍스트 노드고 뒤가 자식 span 이라 byText 로는 안 잡힌다.
-    const cap = PLAN[S.plan].cm;
-    els().filter(e => e.children.length === 1
-        && /^\/\s*\d+회$/.test(e.firstElementChild.textContent.trim())
-        && e.firstChild && e.firstChild.nodeType === 3)
-      .forEach(e => {
-        e.firstChild.textContent = Math.max(0, cap - 1) + ' ';
-        e.firstElementChild.textContent = '/ ' + cap + '회';
-      });
+    // 남은 횟수는 「내 사실」 층이 상태에서 계산해 찍는다
     // 영상 길이 「0:00 / 0:27」 — 아직 안 재생했으니 알 수 없다. 자리째 지운다.
     const dur = byText('0:00 / 0:27')[0];
     if (dur) dur.remove();
