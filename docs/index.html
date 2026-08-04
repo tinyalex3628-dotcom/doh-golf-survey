@@ -6366,20 +6366,20 @@ const P_FONT = "font-family:'Pretendard',-apple-system,sans-serif;";
 /* 머리말 · 제목 · (본문) · 버튼. 본문은 없으면 자리도 안 만든다 —
    빈 칸을 남기면 제목과 버튼 사이가 뜬다. */
 const heroHTML = (kick, title, body, cta) =>
-    '<div style="flex:none;padding:2px 0 14px"><span style="' + P_FONT + 'font-size:12px;'
+    '<div style="flex:none;padding:2px 0 10px"><span style="' + P_FONT + 'font-size:11.5px;'
   + 'font-weight:700;letter-spacing:-.01em;color:var(--ns-green2)">' + kick + '</span></div>'
-  + '<div style="flex:none;' + P_FONT + 'font-size:30px;font-weight:700;'
-  + 'letter-spacing:-.035em;color:var(--ns-ink-g);line-height:1.28;padding-bottom:'
-  + (body ? '14px' : '18px') + '">' + title + '</div>'
+  + '<div style="flex:none;' + P_FONT + 'font-size:23px;font-weight:700;'
+  + 'letter-spacing:-.03em;color:var(--ns-ink-g);line-height:1.34;padding-bottom:'
+  + (body ? '11px' : '15px') + '">' + title + '</div>'
   + (body
-      ? '<div style="flex:none;' + P_FONT + 'font-size:13px;font-weight:400;color:#4A503F;'
-        + 'line-height:1.75;padding-bottom:16px">' + body + '</div>'
+      ? '<div style="flex:none;' + P_FONT + 'font-size:12.5px;font-weight:400;color:#4A503F;'
+        + 'line-height:1.7;padding-bottom:14px">' + body + '</div>'
       : '')
   + '<div data-fresh-go style="flex:none;display:flex;align-items:center;justify-content:center;'
-  + 'gap:8px;min-height:54px;border-radius:16px;background:var(--ns-green);color:#fff;'
-  + 'box-shadow:0 10px 26px rgba(29,69,52,.18)">'
-  + '<span style="' + P_FONT + 'font-size:15px;font-weight:700;letter-spacing:-.02em">'
-  + cta + '</span><span style="font-size:15px">→</span></div>';
+  + 'gap:7px;min-height:46px;border-radius:13px;background:var(--ns-green);color:#fff;'
+  + 'box-shadow:0 7px 18px rgba(29,69,52,.15)">'
+  + '<span style="' + P_FONT + 'font-size:13.5px;font-weight:700;letter-spacing:-.02em">'
+  + cta + '</span><span style="font-size:13px">→</span></div>';
 
 const FRESH_HERO = heroHTML('시작하기', '첫 스윙을<br>올려보세요',
   '영상 하나면 됩니다. 올린 스윙은 날짜별로 쌓이고, 나중에 예전 스윙과 나란히 놓고 볼 수 있어요.',
@@ -6451,12 +6451,15 @@ function homeHero() {
     };
   }
 
-  // ④ 그 외 — 오늘 한 편을 부른다
+  /* ④ 그 외 — 오늘 한 편을 부른다.
+     「마지막 스윙에서 N일 지났어요」를 제목으로 크게 걸었더니 다그치는 말이
+     됐다. 안 온 걸 나무라는 첫 화면은 다시 열고 싶지 않다. 며칠 됐는지는
+     작은 머리말로 내리고(사실이니 남긴다), 제목은 쌓인 것을 보여준다. */
   const last = (window.__SWINGS || [])[0];
   const gap = last ? Math.floor((today - new Date(last.at).setHours(0, 0, 0, 0)) / 864e5) : 0;
   return {
-    html: heroHTML('내 기록',
-      gap > 0 ? '마지막 스윙에서<br>' + gap + '일 지났어요' : '스윙 ' + v + '개를<br>올렸어요',
+    html: heroHTML(gap > 0 ? '마지막 스윙 · ' + gap + '일 전' : '내 기록',
+      '스윙 ' + v + '개를<br>모았어요',
       '', '오늘 스윙 올리기'),
     go: () => go('2c'),
   };
