@@ -5803,10 +5803,30 @@ function toggleChips(labels, css) {
 }
 
 /* ── 라우팅 ─────────────────────────────────────────────────────── */
-function go(id) { S.hist.push(S.route); S.route = id; render(); }
+/* ── 스크롤 자리 기억 ────────────────────────────────────────────────
+   연습기록에서 달력을 한참 내려 며칠을 눌러 들어갔다 나오면, 다시 맨 위였다.
+   보던 자리를 손으로 찾아 내려가야 한다 — 종이라면 손가락을 끼워뒀을 자리다.
+
+   앞으로 갈 때는 맨 위에서 시작하고(새 화면이니까), 뒤로 올 때만 되돌린다.
+   탭을 눌러 다시 들어오는 것도 새로 들어오는 것이라 맨 위가 맞다. */
+const SCROLL = {};
+const scrollBody = () => {
+  const r = root();
+  return r && Array.from(r.querySelectorAll('div'))
+    .find(e => /overflow-y:\s*auto/.test(e.getAttribute('style') || ''));
+};
+function keepScroll() { const b = scrollBody(); if (b) SCROLL[S.route] = b.scrollTop; }
+function restoreScroll() {
+  const y = SCROLL[S.route];
+  if (!y) return;
+  const b = scrollBody();
+  if (b) b.scrollTop = y;
+}
+
+function go(id) { keepScroll(); S.hist.push(S.route); S.route = id; render(); }
 /* 결과지는 로딩 화면을 거쳐 들어간다 */
 function goResult(id) { S.viaLoading = id; go('r5'); }
-function jump(id) { S.hist = []; S.route = id; render(); }
+function jump(id) { keepScroll(); S.hist = []; S.route = id; render(); }
 /* 프로와 비교 진입 — 첫 진입 안내 팝업(13)은 딱 한 번만 뜬다.
    두 번째부터는 팝업 없는 허브(12)로 바로 들어간다.
    15번의 "프로와 똑같이 해야 하나요?" 는 사용자가 일부러 여는 FAQ라 이 규칙과 무관하다. */
@@ -5815,7 +5835,12 @@ function goCompare() { go(S.seenIntro ? '12' : '13'); }
    여기서 go('12') 로 넘기면 히스토리에 13 이 남아, 나중에 뒤로 나갈 때
    팝업이 길목에서 다시 튀어나온다. 그래서 밀어넣지 않고 갈아끼운다. */
 function replaceWith(id) { S.route = id; render(); }
-function back() { S.route = S.hist.length ? S.hist.pop() : '2a'; render(); }
+function back() {
+  keepScroll();
+  S.route = S.hist.length ? S.hist.pop() : '2a';
+  render();
+  restoreScroll();   // 뒤로 나올 때만 — 떠날 때 보던 자리 그대로
+}
 
 /* 알림 전용 작은 헬퍼 */
 function onSel(sel, fn) {
