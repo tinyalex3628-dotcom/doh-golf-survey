@@ -51,20 +51,25 @@ await p.click('[data-bgate-next]');
 await p.click('[data-bgate-close]');
 await p.waitForTimeout(900);
 
-/* 홈 히어로를 읽는다 — 머리말 · 제목 · 버튼 · 프로 카드가 있는지 */
+/* 홈 히어로를 읽는다.
+   히어로는 머리말 · 제목 · (본문) · 버튼이 전부여야 한다 — 프로 카드와
+   한 줄 통계는 걷어냈다. 같은 사실을 첫 화면에서 세 번 말하고 있었다. */
 const hero = () => p.evaluate(() => {
   const h = document.querySelector('[data-h-hero]');
   if (!h) return { none: true };
   const line = s => (h.querySelector(s) || {}).textContent || null;
   const txt = h.textContent.replace(/\s+/g, ' ').trim();
-  const stats = [...document.querySelectorAll('[data-h-stat]')]
-    .map(e => e.textContent.replace(/\s+/g, ' ').trim());
+  const kids = [...h.children];
+  const btn = h.querySelector('[data-fresh-go]');
   return {
-    머리말: (h.firstElementChild || {}).textContent || null,
-    제목: (h.children[1] || {}).textContent || null,
+    머리말: (kids[0] || {}).textContent || null,
+    제목: (kids[1] || {}).textContent || null,
+    본문: kids.length > 3 ? kids[2].textContent : null,
     버튼: line('[data-fresh-go]'),
-    프로카드: /이도형 프로/.test(txt),
-    통계: stats,
+    칸수: kids.length,                       // 3(본문 없음) 또는 4(본문 있음)
+    버튼이막내: kids[kids.length - 1] === btn,
+    프로카드: /KPGA/.test(txt),
+    통계줄: !!document.querySelector('[data-h-stats], [data-h-stat]'),
     남은횟수: (document.querySelector('[data-h-quota]') || {}).textContent
       ? document.querySelector('[data-h-quota]').textContent
           .replace(/\s+/g, ' ').match(/\d+회 남음/) : null,

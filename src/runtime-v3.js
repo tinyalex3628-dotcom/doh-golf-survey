@@ -1005,19 +1005,20 @@ function planTable() {
    박혀 있다. 잠금 띠를 얹어 '예시'라고 적어도, 저건 기능 소개가 아니라
    내 기록인 척하는 숫자다. 오늘 할 수 있는 일 하나로 갈아끼운다. */
 const P_FONT = "font-family:'Pretendard',-apple-system,sans-serif;";
-/* mid 는 본문과 버튼 사이에 끼우는 것(프로 카드)이다. 없으면 붙는 게 없다. */
-const heroHTML = (kick, title, body, cta, mid) =>
+/* 머리말 · 제목 · (본문) · 버튼. 본문은 없으면 자리도 안 만든다 —
+   빈 칸을 남기면 제목과 버튼 사이가 뜬다. */
+const heroHTML = (kick, title, body, cta) =>
     '<div style="flex:none;padding:2px 0 14px"><span style="' + P_FONT + 'font-size:12px;'
   + 'font-weight:700;letter-spacing:-.01em;color:var(--ns-green2)">' + kick + '</span></div>'
   + '<div style="flex:none;' + P_FONT + 'font-size:30px;font-weight:700;'
-  + 'letter-spacing:-.035em;color:var(--ns-ink-g);line-height:1.28;padding-bottom:14px">'
-  + title + '</div>'
-  + '<div style="flex:none;' + P_FONT + 'font-size:13px;font-weight:400;color:#4A503F;'
-  + 'line-height:1.75;padding-bottom:16px">' + body + '</div>'
-  + (mid || '')
+  + 'letter-spacing:-.035em;color:var(--ns-ink-g);line-height:1.28;padding-bottom:'
+  + (body ? '14px' : '18px') + '">' + title + '</div>'
+  + (body
+      ? '<div style="flex:none;' + P_FONT + 'font-size:13px;font-weight:400;color:#4A503F;'
+        + 'line-height:1.75;padding-bottom:16px">' + body + '</div>'
+      : '')
   + '<div data-fresh-go style="flex:none;display:flex;align-items:center;justify-content:center;'
   + 'gap:8px;min-height:54px;border-radius:16px;background:var(--ns-green);color:#fff;'
-  + (mid ? 'margin-top:12px;' : '')
   + 'box-shadow:0 10px 26px rgba(29,69,52,.18)">'
   + '<span style="' + P_FONT + 'font-size:15px;font-weight:700;letter-spacing:-.02em">'
   + cta + '</span><span style="font-size:15px">→</span></div>';
@@ -1026,34 +1027,6 @@ const FRESH_HERO = heroHTML('시작하기', '첫 스윙을<br>올려보세요',
   '영상 하나면 됩니다. 올린 스윙은 날짜별로 쌓이고, 나중에 예전 스윙과 나란히 놓고 볼 수 있어요.',
   '첫 스윙 올리기');
 
-/* 프로 카드 — 원래 히어로 안에 있던 것과 같은 모양이다(유리판 · 이니셜 · 이름).
-   Coaching 은 「이도형 프로가 직접 본다」를 사는 것이라, 홈 첫 화면에 프로가
-   있어야 산 것이 보인다. 원본은 정기 피드백 전용이라 재생시간이 붙어 있었다 —
-   한마디에는 그런 게 없으니 오른쪽은 상태 글씨로 바꾼다. */
-function proCard(right) {
-  return '<div style="flex:none;background:rgba(255,255,255,.68);'
-    + 'border:1px solid rgba(255,255,255,.85);border-radius:16px;padding:14px 15px;'
-    + 'box-shadow:0 10px 26px rgba(29,69,52,.10);backdrop-filter:blur(12px);'
-    + '-webkit-backdrop-filter:blur(12px)">'
-    + '<div style="display:flex;align-items:center;gap:11px">'
-    + '<span style="flex:none;width:36px;height:36px;border-radius:50%;'
-    + 'background:rgba(29,69,52,.09);color:var(--ns-green2);display:flex;'
-    + 'align-items:center;justify-content:center;' + P_FONT
-    + 'font-size:13px;font-weight:700">이</span>'
-    + '<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">'
-    + '<span style="' + P_FONT + 'font-size:13px;font-weight:700;letter-spacing:-.02em;'
-    + 'color:var(--ns-ink-g)">이도형 프로</span>'
-    + '<span style="' + P_FONT + 'font-size:11px;font-weight:400;color:var(--ns-sub-g)">'
-    + 'KPGA · 내 스윙을 직접 봐주는 프로</span></span>'
-    + (right ? '<span style="flex:none;' + P_FONT + 'font-size:11px;font-weight:700;'
-        + 'color:var(--ns-green2);background:rgba(29,69,52,.09);border-radius:8px;'
-        + 'padding:6px 10px;white-space:nowrap">' + right + '</span>' : '')
-    + '</div></div>';
-}
-
-/* 히어로 한 벌 = 머리말 · 제목 · 본문 · 프로 카드 · 버튼 */
-const heroPro = (kick, title, body, right, cta) =>
-  heroHTML(kick, title, body, cta, proCard(right));
 
 const cut = (t, n) => {
   const one = String(t).replace(/\s+/g, ' ').trim();
@@ -1068,7 +1041,14 @@ const cut = (t, n) => {
      ③ 답을 기다리는 중  → 요청한 것이 몇 개고 보통 얼마나 걸리는지
      ④ 그 외(올려둠)     → 오늘 할 일 하나. 오늘 올렸으면 한마디를 부르고,
                           아직이면 오늘 스윙을 올린다.
-   전에는 ①과 ④뿐이라, 몇 개를 올리든 홈이 계속 「스윙 올리기」 카드였다. */
+   전에는 ①과 ④뿐이라, 몇 개를 올리든 홈이 계속 「스윙 올리기」 카드였다.
+
+   머리말 · 제목 · 버튼이 전부다. 프로 카드(이도형 프로 · KPGA)와 남은
+   횟수를 되뇌는 설명 줄은 걷어냈다 — 바로 아래 「이번 달 프로 한마디 N회
+   남음」과 「최근 프로 한마디」가 같은 말을 이미 하고 있어서, 첫 화면이
+   같은 사실을 세 번 말하고 있었다.
+   본문은 남이 대신 못 하는 말이 있을 때만 쓴다 — 프로가 쓴 글(②)과
+   지금 무슨 일이 진행 중인지(③). */
 function homeHero() {
   const v = S.mine.vids;
   if (!v) return { html: FRESH_HERO, go: () => go('2c') };
@@ -1078,16 +1058,15 @@ function homeHero() {
   const waiting = window.__WAIT || [];
   const today = new Date().setHours(0, 0, 0, 0);
   const upToday = (window.__SWINGS || []).filter(r => r.at >= today).length;
-  const { left, cap } = quota();
+  const { left } = quota();
 
   // ② 한마디가 왔다 — 홈에서 제일 먼저 보여야 하는 것
   if (unread.length) {
     const c = unread[0];
     return {
-      html: heroPro('프로 한마디 · 도착',
+      html: heroHTML('프로 한마디 · 도착',
         '이도형 프로가<br>한마디를 남겼어요',
         '“' + cut(c.body, 68) + '”',
-        cmWhen(c.at),
         unread.length > 1 ? '한마디 ' + unread.length + '개 확인하기' : '한마디 확인하기'),
       go: () => cmSheet(),
     };
@@ -1096,10 +1075,10 @@ function homeHero() {
   // ③ 요청해두고 기다리는 중
   if (waiting.length) {
     return {
-      html: heroPro('프로 한마디 · 확인 중',
+      html: heroHTML('프로 한마디 · 확인 중',
         '이도형 프로가<br>스윙을 보고 있어요',
-        '스윙 ' + waiting.length + '개를 봐주는 중이에요. 보통 하루 안에 한마디가 도착해요.',
-        ago(waiting[0].at) + ' 요청',
+        /* 「에」를 붙이면 ago 가 '방금'일 때 「방금에」가 된다 */
+        ago(waiting[0].at) + ' 요청했어요 · 보통 하루 안에 도착해요',
         '올린 스윙 보기'),
       go: () => go(S.acct === 'new' ? 'ge' : '09'),
     };
@@ -1108,27 +1087,19 @@ function homeHero() {
   // ④ 오늘 올렸다 — 다음 걸음은 한마디를 부르는 것
   if (upToday && left) {
     return {
-      html: heroPro('오늘',
-        '오늘 스윙 ' + upToday + '개를<br>올렸어요',
-        '이도형 프로에게 보여주고 한마디를 받아보세요. 이번 달 ' + left + '회 남았어요.',
-        '이번 달 ' + left + '/' + cap + '회',
-        '프로 한마디 요청하기'),
+      html: heroHTML('오늘', '오늘 스윙 ' + upToday + '개를<br>올렸어요',
+        '', '프로 한마디 요청하기'),
       go: () => go('2b'),
     };
   }
 
-  // ④ 그 외 — 쌓인 기록을 보여주고 오늘 한 편을 부른다
+  // ④ 그 외 — 오늘 한 편을 부른다
   const last = (window.__SWINGS || [])[0];
   const gap = last ? Math.floor((today - new Date(last.at).setHours(0, 0, 0, 0)) / 864e5) : 0;
   return {
-    html: heroPro('내 기록',
+    html: heroHTML('내 기록',
       gap > 0 ? '마지막 스윙에서<br>' + gap + '일 지났어요' : '스윙 ' + v + '개를<br>올렸어요',
-      got.length
-        ? '지금까지 받은 한마디 ' + got.length + '개는 레슨기록에 모아뒀어요. '
-          + (left ? '이번 달 ' + left + '회 더 받을 수 있어요.' : '이번 달 횟수는 다 쓰셨어요.')
-        : '오늘 한 편을 올리면 이도형 프로가 직접 보고 한마디를 남겨드려요.',
-      '스윙 ' + v + '개',
-      '오늘 스윙 올리기'),
+      '', '오늘 스윙 올리기'),
     go: () => go('2c'),
   };
 }
@@ -1283,22 +1254,11 @@ function applyFresh() {
   const prm = root().querySelector('[data-pr-month]');
   if (prm) prm.textContent = (TODAY.getMonth() + 1) + '월 · ' + S.mine.days + '일';
 
-  /* 홈 한 줄 통계 — 「12일 연습 · 12개 영상 · 5일 연속」이 박혀 있다.
-     전에는 이 줄을 통째로 글 한 줄로 갈아끼웠는데, 그러면 올린 사람에게도
-     설계된 홈이 안 나온다. 세 칸은 그대로 두고 내 숫자만 넣는다 —
-     아직 한 개도 없을 때만 대신 한 줄을 적는다(0일·0개는 볼 이유가 없다). */
+  /* 홈 한 줄 통계 — 「12일 연습 · 12개 영상 · 5일 연속」이 박혀 있던 줄.
+     홈에서 걷어낸다. 첫 화면이 해야 할 말은 「지금 뭘 하면 되는지」 하나고,
+     쌓인 숫자는 연습기록과 마이가 맡는다(myStats() 가 거기에 그대로 간다). */
   const stats = root().querySelector('[data-h-stats]');
-  if (stats && !v) {
-    stats.innerHTML = '<span style="' + P_FONT
-      + 'font-size:12px;font-weight:600;color:var(--ns-sub-g)">'
-      + '기록은 첫 스윙을 올린 날부터 쌓입니다</span>';
-  } else if (stats) {
-    const NUM = { 연습: S.mine.days + '일', 영상: v + '개', 연속: S.mine.streak + '일' };
-    stats.querySelectorAll('[data-h-stat]').forEach(e => {
-      const n = NUM[e.dataset.hStat];
-      if (n && e.firstElementChild) e.firstElementChild.textContent = n;
-    });
-  }
+  if (stats) stats.remove();
 
   // 오늘 기록하기 — '최근 기록 · 7월 20일 · 🔥 3일 연속'
   root().querySelectorAll('[data-fresh-hide]').forEach(e => { e.style.display = 'none'; });
@@ -2519,20 +2479,16 @@ function pcReply() {
 /* ── 화면별 배선 ───────────────────────────────────────────────── */
 const WIRE = {
   '2a'() {
-    // 글래스 워시 홈 — 히어로(도착 줄 + 제목 + 프로 카드 + CTA)가 한 덩어리다.
+    /* 글래스 워시 홈. 히어로는 applyFresh 가 통째로 다시 쓴다 —
+       여기서 거는 배선은 원본 히어로(정기 피드백)의 것이라 그때 같이 지워진다. */
     onGroup({
-      '이도형 프로':     () => goResult('r1'),   // 프로 카드
+      '이도형 프로':     () => goResult('r1'),   // 원본 히어로의 프로 카드
       '최근 프로 한마디': () => go('2i'),
     });
     // 히어로 CTA — 온 리포트가 있으면 그걸 열고, 없으면 등급에 맞는 곳으로
     onBtn('피드백 확인하기', () => (can('fb') && S.unread) ? goResult('r1') : feedbackCTA());
     onCardOf('이번 달 프로 한마디', () => go('2i'));
-    // 한 줄 통계 — 셋이 서로 다른 곳을 가리킨다
-    const STAT = { '연습': '2b', '영상': '09', '연속': '2b' };
-    root().querySelectorAll('[data-h-stat]').forEach(e => {
-      const d = STAT[e.dataset.hStat];
-      d ? tap(e, () => go(d)) : miss('통계 ' + e.dataset.hStat);
-    });
+    // 한 줄 통계(연습 · 영상 · 연속)는 홈에서 걷어냈다 — applyFresh 가 지운다.
     // 도착 줄을 눌러도 리포트가 열린다
     onText('오늘 도착 · 정기 피드백 No.06', () => goResult('r1'));
     root().querySelectorAll('[data-tl-row]').forEach(r => tap(r, () => go('pc1')));
