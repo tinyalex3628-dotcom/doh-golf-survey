@@ -224,6 +224,13 @@ html.demo body{background:#EDEAE3}
 .swp-del{background:transparent;color:#E6A79B;border-color:rgba(230,167,155,.4)}
 .swp-v{width:100%;max-height:66vh;border-radius:14px;background:#000;display:block}
 .swp-foot{display:flex;align-items:center;justify-content:space-between}
+.swp-day{display:grid;grid-template-columns:1fr 1fr;gap:9px;max-height:66vh;overflow-y:auto}
+.swp-cell{position:relative;display:block;aspect-ratio:3/4;border-radius:12px;overflow:hidden;
+  background:#1D2420;border:1px solid rgba(255,255,255,.16);cursor:pointer}
+.swp-cell img{width:100%;height:100%;object-fit:cover;display:block}
+.swp-tag{position:absolute;left:7px;top:7px;padding:3px 7px;border-radius:6px;
+  background:rgba(20,24,22,.66);color:#fff;
+  font-family:Pretendard,-apple-system,sans-serif;font-size:10px;font-weight:600}
 .swp-sz{font-family:Pretendard,-apple-system,sans-serif;font-size:11.5px;color:rgba(243,239,232,.62)}
 
 /* 표식 — 55개 화면이 전부 같은 상태바(높이 42px)를 쓰고 가운데가 비어 있다.
@@ -5200,6 +5207,8 @@ const S = { route: '2a', hist: [], step: 1, picked: null, vids: 0, viaLoading: f
             // 이 계정이 어떤 사람인지, 그리고 실제로 쌓인 것 (ACCOUNT 참고).
             // 기본은 링크를 받고 방금 들어온 사람이다.
             acct: 'new', mine: { vids: 0, days: 0, streak: 0 },
+            // 달력이 보고 있는 달 — 처음엔 이번 달
+            cal: { y: new Date().getFullYear(), m: new Date().getMonth() },
             // 구독 등급. 정기 피드백은 Elite 전용, 프로 한마디는 Basic 부터.
             // 베타는 Coaching 한 칸으로 고정한다 (BETA 참고) — 프로가 지금
             // 실제로 해줄 수 있는 게 「프로 한마디」뿐이다.
@@ -5309,6 +5318,99 @@ const won = n => n.toLocaleString('ko-KR');
 /* 결제 대상. 아직 안 고른 채로 결제 화면에 오면 다음 칸을 기본으로 잡는다. */
 const buying = () => BETA.on ? BETA.plan : (S.buy || NEXT(S.plan));
 
+/* ── 날짜 ────────────────────────────────────────────────────────────
+   화면에는 2026년 7월 22일이 박혀 있다. 8·9월에 진짜로 쓸 앱이니
+   오늘은 진짜 오늘이어야 하고, 달력은 이번 달을 그려야 한다.
+   점이 찍히는 날은 내가 실제로 스윙을 올린 날뿐이다. */
+const TODAY = new Date();
+const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+const dkey = d => d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+const md = d => (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
+
+/* 내가 올린 날 → 그날의 스윙들 */
+function myDays() {
+  const map = {};
+  window.__SWINGS.forEach(r => {
+    const k = dkey(new Date(r.at));
+    (map[k] = map[k] || []).push(r);
+  });
+  return map;
+}
+
+/* 그날 올린 스윙을 펼쳐 보여준다. 없는 날은 들어갈 것이 없다. */
+function openDay(y, m, d) {
+  const list = myDays()[y + '-' + m + '-' + d] || [];
+  const when = new Date(y, m, d);
+  if (!list.length) {
+    return toast(when > TODAY ? '아직 오지 않은 날이에요'
+                              : md(when) + '엔 올린 스윙이 없어요');
+  }
+  const box = document.createElement('div');
+  box.id = 'swplay';
+  box.innerHTML =
+    '<div class="swp-card"><div class="swp-top"><span class="swp-nm">'
+    + md(when) + ' (' + DOW[when.getDay()] + ') · 스윙 ' + list.length + '개</span>'
+    + '<button class="swp-x" type="button" data-x>닫기</button></div>'
+    + '<div class="swp-day"></div></div>';
+  const wrap = box.querySelector('.swp-day');
+  list.forEach(r => {
+    const cell = document.createElement('span');
+    cell.className = 'swp-cell';
+    cell.innerHTML = (r.poster ? '<img src="' + r.poster + '" alt="">' : '')
+      + '<span class="swp-tag">' + r.view + '</span>';
+    cell.addEventListener('click', () => { box.remove(); playSwing(r); });
+    wrap.appendChild(cell);
+  });
+  box.addEventListener('click', ev => {
+    if (ev.target === box || ev.target.closest('[data-x]')) box.remove();
+  });
+  document.body.appendChild(box);
+}
+
+/* 달력을 이번 달로 다시 그린다. 원래 칸에는 2026년 7월이 통째로 박혀 있었다. */
+function paintCalendar() {
+  const grids = Array.from(root().querySelectorAll('div'))
+    .filter(e => /grid-template-columns:\s*repeat\(7/.test(e.getAttribute('style') || ''));
+  const grid = grids.find(g => g.querySelector('[data-day]'));
+  if (!grid) return;
+  const label = Array.from(root().querySelectorAll('span'))
+    .find(e => !e.childElementCount && /^\d{4}년 \d{1,2}월$/.test(e.textContent.trim()));
+  const y = S.cal.y, m = S.cal.m;
+  if (label) label.textContent = y + '년 ' + (m + 1) + '월';
+
+  const days = myDays();
+  const lead = new Date(y, m, 1).getDay();
+  const last = new Date(y, m + 1, 0).getDate();
+  const nowM = y === TODAY.getFullYear() && m === TODAY.getMonth();
+  let html = '';
+  for (let i = 0; i < lead; i++) html += '<span style="height:39px"></span>';
+  for (let d = 1; d <= last; d++) {
+    const has = !!days[y + '-' + m + '-' + d];
+    const today = nowM && d === TODAY.getDate();
+    const soon = new Date(y, m, d) > TODAY;
+    html += '<span data-day="' + d + '" style="display:flex;flex-direction:column;'
+      + 'align-items:center;gap:3px;padding:3px 0;cursor:pointer">'
+      + '<span style="width:26px;height:26px;border-radius:50%;display:flex;'
+      + 'align-items:center;justify-content:center;'
+      + 'font-family:Pretendard,-apple-system,sans-serif;font-size:12px;font-weight:'
+      + (today ? '700' : '500') + ';'
+      + (today ? 'background:var(--ns-ink);color:#fff'
+               : 'color:' + (soon ? 'var(--ns-ink3);opacity:.5' : 'var(--ns-ink2)'))
+      + '">' + d + '</span>'
+      + '<span style="width:5px;height:5px;border-radius:50%;background:'
+      + (has ? 'var(--ns-green)' : 'transparent') + '"></span></span>';
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('[data-day]').forEach(el =>
+    tap(el, () => openDay(y, m, +el.dataset.day)));
+
+  // ‹ › 로 달을 넘긴다
+  const step = n => { const t = new Date(S.cal.y, S.cal.m + n, 1);
+                      S.cal = { y: t.getFullYear(), m: t.getMonth() }; render(); };
+  onPath('m14 6-6 6 6 6', () => step(-1));
+  onPath('m10 6 6 6-6 6', () => step(1));
+}
+
 /* ── 올린 스윙 보기 ─────────────────────────────────────────────────
    보관함에 든 진짜 파일을 연다. 다 보고 닫을 때 주소를 돌려줘야 한다 —
    안 그러면 열 때마다 메모리에 영상이 한 편씩 쌓인다. */
@@ -5392,12 +5494,19 @@ function paintGallery(host) {
    베타에 못 여는 것은 감추지 않는다. 무엇이 생길지는 보여야 기다린다.
    흐리게 두고 부제를 「베타 이후」로 바꾼 다음, 눌러도 안 들어가게 막는다.
    직접 분석은 그대로 연다 — 진짜 엔진이 붙어 있어 지금도 돌아간다. */
-const TOOL_GO = { ai: () => go('04'), draw: () => go('08'), cmp: goSwCompare };
+const TOOL_GO = { ai: goAI, draw: () => go('08'), cmp: goSwCompare };
 /* 프로와 비교는 견줄 프로 스윙이 있어야 성립한다. 아직 한 편도 안 찍었다.
    빈 화면으로 들여보내느니 문 앞에서 이유를 말하는 게 낫다. */
 const NO_PRO = '비교할 프로 스윙 영상이 아직 없어요';
+const NO_AI  = 'AI 분석은 베타 이후에 열어드릴게요';
+/* AI 설문·자동진단으로 들어가는 문은 여럿이다 (홈 · 허브 · 도구 · 알림함).
+   카드마다 막으면 하나를 빠뜨린다 — 한 곳에서 잡는다. */
+function goAI() {
+  if (BETA.on) return toast(NO_AI);
+  go('04');
+}
 const TOOL_LATER = {
-  ai:  'AI 분석 \u2014 베타 이후에 열어드릴게요',
+  ai:  NO_AI,
   cmp: NO_PRO,
 };
 
@@ -5420,7 +5529,12 @@ function laterMark(el, msg, label) {
    없으면 조용히 지나간다 — 이 층은 55개 화면에서 다 돈다. */
 function laterEntry(title, sub, msg) {
   const card = cardUpTo(title, sub);
-  if (card) laterMark(card, msg);
+  if (!card) return;
+  /* 도구 줄을 통째로 잡으면 옆에 열려 있는 것(직접 분석)까지 같이 막힌다.
+     실제로 그랬다 — 「프로와 비교」를 찾다가 옆 배너의 「나란히 보기」까지
+     품는 조상을 잡았고, 그 바람에 줄 전체가 죽었다. */
+  if (card.querySelector('[data-swtool], [data-swcmp]')) return;
+  laterMark(card, msg);
 }
 
 function wireTools() {
@@ -5542,6 +5656,7 @@ function applyPlanMarks() {
   if (BETA.on) {
     laterEntry('프로와 비교', '나란히 보기', NO_PRO);                 // 홈 퀵메뉴
     laterEntry('프로와 비교하기', 'Next Swing 핵심 차별화', NO_PRO);   // 분석 허브(03)
+    laterEntry('AI 스윙분석 + 설문', '설문 → 스윙 등록 → 맞춤 결과', NO_AI);
   }
 
   // 정기 피드백 설명 — 잠금 띠가 「베타가 끝난 뒤에」라고 해놓고
@@ -5791,11 +5906,30 @@ function applyFresh() {
     if (cnt) cnt.remove();
   }
 
-  // 예시 한마디에 붙은 「6시간 전」은 내 것으로 읽힌다 — 예시라고 적는다
-  root().querySelectorAll('[data-tl-row]').forEach(r => {
-    const when = r.querySelector('span[style*="font-weight:700"], b');
-    if (when) when.textContent = '예시';
-  });
+  /* 예시 한마디를 걷어낸다.
+     8·9월에 진짜 한마디가 오기 시작하면, 예시가 섞여 있는 순간 어느 게 진짜인지
+     알 수 없다. 프로 한마디가 뭔지는 설명 화면(cx)이 맡는다. */
+  const tl = root().querySelectorAll('[data-tl-row]');
+  if (tl.length) {
+    const holder = tl[0].parentElement;
+    holder.setAttribute('style', (holder.getAttribute('style') || '')
+      + ';padding:22px 16px;text-align:center');
+    holder.innerHTML =
+      '<div style="display:flex;flex-direction:column;gap:6px">'
+      + '<span style="' + P_FONT + 'font-size:12.5px;font-weight:600;color:var(--ns-ink2)">'
+      + '아직 받은 한마디가 없어요</span>'
+      + '<span style="' + P_FONT + 'font-size:11.5px;line-height:1.6;color:var(--ns-ink3)">'
+      + '스윙을 올리면 이도형 프로가 직접 남겨드려요</span></div>';
+  }
+
+  // 레슨기록 · 정기 피드백 탭 — 베타엔 아직 없는 기능이라 예시 리포트를 걷어낸다
+  if (S.route === '2f' && !can('fb')) {
+    emptyBody('정기 피드백은 베타 이후에 열립니다',
+              '한 달치 스윙을 모아 프로가 리포트로 만들어드릴 거예요');
+  }
+  if (S.route === '2i') {
+    emptyBody('아직 받은 한마디가 없어요', '스윙을 올리면 이도형 프로가 직접 남겨드려요');
+  }
 
   // 한마디 상세의 「지난 한마디 · 전체 12개」 — 지난 것이 없다.
   // 예시 한마디를 눌러 들어올 수 있는 화면이라 여기까지 따라와야 한다.
@@ -5822,10 +5956,22 @@ function applyFresh() {
     if (readall) readall.style.display = 'none';
   }
 
+  /* 화면 곳곳에 2026년 7월 22일이 글자로 박혀 있다. 8·9월에 쓸 앱이다 — 진짜 오늘로 바꾼다. */
+  const day = TODAY.getDate(), mon = TODAY.getMonth() + 1, dw = DOW[TODAY.getDay()];
+  els().filter(e => !e.childElementCount).forEach(e => {
+    const t = e.textContent;
+    if (!/7월 2[02]일/.test(t)) return;
+    e.textContent = t
+      .replace(/7월 22일 \(수\)/g, mon + '월 ' + day + '일 (' + dw + ')')
+      .replace(/7월 22일 수요일/g, mon + '월 ' + day + '일 ' + dw + '요일')
+      .replace(/7월 22일/g, mon + '월 ' + day + '일')
+      .replace(/7월 20일/g, mon + '월 ' + day + '일');
+  });
+
   // 연습기록 머리의 「7월 · 12일」 — 이 계정이 실제로 연습한 날수
   // (이 층은 화면마다 도니까, 없는 화면에서 miss 를 쌓지 않게 있을 때만 손댄다)
   const prm = root().querySelector('[data-pr-month]');
-  if (prm) prm.textContent = '7월 · ' + S.mine.days + '일';
+  if (prm) prm.textContent = (TODAY.getMonth() + 1) + '월 · ' + S.mine.days + '일';
 
   // 홈 — 12일 연습 · 12개 영상 · 5일 연속
   const stats = root().querySelector('[data-h-stats]');
@@ -6804,16 +6950,8 @@ const WIRE = {
     // 영상 썸네일 → 실제 엔진
     root().querySelectorAll('[style*="linear-gradient"]').forEach(v => tap(v, () => go('sw')));
 
-    // 달력: 오늘은 위에서, 기록 있는 지난 날은 그날 하루로, 없는 날은 안내
-    root().querySelectorAll('[data-day]').forEach(el => {
-      const d = +el.getAttribute('data-day');
-      tap(el, () => {
-        if (d === __PRACTICE.today) return toast('오늘 기록은 위에서 볼 수 있어요');
-        if (!__PRACTICE.days[d]) return toast(d + '일은 아직 기록이 없는 날이에요');
-        S.selDay = d;
-        go('2d');
-      });
-    });
+    // 달력은 이번 달을 그리고, 점은 내가 올린 날에만 찍힌다
+    paintCalendar();
   },
 
   /* ── 그날 하루 (달력에서 진입) ──────────────────────────────────── */
@@ -7266,7 +7404,7 @@ const WIRE = {
   },
 
   'nt'() {
-    const DEST = { cm: 'pc1', reply: 'pc1', fb: () => goResult('r1'), ai: '07',
+    const DEST = { cm: 'pc1', reply: 'pc1', fb: () => goResult('r1'), ai: goAI,
                    streak: '2c', remind: '2c', pay: '18' };
     root().querySelectorAll('[data-nt-row]').forEach(r => tap(r, () => {
       markRead(r);
@@ -7328,7 +7466,14 @@ const WIRE = {
     onBtn('플랜 관리', () => go('18'));
     onCard('MY PLAN', 3, () => go('18'));
     onText('상세보기', () => go('2b'));
-    onGroup({ '연습일': () => go('2b'), '영상 업로드': () => go('09'), '한마디': () => go('pc1') });
+    /* 마이의 통계 세 칸 → 그 기록으로. 신규 계정은 남의 화면 대신 내 것으로 간다.
+       한마디는 아직 받은 게 없으면 열어봐야 남의 것뿐이다. */
+    onGroup({
+      '연습일': () => go('2b'),
+      '영상 업로드': () => go(S.acct === 'new' ? 'ge' : '09'),
+      '한마디': () => (S.acct === 'new' && S.cm !== 'arrived')
+        ? toast('아직 받은 한마디가 없어요') : go('pc1'),
+    });
     // 퀵메뉴 4칸은 grid 하나에 들어 있다. 층수로 올라가면 격자를 통째로 잡아
     // 첫 칸(골프 사전)만 살고 나머지 셋이 죽는다 → 칸의 '면'까지만 올라간다.
     onGroup({
@@ -7372,10 +7517,12 @@ const WIRE = {
   },
 
   '03'() {
-    onCard('설문 → 스윙 등록 → 맞춤 결과', 2, () => go('04'));
+    onCard('설문 → 스윙 등록 → 맞춤 결과', 2, goAI);
     onCard('영상 올리고 프레임 · 선 · 캡처', 2, () => go('08'));
     onCard('Next Swing 핵심 차별화', 2, goCompare);
-    onCard('과거 스윙 날짜별 조회', 2, () => go('2g'));
+    // 2g 는 남의 스윙이 2026년 7월로 박혀 있는 화면이다.
+    // 신규 계정은 내가 올린 것이 그대로 있는 갤러리로 보낸다.
+    onCard('과거 스윙 날짜별 조회', 2, () => go(S.acct === 'new' ? 'ge' : '2g'));
   },
 
   '04'() { onBtn('설문 시작하기', () => { S.step = 1; S.survey = {}; S.vidPicked = false; go('05'); }); },
@@ -7575,7 +7722,8 @@ const WIRE = {
         toast(t + ' 영상을 올렸어요');
       });
     }));
-    onText('스윙 갤러리에서 고르기', () => go('09'));
+    // 09 는 남의 스윙 12개가 박힌 화면이다 — 신규 계정은 내 갤러리로 보낸다
+    onText('스윙 갤러리에서 고르기', () => go(S.acct === 'new' ? 'ge' : '09'));
     onCard('단독 분석으로 이동', 1, () => go('sw'));
     root().querySelectorAll('[style*="linear-gradient"]').forEach(v => tap(v, () => go('sw')));
   },
