@@ -282,7 +282,10 @@ html.demo body{background:#EDEAE3}
 .cmn-img{width:52px;height:70px;object-fit:cover;border-radius:9px;display:block;
   border:1px solid var(--ns-line);cursor:pointer;background:#1D2420}
 .cmn-img:active{opacity:.75}
-.cmn-more{align-self:center;font-family:Pretendard,-apple-system,sans-serif;
+/* 힌트는 오른쪽 끝에 붙인다. 썸네일 바로 옆에 두면 카드 오른쪽 절반이
+   빈 채로 남고 글자만 그 한가운데 떠 있어 안 끝난 화면처럼 보인다. */
+.cmn-more{align-self:center;margin-left:auto;padding-left:10px;white-space:nowrap;
+  font-family:Pretendard,-apple-system,sans-serif;
   font-size:10.5px;font-weight:600;color:var(--ns-ink3)}
 
 /* 사진 크게 보기 — 어디서 눌렀든 이 한 겹이 뜬다 */

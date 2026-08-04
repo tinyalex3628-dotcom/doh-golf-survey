@@ -75,6 +75,25 @@ const hero = () => p.evaluate(() => {
           .replace(/\s+/g, ' ').match(/\d+회 남음/) : null,
   };
 });
+/* 홈 본문은 gap 이 없다 — 구역마다 자기 여백을 갖는다. 히어로 밑에 붙어
+   있던 한 줄 통계를 걷어내면서 그 줄이 만들던 틈까지 같이 사라졌던 적이
+   있다. 초록 버튼이 아래 카드에 딱 붙었다. 다시 그렇게 되지 않게 잰다. */
+const gaps = () => p.evaluate(() => {
+  const hero = document.querySelector('[data-h-hero]');
+  if (!hero) return { none: true };
+  const body = hero.parentElement;
+  const out = [];
+  let prev = null;
+  [...body.children].forEach(e => {
+    const r = e.getBoundingClientRect();
+    const cs = getComputedStyle(e);
+    // 안쪽 여백(padding-top)이 있으면 그것도 틈이다 — 둘을 합쳐 본다
+    if (prev != null) out.push(Math.round(r.top - prev) + parseFloat(cs.paddingTop || 0));
+    prev = r.bottom;
+  });
+  return { 구역간틈: out, 제일좁은틈: Math.min(...out) };
+});
+
 const day = n => new Date(Date.now() - n * 864e5).toISOString();
 
 // ① 아직 한 개도 안 올림
@@ -142,6 +161,7 @@ await p.evaluate(async () => {
 });
 await p.waitForTimeout(400);
 const s5 = await hero();
+const g5 = await gaps();
 await p.screenshot({ path: '_hh_record.png' });
 
 console.log('① 안 올렸을 때 ', JSON.stringify(s1));
@@ -150,6 +170,8 @@ console.log('③ 한마디 요청  ', JSON.stringify(s3), '· 버튼 찾음', as
             '· 서버로 간 요청', JSON.stringify(요청함));
 console.log('④ 한마디 도착  ', JSON.stringify(s4), '· 쓰는 도중', JSON.stringify(도중));
 console.log('⑤ 읽은 뒤·3일 전', JSON.stringify(s5));
+console.log('⑥ 홈 구역 여백  ', JSON.stringify(g5),
+            g5.제일좁은틈 >= 14 ? '· 괜찮음' : '· 너무 붙었다!');
 console.log('JS 오류', errs.length ? errs : '없음');
 console.log('빠진 배선', await p.evaluate(() => (window.__MISS || []).slice(0, 5)));
 

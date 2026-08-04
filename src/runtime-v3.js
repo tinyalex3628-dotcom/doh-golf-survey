@@ -1115,6 +1115,11 @@ function applyFresh() {
     hero.removeAttribute('data-lock');
     const h = homeHero();
     hero.innerHTML = h.html;
+    /* 홈 본문은 gap 이 없다 — 구역마다 자기 여백을 갖는 구조다. 히어로는
+       원래 여백이 0이고, 밑에 붙어 있던 한 줄 통계(위 20 · 아래 15)가
+       다음 카드와의 틈을 만들고 있었다. 그 줄을 걷어냈으니 히어로가 직접
+       갖는다 — 안 그러면 초록 버튼이 아래 카드에 딱 붙는다. */
+    hero.style.marginBottom = '20px';
     tap(hero.querySelector('[data-fresh-go]'), h.go);
   }
 
@@ -2153,7 +2158,7 @@ function shotStrip(photos) {
   return '<div class="cmn-shots">'
     + photos.map((u, i) => '<img class="cmn-img" src="' + u + '" alt="캡처 ' + (i + 1)
         + '" data-shot="' + i + '">').join('')
-    + '<span class="cmn-more">눌러서 크게</span></div>';
+    + '<span class="cmn-more">눌러서 크게 ›</span></div>';
 }
 
 /* 전체화면 한 장. 여러 장이면 좌우로 넘긴다 — 다시 목록으로 나갔다
