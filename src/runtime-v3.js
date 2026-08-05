@@ -2022,6 +2022,10 @@ function syncRemote(list) {
   window.__WAIT = list.filter(sw => sw.want_comment && !(sw.comments || []).length)
     .map(sw => ({ id: sw.id, view: sw.view, at: new Date(sw.created_at).getTime() }));
 
+  /* 프로가 답을 단 스윙 — 여는 화면의 「하나씩 보고 있어요」가 이걸 센다 */
+  window.__ANSWERED = {};
+  list.forEach(sw => { if ((sw.comments || []).length) window.__ANSWERED[sw.id] = true; });
+
   /* 이번 달 쓴 횟수 — 받은 한마디 + 아직 답을 기다리는 요청.
      전에는 「요청하기」를 누른 세션에서만 세서, 새로고침하면 다시 5회로 돌아갔다.
 
@@ -3767,6 +3771,10 @@ render();
 const needJoin = () => window.NS && !NS.down() && !NS.named();
 window.__afterGate = () => { if (needJoin()) joinSheet(true); };
 
+/* 첫 데이터가 다 왔다는 신호. 여는 화면이 이걸 기다렸다가 카드를 고른다. */
+window.__BOOTREADY = false;
+function bootDone() { window.__BOOTREADY = true; }
+
 if (window.NS) NS.ready().then(u => {
   if (!u) return;
   if (NS.nick()) { S.nick = NS.nick(); render(); }
@@ -3776,8 +3784,11 @@ if (window.NS) NS.ready().then(u => {
   const dev = /[?&]dev(=|&|$)/.test(location.search);
   if ((seen || dev) && needJoin() && !dev) joinSheet(true);
   resendAll();
-  loadComments();
-}).catch(() => {});
+  /* 여는 화면이 이 신호를 기다린다 — 스윙·한마디가 와 있어야 카드가 제대로
+     갈린다. 실패해도 신호는 준다. 안 주면 여는 화면이 끝까지 기다린다. */
+  loadComments().then(bootDone, bootDone);
+}).catch(bootDone);
+if (!window.NS) bootDone();
 
 window.__vaultSync().then(l => {
   if (!l.length) return;

@@ -23,6 +23,8 @@ vault = open(os.path.join(HERE, 'vault.js'), encoding='utf-8').read()
 sb_lib = open(os.path.join(HERE, 'supabase-umd.js'), encoding='utf-8').read()
 sb_app = open(os.path.join(HERE, 'sb.js'), encoding='utf-8').read()
 runtime = open(os.path.join(HERE, 'runtime-v3.js'), encoding='utf-8').read()
+# 여는 화면 — 오늘의 한 장. 런타임의 quota()·S 를 쓰므로 런타임 뒤에 실린다
+opening = open(os.path.join(HERE, 'opening.js'), encoding='utf-8').read()
 # 베타 안내 — 입구 한 장 + 상태바에 붙는 「베타」 표식
 beta = open(os.path.join(HERE, 'beta-gate.js'), encoding='utf-8').read()
 # 스윙분석 엔진 — 원본 3파일을 그대로 번들한 것 (코드 수정 없음, 별칭 경로만 상대경로로)
@@ -308,6 +310,72 @@ html.demo body{background:#EDEAE3}
   font-family:Pretendard,-apple-system,sans-serif;font-size:12px;font-weight:600;
   color:var(--ns-green)}
 
+/* ── 여는 화면 · 오늘의 한 장 ────────────────────────────────────────
+   머리는 애니메이션이 없다 — 열자마자 그냥 거기 있다. 브랜드가 움직이면
+   매번 「보여주는 것」이 되고, 매일 보면 그게 제일 지겹다.
+   가운데 한 장만 0.42초 뒤에 올라온다. */
+#openscr{position:fixed;inset:0;z-index:300;background:var(--ns-bg);opacity:1;
+  transition:opacity .3s ease-out}
+#openscr.out{opacity:0}
+.o-head{position:absolute;left:0;right:0;top:13%;display:flex;flex-direction:column;
+  align-items:center}
+.o-ns{width:46px;height:46px;border-radius:14px;background:var(--ns-green);color:#FFF;
+  display:flex;align-items:center;justify-content:center;font-family:Hahmlet,serif;
+  font-weight:600;font-size:15px;letter-spacing:.02em}
+.o-mk{margin-top:17px;font-family:Hahmlet,serif;font-weight:400;font-size:24px;
+  letter-spacing:.15em;text-indent:.15em;line-height:1.1;color:var(--ns-ink)}
+.o-ru{margin-top:13px;width:30px;height:1.5px;background:rgba(125,93,46,.34)}
+/* 슬로건 — 머리에서 유일하게 바뀌는 자리다. 요일마다 갈아 끼운다 */
+.o-slo{margin-top:12px;font-family:Pretendard,-apple-system,sans-serif;font-size:12px;
+  font-weight:500;letter-spacing:.005em;color:var(--ns-ink3)}
+.o-art{position:absolute;left:24px;right:24px;top:51%;translate:0 -50%;display:flex;
+  align-items:center;justify-content:center;min-height:74px}
+.o-ttl{position:absolute;left:26px;right:26px;top:62%;text-align:center;
+  font-family:Pretendard,-apple-system,sans-serif;font-size:14px;font-weight:700;
+  letter-spacing:-.015em;line-height:1.55;color:var(--ns-ink)}
+.o-sub{position:absolute;left:26px;right:26px;top:calc(62% + 25px);text-align:center;
+  font-family:Pretendard,-apple-system,sans-serif;font-size:11px;font-weight:500;
+  color:var(--ns-ink3);line-height:1.65}
+/* 오랜만에 온 사람 · 처음 온 사람은 제목을 키운다. 이 한 줄이 전부인 화면이라 */
+.o-ttl.bigT{font-size:19px;letter-spacing:-.025em}
+/* 그림이 없는 카드(환영)는 글만 가운데로 올린다 */
+#openscr.noart .o-ttl{top:47%}
+#openscr.noart .o-sub{top:calc(47% + 25px)}
+.o-spin{position:absolute;left:50%;bottom:88px;transform:translateX(-50%);
+  width:22px;height:22px}
+.o-spin svg{width:22px;height:22px;animation:ospin 950ms linear infinite}
+.o-spin .sb{fill:none;stroke:var(--ns-line);stroke-width:2}
+.o-spin .sf{fill:none;stroke:var(--ns-green);stroke-width:2;stroke-linecap:round;
+  stroke-dasharray:15 42}
+@keyframes ospin{to{transform:rotate(360deg)}}
+@keyframes oup{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+@keyframes ofade{from{opacity:0}to{opacity:1}}
+#openscr.on .o-art{animation:oup .62s cubic-bezier(.2,.7,.3,1) .42s both}
+#openscr.on .o-ttl{animation:oup .52s ease-out .56s both}
+#openscr.on .o-sub{animation:oup .52s ease-out .64s both}
+#openscr.on .o-spin{animation:ofade .5s ease-out .2s both}
+@media (prefers-reduced-motion:reduce){ .o-spin svg{animation:none} }
+/* 그림 부품 */
+.o-big{font-family:Pretendard,-apple-system,sans-serif;font-weight:600;
+  letter-spacing:-.045em;line-height:1;color:var(--ns-green);font-variant-numeric:tabular-nums}
+.o-dd{display:flex;gap:8px;align-items:center}
+.o-dd i{width:8px;height:8px;border-radius:50%;background:var(--ns-line);display:block}
+.o-dd i.on{background:var(--ns-green)}
+.o-bars{display:flex;gap:5px;align-items:flex-end;height:44px}
+.o-bars i{width:8px;border-radius:2px;background:var(--ns-green);display:block}
+.o-bars i.dim{background:var(--ns-line)}
+.o-gridd{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;width:124px}
+.o-gridd i{width:6px;height:6px;border-radius:50%;background:var(--ns-line);display:block}
+.o-gridd i.on{background:var(--ns-green)}
+.o-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:112px}
+.o-tiles i{aspect-ratio:1;border-radius:3px;background:var(--ns-sand);display:block}
+.o-tiles i.on{background:var(--ns-green)}
+/* 프로가 남긴 말 — 앱이 스윙을 평가하지 않는다. 프로가 쓴 말을 그대로 인용한다 */
+.o-qw{position:relative;display:block;max-width:264px;font-family:Hahmlet,serif;
+  font-weight:400;font-size:14px;line-height:1.8;color:var(--ns-ink);text-align:center}
+.o-qw .o-qm{display:block;font-size:24px;line-height:.7;color:var(--ns-bronze);
+  margin-bottom:7px}
+
 /* 올린 스윙 보기 — 진짜 영상을 여는 창 */
 #swplay{position:fixed;inset:0;z-index:210;display:flex;align-items:center;justify-content:center;
   background:rgba(12,15,14,.86);padding:18px}
@@ -400,6 +468,9 @@ window.__PRACTICE = {json.dumps(practice_data, ensure_ascii=False)};
 </script>
 <script>
 {runtime}
+</script>
+<script>
+{opening}
 </script>
 <script>
 /* 런타임이 첫 화면을 그린 뒤에 얹는다 — 표식이 붙을 프레임이 있어야 한다 */

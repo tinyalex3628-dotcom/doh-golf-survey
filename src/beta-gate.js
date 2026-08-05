@@ -138,7 +138,29 @@
     mark();
   }
 
+  /* ── 여는 순서 ───────────────────────────────────────────────────
+     ① 여는 화면(오늘의 한 장) ② 베타 안내 ③ 계정 만들기 ④ 앱.
+     여는 화면은 세션마다 한 번이다 — 탭을 오갈 때마다 뜨면 관문이 된다.
+     서버에서 가입일과 지난번 카드를 받아와야 제대로 갈리므로 조금 기다린다.
+     안 오면 그냥 연다 — 첫 방문으로 쳐도 카드는 나온다. */
   let seen = false;
   try { seen = sessionStorage.getItem(KEY) === '1'; } catch (e) {}
-  if (!DEV && !seen) open();
+  const gate = () => { if (!DEV && !seen) open(); };
+
+  let opened = false;
+  try { opened = sessionStorage.getItem('ns-open-seen') === '1'; } catch (e) {}
+
+  if (DEV || opened || !window.__openScreen) return gate();
+  try { sessionStorage.setItem('ns-open-seen', '1'); } catch (e) {}
+
+  let went = false;
+  const start = () => { if (went) return; went = true; window.__openScreen(gate); };
+  /* 스윙·한마디가 와 있어야 카드가 제대로 갈린다. 그 신호를 기다리되
+     1.2초까지만 — 데이터가 늦는다고 흰 화면을 계속 보여줄 수는 없다.
+     늦게 오면 그냥 응원 카드가 나온다. 틀린 말은 아니다. */
+  const t0 = Date.now();
+  (function wait() {
+    if (window.__BOOTREADY || Date.now() - t0 > 1200) return start();
+    setTimeout(wait, 60);
+  })();
 })();

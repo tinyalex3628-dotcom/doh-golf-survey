@@ -43,9 +43,17 @@ const NS = (() => {
         user = r.data.user;
       }
       me = user;
-      const p = await c.from('profiles').select('is_pro,nickname').eq('id', me.id).maybeSingle();
+      const p = await c.from('profiles')
+        .select('is_pro,nickname,created_at,open_mem').eq('id', me.id).maybeSingle();
       pro = !!(p.data && p.data.is_pro);
       nickname = (p.data && p.data.nickname) || null;
+      /* 여는 화면이 쓰는 두 가지 — 가입일(「함께한 지」)과 지난번에 보여준 카드.
+         기기에만 두면 폰을 바꿀 때 리셋돼서 스무 날 만에 온 사람이 「처음 온
+         사람」으로 보인다. */
+      if (p.data) {
+        window.__BORN = p.data.created_at ? new Date(p.data.created_at).getTime() : null;
+        window.__OPENMEM = p.data.open_mem || null;
+      }
       return me;
     } catch (e) {
       failed = true;
@@ -219,6 +227,15 @@ const NS = (() => {
     if (r.error) throw r.error;
   }
 
+  /* 여는 화면이 지난번에 뭘 보여줬는지 — 서버에 둬야 폰을 바꿔도 이어진다.
+     실패해도 조용히 넘어간다. 기기에도 같은 걸 적어두므로 화면은 그대로 돈다. */
+  async function saveOpen(mem) {
+    const c = client();
+    const u = await ready();
+    if (!c || !u) return;
+    await c.from('profiles').update({ open_mem: mem }).eq('id', u.id);
+  }
+
   async function setName(nickname) {
     const c = client();
     const u = await ready();
@@ -229,6 +246,7 @@ const NS = (() => {
 
   return {
     ready, push, mine, all, comment, markRead, link, remove, people, setName, note, want,
+    saveOpen,
     signUp, signIn,
     nick: () => nickname,
     named: () => !!(me && !me.is_anonymous),

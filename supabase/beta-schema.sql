@@ -18,6 +18,11 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 alter table public.profiles add column if not exists real_name text;
+-- 여는 화면(오늘의 한 장)이 지난번에 보여준 카드·갈래와 마지막 방문일.
+-- 기기에만 두면 폰을 바꿀 때 리셋돼서, 스무 날 만에 온 사람이 「처음 온 사람」이
+-- 된다. 「얼마 만에 왔나」가 카드를 고르는 기준이라 여기 있어야 한다.
+--   { "last": 1754300000000, "seen": ["cheer","quota"], "seenG": ["cheer","goal"] }
+alter table public.profiles add column if not exists open_mem jsonb;
 
 -- 계정이 생기면 프로필도 같이 생긴다 (익명 계정 포함 — 링크만 누르고 들어온 사람)
 create or replace function public.on_new_user() returns trigger

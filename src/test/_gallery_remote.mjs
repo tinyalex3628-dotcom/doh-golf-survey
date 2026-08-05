@@ -53,6 +53,11 @@ const vsrv = http.createServer((q, r) => {
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const ctx = await b.newContext({ viewport: { width: 430, height: 900 } });
 const p = await ctx.newPage();
+/* 여는 화면(오늘의 한 장)은 _opening.mjs 가 맡는다. 여기서는 건너뛴다 —
+   안 그러면 앱이 뜨기까지 3초가 더 걸려 이 시험의 타이밍이 전부 밀린다. */
+await p.addInitScript(() => {
+  try { sessionStorage.setItem('ns-open-seen', '1'); } catch (e) {}
+});
 const errs = [];
 p.on('pageerror', e => errs.push(String(e).slice(0, 180)));
 
