@@ -263,6 +263,15 @@ function paintCalendar() {
   grid.querySelectorAll('[data-day]').forEach(el =>
     tap(el, () => openDay(y, m, +el.dataset.day)));
 
+  /* 설계 때 달력은 주(週)마다 한 줄씩, 다섯 줄로 그려져 있었다. 우리는 한 칸에
+     한 달을 통째로 그리므로 나머지 네 줄이 그대로 남는다 — 지난달 날짜가
+     오늘 달력 밑에 붙어 있었고, 그만큼(약 130px) 화면도 잡아먹었다.
+     요일 머리줄(일~토)과 방금 그린 칸만 남기고 걷어낸다. */
+  grids.forEach(g => {
+    if (g === grid) return;
+    if (g.querySelector('[data-day]')) g.remove();
+  });
+
   // ‹ › 로 달을 넘긴다
   const step = n => { const t = new Date(S.cal.y, S.cal.m + n, 1);
                       S.cal = { y: t.getFullYear(), m: t.getMonth() }; render(); };
@@ -2694,9 +2703,63 @@ const WIRE = {
     // 오늘 카드
     const emptyBox = root().querySelector('[data-today="empty"] [style*="dashed"]');
     emptyBox ? tap(emptyBox, () => go('2c')) : miss('오늘 카드 업로드 박스');
-    onBtn('오늘 연습 기록하기', () => go('2c'));
+
+    /* ── 기록이 먼저 보이게 ────────────────────────────────────────
+       연습기록 화면인데 정작 기록(달력)이 화면 밖에 있었다. 「오늘」 카드가
+       288px 를 먹고 그 아래 두 카드까지 지나야 달력이 나와서, 열자마자
+       스크롤을 내려야 자기 기록을 볼 수 있었다.
+
+       ① 「오늘 연습 기록하기」 버튼을 뗀다. 바로 위 점선 상자가 같은 곳
+          (2c)으로 가고, 「오늘 스윙 올리기」라고 이미 적혀 있다. 한 카드에
+          같은 곳으로 가는 문이 둘일 이유가 없다.
+       ② 점선 상자를 한 줄로 눕힌다 — 세로로 쌓은 아이콘·제목·부제를
+          가로로 놓으면 135px 가 60px 대가 된다.
+       ③ 달력을 「오늘」 카드 바로 밑으로 올린다. 프로 한마디와 정기 피드백은
+          그 아래로 내린다 — 이 화면의 주인공은 기록이다. */
+    root().querySelectorAll('[data-today] span, [data-today] div').forEach(e => {
+      if (e.childElementCount || e.textContent.trim() !== '오늘 연습 기록하기') return;
+      const btn = e.closest('span, div');
+      if (btn) btn.remove();
+    });
     onBtn('기록 마저 쓰기', () => go('2c'));
     onText('수정', () => go('2c'));
+
+    // ② 점선 상자를 한 줄로 — 세로로 쌓인 아이콘·제목·부제를 가로로 눕힌다
+    if (emptyBox && !emptyBox.dataset.slim) {
+      emptyBox.dataset.slim = '1';
+      emptyBox.setAttribute('style', (emptyBox.getAttribute('style') || '')
+        .replace(/padding:[^;]*/, 'padding:13px 14px')
+        + ';flex-direction:row;align-items:center;justify-content:flex-start;gap:11px;text-align:left');
+      // 아이콘 동그라미는 줄이고, 글 두 줄은 한 덩어리로 묶어 옆에 세운다
+      const kids = Array.from(emptyBox.children);
+      const ico = kids.find(k => k.querySelector('svg'));
+      if (ico) {
+        ico.style.flex = 'none';
+        ico.style.width = '34px'; ico.style.height = '34px'; ico.style.margin = '0';
+      }
+      const words = kids.filter(k => k !== ico);
+      if (words.length) {
+        const col = document.createElement('span');
+        col.setAttribute('style', 'flex:1;min-width:0;display:flex;flex-direction:column;gap:2px');
+        words.forEach(w => { w.style.margin = '0'; col.appendChild(w); });
+        emptyBox.appendChild(col);
+      }
+    }
+
+    /* ③ 달력을 「오늘」 카드 바로 밑으로. 구역을 지우지 않고 자리만 바꾼다 —
+       프로 한마디도 정기 피드백도 이 화면에서 할 일이 있다. */
+    const body2b = Array.from(root().querySelectorAll('div')).find(e => {
+      const st = e.getAttribute('style') || '';
+      return /flex:\s*1/.test(st) && /overflow-y:\s*auto/.test(st);
+    });
+    const past = byText('지난 기록')[0];
+    if (body2b && past) {
+      let sec = past;
+      while (sec && sec.parentElement !== body2b) sec = sec.parentElement;
+      if (sec && body2b.children[1] && sec !== body2b.children[1]) {
+        body2b.insertBefore(sec, body2b.children[1]);
+      }
+    }
 
     // 프로 한마디 카드
     onBtn('프로 한마디 요청하기', () => {
