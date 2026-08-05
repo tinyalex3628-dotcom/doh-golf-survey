@@ -23,7 +23,9 @@ window.__SW = [{ id: 'rw-1', view: '정면', path: 'a', size: 10, note: null, wa
   created_at: new Date(Date.now() - 9 * 36e5).toISOString(),
   comments: [{ id: 'cm-1', body: '이렇게 하시면됩니다',
     photos: ['${shot('#2C3A30')}', '${shot('#3A2C30')}'],
-    created_at: new Date(Date.now() - 9 * 36e5).toISOString(), read_at: null }] }];
+    created_at: new Date(Date.now() - 9 * 36e5).toISOString(), read_at: null },
+   { id: 'cm-2', body: '한 번 더 보니 하체는 좋아졌어요',
+    photos: [], created_at: new Date(Date.now() - 2 * 36e5).toISOString(), read_at: null }] }];
 const NS = {
   ready: () => Promise.resolve({ id: 'u-1', is_anonymous: false }),
   isPro: () => false,
@@ -59,23 +61,31 @@ await p.click('[data-bgate-next]');
 await p.click('[data-bgate-close]');
 await p.waitForTimeout(1500);
 
-// ① 상세(pc1) — 글이 먼저, 사진은 작은 썸네일, 스크롤 없이 글이 보인다
+/* ① 상세(pc1) — 한 스윙에 달린 답이 오래된 것부터 세로로 쭉 선다(댓글줄).
+      사진은 댓글 오른쪽 위에 작게. 「눌러서 크게」 같은 글자는 없다. */
 await p.click((await p.$('[data-cm-bar]')) ? '[data-cm-bar]' : '[data-fresh-go]');
 await p.waitForTimeout(600);
 const detail = await p.evaluate(() => {
   const bub = document.querySelector('[data-pc-body]');
   if (!bub) return { none: true };
-  const body = [...bub.querySelectorAll('span')].find(e => /하시면됩니다/.test(e.textContent));
+  const rows = [...bub.querySelectorAll('[data-cm-row2]')];
+  const body = [...bub.querySelectorAll('span')].find(e =>
+    !e.childElementCount && /하시면됩니다/.test(e.textContent));
   const imgs = [...bub.querySelectorAll('.cmn-img')];
+  const nm = [...rows[0].querySelectorAll('span')].find(e =>
+    !e.childElementCount && e.textContent.trim() === '이도형 프로');
   const bb = body.getBoundingClientRect(), im = imgs[0].getBoundingClientRect();
   return {
     화면: S.route,
+    댓글수: rows.length,
+    순서: rows.map(r => r.textContent.replace(/\s+/g, ' ').trim().slice(-12)),
     글: body.textContent.trim(),
-    글이사진위: bb.bottom <= im.top + 1,
+    사진이오른쪽위: im.left > nm.getBoundingClientRect().right && im.top < bb.top,
     사진크기: Math.round(im.width) + '×' + Math.round(im.height),
     사진장수: imgs.length,
     사진나란히: Math.abs(imgs[0].getBoundingClientRect().top
                        - imgs[1].getBoundingClientRect().top) < 2,
+    눌러서크게글자: /눌러서 크게/.test(bub.textContent),
   };
 });
 await p.screenshot({ path: '_st_pc1.png' });
@@ -120,9 +130,12 @@ const home = await p.evaluate(() => {
   };
 });
 await p.screenshot({ path: '_st_home.png' });
+/* 홈은 최신 한마디를 보여준다 — 그게 사진 없는 답이면 누를 셀도 없다 */
 const cell = await p.$('[data-cm-row] .cmn-img, [data-cm-row] .cm-wall img');
 if (cell) { await cell.click(); await p.waitForTimeout(350); }
-const fromHome = await p.evaluate(() => ({ 크게보기: !!document.getElementById('shotbig') }));
+const fromHome = await p.evaluate(() => ({ 사진있음: !!document.querySelector(
+  '[data-cm-row] .cmn-img, [data-cm-row] .cm-wall img'),
+  크게보기: !!document.getElementById('shotbig') }));
 
 console.log('① 상세의 사진', JSON.stringify(detail));
 console.log('② 크게 보기  ', JSON.stringify(big));

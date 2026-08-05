@@ -2318,13 +2318,13 @@ function cmAnnounce(fresh) {
    스윙 캡처는 세로로 길다. 글 사이에 크게 놓으면 한 장이 화면을 다 먹어서
    정작 프로가 쓴 글이 위로 밀려난다. 읽으러 온 화면이니 글이 먼저다.
    작은 썸네일 줄로 눕히고, 크게 볼 사람만 눌러서 전체화면으로 연다. */
-function shotStrip(photos) {
+function shotStrip(photos, hint) {
   const n = (photos || []).length;
   if (!n) return '';
   return '<div class="cmn-shots">'
     + photos.map((u, i) => '<img class="cmn-img" src="' + u + '" alt="캡처 ' + (i + 1)
         + '" data-shot="' + i + '">').join('')
-    + '<span class="cmn-more">눌러서 크게 ›</span></div>';
+    + (hint === false ? '' : '<span class="cmn-more">눌러서 크게 ›</span>') + '</div>';
 }
 
 /* 전체화면 한 장. 여러 장이면 좌우로 넘긴다 — 다시 목록으로 나갔다
@@ -2724,28 +2724,42 @@ function applyPc1() {
   }
 
   // 프로 말풍선 — 예시 문단·비교 사진·조언 카드를 전부 진짜 글과 사진으로
+  /* ── 댓글줄 ────────────────────────────────────────────────────
+     한 스윙에 프로가 여러 번 답할 수 있다. 카드 한 장에 최신 것만 담으면
+     나머지는 갈 곳이 없다. 그래서 이 스윙에 달린 것을 오래된 것부터
+     세로로 쭉 세운다 — 게시물 밑 댓글줄과 같은 모양이다.
+     사진은 댓글 오른쪽 위에 작게. 눌러야 크게 열리는 건 그대로다. */
   const bubble = root().querySelector('[data-pc-body]');
   if (bubble) {
-    const at = new Date(c.at);
-    const gapH = c.swAt
-      ? Math.max(1, Math.round((at - new Date(c.swAt)) / 36e5)) : null;
-    bubble.innerHTML =
-      '<span style="display:flex;align-items:center;gap:9px;padding-bottom:9px">'
-      + '<span style="flex:none;width:30px;height:30px;border-radius:50%;'
-      + 'background:rgba(125,93,46,.14);color:var(--ns-bronze);display:flex;align-items:center;'
-      + 'justify-content:center;' + P_FONT + 'font-size:12px;font-weight:700">이</span>'
-      + '<span style="display:flex;flex-direction:column;gap:1px;min-width:0">'
-      + '<span style="' + P_FONT + 'font-size:12.5px;font-weight:700;color:var(--ns-ink)">'
-      + '이도형 프로</span>'
-      + '<span style="' + P_FONT + 'font-size:10.5px;color:var(--ns-ink3)">'
-      + md(at) + ' ' + hm(at) + (gapH ? ' · 답장까지 ' + gapH + '시간' : '') + '</span>'
-      + '</span></span>'
-      + '<span style="display:block;' + P_FONT + 'font-size:13px;line-height:1.85;'
-      + 'color:var(--ns-ink);white-space:pre-wrap;word-break:break-word">'
-      + safe(c.body) + '</span>'
-      + (c.photos && c.photos.length
-          ? '<div style="margin-top:10px">' + shotStrip(c.photos) + '</div>' : '');
-    wireShots(bubble, c.photos || []);
+    const thread = all.filter(x => x.swingId && x.swingId === c.swingId)
+      .sort((a2, b2) => new Date(a2.at) - new Date(b2.at));
+    const rows = thread.length ? thread : [c];
+    bubble.innerHTML = rows.map((r, i) => {
+      const at = new Date(r.at);
+      const n = (r.photos || []).length;
+      return '<div data-cm-row2="' + i + '" style="display:flex;flex-direction:column;gap:7px'
+        + (i ? ';margin-top:14px;padding-top:14px;border-top:1px solid var(--ns-line)' : '')
+        + '">'
+        // 머리줄 — 왼쪽에 누가·언제, 오른쪽에 사진
+        + '<span style="display:flex;align-items:flex-start;gap:9px">'
+        + '<span style="flex:none;width:30px;height:30px;border-radius:50%;'
+        + 'background:rgba(125,93,46,.14);color:var(--ns-bronze);display:flex;'
+        + 'align-items:center;justify-content:center;' + P_FONT
+        + 'font-size:12px;font-weight:700">이</span>'
+        + '<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">'
+        + '<span style="' + P_FONT + 'font-size:12.5px;font-weight:700;'
+        + 'color:var(--ns-ink)">이도형 프로</span>'
+        + '<span style="' + P_FONT + 'font-size:10.5px;color:var(--ns-ink3)">'
+        + md(at) + ' ' + hm(at) + '</span></span>'
+        + (n ? '<span style="flex:none">' + shotStrip(r.photos, false) + '</span>' : '')
+        + '</span>'
+        // 본문 — 아바타 폭만큼 들여쓴다
+        + '<span style="display:block;padding-left:39px;' + P_FONT + 'font-size:13px;'
+        + 'line-height:1.85;color:var(--ns-ink);white-space:pre-wrap;word-break:break-word">'
+        + safe(r.body) + '</span></div>';
+    }).join('');
+    bubble.querySelectorAll('[data-cm-row2]').forEach(row =>
+      wireShots(row, rows[+row.dataset.cmRow2].photos || []));
   }
 
   // 오른쪽 위 「4 / 6회」 — 진짜 남은 횟수로
