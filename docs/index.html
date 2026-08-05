@@ -6464,9 +6464,19 @@ function planTable() {
 const P_FONT = "font-family:'Pretendard',-apple-system,sans-serif;";
 /* 머리말 · 제목 · (본문) · 버튼. 본문은 없으면 자리도 안 만든다 —
    빈 칸을 남기면 제목과 버튼 사이가 뜬다. */
+/* 머리말 줄 오른쪽에 오늘 날짜를 붙인다.
+   쌓이는 걸 보는 앱이라 「오늘이 며칠인지」가 첫 화면에 있어야 한다.
+   왼쪽은 「마지막 스윙 · 1일 전」처럼 내 상태고, 오른쪽은 오늘이다 —
+   둘이 나란히 있어야 며칠이 비었는지가 눈으로 읽힌다. */
+const todayLabel = () => (TODAY.getMonth() + 1) + '월 ' + TODAY.getDate() + '일 '
+  + DOW[TODAY.getDay()] + '요일';
+
 const heroHTML = (kick, title, body, cta) =>
-    '<div style="flex:none;padding:2px 0 10px"><span style="' + P_FONT + 'font-size:11.5px;'
-  + 'font-weight:700;letter-spacing:-.01em;color:var(--ns-green2)">' + kick + '</span></div>'
+    '<div style="flex:none;display:flex;align-items:baseline;gap:10px;padding:2px 0 10px">'
+  + '<span style="flex:1;min-width:0;' + P_FONT + 'font-size:11.5px;'
+  + 'font-weight:700;letter-spacing:-.01em;color:var(--ns-green2)">' + kick + '</span>'
+  + '<span style="flex:none;' + P_FONT + 'font-size:11px;font-weight:500;'
+  + 'color:var(--ns-sub-g)">' + todayLabel() + '</span></div>'
   + '<div style="flex:none;' + P_FONT + 'font-size:23px;font-weight:700;'
   + 'letter-spacing:-.03em;color:var(--ns-ink-g);line-height:1.34;padding-bottom:'
   + (body ? '11px' : '15px') + '">' + title + '</div>'
@@ -6767,6 +6777,33 @@ function applyFresh() {
       .replace(/7월 22일/g, mon + '월 ' + day + '일')
       .replace(/7월 20일/g, mon + '월 ' + day + '일');
   });
+
+  /* 날짜만 갈아끼우고 요일은 안 고쳐서 「8월 5일 (월)」 같은 게 남았다.
+     8월 5일은 수요일이다. 날짜를 도와주는 앱이 요일을 틀리면 다른 숫자도
+     못 믿는다 — 화면에 남은 「N월 N일 (요일)」의 요일을 전부 다시 센다. */
+  els().filter(e => !e.childElementCount && /\d+월 \d+일\s*\([월화수목금토일]\)/.test(e.textContent))
+    .forEach(e => {
+      e.textContent = e.textContent.replace(/(\d+)월 (\d+)일(\s*)\([월화수목금토일]\)/g,
+        (_, m, d, sp) => {
+          const dt = new Date(TODAY.getFullYear(), +m - 1, +d);
+          return m + '월 ' + d + '일' + sp + '(' + DOW[dt.getDay()] + ')';
+        });
+    });
+
+  /* 「이번 달」이 몇 월인지는 아무 데도 안 적혀 있었다.
+     이 앱은 쌓이는 걸 보는 앱이라 지금이 몇 월인지가 곧 맥락이다 —
+     「이번 달 프로 한마디 4회 남음」보다 「8월 프로 한마디 4회 남음」이
+     한 달이 지나가고 있다는 걸 알려준다.
+
+     이름표에만 붙인다. 「이번 달 프로 한마디를 다 썼어요」처럼 문장으로
+     끝나는 것은 그대로 둔다 — 「8월 프로 한마디를 다 썼어요」는 남의 달
+     이야기처럼 읽힌다. */
+  els().filter(e => !e.childElementCount && /^이번 달 /.test(e.textContent.trim())
+      && !/[요다까][.!?]?$/.test(e.textContent.trim())
+      && !/[.!?]/.test(e.textContent))
+    .forEach(e => {
+      e.textContent = e.textContent.replace(/^(\s*)이번 달 /, '$1' + mon + '월 ');
+    });
 
   // 연습기록 머리의 「7월 · 12일」 — 이 계정이 실제로 연습한 날수
   // (이 층은 화면마다 도니까, 없는 화면에서 miss 를 쌓지 않게 있을 때만 손댄다)

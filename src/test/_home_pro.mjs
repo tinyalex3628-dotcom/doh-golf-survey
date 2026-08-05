@@ -85,6 +85,14 @@ const look = () => p.evaluate(() => {
     구독타일: !!document.evaluate(
       "//span[normalize-space(text())='구독']", document, null, 9, null).singleNodeValue,
     구독안내남음: document.body.innerText.includes('구독 안내'),
+    // 「이번 달」이 몇 월인지 — 쌓이는 걸 보는 앱이라 달 이름이 있어야 한다
+    오늘날짜: (document.querySelector('[data-h-hero]') || { textContent: '' })
+      .textContent.match(/\d+월 \d+일 [월화수목금토일]요일/)?.[0] || null,
+    횟수카드: (() => {
+      const q = document.querySelector('[data-h-quota]');
+      return q ? q.textContent.replace(/\s+/g, ' ').trim().slice(0, 24) : null;
+    })(),
+    이번달남음: document.body.innerText.includes('이번 달'),
   };
 });
 
