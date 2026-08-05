@@ -6493,7 +6493,7 @@ const cut = (t, n) => {
    지금 무슨 일이 진행 중인지(③). */
 function homeHero() {
   const v = S.mine.vids;
-  if (!v) return { html: FRESH_HERO, go: () => go('2c') };
+  if (!v) return { html: FRESH_HERO, go: () => go('2c'), kind: 'fresh' };
 
   const got = window.__COMMENTS || [];
   const unread = got.filter(c => !c.read);
@@ -6511,6 +6511,7 @@ function homeHero() {
         '“' + cut(c.body, 68) + '”',
         unread.length > 1 ? '한마디 ' + unread.length + '개 확인하기' : '한마디 확인하기'),
       go: () => cmSheet(),
+      kind: 'arrived',
     };
   }
 
@@ -6523,6 +6524,7 @@ function homeHero() {
         ago(waiting[0].at) + ' 요청했어요 · 보통 하루 안에 도착해요',
         '올린 스윙 보기'),
       go: () => go(S.acct === 'new' ? 'ge' : '09'),
+      kind: 'waiting',
     };
   }
 
@@ -6532,20 +6534,26 @@ function homeHero() {
       html: heroHTML('오늘', '오늘 스윙 ' + upToday + '개를<br>올렸어요',
         '', '프로 한마디 요청하기'),
       go: () => go('2b'),
+      kind: 'today',
     };
   }
 
   /* ④ 그 외 — 오늘 한 편을 부른다.
      「마지막 스윙에서 N일 지났어요」를 제목으로 크게 걸었더니 다그치는 말이
      됐다. 안 온 걸 나무라는 첫 화면은 다시 열고 싶지 않다. 며칠 됐는지는
-     작은 머리말로 내리고(사실이니 남긴다), 제목은 쌓인 것을 보여준다. */
+     작은 머리말로 내린다 — 사실이니 남기되 제목 자리는 주지 않는다.
+
+     제목은 「스윙 8개를 모았어요」였다. 사실이지만 읽고 나서 할 일이 안 남는다.
+     첫 화면은 알려주는 자리가 아니라 오늘 한 걸음을 정해주는 자리다.
+     개수는 바로 아래 기록 줄이 이미 세고 있다. */
   const last = (window.__SWINGS || [])[0];
   const gap = last ? Math.floor((today - new Date(last.at).setHours(0, 0, 0, 0)) / 864e5) : 0;
   return {
-    html: heroHTML(gap > 0 ? '마지막 스윙 · ' + gap + '일 전' : '내 기록',
-      '스윙 ' + v + '개를<br>모았어요',
+    html: heroHTML(gap > 0 ? '마지막 스윙 · ' + gap + '일 전' : '스윙 ' + v + '개',
+      '오늘도 스윙<br>올려볼까요?',
       '', '오늘 스윙 올리기'),
     go: () => go('2c'),
+    kind: 'idle',
   };
 }
 
@@ -6556,9 +6564,11 @@ function applyFresh() {
   // 홈 히어로 — 남의 리포트 대신 오늘 할 수 있는 하나, 그리고 내가 실제로 쌓은 것.
   // data-lock 을 뗄 수 있는 건 이 층(등급 표시)이 잠금 층보다 먼저 돌기 때문이다.
   const hero = root().querySelector('[data-h-hero]');
+  let heroKind = null;
   if (hero) {
     hero.removeAttribute('data-lock');
     const h = homeHero();
+    heroKind = h.kind;
     hero.innerHTML = h.html;
     /* 홈 본문은 gap 이 없다 — 구역마다 자기 여백을 갖는 구조다. 히어로는
        원래 여백이 0이고, 밑에 붙어 있던 한 줄 통계(위 20 · 아래 15)가
@@ -6574,6 +6584,34 @@ function applyFresh() {
     // 게이지 — 쓴 만큼만 찬다
     const gauge = root().querySelector('[data-h-quota] span[style*="width:33%"]');
     if (gauge) { const { cap } = quota(); gauge.style.width = Math.round(S.cmUsed / cap * 100) + '%'; }
+
+    /* 프로가 지금 나에게 무슨 일을 하고 있는지 한 줄.
+       이 앱이 파는 건 「이도형 프로가 봐준다」 하나다. 홈에 그게 안 보이면
+       영상 올려두는 앱과 구별이 안 된다. 횟수 카드가 이미 프로 이야기를
+       하고 있으니 그 칸 안에 붙인다 — 새 카드를 만들면 첫 화면이 또 길어진다.
+
+       히어로가 같은 말을 하고 있을 때(기다리는 중)는 여기서 뺀다.
+       한 화면에서 같은 사실을 두 번 말하지 않는다. */
+    const qbox = root().querySelector('[data-h-quota]');
+    if (qbox && !qbox.querySelector('[data-h-pro]')) {
+      const wait = (window.__WAIT || []).length;
+      const seenN = (window.__COMMENTS || []).length;
+      const line = (wait && heroKind !== 'waiting')
+        ? '이도형 프로가 스윙 ' + wait + '개를 보고 있어요'
+        : seenN ? '지금까지 이도형 프로가 ' + seenN + '번 봐줬어요'
+        // 히어로가 「보고 있어요」를 이미 말한 참이다. 그다음 일을 적는다.
+        : wait ? '확인이 끝나면 바로 알려드려요'
+        : '스윙을 올리면 이도형 프로가 직접 봐요';
+      const el = document.createElement('div');
+      el.setAttribute('data-h-pro', '');
+      el.setAttribute('style', 'display:flex;align-items:center;gap:6px;margin-top:11px;'
+        + 'padding-top:10px;border-top:1px solid var(--ns-line)');
+      el.innerHTML = '<span style="flex:none;width:5px;height:5px;border-radius:50%;'
+        + 'background:var(--ns-green)"></span>'
+        + '<span style="' + P_FONT + 'font-size:11px;font-weight:600;letter-spacing:-.01em;'
+        + 'color:var(--ns-green2)">' + line + '</span>';
+      qbox.appendChild(el);
+    }
   } else {
     // 못 받는 등급이면 홈의 횟수 카드 자체가 설 자리가 없다.
     // (잠금 띠는 이 카드 대신 밑의 한마디 예시 목록에 붙는다 — 거기가 제자리다)
@@ -6581,13 +6619,26 @@ function applyFresh() {
     if (quota) quota.remove();
   }
 
-  // 「최근 프로 한마디 — 이번 달 2회」 — 받은 만큼만 적는다. 없으면 머리말도 없다.
+  /* 홈 바로가기 — 「구독 안내」는 여기서 제일 덜 누르는 칸이다.
+     안내라는 말을 떼면 나머지 셋(스윙 분석 · 프로와 비교 · 골프 사전)과
+     길이가 맞아 눈이 한 번에 넷을 읽는다. */
+  if (S.route === '2a') {
+    const subTile = byText('구독 안내')[0];
+    if (subTile) subTile.textContent = '구독';
+  }
+
+  /* 「최근 프로 한마디 — 이번 달 2회」 — 받은 만큼만 적는다. 없으면 머리말도 없다.
+     「최근」은 언제인지가 흐리다. 안 읽은 게 있으면 그렇게 말한다 —
+     지금 눌러야 할 게 있다는 뜻이라 「최근」보다 훨씬 급한 말이다. */
   const cmHead = byText('최근 프로 한마디')[0];
   if (cmHead) {
-    const n = (window.__COMMENTS || []).length;
+    const all = window.__COMMENTS || [];
+    const nu = all.filter(c => !c.read).length;
     const cnt = cmHead.nextElementSibling;
-    if (n) { if (cnt) cnt.textContent = '이번 달 ' + n + '회'; }
-    else { cmHead.textContent = '프로 한마디'; if (cnt) cnt.remove(); }
+    if (all.length) {
+      cmHead.textContent = nu ? '새 프로 한마디' : '받은 프로 한마디';
+      if (cnt) cnt.textContent = nu ? nu + '개 안 읽음' : all.length + '회';
+    } else { cmHead.textContent = '프로 한마디'; if (cnt) cnt.remove(); }
   }
 
   /* 예시 한마디를 걷어낸다.
@@ -6601,9 +6652,15 @@ function applyFresh() {
       holder.innerHTML = got.slice(0, 3).map((c, i) =>
         '<div data-cm-row="' + c.id + '" style="padding:12px 2px'
         + (i ? ';border-top:1px solid var(--ns-line)' : '') + '">'
-        + '<span style="display:flex;align-items:baseline;gap:7px;padding-bottom:4px">'
-        + '<span style="' + P_FONT + 'font-size:11px;font-weight:700;color:var(--ns-bronze)">'
-        + cmWhen(c.at) + '</span>'
+        /* 안 읽은 것은 시간 대신 NEW. 「14시간 전」은 읽고 나서 판단해야
+           하지만 NEW 는 눈에 먼저 들어온다 — 지금 볼 것인지가 먼저다. */
+        + '<span style="display:flex;align-items:center;gap:7px;padding-bottom:4px">'
+        + (c.read
+            ? '<span style="' + P_FONT + 'font-size:11px;font-weight:700;'
+              + 'color:var(--ns-bronze)">' + cmWhen(c.at) + '</span>'
+            : '<span style="' + P_FONT + 'font-size:9px;font-weight:800;letter-spacing:.08em;'
+              + 'color:#fff;background:var(--ns-green);border-radius:5px;padding:2.5px 6px">'
+              + 'NEW</span>')
         + '<span style="' + P_FONT + 'font-size:11px;color:var(--ns-ink3)">이도형 프로 · '
         + c.view + '</span></span>'
         + '<span style="display:block;' + P_FONT + 'font-size:12.5px;line-height:1.7;'
