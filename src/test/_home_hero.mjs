@@ -175,6 +175,47 @@ console.log('③ 한마디 요청  ', JSON.stringify(s3), '· 버튼 찾음', as
             '· 서버로 간 요청', JSON.stringify(요청함));
 console.log('④ 한마디 도착  ', JSON.stringify(s4), '· 쓰는 도중', JSON.stringify(도중));
 console.log('⑤ 읽은 뒤·3일 전', JSON.stringify(s5));
+/* ⑦ 프로 한마디는 하루 한 번 — 오늘 이미 썼으면 버튼이 작아지고,
+      눌러도 내일 다시 하라고만 말한다 */
+await p.evaluate(async () => {
+  const now = new Date().toISOString();
+  // 오늘 올렸고 오늘 답도 받아 읽었다 — 오늘 몫을 다 쓴 날이다
+  window.__SW = [{ id: 'rw-9', view: '정면', path: 'a', size: 10, note: null,
+    want_comment: false, created_at: now,
+    comments: [{ id: 'c9', body: '좋아졌어요', photos: [],
+      created_at: now, read_at: now }] }];
+  await loadComments();
+  jump('2a');
+});
+await p.waitForTimeout(500);
+const s7 = await hero();
+const 작은버튼 = await p.evaluate(() => {
+  const b = document.querySelector('[data-fresh-go]');
+  const r = b.getBoundingClientRect();
+  return { 높이: Math.round(r.height), 초록: /var\(--ns-green\)/.test(b.getAttribute('style')) };
+});
+await p.click('[data-fresh-go]');
+await p.waitForTimeout(300);
+const 안내 = await p.evaluate(() => {
+  const t = document.getElementById('toastbox');
+  return t && t.classList.contains('show') ? t.textContent.trim() : null;
+});
+// 2b 의 요청 버튼도 같은 규칙으로 막힌다
+await p.evaluate(() => jump('2b'));
+await p.waitForTimeout(300);
+const 두번째요청 = await p.evaluate(async () => {
+  const btn = [...document.querySelectorAll('#stage *')].filter(e =>
+    !e.childElementCount && e.textContent.trim() === '프로 한마디 요청하기').pop();
+  if (!btn) return { 버튼없음: true };
+  btn.click();
+  await new Promise(r => setTimeout(r, 300));
+  const t = document.getElementById('toastbox');
+  return { 안내: t && t.classList.contains('show') ? t.textContent.trim() : null };
+});
+
+console.log('⑦ 오늘 몫 다 씀 ', JSON.stringify(s7));
+console.log('   작은 버튼    ', JSON.stringify(작은버튼), '· 눌렀을 때', JSON.stringify(안내));
+console.log('   2b 재요청    ', JSON.stringify(두번째요청));
 console.log('⑥ 홈 구역 여백  ', JSON.stringify(g5),
             g5.제일좁은틈 >= 14 ? '· 괜찮음' : '· 너무 붙었다!');
 console.log('JS 오류', errs.length ? errs : '없음');

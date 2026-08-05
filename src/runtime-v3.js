@@ -551,6 +551,13 @@ const quota = () => {
   const cap = PLAN[S.plan].cm;
   return { cap, left: Math.max(0, cap - S.cmUsed) };
 };
+/* 프로 한마디는 하루 한 번이다. 오늘 요청해뒀거나 오늘 답을 받았으면 쓴 것. */
+const cmToday = () => {
+  const t0 = new Date().setHours(0, 0, 0, 0);
+  return (window.__WAIT || []).some(w => w.at >= t0)
+      || (window.__COMMENTS || []).some(c => new Date(c.at).getTime() >= t0);
+};
+
 const ago = t => {
   if (!t) return '방금';
   const h = Math.floor((Date.now() - t) / 36e5);
@@ -1090,7 +1097,7 @@ const P_FONT = "font-family:'Pretendard',-apple-system,sans-serif;";
 const todayLabel = () => (TODAY.getMonth() + 1) + '월 ' + TODAY.getDate() + '일 '
   + DOW[TODAY.getDay()] + '요일';
 
-const heroHTML = (kick, title, body, cta) =>
+const heroHTML = (kick, title, body, cta, small) =>
     '<div style="flex:none;display:flex;align-items:baseline;gap:10px;padding:2px 0 10px">'
   + '<span style="flex:1;min-width:0;' + P_FONT + 'font-size:11.5px;'
   + 'font-weight:700;letter-spacing:-.01em;color:var(--ns-green2)">' + kick + '</span>'
@@ -1103,11 +1110,19 @@ const heroHTML = (kick, title, body, cta) =>
       ? '<div style="flex:none;' + P_FONT + 'font-size:12.5px;font-weight:400;color:#4A503F;'
         + 'line-height:1.7;padding-bottom:14px">' + body + '</div>'
       : '')
-  + '<div data-fresh-go style="flex:none;display:flex;align-items:center;justify-content:center;'
-  + 'gap:7px;min-height:46px;border-radius:13px;background:var(--ns-green);color:#fff;'
-  + 'box-shadow:0 7px 18px rgba(29,69,52,.15)">'
-  + '<span style="' + P_FONT + 'font-size:13.5px;font-weight:700;letter-spacing:-.02em">'
-  + cta + '</span><span style="font-size:13px">→</span></div>';
+  + (small
+      /* 오늘 몫을 다 쓴 날 — 누를 일이 없는 버튼을 크게 두지 않는다.
+         눌리면 눌리되, 내일 다시 하라고 말한다. */
+      ? '<div data-fresh-go style="flex:none;display:flex;align-items:center;'
+        + 'justify-content:center;gap:6px;min-height:36px;border-radius:10px;'
+        + 'background:transparent;border:1px solid var(--ns-line);color:var(--ns-ink3)">'
+        + '<span style="' + P_FONT + 'font-size:12px;font-weight:600;letter-spacing:-.01em">'
+        + cta + '</span></div>'
+      : '<div data-fresh-go style="flex:none;display:flex;align-items:center;justify-content:center;'
+        + 'gap:7px;min-height:46px;border-radius:13px;background:var(--ns-green);color:#fff;'
+        + 'box-shadow:0 7px 18px rgba(29,69,52,.15)">'
+        + '<span style="' + P_FONT + 'font-size:13.5px;font-weight:700;letter-spacing:-.02em">'
+        + cta + '</span><span style="font-size:13px">→</span></div>');
 
 const FRESH_HERO = heroHTML('시작하기', '첫 스윙을<br>올려보세요',
   '영상 하나면 됩니다. 올린 스윙은 날짜별로 쌓이고, 나중에 예전 스윙과 나란히 놓고 볼 수 있어요.',
@@ -1178,13 +1193,26 @@ function homeHero() {
     };
   }
 
-  // ④ 오늘 올렸다 — 다음 걸음은 한마디를 부르는 것
-  if (upToday && left) {
+  /* ④ 오늘 올렸다 — 다음 걸음은 한마디를 부르는 것.
+     「오늘 스윙 1개를 올렸어요」는 사실이지만 읽고 나서 할 일이 안 남는다.
+     개수는 밑의 기록 줄이 이미 센다. 제목은 다음 걸음을 말한다. */
+  if (upToday && left && !cmToday()) {
     return {
-      html: heroHTML('오늘', '오늘 스윙 ' + upToday + '개를<br>올렸어요',
+      html: heroHTML('오늘', '오늘 스윙,<br>프로에게 보여줄까요?',
         '', '프로 한마디 요청하기'),
       go: () => go('2b'),
       kind: 'today',
+    };
+  }
+
+  /* ④-2 오늘 몫을 썼다 — 하루 한 번이라 다시 누를 일이 없다.
+     버튼을 작게 내리고, 눌러도 내일 다시 하라고만 말한다. */
+  if (cmToday() && upToday) {
+    return {
+      html: heroHTML('오늘', '오늘 스윙,<br>프로에게 보냈어요',
+        '', '오늘 몫은 다 썼어요 · 내일 다시', true),
+      go: () => toast('프로 한마디는 하루 한 번이에요 · 내일 다시 요청할 수 있어요'),
+      kind: 'usedtoday',
     };
   }
 
@@ -1890,6 +1918,16 @@ function render() {
   if ((window.__COMMENTS || []).length) {
     S.unread = window.__COMMENTS.filter(c => !c.read).length;
     if (S.unread) S.stripOff = false;
+  }
+  /* 연습기록의 한마디 카드 상태를 사실에서 정한다. 전에는 2c(오늘 기록하기)를
+     거쳐 저장했을 때만 'ask' 로 켜져서, 홈에서 바로 올린 사람은 「영상을
+     올리면 받을 수 있어요」만 보고 요청 버튼이 아예 없는 화면을 만났다.
+     홈 히어로는 「프로 한마디 요청하기」라고 보내놓고서. */
+  {
+    const t0 = new Date().setHours(0, 0, 0, 0);
+    const upT = (window.__SWINGS || []).filter(r => r.at >= t0).length;
+    if ((window.__WAIT || []).length) S.cm = 'wait';
+    else if (S.cm !== 'arrived' && upT) S.cm = 'ask';
   }
   const tpl = document.querySelector('template[data-scr="' + S.route + '"]');
   if (swHost && swHost.parentElement) swHost.remove();   // 지우지 말고 떼어만 둔다
@@ -2959,6 +2997,8 @@ const WIRE = {
 
     // 프로 한마디 카드
     onBtn('프로 한마디 요청하기', () => {
+      // 하루 한 번 — 화면마다 막으면 하나를 빠뜨린다. 여기 한 곳에서 건다.
+      if (cmToday()) return toast('프로 한마디는 하루 한 번이에요 · 내일 다시 요청할 수 있어요');
       S.cm = 'wait'; S.cmAt = Date.now(); S.cmUsed += 1;
       /* 서버에도 표시를 남긴다 — 이게 빠져 있어서, 이 버튼으로 부른 요청은
          화면만 「기다리는 중」이 되고 프로 도착함에는 뜨지 않았다.
@@ -2971,12 +3011,17 @@ const WIRE = {
     /* 도착한 한마디 말풍선은 뗀다 — 바로 위 달력 요약 칸이 그날 한마디를
        이미 보여주고 누르면 상세로 간다. 같은 말이 한 화면에 두 번 있었다.
        (요청 · 기다리는 중 카드는 남긴다. 그건 요약 칸이 안 하는 말이다) */
-    const bubble = root().querySelector('[data-cm="arrived"]');
-    if (bubble) {
-      let sec = bubble;
+    /* 지울 것은 「도착한 한마디」일 때뿐이다. 구역을 통째로 지웠더니
+       요청 · 기다리는 중 카드까지 같이 사라져서, 홈이 「프로 한마디
+       요청하기」로 보내놓고 정작 여기엔 누를 것이 없었다. */
+    if (S.cm === 'arrived') {
+      const bubble = root().querySelector('[data-cm="arrived"]');
       const bd = scrollBody();
-      while (sec && bd && sec.parentElement !== bd) sec = sec.parentElement;
-      (sec && sec !== bd ? sec : bubble).remove();
+      if (bubble && bd) {
+        let sec = bubble;
+        while (sec && sec.parentElement !== bd) sec = sec.parentElement;
+        if (sec && sec !== bd) sec.remove();
+      }
     }
     onText('플랜 보기', () => go('18'));
 
