@@ -21,7 +21,11 @@ function inLoad(force) {
   NS.ready().then(u => {
     if (!u) throw new Error('서버에 연결하지 못했어요');
     IN.uid = u.id;
-    IN.pro = NS.isPro();
+    /* ready() 는 첫 결과를 캐시한다 — 자격은 서버에서 새로 읽어야
+       「다시 불러오기」가 진짜로 다시 불러온다 */
+    return NS.refresh ? NS.refresh() : NS.isPro();
+  }).then(pro => {
+    IN.pro = !!pro;
     return Promise.all([NS.all(), NS.people()]);
   }).then(([list, who]) => {
     IN.list = list; IN.who = who;
@@ -58,8 +62,12 @@ function inSetup() {
         이 화면을 새로고침하세요.</span>
       <code style="display:block;padding:14px 15px;border-radius:11px;background:var(--ns-ink);
         color:#DCE7DE;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.7;
-        word-break:break-all;user-select:all">update public.profiles set is_pro = true
-where id = '${esc(IN.uid || '')}';</code>
+        word-break:break-all;user-select:all">insert into public.profiles (id, is_pro)
+values ('${esc(IN.uid || '')}', true)
+on conflict (id) do update set is_pro = true;</code>
+      <span style="font-size:11.5px;color:var(--ns-ink3);line-height:1.7">
+        (update 문으로 하면 이 계정의 profiles 줄이 아직 없을 때 0줄에 적용되고
+        조용히 끝납니다 — 위 문장은 없으면 만들면서 켭니다)</span>
       <span style="font-size:11.5px;color:var(--ns-ink3);line-height:1.7">
         아이디로 가입한 계정이면 이 자격이 계정에 붙습니다 —
         다른 기기에서도 같은 아이디로 로그인하면 그대로 프로입니다.</span>

@@ -5290,6 +5290,20 @@ const NS = (() => {
     if (r.error) throw r.error;
   }
 
+  /* 프로 자격을 서버에서 다시 읽는다. ready() 는 첫 결과를 캐시하므로,
+     콘솔에서 is_pro 를 켠 「뒤에」는 이걸 불러야 화면이 알아챈다.
+     관리자 콘솔의 「다시 불러오기」가 이걸 안 부르고 ready() 만 다시 불러서,
+     SQL 을 실행해도 영영 프로가 안 되는 버그가 실제로 있었다. */
+  async function refresh() {
+    const c = client();
+    const u = await ready();
+    if (!c || !u) return false;
+    const p = await c.from('profiles').select('is_pro,nickname').eq('id', u.id).maybeSingle();
+    pro = !!(p.data && p.data.is_pro);
+    nickname = (p.data && p.data.nickname) || nickname;
+    return pro;
+  }
+
   /* 여는 화면이 지난번에 뭘 보여줬는지 — 서버에 둬야 폰을 바꿔도 이어진다.
      실패해도 조용히 넘어간다. 기기에도 같은 걸 적어두므로 화면은 그대로 돈다. */
   async function saveOpen(mem) {
@@ -5309,7 +5323,7 @@ const NS = (() => {
 
   return {
     ready, push, mine, all, comment, markRead, link, remove, people, setName, note, want,
-    saveOpen,
+    saveOpen, refresh,
     signUp, signIn,
     nick: () => nickname,
     named: () => !!(me && !me.is_anonymous),
