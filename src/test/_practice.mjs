@@ -127,6 +127,33 @@ const 기록있는날 = await day(오늘);
 const 빈날 = await day(어제);
 await p.screenshot({ path: '_2b_day.png' });
 
+/* 날짜를 바꿔도 보던 자리를 지키는가 — 누를 때마다 맨 위로 튀면
+   달력을 보려고 내려온 사람이 매번 다시 내려와야 한다 */
+const sb = () => p.evaluate(() => {
+  const b = [...document.querySelectorAll('#stage>div div')].find(e =>
+    /overflow-y:\s*auto/.test(e.getAttribute('style') || ''));
+  return b ? Math.round(b.scrollTop) : -1;
+});
+await p.evaluate(() => {
+  const b = [...document.querySelectorAll('#stage>div div')].find(e =>
+    /overflow-y:\s*auto/.test(e.getAttribute('style') || ''));
+  if (b) b.scrollTop = 260;
+});
+await p.waitForTimeout(150);
+const 내린뒤 = await sb();
+await p.click('[data-day="' + 어제 + '"]');
+await p.waitForTimeout(350);
+const 날짜바꾼뒤 = await sb();
+
+/* 프로 한마디 말풍선은 아래에 또 있으면 안 된다 — 요약 칸이 이미 보여준다 */
+const 중복 = await p.evaluate(() => ({
+  아래말풍선: !!document.querySelector('[data-cm="arrived"]'),
+  요약칸한마디: document.querySelectorAll('[data-dp-cm]').length,
+}));
+
+console.log('스크롤 유지    ', JSON.stringify({ 내린뒤, 날짜바꾼뒤,
+  지켜짐: Math.abs(내린뒤 - 날짜바꾼뒤) <= 2 }));
+console.log('아래 중복 카드 ', JSON.stringify(중복));
 // 요약 칸의 한마디를 누르면 상세(pc1)로
 await p.click('[data-day="' + 오늘 + '"]');
 await p.waitForTimeout(300);
@@ -144,5 +171,6 @@ console.log('한마디 눌러서 ', JSON.stringify(눌러서상세));
 console.log(v.스크롤없이보임 && v.달력칸수 === 1 && !v.기록버튼
   && String(기록있는날.검은동그라미) === String(오늘)
   && String(빈날.검은동그라미) === String(어제) && 빈날.없다고말함
+  && Math.abs(내린뒤 - 날짜바꾼뒤) <= 2 && !중복.아래말풍선
   ? '통과' : '실패!');
 await b.close(); srv.close();

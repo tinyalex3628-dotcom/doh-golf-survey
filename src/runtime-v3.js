@@ -200,8 +200,15 @@ function myDays() {
    달력 밑 요약 칸(dayPanel)이 그날 것으로 바뀐다. 미래는 못 고른다. */
 function selectDay(y, m, d) {
   if (new Date(y, m, d) > TODAY) return toast('아직 오지 않은 날이에요');
+  /* 화면을 통째로 다시 그리는 구조라, 날짜를 누를 때마다 스크롤이 맨 위로
+     튀었다. 달력을 보려고 내려온 사람이 누를 때마다 다시 올라가버린다.
+     보던 자리를 재서 그린 뒤에 되돌려 놓는다 (render 는 동기다). */
+  const before = scrollBody();
+  const top = before ? before.scrollTop : 0;
   S.cal.sel = { y: y, m: m, d: d };
   render();
+  const after = scrollBody();
+  if (after) after.scrollTop = top;
 }
 
 /* 그날의 프로 한마디 — 도착한 날 기준으로 모은다 */
@@ -2878,8 +2885,16 @@ const WIRE = {
     });
     const waitCard = root().querySelector('[data-cm="wait"]');
     waitCard ? tap(waitCard, () => go('pc2')) : miss('코멘트 대기 카드');
+    /* 도착한 한마디 말풍선은 뗀다 — 바로 위 달력 요약 칸이 그날 한마디를
+       이미 보여주고 누르면 상세로 간다. 같은 말이 한 화면에 두 번 있었다.
+       (요청 · 기다리는 중 카드는 남긴다. 그건 요약 칸이 안 하는 말이다) */
     const bubble = root().querySelector('[data-cm="arrived"]');
-    bubble ? tap(bubble.firstElementChild || bubble, () => go('pc1')) : miss('한마디 말풍선');
+    if (bubble) {
+      let sec = bubble;
+      const bd = scrollBody();
+      while (sec && bd && sec.parentElement !== bd) sec = sec.parentElement;
+      (sec && sec !== bd ? sec : bubble).remove();
+    }
     onText('플랜 보기', () => go('18'));
 
     // 정기 피드백 카드 — 제목 줄에서 카드 전체까지 올라가 통째로 배선한다
