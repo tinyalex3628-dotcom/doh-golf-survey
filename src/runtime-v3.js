@@ -2516,6 +2516,13 @@ function upPaint() {
   }
 
   if (u.done) {
+    /* 「정면 · 측면 모두 올릴 수 있어요」라고 안내해놓고, 하나 올리고 나면
+       더 올릴 입구가 없었다. 상자를 눌러도 열리긴 했지만 아무 데도 그렇게
+       안 적혀 있었다 — 자리가 남았으면 오른쪽에 입구를 적는다. */
+    const today0 = new Date().setHours(0, 0, 0, 0);
+    const cnt = Math.max(u.n,
+      (window.__SWINGS || []).filter(r => r.at >= today0).length);
+    const room = Math.max(0, UP_MAX - cnt);
     box.setAttribute('style', base + ';border-style:solid;border-color:#21402F;background:#F2F8F4');
     box.innerHTML =
       '<span style="display:flex;align-items:center;gap:9px;width:100%;min-width:0">'
@@ -2528,8 +2535,12 @@ function upPaint() {
       /* 파일명은 「Screen_Recording_20260702_201406_Instagram.mp4」 같은 것이 온다.
          길어서 상자를 뚫고 나가고, 읽어도 아무 도움이 안 된다.
          올린 사람이 알고 싶은 건 무엇을 몇 개 올렸는가다. */
-      + (u.n > 1 ? '정면 · 측면 ' + u.n + '개 올렸어요' : VIEWS[0] + ' 스윙 올렸어요')
-      + '</span></span>';
+      + (cnt > 1 ? '정면 · 측면 ' + cnt + '개 올렸어요' : VIEWS[0] + ' 스윙 올렸어요')
+      + '</span>'
+      + (room ? '<span style="flex:none;font-size:12px;font-weight:700;color:#21402F;'
+          + 'background:#fff;border:1px solid #21402F;border-radius:9px;padding:7px 11px;'
+          + 'white-space:nowrap">' + VIEWS[cnt] + ' 올리기 +</span>' : '')
+      + '</span>';
     return;
   }
 
