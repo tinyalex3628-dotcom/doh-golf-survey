@@ -728,6 +728,39 @@ on conflict (id) do update set is_pro = true;</code>
       <span data-in-reload style="align-self:flex-start;margin-top:4px;padding:10px 15px;
         border-radius:10px;background:var(--ns-green);color:#fff;font-size:12.5px;font-weight:700;
         cursor:pointer">다 했어요 · 다시 불러오기</span>
+
+      <div style="margin-top:22px;padding-top:20px;border-top:1px solid var(--ns-line);
+        display:flex;flex-direction:column;gap:11px">
+        <span style="font-size:14px;font-weight:700;color:var(--ns-ink)">
+          매번 다시 해야 한다면 — 프로 계정을 만드세요</span>
+        <span style="font-size:12.5px;color:var(--ns-ink3);line-height:1.8">
+          지금은 이 브라우저에만 있는 임시 계정이라, 저장소가 비워지면 새 계정이
+          생기고 위 자격도 같이 사라집니다(어제 켜둔 건 어제 그 계정에 붙어 있습니다).
+          아이디로 한 번 만들어 두면 그 계정에 자격이 붙어서, 다른 기기에서도
+          로그인만 하면 그대로 프로입니다.</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input data-in-id placeholder="아이디 (영문·숫자 4~20자)" autocomplete="username"
+            style="flex:1;min-width:170px;padding:11px 13px;border-radius:10px;
+            border:1px solid var(--ns-line);background:var(--ns-card);font-size:13px;
+            font-family:inherit;color:var(--ns-ink)">
+          <input data-in-pw type="password" placeholder="비밀번호 (6자 이상)"
+            autocomplete="current-password"
+            style="flex:1;min-width:170px;padding:11px 13px;border-radius:10px;
+            border:1px solid var(--ns-line);background:var(--ns-card);font-size:13px;
+            font-family:inherit;color:var(--ns-ink)">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span data-in-signin style="padding:10px 15px;border-radius:10px;
+            background:var(--ns-green);color:#fff;font-size:12.5px;font-weight:700;
+            cursor:pointer">로그인</span>
+          <span data-in-signup style="padding:10px 15px;border-radius:10px;
+            background:var(--ns-card);border:1px solid var(--ns-green);color:var(--ns-green);
+            font-size:12.5px;font-weight:700;cursor:pointer">이 계정으로 새로 만들기</span>
+        </div>
+        <span style="font-size:11.5px;color:var(--ns-ink3);line-height:1.7">
+          새로 만들면 지금 보이는 ID 그대로 계정이 됩니다 — 위 SQL 을 한 번 실행하면
+          그 뒤로는 로그인만 하면 됩니다.</span>
+      </div>
     </div></div>`;
 }
 
@@ -1157,6 +1190,24 @@ function inMount() {
 function inWire() {
   on('[data-in-row]', 'click', e => { IN.sel = e.currentTarget.dataset.inRow; render(); });
   on('[data-in-reload]', 'click', () => { IN.ready = false; inLoad(true); });
+
+  /* 프로 계정 — 익명 계정은 브라우저 저장소가 비워지면 사라진다.
+     아이디로 만들어 두면 자격이 그 계정에 붙어서 기기를 옮겨도 그대로다. */
+  const inCreds = () => {
+    const g = sel => (document.querySelector(sel) || {}).value || '';
+    return { id: g('[data-in-id]').trim(), pw: g('[data-in-pw]') };
+  };
+  const inAuth = (fn, okMsg) => {
+    const { id, pw } = inCreds();
+    if (!id || !pw) return toast('아이디와 비밀번호를 적어주세요');
+    fn(id, pw).then(() => {
+      toast(okMsg);
+      IN.ready = false; inLoad(true);
+    }).catch(e => toast((e && e.message) || '안 됐어요 · 다시 해주세요'));
+  };
+  on('[data-in-signin]', 'click', () => inAuth(NS.signIn, '로그인했어요'));
+  on('[data-in-signup]', 'click', () =>
+    inAuth((id, pw) => NS.signUp(id, pw, '이도형 프로', null), '계정을 만들었어요'));
   on('[data-in-txt]', 'input', e => { const s = inPick(); if (s) IN.draft[s.id] = e.target.value; });
   on('[data-in-shot-x]', 'click', e => {
     const s = inPick(); if (!s) return;
