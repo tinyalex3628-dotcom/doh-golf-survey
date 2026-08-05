@@ -5698,6 +5698,20 @@ function dayPanel(grid, y, m) {
     inner += '<span style="' + P_FONT + 'font-size:12px;color:var(--ns-ink3);'
       + 'padding:6px 0 2px">이 날의 기록이 없어요</span>';
   } else {
+    if (swings.length) {
+      inner += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        + '<span style="' + P_FONT + 'font-size:11.5px;font-weight:600;'
+        + 'color:var(--ns-ink2)">올린 스윙 ' + swings.length + '개</span>'
+        + swings.map((r, i) => '<span data-dp-sw="' + i + '" style="position:relative;'
+            + 'width:38px;height:50px;border-radius:8px;overflow:hidden;cursor:pointer;'
+            + 'background:' + (r.poster ? '#1D2420' : 'var(--ns-sand)')
+            + ';border:1px solid var(--ns-line)">'
+            + (r.poster ? '<img src="' + r.poster + '" alt="" style="width:100%;height:100%;'
+                + 'object-fit:cover;display:block">' : '')
+            + '</span>').join('')
+        + '</div>';
+    }
+    // 한마디는 스윙 줄 아래에 — 그날 무엇을 올렸는지가 먼저다
     cms.forEach(c => {
       inner += '<div data-dp-cm="' + c.id + '" style="display:flex;flex-direction:column;gap:4px;'
         + 'padding:10px 12px;border-radius:11px;background:rgba(125,93,46,.07);'
@@ -5714,19 +5728,6 @@ function dayPanel(grid, y, m) {
         + 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;'
         + 'overflow:hidden">' + safe(c.body) + '</span></div>';
     });
-    if (swings.length) {
-      inner += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-        + '<span style="' + P_FONT + 'font-size:11.5px;font-weight:600;'
-        + 'color:var(--ns-ink2)">올린 스윙 ' + swings.length + '개</span>'
-        + swings.map((r, i) => '<span data-dp-sw="' + i + '" style="position:relative;'
-            + 'width:38px;height:50px;border-radius:8px;overflow:hidden;cursor:pointer;'
-            + 'background:' + (r.poster ? '#1D2420' : 'var(--ns-sand)')
-            + ';border:1px solid var(--ns-line)">'
-            + (r.poster ? '<img src="' + r.poster + '" alt="" style="width:100%;height:100%;'
-                + 'object-fit:cover;display:block">' : '')
-            + '</span>').join('')
-        + '</div>';
-    }
   }
   box.innerHTML = inner;
   box.querySelectorAll('[data-dp-cm]').forEach(e =>
@@ -7541,15 +7542,21 @@ function upStart() {
 }
 
 function upTake(files) {
-  const over = files.length > UP_MAX;
-  const take = files.slice(0, UP_MAX);
+  /* 하루 두 개(정면·측면)가 상한이다. 한 번에 두 개 제한만 있으면
+     나눠 올리는 걸로 뚫린다 — 이미 올린 것까지 세서 남은 자리만 받는다. */
+  const today = new Date().setHours(0, 0, 0, 0);
+  const already = (window.__SWINGS || []).filter(r => r.at >= today).length;
+  const room = Math.max(0, UP_MAX - already);
+  if (!room) return toast('오늘은 두 개(정면·측면)까지 올릴 수 있어요');
+  const over = files.length > room;
+  const take = files.slice(0, room);
   if (take.some(f => f.size > VAULT.MAX)) {
     return toast('영상이 너무 커요 · 10초 안쪽으로 잘라서 올려주세요');
   }
   S.up = { p: 0, done: false, failed: false, n: take.length,
            names: take.map(f => f.name || '스윙.mp4') };
   upPaint();
-  if (over) toast('한 번에 두 개까지 올릴 수 있어요');
+  if (over) toast('오늘은 두 개(정면·측면)까지 올릴 수 있어요');
   else {
     // 40MB 짜리는 데이터로 1분 넘게 걸린다. 멈춘 줄 알기 전에 미리 말해준다.
     const mb = take.reduce((a, f) => a + f.size, 0) / 1024 / 1024;
@@ -7560,7 +7567,7 @@ function upTake(files) {
   const next = () => {
     if (i >= take.length) return upFinish();
     const file = take[i];
-    VAULT.add(file, VIEWS[i] || '정면').then(rec => {
+    VAULT.add(file, VIEWS[already + i] || '측면').then(rec => {
       sendUp(rec, file);            // 기기에 넣었으면 그다음 프로에게 보낸다
       i += 1;
       if (!S.up) return;                   // 그새 화면을 떠났으면 그린 것도 없다
@@ -8216,6 +8223,21 @@ function applyPc1() {
       wireShots(row, rows[+row.dataset.cmRow2].photos || []));
   }
 
+  /* ── 순서 ──────────────────────────────────────────────────────
+     답장을 확인하러 오는 화면이다. 질문(내가 남긴 기록)이 먼저, 답(프로
+     한마디)이 바로 그 밑에. 영상은 참고라 맨 뒤로 보낸다 — 위에 두면
+     답을 보기 전에 화면 반을 지나야 한다. */
+  const vidSec = vidBox && secOf(vidBox);
+  const thrSec = bubble && secOf(bubble);
+  if (body && vidSec && thrSec) {
+    const vh = document.createElement('div');
+    vh.setAttribute('style', 'margin:18px 0 9px;' + P_FONT
+      + 'font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--ns-ink3)');
+    vh.textContent = '내 스윙 영상';
+    body.appendChild(vh);
+    body.appendChild(vidSec);
+  }
+
   // 오른쪽 위 「4 / 6회」 — 진짜 남은 횟수로
   const { cap, left } = quota();
   const qb = byText('4 / 6회')[0];
@@ -8281,6 +8303,38 @@ const WIRE = {
     showVariant('today', S.today);
     showVariant('cm', S.cm);
 
+    /* 답장이 와 있으면 이 화면 맨 위에서 바로 말한다 — 안 읽었거나 오늘 온 것.
+       연습기록은 매일 여는 화면이라, 여기서 한 번에 상세로 들어가게 한다.
+       X 로 닫으면 이 세션에는 다시 안 뜬다. */
+    const today0 = new Date().setHours(0, 0, 0, 0);
+    const fresh2b = (window.__COMMENTS || []).filter(c =>
+      !c.read || new Date(c.at).getTime() >= today0);
+    const bd2b = scrollBody();
+    if (fresh2b.length && !window.__cm2bOff && bd2b
+        && !bd2b.querySelector('[data-cm2b]')) {
+      const bar = document.createElement('div');
+      bar.setAttribute('data-cm2b', '');
+      bar.setAttribute('style', 'flex:none;display:flex;align-items:center;gap:9px;'
+        + 'margin-bottom:12px;padding:13px 14px;border-radius:13px;'
+        + 'background:var(--ns-green);box-shadow:0 9px 22px -13px rgba(33,64,47,.8)');
+      bar.innerHTML =
+        '<span style="flex:none;width:7px;height:7px;border-radius:50%;background:#E8B85F"></span>'
+        + '<span style="flex:1;min-width:0;' + P_FONT + 'font-size:12.5px;font-weight:700;'
+        + 'color:#fff;letter-spacing:-.01em">프로에게 답장이 왔어요'
+        + (fresh2b.length > 1 ? ' · ' + fresh2b.length + '개' : '') + '</span>'
+        + '<span style="flex:none;' + P_FONT + 'font-size:11.5px;font-weight:700;'
+        + 'color:#fff">보기 ›</span>'
+        + '<span data-cm2b-x style="flex:none;padding:2px 4px;' + P_FONT
+        + 'font-size:13px;font-weight:700;color:rgba(255,255,255,.65)">✕</span>';
+      bd2b.insertBefore(bar, bd2b.firstChild);
+      bar.addEventListener('click', ev => {
+        if (ev.target.closest('[data-cm2b-x]')) {
+          window.__cm2bOff = true; bar.remove(); return;
+        }
+        goCm(fresh2b[0].id);
+      });
+    }
+
     // 오늘 카드
     const emptyBox = root().querySelector('[data-today="empty"] [style*="dashed"]');
     emptyBox ? tap(emptyBox, () => go('2c')) : miss('오늘 카드 업로드 박스');
@@ -8337,8 +8391,12 @@ const WIRE = {
     if (body2b && past) {
       let sec = past;
       while (sec && sec.parentElement !== body2b) sec = sec.parentElement;
-      if (sec && body2b.children[1] && sec !== body2b.children[1]) {
-        body2b.insertBefore(sec, body2b.children[1]);
+      /* 자리 기준은 「오늘」 카드다 — 몇 번째 칸이냐로 잡으면 위에 배너가
+         끼는 순간 달력이 오늘 카드 위로 올라가버린다. 실제로 그랬다. */
+      let todayCard = root().querySelector('[data-today]');
+      while (todayCard && todayCard.parentElement !== body2b) todayCard = todayCard.parentElement;
+      if (sec && todayCard && sec !== todayCard.nextElementSibling) {
+        body2b.insertBefore(sec, todayCard.nextElementSibling);
       }
     }
 

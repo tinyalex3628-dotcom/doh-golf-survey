@@ -127,6 +127,16 @@ const 기록있는날 = await day(오늘);
 const 빈날 = await day(어제);
 await p.screenshot({ path: '_2b_day.png' });
 
+/* 답장 배너 — 오늘 온 한마디가 있으니 맨 위에 떠야 하고, X 로 닫힌다 */
+const 배너 = await p.evaluate(() => {
+  const b = document.querySelector('[data-cm2b]');
+  return b ? b.textContent.replace(/\s+/g, ' ').trim() : null;
+});
+await p.click('[data-cm2b-x]');
+await p.waitForTimeout(250);
+const 배너닫힘 = await p.evaluate(() => !document.querySelector('[data-cm2b]'));
+console.log('답장 배너      ', JSON.stringify({ 배너, 배너닫힘 }));
+
 /* 날짜를 바꿔도 보던 자리를 지키는가 — 누를 때마다 맨 위로 튀면
    달력을 보려고 내려온 사람이 매번 다시 내려와야 한다 */
 const sb = () => p.evaluate(() => {
@@ -137,7 +147,7 @@ const sb = () => p.evaluate(() => {
 await p.evaluate(() => {
   const b = [...document.querySelectorAll('#stage>div div')].find(e =>
     /overflow-y:\s*auto/.test(e.getAttribute('style') || ''));
-  if (b) b.scrollTop = 260;
+  if (b) b.scrollTop = 150;
 });
 await p.waitForTimeout(150);
 const 내린뒤 = await sb();
