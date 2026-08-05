@@ -122,10 +122,61 @@ await set([
 const e = await look();
 await p.screenshot({ path: '/tmp/_pro_idle.png' });
 
+/* ⑤ 긴 글 + 사진 세 장 — 카드가 꽉 차야 한다.
+   프로가 쓴 글이 이 앱이 파는 것이라 카드에서 제일 큰 자리를 먹어야 한다. */
+const PIX = 'data:image/svg+xml;base64,' + Buffer.from(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="360" height="640">'
+  + '<rect width="360" height="640" fill="#2C3A30"/>'
+  + '<line x1="60" y1="180" x2="300" y2="240" stroke="#E4573D" stroke-width="8"/>'
+  + '<line x1="180" y1="80" x2="180" y2="560" stroke="#E4573D" stroke-width="8"/></svg>'
+).toString('base64');
+const LONG = '왼팔이 접히는 건 팔 힘 때문이 아니라 어깨 회전이 부족해서입니다.\n'
+  + '영상 0:07쯤 보시면 상체가 먼저 열리는 게 보여요. 한 번에 하나씩 갑니다.';
+await set([
+  sw('s1', { comments: [{ id: 'c2', body: LONG,
+    photos: [PIX, PIX, PIX], created_at: ago(14), read_at: null }] }),
+  sw('s2', { comments: [{ id: 'c3', body: '지난번보다 좋아졌어요.',
+    photos: [], created_at: ago(70), read_at: ago(60) }] }),
+]);
+const f = await p.evaluate(() => {
+  const row = document.querySelector('[data-cm-row]');
+  const bd = row && row.querySelector('[data-cm-body]');
+  const wall = row && row.querySelector('.cm-wall');
+  const op = row && row.querySelector('[data-cm-open]');
+  const all = document.querySelector('[data-cm-all]');
+  const cs = bd && getComputedStyle(bd);
+  const nav = document.querySelector('[data-nav], nav');
+  return {
+    카드높이: row ? Math.round(row.getBoundingClientRect().height) : null,
+    본문줄수: bd ? Math.round(bd.clientHeight / parseFloat(cs.lineHeight)) : null,
+    본문잘림: bd ? bd.scrollHeight > bd.clientHeight + 2 : null,
+    사진판: wall ? Math.round(wall.getBoundingClientRect().width) + '×'
+                 + Math.round(wall.getBoundingClientRect().height) : null,
+    보이는사진: wall ? wall.querySelectorAll('img').length : 0,
+    더배지: wall && wall.querySelector('.cm-wall-n')
+      ? wall.querySelector('.cm-wall-n').textContent : null,
+    액션: op ? op.textContent.trim() : null,
+    모두보기: all ? all.textContent.trim() : null,
+    설명문구남음: document.body.innerText.includes('눌러서 크게'),
+  };
+});
+await p.screenshot({ path: '/tmp/_pro_rich.png' });
+// 사진을 누르면 크게, 카드를 누르면 한마디
+await p.click('.cm-wall img');
+await p.waitForTimeout(400);
+const big = await p.evaluate(() => ({ 큰화면: !!document.getElementById('shotbig'),
+  시트안뜸: !document.getElementById('cmnew') }));
+await p.evaluate(() => { const x = document.getElementById('shotbig'); if (x) x.remove(); });
+await p.click('[data-cm-open]');
+await p.waitForTimeout(400);
+const sheet = await p.evaluate(() => ({ 시트: !!document.getElementById('cmnew') }));
+
 console.log('① 아무것도 없을 때', JSON.stringify(a, null, 0));
 console.log('② 답 기다리는 중  ', JSON.stringify(c, null, 0));
 console.log('③ 안 읽은 한마디  ', JSON.stringify(d, null, 0));
 console.log('④ 읽은 뒤        ', JSON.stringify(e, null, 0));
+console.log('⑤ 긴 글 + 사진 3장', JSON.stringify(f));
+console.log('   사진 누름', JSON.stringify(big), '· 카드 누름', JSON.stringify(sheet));
 console.log('JS 오류', errs.length ? errs : '없음');
 console.log('빠진 배선', await p.evaluate(() => (window.__MISS || []).slice(0, 4)));
 

@@ -280,6 +280,18 @@ html.demo body{background:#EDEAE3}
 /* 스윙 캡처는 세로로 길다. 크게 놓으면 한 장이 화면을 다 먹고 프로가 쓴 글이
    위로 밀려난다 — 읽으러 온 화면인데 사진부터 보게 된다. 작은 썸네일 줄로
    눕히고, 크게 보고 싶으면 눌러서 전체화면으로 연다. */
+/* 홈에 서는 한마디의 사진 — 영상에서 떠온 한 장면이다.
+   검은 판에 세워 한 장면처럼 보이게 한다. 스윙은 세로 영상이라
+   폭을 다 쓰게 두면 카드 하나가 화면을 통째로 먹는다 — 높이로 묶는다. */
+.cm-wall{position:relative;display:flex;align-items:center;justify-content:center;gap:6px;
+  height:200px;border-radius:12px;background:#1D2420;overflow:hidden}
+.cm-wall img{height:100%;width:auto;min-width:0;max-width:100%;object-fit:contain;
+  display:block;cursor:pointer}
+.cm-wall img:active{opacity:.8}
+.cm-wall-n{position:absolute;right:9px;bottom:9px;font-family:Pretendard,-apple-system,sans-serif;
+  font-size:11px;font-weight:700;color:#fff;background:rgba(0,0,0,.55);border-radius:8px;
+  padding:3px 8px}
+
 .cmn-shots{display:flex;gap:7px;flex-wrap:wrap}
 .cmn-img{width:52px;height:70px;object-fit:cover;border-radius:9px;display:block;
   border:1px solid var(--ns-line);cursor:pointer;background:#1D2420}

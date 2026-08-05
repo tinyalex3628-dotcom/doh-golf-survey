@@ -544,9 +544,12 @@ function applyMyFacts() {
 
   /* 홈 도착 줄 — 화면에 박혀 있는 「오늘 도착 · 정기 피드백 No.06」띠를 고쳐
      쓰려 했지만, 새 계정은 홈 히어로가 통째로 갈리면서 그 띠도 같이 사라진다.
-     남의 화면을 빌리지 말고 우리 띠를 세운다. */
+     남의 화면을 빌리지 말고 우리 띠를 세운다.
+
+     히어로가 이미 도착을 알리고 있으면 띠는 안 세운다 — 한 화면에서
+     같은 소식을 띠 · 히어로 · 카드로 세 번 말하게 된다. */
   const heroEl = root().querySelector('[data-h-hero]');
-  if (heroEl && heroEl.parentElement && unread.length
+  if (heroEl && heroEl.parentElement && unread.length && HERO_KIND !== 'arrived'
       && !root().querySelector('[data-cm-bar]')) {
     const bar = document.createElement('div');
     bar.setAttribute('data-cm-bar', '');
@@ -1033,6 +1036,10 @@ const cut = (t, n) => {
   return safe(one.length > n ? one.slice(0, n) + '…' : one);
 };
 
+/* 홈 히어로가 지금 무슨 얼굴인지. 아래 층(내 사실)이 같은 말을 또 하지 않게
+   봐야 해서 층 밖에 둔다. 홈이 아닐 때는 뜻이 없다. */
+let HERO_KIND = null;
+
 /* ── 홈 히어로 ───────────────────────────────────────────────────────
    Coaching 이 파는 건 「프로 한마디」 한 가지다. 그래서 홈 첫 화면은
    그 한 바퀴가 지금 어디까지 왔는지를 보여준다 —
@@ -1060,14 +1067,16 @@ function homeHero() {
   const upToday = (window.__SWINGS || []).filter(r => r.at >= today).length;
   const { left } = quota();
 
-  // ② 한마디가 왔다 — 홈에서 제일 먼저 보여야 하는 것
+  /* ② 한마디가 왔다 — 홈에서 제일 먼저 보여야 하는 것.
+     전에는 여기에 프로가 쓴 글을 한 줄 따왔다. 그때는 밑의 한마디 카드가
+     한 줄만 흘려 보여줘서, 프로의 말을 볼 곳이 여기뿐이었다.
+     이제 카드가 세 줄을 펴고 사진까지 세운다 — 여기서 또 따오면 같은 글이
+     한 화면에 두 번 뜬다. 알리는 일만 하고 글은 카드에 넘긴다. */
   if (unread.length) {
-    const c = unread[0];
     return {
       html: heroHTML('프로 한마디 · 도착',
         '이도형 프로가<br>한마디를 남겼어요',
-        '“' + cut(c.body, 68) + '”',
-        unread.length > 1 ? '한마디 ' + unread.length + '개 확인하기' : '한마디 확인하기'),
+        '', unread.length > 1 ? '한마디 ' + unread.length + '개 확인하기' : '한마디 확인하기'),
       go: () => cmSheet(),
       kind: 'arrived',
     };
@@ -1122,11 +1131,11 @@ function applyFresh() {
   // 홈 히어로 — 남의 리포트 대신 오늘 할 수 있는 하나, 그리고 내가 실제로 쌓은 것.
   // data-lock 을 뗄 수 있는 건 이 층(등급 표시)이 잠금 층보다 먼저 돌기 때문이다.
   const hero = root().querySelector('[data-h-hero]');
-  let heroKind = null;
+  HERO_KIND = null;
   if (hero) {
     hero.removeAttribute('data-lock');
     const h = homeHero();
-    heroKind = h.kind;
+    HERO_KIND = h.kind;
     hero.innerHTML = h.html;
     /* 홈 본문은 gap 이 없다 — 구역마다 자기 여백을 갖는 구조다. 히어로는
        원래 여백이 0이고, 밑에 붙어 있던 한 줄 통계(위 20 · 아래 15)가
@@ -1154,7 +1163,7 @@ function applyFresh() {
     if (qbox && !qbox.querySelector('[data-h-pro]')) {
       const wait = (window.__WAIT || []).length;
       const seenN = (window.__COMMENTS || []).length;
-      const line = (wait && heroKind !== 'waiting')
+      const line = (wait && HERO_KIND !== 'waiting')
         ? '이도형 프로가 스윙 ' + wait + '개를 보고 있어요'
         : seenN ? '지금까지 이도형 프로가 ' + seenN + '번 봐줬어요'
         // 히어로가 「보고 있어요」를 이미 말한 참이다. 그다음 일을 적는다.
@@ -1207,32 +1216,23 @@ function applyFresh() {
     const holder = tl[0].parentElement;
     const got = window.__COMMENTS;
     if (got.length) {
-      holder.innerHTML = got.slice(0, 3).map((c, i) =>
-        '<div data-cm-row="' + c.id + '" style="padding:12px 2px'
-        + (i ? ';border-top:1px solid var(--ns-line)' : '') + '">'
-        /* 안 읽은 것은 시간 대신 NEW. 「14시간 전」은 읽고 나서 판단해야
-           하지만 NEW 는 눈에 먼저 들어온다 — 지금 볼 것인지가 먼저다. */
-        + '<span style="display:flex;align-items:center;gap:7px;padding-bottom:4px">'
-        + (c.read
-            ? '<span style="' + P_FONT + 'font-size:11px;font-weight:700;'
-              + 'color:var(--ns-bronze)">' + cmWhen(c.at) + '</span>'
-            : '<span style="' + P_FONT + 'font-size:9px;font-weight:800;letter-spacing:.08em;'
-              + 'color:#fff;background:var(--ns-green);border-radius:5px;padding:2.5px 6px">'
-              + 'NEW</span>')
-        + '<span style="' + P_FONT + 'font-size:11px;color:var(--ns-ink3)">이도형 프로 · '
-        + c.view + '</span></span>'
-        + '<span style="display:block;' + P_FONT + 'font-size:12.5px;line-height:1.7;'
-        + 'color:var(--ns-ink2);white-space:pre-wrap">' + safe(c.body) + '</span>'
-        /* 사진은 작은 줄로. 전에는 폭을 다 쓰는 큰 사진이라 홈에서 한마디
-           한 개가 화면을 통째로 먹고, 그 아래 바로가기까지 밀려났다. */
-        + (c.photos && c.photos.length
-            ? '<div style="margin-top:8px">' + shotStrip(c.photos) + '</div>' : '')
-        + '</div>').join('');
-      holder.querySelectorAll('[data-cm-row]').forEach(r => {
-        const c = got.find(x => x.id === r.getAttribute('data-cm-row'));
-        wireShots(r, (c && c.photos) || []);
-        tap(r, () => cmSheet(r.getAttribute('data-cm-row')));
-      });
+      holder.innerHTML = cmHome(got[0])
+        + (got.length > 1
+            ? '<div data-cm-all style="display:flex;align-items:center;justify-content:center;'
+              + 'margin-top:11px;padding-top:11px;border-top:1px solid var(--ns-line);'
+              + P_FONT + 'font-size:11.5px;font-weight:600;color:var(--ns-ink3)">'
+              + '받은 한마디 ' + got.length + '개 모두 보기 ›</div>'
+            : '');
+      /* 글이 잘렸으면 그렇게 말한다 — 「한마디 보기」는 사진만 있을 때의 말이다 */
+      const bd = holder.querySelector('[data-cm-body]');
+      const op = holder.querySelector('[data-cm-open]');
+      if (bd && op && bd.scrollHeight > bd.clientHeight + 2) op.textContent = '이어서 읽기 ›';
+      const row = holder.querySelector('[data-cm-row]');
+      if (row) {
+        wireShots(row, got[0].photos || []);
+        tap(row, () => cmSheet(got[0].id));
+      }
+      tap(holder.querySelector('[data-cm-all]'), () => go('2i'));
     } else {
       holder.setAttribute('style', (holder.getAttribute('style') || '')
         + ';padding:22px 16px;text-align:center');
@@ -2275,6 +2275,48 @@ function wireShots(host, photos) {
   });
 }
 
+/* 프로가 붙인 사진 — 영상에서 떠온 한 장면이다. 우표만 하게 늘어놓으면
+   무엇을 찍었는지 안 보이고, 카드 오른쪽 절반이 빈 채로 남는다.
+   검은 판 위에 세워 한 장면처럼 보이게 한다. 스윙 영상은 세로라
+   폭을 다 쓰게 두면 화면을 통째로 먹으므로 높이로 묶는다. */
+function shotWall(photos) {
+  const n = photos.length;
+  return '<div class="cm-wall">'
+    + photos.slice(0, 2).map((u, i) => '<img src="' + u + '" alt="캡처 ' + (i + 1)
+        + '" data-shot="' + i + '">').join('')
+    + (n > 2 ? '<span class="cm-wall-n">+' + (n - 2) + '</span>' : '')
+    + '</div>';
+}
+
+/* 홈에 서는 한마디 한 장.
+   프로가 쓴 글이 이 앱이 파는 것 자체다. 한 줄만 흘려 보여주면 카드가
+   반쯤 빈 채로 남고 읽어볼 마음도 안 생긴다 — 글을 세 줄까지 편다.
+
+   홈에는 제일 새 것 한 장만 세운다. 예전에는 세 개를 늘어놓았는데,
+   글과 사진을 제대로 키우고 나면 세 개가 화면을 통째로 먹는다.
+   나머지는 밑의 「모두 보기」가 맡는다. */
+function cmHome(c) {
+  const ph = c.photos || [];
+  return '<div data-cm-row="' + c.id + '" style="display:flex;flex-direction:column;gap:9px">'
+    + '<span style="display:flex;align-items:center;gap:7px">'
+    + (c.read
+        ? '<span style="' + P_FONT + 'font-size:11px;font-weight:700;color:var(--ns-bronze)">'
+          + cmWhen(c.at) + '</span>'
+        : '<span style="' + P_FONT + 'font-size:9px;font-weight:800;letter-spacing:.08em;'
+          + 'color:#fff;background:var(--ns-green);border-radius:5px;padding:2.5px 6px">'
+          + 'NEW</span>')
+    + '<span style="' + P_FONT + 'font-size:11px;color:var(--ns-ink3)">이도형 프로 · '
+    + safe(c.view) + '</span></span>'
+    + '<span data-cm-body style="' + P_FONT + 'font-size:13px;line-height:1.72;'
+    + 'color:var(--ns-ink);white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;'
+    + '-webkit-box-orient:vertical;overflow:hidden">' + safe(c.body) + '</span>'
+    + (ph.length ? shotWall(ph) : '')
+    /* 「눌러서 크게」는 설명이지 할 일이 아니다. 누를 건 어차피 누른다. */
+    + '<span data-cm-open style="display:flex;align-items:center;padding-top:10px;'
+    + 'border-top:1px solid var(--ns-line);' + P_FONT + 'font-size:12px;font-weight:700;'
+    + 'color:var(--ns-green)">한마디 보기 ›</span></div>';
+}
+
 /* 목록 한 줄 — 안 읽은 것은 테두리가 초록이고 NEW 가 붙는다 */
 function cmCard(c) {
   const n = (c.photos || []).length;
@@ -2378,7 +2420,18 @@ function upPaint() {
 
   if (!u) {                                // 아직 안 올림 / 취소함
     box.setAttribute('style', base);
-    box.innerHTML = '<span style="font-size:13px;font-weight:600;color:#4A4638">영상 추가하기</span>';
+    // 연습기록의 오늘 카드와 같은 얼굴 — 같은 일은 어느 화면에서든 같아 보여야 한다
+    box.innerHTML =
+      '<span style="width:36px;height:36px;border-radius:50%;background:var(--ns-sand);'
+      + 'color:var(--ns-green);display:flex;align-items:center;justify-content:center">'
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '
+      + 'stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px">'
+      + '<path d="M12 16V4m0 0 4 4m-4-4-4 4"></path>'
+      + '<path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"></path></svg></span>'
+      + '<span style="font-size:13px;font-weight:600;letter-spacing:-.02em;color:var(--ns-ink)">'
+      + '오늘 스윙 올리기</span>'
+      + '<span style="font-size:11px;font-weight:500;color:var(--ns-ink3)">'
+      + '정면 · 측면 모두 올릴 수 있어요</span>';
     return;
   }
 

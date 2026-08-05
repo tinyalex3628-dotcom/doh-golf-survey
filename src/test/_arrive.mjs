@@ -151,15 +151,20 @@ const viaToast = await p.evaluate(() => ({ open: !!document.getElementById('cmne
 
 await p.evaluate(() => { const s = document.getElementById('cmnew'); if (s) s.remove(); jump('2a'); });
 await p.waitForTimeout(400);
+/* 히어로가 도착을 알리는 동안은 띠를 따로 안 세운다 — 같은 소식을
+   세 번 말하게 된다. 히어로가 그 역할을 하는지 본다. */
 const homeNew = await p.evaluate(() => {
-  const st = document.querySelector('[data-cm-bar]');
+  const hero = document.querySelector('[data-h-hero]');
+  const bar = document.querySelector('[data-cm-bar]');
   const dot = document.querySelector('[data-bell-dot]');
-  return { bar: st ? st.textContent.replace(/\s+/g, ' ').trim() : null,
+  return { 히어로: hero ? hero.textContent.replace(/\s+/g, ' ').trim().slice(0, 30) : null,
+            띠없음: !bar,
            dot: dot ? dot.style.display + ':' + dot.textContent : null };
 });
 await p.screenshot({ path: '_ar_home.png' });
-// 도착 줄을 누르면 바로 펼쳐진다
-if (await p.$('[data-cm-bar]')) { await p.click('[data-cm-bar]'); await p.waitForTimeout(500); }
+// 히어로 버튼을 누르면 바로 펼쳐진다
+await p.click('[data-h-hero] [data-fresh-go]');
+await p.waitForTimeout(500);
 const viaStrip = await p.evaluate(() => ({ open: !!document.getElementById('cmnew') }));
 
 console.log('① 안내 떠 있을 때 ', JSON.stringify(duringGate));

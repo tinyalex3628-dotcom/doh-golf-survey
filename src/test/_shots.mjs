@@ -117,7 +117,7 @@ const closed = await p.evaluate(() => ({
   시트그대로: !!document.getElementById('cmnew'),
 }));
 
-// ④ 홈 타임라인 — 사진이 줄을 안 먹고, 눌러도 시트가 아니라 크게 보기가 뜬다
+// ④ 홈 한마디 카드 — 글 세 줄 + 검은 판 사진. 사진을 누르면 크게 보기가 뜬다
 await p.click('[data-cm-ok]');
 await p.waitForTimeout(400);
 await p.evaluate(() => jump('2a'));
@@ -125,16 +125,17 @@ await p.waitForTimeout(400);
 const home = await p.evaluate(() => {
   const row = document.querySelector('[data-cm-row]');
   if (!row) return { none: true };
-  const imgs = [...row.querySelectorAll('.cmn-img')];
+  const wall = row.querySelector('.cm-wall');
   return {
     줄높이: Math.round(row.getBoundingClientRect().height),
-    사진크기: imgs.length ? Math.round(imgs[0].getBoundingClientRect().width) + '×'
-      + Math.round(imgs[0].getBoundingClientRect().height) : null,
-    글: (row.querySelector('span[style*="pre-wrap"]') || {}).textContent,
+    사진판: wall ? Math.round(wall.getBoundingClientRect().width) + '×'
+      + Math.round(wall.getBoundingClientRect().height) : null,
+    글: (row.querySelector('[data-cm-body]') || {}).textContent,
+    액션: (row.querySelector('[data-cm-open]') || {}).textContent,
   };
 });
 await p.screenshot({ path: '_st_home.png' });
-await p.click('[data-cm-row] .cmn-img');
+await p.click('[data-cm-row] .cm-wall img');
 await p.waitForTimeout(350);
 const fromHome = await p.evaluate(() => ({
   크게보기: !!document.getElementById('shotbig'),
