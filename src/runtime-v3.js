@@ -1325,19 +1325,25 @@ function applyFresh() {
   const tl = root().querySelectorAll('[data-tl-row]');
   if (tl.length) {
     const holder = tl[0].parentElement;
+    /* 카드 그림자가 진해서 카드가 떠 보였다. 그림자를 옅게 줄이고 그만큼
+       테두리로 잡아준다 — 유리판 흉내(반투명 흰 테두리)는 배경이 밝은
+       홈에서 거의 안 보여서 제 몫을 못 하고 있었다. */
+    holder.style.boxShadow = '0 2px 8px rgba(29,69,52,.08)';
+    holder.style.border = '1px solid #EAE4DA';
     const got = window.__COMMENTS;
     if (got.length) {
       holder.innerHTML = cmHome(got[0])
         + (got.length > 1
             ? '<div data-cm-all style="display:flex;align-items:center;justify-content:center;'
-              + 'margin-top:11px;padding-top:11px;border-top:1px solid var(--ns-line);'
-              + P_FONT + 'font-size:11.5px;font-weight:600;color:var(--ns-ink3)">'
-              + '받은 한마디 ' + got.length + '개 모두 보기 ›</div>'
+              + 'gap:6px;margin-top:11px;padding-top:11px;border-top:1px solid var(--ns-line);'
+              + P_FONT + 'font-size:12px;font-weight:600;color:var(--ns-green)">'
+              + '<span>프로 코멘트 ' + got.length + '개 모두 보기</span><span>→</span></div>'
             : '');
       /* 글이 잘렸으면 그렇게 말한다 — 「한마디 보기」는 사진만 있을 때의 말이다 */
       const bd = holder.querySelector('[data-cm-body]');
       const op = holder.querySelector('[data-cm-open]');
-      if (bd && op && bd.scrollHeight > bd.clientHeight + 2) op.textContent = '이어서 읽기 ›';
+      const opT = holder.querySelector('[data-cm-open-t]');
+      if (bd && opT && bd.scrollHeight > bd.clientHeight + 2) opT.textContent = '계속 읽기';
       const row = holder.querySelector('[data-cm-row]');
       if (row) {
         wireShots(row, got[0].photos || []);
@@ -2426,11 +2432,14 @@ function wireShots(host, photos) {
    무엇을 찍었는지 안 보이고, 카드 오른쪽 절반이 빈 채로 남는다.
    검은 판 위에 세워 한 장면처럼 보이게 한다. 스윙 영상은 세로라
    폭을 다 쓰게 두면 화면을 통째로 먹으므로 높이로 묶는다. */
-function shotWall(photos) {
+function shotWall(photos, view) {
   const n = photos.length;
   return '<div class="cm-wall">'
     + photos.slice(0, 2).map((u, i) => '<img src="' + u + '" alt="캡처 ' + (i + 1)
         + '" data-shot="' + i + '">').join('')
+    /* 어느 각도인지는 사진 위에 붙인다 — 머리줄에서 「이도형 프로 · 정면」으로
+       붙여 쓰면 사람 이름과 각도가 한 덩어리로 읽힌다 */
+    + (view ? '<span class="cm-wall-v">' + safe(view) + '</span>' : '')
     + (n > 2 ? '<span class="cm-wall-n">+' + (n - 2) + '</span>' : '')
     + '</div>';
 }
@@ -2439,29 +2448,41 @@ function shotWall(photos) {
    프로가 쓴 글이 이 앱이 파는 것 자체다. 한 줄만 흘려 보여주면 카드가
    반쯤 빈 채로 남고 읽어볼 마음도 안 생긴다 — 글을 세 줄까지 편다.
 
+   머리줄은 두 줄이다. 「12시간 전 이도형 프로 · 정면」을 한 줄에 붙여 쓰면
+   시간 · 사람 · 각도가 한 덩어리로 뭉쳐 읽힌다. 시간을 위로 올리고
+   이름을 밑에 세운다. 각도는 사진 위 배지로 옮겼다.
+
    홈에는 제일 새 것 한 장만 세운다. 예전에는 세 개를 늘어놓았는데,
    글과 사진을 제대로 키우고 나면 세 개가 화면을 통째로 먹는다.
    나머지는 밑의 「모두 보기」가 맡는다. */
 function cmHome(c) {
   const ph = c.photos || [];
-  return '<div data-cm-row="' + c.id + '" style="display:flex;flex-direction:column;gap:9px">'
-    + '<span style="display:flex;align-items:center;gap:7px">'
+  return '<div data-cm-row="' + c.id + '" style="display:flex;flex-direction:column;gap:8px">'
+    // ① 시간 (안 읽었으면 NEW 배지가 그 자리를 받는다)
+    + '<span style="display:flex;align-items:center;gap:6px">'
     + (c.read
-        ? '<span style="' + P_FONT + 'font-size:11px;font-weight:700;color:var(--ns-bronze)">'
+        ? '<span style="' + P_FONT + 'font-size:11px;font-weight:600;color:var(--ns-ink3)">'
           + cmWhen(c.at) + '</span>'
         : '<span style="' + P_FONT + 'font-size:9px;font-weight:800;letter-spacing:.08em;'
           + 'color:#fff;background:var(--ns-green);border-radius:5px;padding:2.5px 6px">'
-          + 'NEW</span>')
-    + '<span style="' + P_FONT + 'font-size:11px;color:var(--ns-ink3)">이도형 프로 · '
-    + safe(c.view) + '</span></span>'
+          + 'NEW</span>'
+          + '<span style="' + P_FONT + 'font-size:11px;font-weight:600;'
+          + 'color:var(--ns-ink3)">' + cmWhen(c.at) + '</span>')
+    + '</span>'
+    // ② 쓴 사람 — 한 줄을 통째로 준다
+    + '<span style="' + P_FONT + 'font-size:12.5px;font-weight:700;letter-spacing:-.01em;'
+    + 'color:var(--ns-ink)">이도형 프로</span>'
+    // ③ 본문 세 줄
     + '<span data-cm-body style="' + P_FONT + 'font-size:13px;line-height:1.72;'
     + 'color:var(--ns-ink);white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;'
-    + '-webkit-box-orient:vertical;overflow:hidden">' + safe(c.body) + '</span>'
-    + (ph.length ? shotWall(ph) : '')
+    + '-webkit-box-orient:vertical;overflow:hidden;margin-top:1px">' + safe(c.body) + '</span>'
+    // ④ 사진 — 글 바로 밑에 붙인다(8px). 각도 배지는 사진 위에.
+    + (ph.length ? shotWall(ph, c.view) : '')
     /* 「눌러서 크게」는 설명이지 할 일이 아니다. 누를 건 어차피 누른다. */
-    + '<span data-cm-open style="display:flex;align-items:center;padding-top:10px;'
-    + 'border-top:1px solid var(--ns-line);' + P_FONT + 'font-size:12px;font-weight:700;'
-    + 'color:var(--ns-green)">한마디 보기 ›</span></div>';
+    + '<span data-cm-open style="display:flex;align-items:center;gap:6px;margin-top:3px;'
+    + 'padding-top:11px;border-top:1px solid var(--ns-line);' + P_FONT
+    + 'font-size:12.5px;font-weight:600;color:var(--ns-green)">'
+    + '<span data-cm-open-t>한마디 보기</span><span>→</span></span></div>';
 }
 
 /* 목록 한 줄 — 안 읽은 것은 테두리가 초록이고 NEW 가 붙는다 */

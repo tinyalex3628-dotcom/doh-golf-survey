@@ -291,6 +291,11 @@ html.demo body{background:#EDEAE3}
 .cm-wall-n{position:absolute;right:9px;bottom:9px;font-family:Pretendard,-apple-system,sans-serif;
   font-size:11px;font-weight:700;color:#fff;background:rgba(0,0,0,.55);border-radius:8px;
   padding:3px 8px}
+/* 어느 각도인지 — 사진 위 왼쪽 어깨에. 머리줄에 「이도형 프로 · 정면」으로
+   붙여 쓰면 사람 이름과 각도가 한 덩어리로 읽힌다. */
+.cm-wall-v{position:absolute;left:9px;top:9px;font-family:Pretendard,-apple-system,sans-serif;
+  font-size:10.5px;font-weight:700;letter-spacing:-.01em;color:#fff;
+  background:rgba(20,24,22,.62);border-radius:7px;padding:4px 9px}
 
 .cmn-shots{display:flex;gap:7px;flex-wrap:wrap}
 .cmn-img{width:52px;height:70px;object-fit:cover;border-radius:9px;display:block;
