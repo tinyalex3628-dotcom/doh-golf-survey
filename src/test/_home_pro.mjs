@@ -185,6 +185,47 @@ console.log('③ 안 읽은 한마디  ', JSON.stringify(d, null, 0));
 console.log('④ 읽은 뒤        ', JSON.stringify(e, null, 0));
 console.log('⑤ 긴 글 + 사진 3장', JSON.stringify(f));
 console.log('   사진 누름', JSON.stringify(big), '· 카드 누름', JSON.stringify(sheet));
+/* ⑤ 홈 카드는 늘 「제일 새 한마디」다 — 새 스윙에 답이 달리면 그걸로 바뀐다.
+      그리고 머리줄에 답이 온 때와 「어느 날 스윙인지」가 같이 적힌다. */
+const 머리 = () => p.evaluate(() => {
+  const row = document.querySelector('[data-cm-row]');
+  if (!row) return { none: true };
+  return {
+    머리줄: (row.children[0] || {}).textContent.replace(/\s+/g, ' ').trim(),
+    이름: (row.children[1] || {}).textContent.trim(),
+    본문: (row.querySelector('[data-cm-body]') || {}).textContent.trim().slice(0, 14),
+  };
+});
+await p.evaluate(async () => {
+  const D = 864e5;
+  window.__SW = [{ id: 'sw-old', view: '정면', path: 'a', size: 10, note: null,
+    want_comment: false, created_at: new Date(Date.now() - 5 * D).toISOString(),
+    comments: [{ id: 'c-old', body: '예전 스윙에 대한 답', photos: [],
+      created_at: new Date(Date.now() - 4 * D).toISOString(),
+      read_at: new Date().toISOString() }] }];
+  await loadComments(); jump('2a');
+});
+await p.waitForTimeout(400);
+const 이전 = await 머리();
+
+// 새 스윙을 올리고 거기에 답이 달렸다
+await p.evaluate(async () => {
+  const D = 864e5;
+  window.__SW.unshift({ id: 'sw-new', view: '측면', path: 'b', size: 10, note: null,
+    want_comment: false, created_at: new Date(Date.now() - 1 * D).toISOString(),
+    comments: [{ id: 'c-new', body: '새 스윙에 대한 답', photos: [],
+      created_at: new Date().toISOString(), read_at: null }] });
+  await loadComments(); jump('2a');
+});
+await p.waitForTimeout(500);
+const 이후 = await 머리();
+
+console.log('⑤ 예전 답만 있을 때', JSON.stringify(이전));
+console.log('   새 답이 온 뒤   ', JSON.stringify(이후));
+console.log('   바뀌었나        ',
+  이전.본문 !== 이후.본문 && /새 스윙/.test(이후.본문) ? '예' : '아니오!',
+  '· 스윙 날짜 병기', /스윙/.test(이후.머리줄) ? '예' : '아니오!');
+
 console.log('JS 오류', errs.length ? errs : '없음');
 console.log('빠진 배선', await p.evaluate(() => (window.__MISS || []).slice(0, 4)));
 
