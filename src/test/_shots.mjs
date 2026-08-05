@@ -57,46 +57,39 @@ await p.goto('http://127.0.0.1:8841/');
 await p.waitForTimeout(600);
 await p.click('[data-bgate-next]');
 await p.click('[data-bgate-close]');
-await p.waitForTimeout(1800);
+await p.waitForTimeout(1500);
 
-// ① 시트 — 글이 보이고, 사진은 작고, 스크롤이 없다
-const sheet = await p.evaluate(() => {
-  const s = document.getElementById('cmnew');
-  if (!s) return { none: true };
-  const card = s.querySelector('.cmn-card');
-  const body = s.querySelector('.cmn-body');
-  const imgs = [...s.querySelectorAll('.cmn-img')];
-  const bb = body.getBoundingClientRect();
-  const im = imgs[0].getBoundingClientRect();
+// ① 상세(pc1) — 글이 먼저, 사진은 작은 썸네일, 스크롤 없이 글이 보인다
+await p.click((await p.$('[data-cm-bar]')) ? '[data-cm-bar]' : '[data-fresh-go]');
+await p.waitForTimeout(600);
+const detail = await p.evaluate(() => {
+  const bub = document.querySelector('[data-pc-body]');
+  if (!bub) return { none: true };
+  const body = [...bub.querySelectorAll('span')].find(e => /하시면됩니다/.test(e.textContent));
+  const imgs = [...bub.querySelectorAll('.cmn-img')];
+  const bb = body.getBoundingClientRect(), im = imgs[0].getBoundingClientRect();
   return {
+    화면: S.route,
     글: body.textContent.trim(),
-    글이화면안: bb.top >= 0 && bb.bottom <= innerHeight,
     글이사진위: bb.bottom <= im.top + 1,
     사진크기: Math.round(im.width) + '×' + Math.round(im.height),
     사진장수: imgs.length,
     사진나란히: Math.abs(imgs[0].getBoundingClientRect().top
                        - imgs[1].getBoundingClientRect().top) < 2,
-    스크롤: card.scrollHeight > card.clientHeight + 1,
-    카드높이: Math.round(card.getBoundingClientRect().height),
-    버튼화면안: s.querySelector('[data-cm-ok]').getBoundingClientRect().bottom <= innerHeight + 1,
   };
 });
-await p.screenshot({ path: '_st_sheet.png' });
+await p.screenshot({ path: '_st_pc1.png' });
 
-// ② 썸네일을 누르면 전체화면 — 시트는 안 닫힌다.
-//    (홈 타임라인에도 같은 사진이 있으니 시트 안으로 좁혀서 누른다)
-await p.click('#cmnew .cmn-img[data-shot="1"]');
+// ② 썸네일을 누르면 전체화면 — 화면은 그대로 pc1
+await p.click('[data-pc-body] .cmn-img[data-shot="1"]');
 await p.waitForTimeout(350);
 const big = await p.evaluate(() => {
   const g = document.getElementById('shotbig');
   if (!g) return { none: true };
   const im = g.querySelector('img').getBoundingClientRect();
-  return {
-    열림: true, 시트살아있음: !!document.getElementById('cmnew'),
-    쪽수: (g.querySelector('[data-sb-n]') || {}).textContent || null,
-    큼: Math.round(im.width) + '×' + Math.round(im.height),
-    화면대비: Math.round(im.height / innerHeight * 100) + '%',
-  };
+  return { 열림: true, 화면그대로: S.route === 'pc1',
+           쪽수: (g.querySelector('[data-sb-n]') || {}).textContent || null,
+           화면대비: Math.round(im.height / innerHeight * 100) + '%' };
 });
 await p.screenshot({ path: '_st_big.png' });
 
@@ -113,39 +106,28 @@ const flipped = await p.evaluate(() =>
 await p.click('[data-sb-x]');
 await p.waitForTimeout(250);
 const closed = await p.evaluate(() => ({
-  큰화면닫힘: !document.getElementById('shotbig'),
-  시트그대로: !!document.getElementById('cmnew'),
-}));
+  큰화면닫힘: !document.getElementById('shotbig'), 화면: S.route }));
 
-// ④ 홈 한마디 카드 — 글 세 줄 + 검은 판 사진. 사진을 누르면 크게 보기가 뜬다
-await p.click('[data-cm-ok]');
-await p.waitForTimeout(400);
+// ④ 홈 한마디 카드 — 사진을 누르면 크게 보기가 뜬다
 await p.evaluate(() => jump('2a'));
-await p.waitForTimeout(400);
+await p.waitForTimeout(500);
 const home = await p.evaluate(() => {
   const row = document.querySelector('[data-cm-row]');
   if (!row) return { none: true };
-  const wall = row.querySelector('.cm-wall');
   return {
     줄높이: Math.round(row.getBoundingClientRect().height),
-    사진판: wall ? Math.round(wall.getBoundingClientRect().width) + '×'
-      + Math.round(wall.getBoundingClientRect().height) : null,
-    글: (row.querySelector('[data-cm-body]') || {}).textContent,
-    액션: (row.querySelector('[data-cm-open]') || {}).textContent,
+    글: (row.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 30),
   };
 });
 await p.screenshot({ path: '_st_home.png' });
-await p.click('[data-cm-row] .cm-wall img');
-await p.waitForTimeout(350);
-const fromHome = await p.evaluate(() => ({
-  크게보기: !!document.getElementById('shotbig'),
-  시트안뜸: !document.getElementById('cmnew'),
-}));
+const cell = await p.$('[data-cm-row] .cmn-img, [data-cm-row] .cm-wall img');
+if (cell) { await cell.click(); await p.waitForTimeout(350); }
+const fromHome = await p.evaluate(() => ({ 크게보기: !!document.getElementById('shotbig') }));
 
-console.log('① 시트        ', JSON.stringify(sheet));
-console.log('② 크게 보기    ', JSON.stringify(big));
-console.log('③ 넘김        ', flipped, '· 닫기', JSON.stringify(closed));
-console.log('④ 홈 타임라인  ', JSON.stringify(home), '· 사진 누름', JSON.stringify(fromHome));
+console.log('① 상세의 사진', JSON.stringify(detail));
+console.log('② 크게 보기  ', JSON.stringify(big));
+console.log('③ 넘김       ', flipped, '· 닫기', JSON.stringify(closed));
+console.log('④ 홈 카드    ', JSON.stringify(home), '· 사진 누름', JSON.stringify(fromHome));
 console.log('JS 오류', errs.length ? errs : '없음');
 
 await b.close(); srv.close();

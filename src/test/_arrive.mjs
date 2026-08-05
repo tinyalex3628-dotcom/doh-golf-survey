@@ -59,121 +59,97 @@ const duringGate = await p.evaluate(() => ({
   sheet: !!document.getElementById('cmnew'),
 }));
 
-// 안내 두 장을 넘긴다
 await p.click('[data-bgate-next]');
 await p.waitForTimeout(200);
 await p.click('[data-bgate-close]');
-await p.waitForTimeout(1800);
+await p.waitForTimeout(1500);
 
-// ② 관문이 걷히면 시트가 스스로 올라온다
-const sheet = await p.evaluate(() => {
-  const s = document.getElementById('cmnew');
-  if (!s) return { none: true };
-  const imgs = [...s.querySelectorAll('.cmn-img')];
-  return {
-    on: s.classList.contains('on'),
-    title: (s.querySelector('.cmn-t') || {}).textContent,
-    body: (s.querySelector('.cmn-body') || {}).textContent,
-    photos: imgs.length,
-    imgOK: imgs.every(i => i.complete && i.naturalWidth > 0),
-    top: Math.round(s.querySelector('.cmn-card').getBoundingClientRect().top),
-    btnY: Math.round(s.querySelector('[data-cm-ok]').getBoundingClientRect().bottom),
-    화면안: s.querySelector('[data-cm-ok]').getBoundingClientRect().bottom <= innerHeight + 1,
-  };
-});
-await p.screenshot({ path: '_ar_sheet.png' });
-
-// ③ 확인 → 서버에 읽음으로 적힌다
-await p.click('[data-cm-ok]');
-await p.waitForTimeout(600);
-const afterOK = await p.evaluate(() => ({
-  gone: !document.getElementById('cmnew'),
-  read: window.__READ,
-  unread: S.unread,
-  cm: S.cm,
-}));
-
-// ④ 홈으로 — 도착 줄과 종 배지
-await p.evaluate(() => jump('2a'));
-await p.waitForTimeout(400);
+/* ② 팝업은 이제 안 뜬다. 홈 히어로와 도착 줄이 그 말을 이미 하고 있어서,
+      같은 말을 팝업으로 한 번 더 할 이유가 없다. */
 const home = await p.evaluate(() => {
   const st = document.querySelector('[data-cm-bar]');
   const dot = document.querySelector('[data-bell-dot]');
-  const tl = [...document.querySelectorAll('[data-cm-row]')];
+  const h = document.querySelector('[data-h-hero]');
   return {
-    bar: st ? st.textContent.replace(/\s+/g, ' ').trim() : null,
-    dot: dot ? dot.style.display : null,
-    recent: tl.length, recentText: tl[0] ? tl[0].textContent.replace(/\s+/g, ' ').slice(0, 40) : null,
+    팝업: !!document.getElementById('cmnew'),
+    히어로: h ? h.textContent.replace(/\s+/g, ' ').trim().slice(0, 34) : null,
+    도착줄: st ? st.textContent.replace(/\s+/g, ' ').trim() : null,
+    종배지: dot ? dot.style.display + ':' + dot.textContent : null,
+    unread: S.unread,
   };
 });
+await p.screenshot({ path: '_ar_home.png' });
 
-// ⑤ 레슨기록 › 프로 한마디 목록 — 예시 세 줄이 아니라 받은 것 한 줄
+/* ③ 눌러서 상세(pc1)로 바로 간다 — 중간에 팝업이 없다.
+      히어로가 이미 「한마디 도착」을 말하는 화면에선 도착 줄을 안 세운다
+      (같은 소식을 두 번 말하지 않는다). 그럴 땐 히어로 버튼이 그 자리다. */
+await p.click((await p.$('[data-cm-bar]')) ? '[data-cm-bar]' : '[data-fresh-go]');
+await p.waitForTimeout(600);
+const detail = await p.evaluate(() => {
+  const bub = document.querySelector('[data-pc-body]');
+  const imgs = [...document.querySelectorAll('[data-pc-body] .cmn-img')];
+  return {
+    화면: S.route,
+    팝업없음: !document.getElementById('cmnew'),
+    프로글: bub ? /어깨 회전이 덜 돌아서/.test(bub.textContent) : false,
+    사진: imgs.length,
+    사진실림: imgs.every(i => i.complete && i.naturalWidth > 0),
+    영상칸: !!document.querySelector('[data-pc-video] video'),
+    예시남음: /드라이버|45분|짚은 지점|지난 한마디/.test(
+      document.querySelector('#stage>div').textContent),
+    읽음: window.__READ,
+    unread: S.unread,
+  };
+});
+await p.screenshot({ path: '_ar_pc1.png' });
+
+// ④ 사진을 누르면 크게 보기
+await p.click('[data-pc-body] .cmn-img');
+await p.waitForTimeout(350);
+const big = await p.evaluate(() => ({ 열림: !!document.getElementById('shotbig') }));
+await p.evaluate(() => { const g = document.getElementById('shotbig'); if (g) g.remove(); });
+
+// ⑤ 레슨기록 › 받은 한마디 목록 — 예시가 아니라 받은 것 한 줄
 await p.evaluate(() => jump('2i'));
 await p.waitForTimeout(400);
 const list = await p.evaluate(() => {
   const rows = [...document.querySelectorAll('[data-cm-open]')];
-  const body = document.body.innerText;
   return {
-    rows: rows.length,
-    first: rows[0] ? rows[0].textContent.replace(/\s+/g, ' ').trim().slice(0, 46) : null,
-    예시남음: /그립 잡을 때 왼손 엄지|하체부터 시작하는 건/.test(body),
-    지난달: /6월에 받은 한마디/.test(body),
+    줄수: rows.length,
+    첫줄: rows[0] ? rows[0].textContent.replace(/\s+/g, ' ').trim().slice(0, 40) : null,
+    예시남음: /그립 잡을 때 왼손 엄지|하체부터 시작하는 건/.test(document.body.innerText),
   };
 });
-// 줄을 누르면 그 한마디가 펼쳐진다
 await p.click('[data-cm-open]');
 await p.waitForTimeout(500);
-const reopen = await p.evaluate(() => {
-  const s = document.getElementById('cmnew');
-  return { open: !!s, photos: s ? s.querySelectorAll('.cmn-img').length : 0 };
-});
-await p.click('[data-cm-ok]');
-await p.waitForTimeout(300);
+const reopen = await p.evaluate(() => ({ 화면: S.route,
+  사진: document.querySelectorAll('[data-pc-body] .cmn-img').length }));
 
 // ⑥ 쓰는 도중에 새 한마디가 오면 — 끊지 않고 아래쪽 알림으로
+await p.evaluate(() => jump('2a'));
+await p.waitForTimeout(300);
 await p.evaluate(() => {
   window.__SW[0].comments.push({ id: 'cm-2', body: '오늘 것 잘 봤어요. 하체가 좋아졌습니다.',
-    photos: [],
-    created_at: new Date().toISOString(), read_at: null });
+    photos: [], created_at: new Date().toISOString(), read_at: null });
   return loadComments();
 });
 await p.waitForTimeout(700);
 const live = await p.evaluate(() => {
   const t = document.getElementById('toastbox');
-  return { toast: t && t.classList.contains('show') ? t.textContent.replace(/\s+/g, ' ').trim() : null,
-           sheetAuto: !!document.getElementById('cmnew'), unread: S.unread };
+  return { 알림: t && t.classList.contains('show')
+             ? t.textContent.replace(/\s+/g, ' ').trim() : null,
+           팝업안뜸: !document.getElementById('cmnew'), unread: S.unread };
 });
-await p.screenshot({ path: '_ar_toast.png' });
-// 알림의 「바로 보기」를 누르면 열린다
 const btn = await p.$('#toastbox .toast-act');
 if (btn) { await btn.click(); await p.waitForTimeout(500); }
-const viaToast = await p.evaluate(() => ({ open: !!document.getElementById('cmnew') }));
+const viaToast = await p.evaluate(() => ({ 화면: S.route, 읽음: window.__READ }));
 
-await p.evaluate(() => { const s = document.getElementById('cmnew'); if (s) s.remove(); jump('2a'); });
-await p.waitForTimeout(400);
-/* 히어로가 도착을 알리는 동안은 띠를 따로 안 세운다 — 같은 소식을
-   세 번 말하게 된다. 히어로가 그 역할을 하는지 본다. */
-const homeNew = await p.evaluate(() => {
-  const hero = document.querySelector('[data-h-hero]');
-  const bar = document.querySelector('[data-cm-bar]');
-  const dot = document.querySelector('[data-bell-dot]');
-  return { 히어로: hero ? hero.textContent.replace(/\s+/g, ' ').trim().slice(0, 30) : null,
-            띠없음: !bar,
-           dot: dot ? dot.style.display + ':' + dot.textContent : null };
-});
-await p.screenshot({ path: '_ar_home.png' });
-// 히어로 버튼을 누르면 바로 펼쳐진다
-await p.click('[data-h-hero] [data-fresh-go]');
-await p.waitForTimeout(500);
-const viaStrip = await p.evaluate(() => ({ open: !!document.getElementById('cmnew') }));
-
-console.log('① 안내 떠 있을 때 ', JSON.stringify(duringGate));
-console.log('② 관문 걷힌 뒤 시트', JSON.stringify(sheet));
-console.log('③ 확인 누른 뒤   ', JSON.stringify(afterOK));
-console.log('④ 홈            ', JSON.stringify(home));
-console.log('⑤ 한마디 목록    ', JSON.stringify(list), '· 다시 열기', JSON.stringify(reopen));
-console.log('⑥ 쓰는 도중 도착 ', JSON.stringify(live), '· 알림으로 열기', JSON.stringify(viaToast));
-console.log('⑦ 안 읽은 것 있는 홈', JSON.stringify(homeNew), '· 줄 눌러 열기', JSON.stringify(viaStrip));
+console.log('① 안내 떠 있을 때', JSON.stringify(duringGate));
+console.log('② 안내 걷힌 홈  ', JSON.stringify(home));
+console.log('③ 줄 눌러 상세  ', JSON.stringify(detail));
+console.log('④ 사진 크게     ', JSON.stringify(big));
+console.log('⑤ 한마디 목록   ', JSON.stringify(list), '· 눌러 열기', JSON.stringify(reopen));
+console.log('⑥ 쓰는 도중 도착', JSON.stringify(live), '· 알림으로 열기', JSON.stringify(viaToast));
 console.log('JS 오류', errs.length ? errs : '없음');
 console.log('빠진 배선', await p.evaluate(() => (window.__MISS || []).slice(0, 5)));
 

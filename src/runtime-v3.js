@@ -196,34 +196,83 @@ function myDays() {
   return map;
 }
 
-/* 그날 올린 스윙을 펼쳐 보여준다. 없는 날은 들어갈 것이 없다. */
-function openDay(y, m, d) {
-  const list = myDays()[y + '-' + m + '-' + d] || [];
-  const when = new Date(y, m, d);
-  if (!list.length) {
-    return toast(when > TODAY ? '아직 오지 않은 날이에요'
-                              : md(when) + '엔 올린 스윙이 없어요');
-  }
+/* 날짜를 고른다 — 팝업 대신 선택이다. 검은 동그라미가 그날로 옮겨 가고,
+   달력 밑 요약 칸(dayPanel)이 그날 것으로 바뀐다. 미래는 못 고른다. */
+function selectDay(y, m, d) {
+  if (new Date(y, m, d) > TODAY) return toast('아직 오지 않은 날이에요');
+  S.cal.sel = { y: y, m: m, d: d };
+  render();
+}
+
+/* 그날의 프로 한마디 — 도착한 날 기준으로 모은다 */
+function dayComments(y, m, d) {
+  const k = y + '-' + m + '-' + d;
+  return (window.__COMMENTS || []).filter(c => dkey(new Date(c.at)) === k);
+}
+
+/* ── 달력 밑 요약 칸 ────────────────────────────────────────────────
+   고른 날의 프로 한마디(간략히 — 누르면 상세)와 올린 스윙(누르면 재생).
+   아무것도 없는 날은 없다고 말한다 — 눌리는데 조용하면 고장으로 보인다. */
+function dayPanel(grid, y, m) {
+  const sel = (S.cal.sel && S.cal.sel.y === y && S.cal.sel.m === m) ? S.cal.sel
+    : (y === TODAY.getFullYear() && m === TODAY.getMonth()
+        ? { y: y, m: m, d: TODAY.getDate() } : null);
+  const old = root().querySelector('[data-daypanel]');
+  if (old) old.remove();
+  if (!sel) return;
+
+  const when = new Date(sel.y, sel.m, sel.d);
+  const swings = myDays()[sel.y + '-' + sel.m + '-' + sel.d] || [];
+  const cms = dayComments(sel.y, sel.m, sel.d);
+
   const box = document.createElement('div');
-  box.id = 'swplay';
-  box.innerHTML =
-    '<div class="swp-card"><div class="swp-top"><span class="swp-nm">'
-    + md(when) + ' (' + DOW[when.getDay()] + ') · 스윙 ' + list.length + '개</span>'
-    + '<button class="swp-x" type="button" data-x>닫기</button></div>'
-    + '<div class="swp-day"></div></div>';
-  const wrap = box.querySelector('.swp-day');
-  list.forEach(r => {
-    const cell = document.createElement('span');
-    cell.className = 'swp-cell';
-    cell.innerHTML = (r.poster ? '<img src="' + r.poster + '" alt="">' : '')
-      + '<span class="swp-tag">' + r.view + '</span>';
-    cell.addEventListener('click', () => { box.remove(); playSwing(r); });
-    wrap.appendChild(cell);
-  });
-  box.addEventListener('click', ev => {
-    if (ev.target === box || ev.target.closest('[data-x]')) box.remove();
-  });
-  document.body.appendChild(box);
+  box.setAttribute('data-daypanel', '');
+  box.setAttribute('style', 'margin-top:12px;padding-top:12px;'
+    + 'border-top:1px solid var(--ns-line);display:flex;flex-direction:column;gap:8px');
+
+  let inner = '<span style="' + P_FONT + 'font-size:11.5px;font-weight:700;'
+    + 'color:var(--ns-ink2)">' + md(when) + ' (' + DOW[when.getDay()] + ')</span>';
+
+  if (!swings.length && !cms.length) {
+    inner += '<span style="' + P_FONT + 'font-size:12px;color:var(--ns-ink3);'
+      + 'padding:6px 0 2px">이 날의 기록이 없어요</span>';
+  } else {
+    cms.forEach(c => {
+      inner += '<div data-dp-cm="' + c.id + '" style="display:flex;flex-direction:column;gap:4px;'
+        + 'padding:10px 12px;border-radius:11px;background:rgba(125,93,46,.07);'
+        + 'border:1px solid rgba(125,93,46,.22);cursor:pointer">'
+        + '<span style="display:flex;align-items:center;gap:6px">'
+        + '<span style="' + P_FONT + 'font-size:10.5px;font-weight:700;color:var(--ns-bronze)">'
+        + '프로 한마디</span>'
+        + ((c.photos || []).length ? '<span style="' + P_FONT + 'font-size:10px;'
+            + 'color:var(--ns-ink3)">사진 ' + c.photos.length + '</span>' : '')
+        + '<span style="flex:1"></span>'
+        + '<span style="' + P_FONT + 'font-size:10.5px;font-weight:600;'
+        + 'color:var(--ns-green2)">자세히 ›</span></span>'
+        + '<span style="' + P_FONT + 'font-size:12px;line-height:1.6;color:var(--ns-ink2);'
+        + 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;'
+        + 'overflow:hidden">' + safe(c.body) + '</span></div>';
+    });
+    if (swings.length) {
+      inner += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        + '<span style="' + P_FONT + 'font-size:11.5px;font-weight:600;'
+        + 'color:var(--ns-ink2)">올린 스윙 ' + swings.length + '개</span>'
+        + swings.map((r, i) => '<span data-dp-sw="' + i + '" style="position:relative;'
+            + 'width:38px;height:50px;border-radius:8px;overflow:hidden;cursor:pointer;'
+            + 'background:' + (r.poster ? '#1D2420' : 'var(--ns-sand)')
+            + ';border:1px solid var(--ns-line)">'
+            + (r.poster ? '<img src="' + r.poster + '" alt="" style="width:100%;height:100%;'
+                + 'object-fit:cover;display:block">' : '')
+            + '</span>').join('')
+        + '</div>';
+    }
+  }
+  box.innerHTML = inner;
+  box.querySelectorAll('[data-dp-cm]').forEach(e =>
+    tap(e, () => goCm(e.getAttribute('data-dp-cm'))));
+  box.querySelectorAll('[data-dp-sw]').forEach(e =>
+    tap(e, () => playSwing(swings[+e.dataset.dpSw])));
+  grid.parentElement.appendChild(box);
 }
 
 /* 달력을 이번 달로 다시 그린다. 원래 칸에는 2026년 7월이 통째로 박혀 있었다. */
@@ -241,27 +290,34 @@ function paintCalendar() {
   const lead = new Date(y, m, 1).getDay();
   const last = new Date(y, m + 1, 0).getDate();
   const nowM = y === TODAY.getFullYear() && m === TODAY.getMonth();
+  /* 검은 동그라미는 「고른 날」을 따라다닌다. 처음엔 오늘이다.
+     오늘이 안 골라져 있을 땐 테두리만 — 오늘 자리는 계속 찾아져야 한다. */
+  const selD = (S.cal.sel && S.cal.sel.y === y && S.cal.sel.m === m)
+    ? S.cal.sel.d : (nowM ? TODAY.getDate() : 0);
   let html = '';
   for (let i = 0; i < lead; i++) html += '<span style="height:39px"></span>';
   for (let d = 1; d <= last; d++) {
     const has = !!days[y + '-' + m + '-' + d];
     const today = nowM && d === TODAY.getDate();
+    const sel = d === selD;
     const soon = new Date(y, m, d) > TODAY;
     html += '<span data-day="' + d + '" style="display:flex;flex-direction:column;'
       + 'align-items:center;gap:3px;padding:3px 0;cursor:pointer">'
       + '<span style="width:26px;height:26px;border-radius:50%;display:flex;'
-      + 'align-items:center;justify-content:center;'
+      + 'align-items:center;justify-content:center;box-sizing:border-box;'
       + 'font-family:Pretendard,-apple-system,sans-serif;font-size:12px;font-weight:'
-      + (today ? '700' : '500') + ';'
-      + (today ? 'background:var(--ns-ink);color:#fff'
-               : 'color:' + (soon ? 'var(--ns-ink3);opacity:.5' : 'var(--ns-ink2)'))
+      + (sel || today ? '700' : '500') + ';'
+      + (sel ? 'background:var(--ns-ink);color:#fff'
+         : today ? 'border:1.5px solid var(--ns-ink);color:var(--ns-ink)'
+         : 'color:' + (soon ? 'var(--ns-ink3);opacity:.5' : 'var(--ns-ink2)'))
       + '">' + d + '</span>'
       + '<span style="width:5px;height:5px;border-radius:50%;background:'
       + (has ? 'var(--ns-green)' : 'transparent') + '"></span></span>';
   }
   grid.innerHTML = html;
   grid.querySelectorAll('[data-day]').forEach(el =>
-    tap(el, () => openDay(y, m, +el.dataset.day)));
+    tap(el, () => selectDay(y, m, +el.dataset.day)));
+  dayPanel(grid, y, m);
 
   /* 설계 때 달력은 주(週)마다 한 줄씩, 다섯 줄로 그려져 있었다. 우리는 한 칸에
      한 달을 통째로 그리므로 나머지 네 줄이 그대로 남는다 — 지난달 날짜가
@@ -576,7 +632,7 @@ function applyMyFacts() {
       + '<span style="flex:none;' + P_FONT + 'font-size:11.5px;font-weight:700;color:#fff">'
       + '보기 ›</span>';
     heroEl.parentElement.insertBefore(bar, heroEl);
-    tap(bar, () => cmSheet());
+    tap(bar, () => goCm());
   }
 
   // 연습기록 말풍선 — 예시 문구 자리에 진짜 한마디를 넣고, 눌러서 펼치게
@@ -593,7 +649,7 @@ function applyMyFacts() {
     }
     const hit = bub.firstElementChild || bub;
     hit.removeAttribute('data-tapped');
-    tap(hit, () => cmSheet());
+    tap(hit, () => goCm());
   }
 
   // 레슨기록 › 프로 한마디 목록 — 예시 세 줄을 받은 것으로 갈아 끼운다
@@ -602,7 +658,7 @@ function applyMyFacts() {
     const holder = cmRows[0].parentElement;
     holder.innerHTML = got.map(cmCard).join('');
     holder.querySelectorAll('[data-cm-open]').forEach(r =>
-      tap(r, () => cmSheet(r.getAttribute('data-cm-open'))));
+      tap(r, () => goCm(r.getAttribute('data-cm-open'))));
   }
   // 「6월에 받은 한마디 5개」 — 6월엔 앱이 없었다
   const older = root().querySelector('[data-cm-older]');
@@ -1096,7 +1152,7 @@ function homeHero() {
       html: heroHTML('프로 한마디 · 도착',
         '이도형 프로가<br>한마디를 남겼어요',
         '', unread.length > 1 ? '한마디 ' + unread.length + '개 확인하기' : '한마디 확인하기'),
-      go: () => cmSheet(),
+      go: () => goCm(),
       kind: 'arrived',
     };
   }
@@ -1249,7 +1305,7 @@ function applyFresh() {
       const row = holder.querySelector('[data-cm-row]');
       if (row) {
         wireShots(row, got[0].photos || []);
-        tap(row, () => cmSheet(got[0].id));
+        tap(row, () => goCm(got[0].id));
       }
       tap(holder.querySelector('[data-cm-all]'), () => go('2i'));
     } else {
@@ -2201,7 +2257,11 @@ function loadComments() {
     const out = [];
     list.forEach(sw => (sw.comments || []).forEach(c =>
       out.push({ id: c.id, body: c.body, photos: c.photos || [],
-                 at: c.created_at, read: c.read_at, view: sw.view })));
+                 at: c.created_at, read: c.read_at, view: sw.view,
+                 /* 상세 화면(pc1)이 영상과 메모까지 보여준다 — 어느 스윙에
+                    달린 답인지 여기 실어 둔다 */
+                 swingId: sw.id, swPath: sw.path, swAt: sw.created_at,
+                 note: sw.note || null })));
     out.sort((a, b) => new Date(b.at) - new Date(a.at));
     const had = window.__COMMENTS.length;
     window.__COMMENTS = out;
@@ -2233,13 +2293,6 @@ function loadComments() {
    읽으면 서버에 읽음으로 적는다 — 폰을 바꿔도 다시 뜨지 않는다. */
 const cmTold = new Set();          // 이 세션에서 이미 알린 것
 
-// 안내나 가입 관문이 떠 있는 동안은 끼어들지 않는다 — 순서가 있다
-const cmGated = () => {
-  if (document.getElementById('join')) return true;
-  const g = document.getElementById('bgate');
-  return !!(g && !g.hidden);
-};
-
 function cmAnnounce(fresh) {
   const unseen = fresh.filter(c => !cmTold.has(c.id));
   if (!unseen.length) return;
@@ -2247,15 +2300,11 @@ function cmAnnounce(fresh) {
   const first = !window.__cmBooted;
   window.__cmBooted = true;
   if (!first) {
-    return toast('이도형 프로가 한마디를 남겼어요', { label: '바로 보기', fn: () => cmSheet() });
+    return toast('이도형 프로가 한마디를 남겼어요', { label: '바로 보기', fn: () => goCm() });
   }
-  // 앱을 막 연 참이다 — 관문이 걷히면 바로 펼친다
-  const t = setInterval(() => {
-    if (cmGated()) return;
-    clearInterval(t);
-    cmSheet();
-  }, 700);
-  setTimeout(() => clearInterval(t), 90000);
+  /* 앱을 막 연 참이다. 전에는 관문이 걷히면 시트(팝업)를 자동으로 펼쳤는데,
+     팝업을 걷어냈다 — 홈 히어로가 이미 「한마디 도착」을 크게 말하고 있고,
+     종 배지·도착 줄도 있다. 같은 말을 팝업으로 한 번 더 할 이유가 없다. */
 }
 
 /* ── 프로가 붙인 사진 ────────────────────────────────────────────────
@@ -2384,53 +2433,24 @@ function cmCard(c) {
     + safe(c.body) + '</span></div>';
 }
 
-/* 펼친 한마디 — 프로가 보낸 글과 사진이 그대로 나온다 */
-function cmSheet(id) {
+/* 한마디를 연다 — 시트(팝업) 대신 상세 화면(pc1)으로 바로 간다.
+   팝업으로 요약을 한 번 보여주고 또 누르게 하는 건 손이 두 번 가는 길이었다.
+   상세에는 영상·내 메모·프로 글·사진이 다 있다. 여는 순간 읽음으로 적는다. */
+function goCm(id) {
   const all = window.__COMMENTS || [];
-  if (!all.length) return;
-  const fresh = all.filter(c => !c.read);
-  const show = id ? all.filter(c => c.id === id)
-             : fresh.length ? fresh : all.slice(0, 1);
-  if (!show.length) return;
-  const old = document.getElementById('cmnew');
-  if (old) old.remove();
-
-  const box = document.createElement('div');
-  box.id = 'cmnew';
-  box.innerHTML = '<div class="cmn-card">'
-    + '<span class="cmn-tag">프로 한마디</span>'
-    + '<span class="cmn-t">이도형 프로가 한마디를 남겼어요</span>'
-    + show.map((c, i) => '<div class="cmn-one" data-cm-one="' + i + '">'
-        + '<span class="cmn-meta">' + cmWhen(c.at) + ' · ' + safe(c.view) + ' 스윙</span>'
-        + '<span class="cmn-body">' + safe(c.body) + '</span>'
-        + shotStrip(c.photos) + '</div>').join('')
-    + '<div class="cmn-foot">'
-    + '<button class="cmn-btn" type="button" data-cm-ok>확인했어요</button>'
-    + '<button class="cmn-alt" type="button" data-cm-list>받은 한마디 모두 보기</button>'
-    + '</div></div>';
-
-  const shut = go2i => {
-    box.remove();
-    // 펼친 것은 읽은 것이다 — 서버에도 적어 둔다
-    show.filter(c => !c.read).forEach(c => {
-      c.read = new Date().toISOString();
-      if (window.NS) NS.markRead(c.id);
-    });
-    S.unread = (window.__COMMENTS || []).filter(c => !c.read).length;
+  if (!all.length) return toast('아직 받은 한마디가 없어요');
+  const c = (id && all.find(x => x.id === id))
+         || all.find(x => !x.read) || all[0];
+  S.pcCm = c.id;
+  if (!c.read) {
+    c.read = new Date().toISOString();
+    if (window.NS) NS.markRead(c.id);
+    S.unread = all.filter(x => !x.read).length;
     if (!S.unread) S.stripOff = true;
-    if (go2i) jump('2i'); else render();
-  };
-  box.addEventListener('click', ev => {
-    if (ev.target.closest('[data-shot]')) return;      // 사진은 크게 보기가 먼저 잡는다
-    if (ev.target.closest('[data-cm-list]')) return shut(true);
-    if (ev.target === box || ev.target.closest('[data-cm-ok]')) shut(false);
-  });
-  document.body.appendChild(box);
-  box.querySelectorAll('[data-cm-one]').forEach(one =>
-    wireShots(one, show[+one.dataset.cmOne].photos || []));
-  requestAnimationFrame(() => box.classList.add('on'));
+  }
+  go('pc1');
 }
-window.__cmSheet = cmSheet;
+window.__goCm = goCm;
 
 /* 앱을 보고 있는 동안에도 계속 확인한다 — 프로는 아무 때나 답한다 */
 setInterval(() => { if (!document.hidden) loadComments(); }, 60000);
@@ -2617,31 +2637,117 @@ function pcToggle(sel, onMsg, offMsg) {
   });
 }
 
-/* 회원 답글 — 코멘트는 일방 통보가 아니라 주고받는 것 */
-const REPLY_TXT = [
-  '아 어깨였군요. 7번 아이언으로 20번씩 해보겠습니다',
-  '다음엔 정면으로 찍어서 올릴게요. 감사합니다!',
-  '0:07 다시 봤는데 진짜 어깨가 멈춰 있네요',
-];
+/* 회원 답글 — 설계 때는 예시 문장 세 개가 돌아가며 붙었다.
+   베타는 실사용이다. 서버에 답글 보내는 길이 아직 없으니, 가짜로 남긴
+   척하지 않고 사실대로 말한다. */
 function pcReply() {
-  const box = root().querySelector('[data-pc-thread]');
-  if (!box) return;
-  const d = document.createElement('div');
-  d.style.cssText = 'display:flex;justify-content:flex-end;padding-top:10px';
-  d.innerHTML = '<span style="max-width:80%;background:#E6EDE7;border:1px solid #D3E0D6;'
-    + 'border-radius:13px 13px 4px 13px;padding:10px 13px;font-size:12.5px;font-weight:500;'
-    + 'color:#21402F;line-height:1.7;letter-spacing:-.01em">'
-    + REPLY_TXT[S.replies % REPLY_TXT.length]
-    + '<span style="display:block;font-size:9.5px;font-weight:500;color:#686253;'
-    + 'font-family:var(--font-num);margin-top:5px;text-align:right">방금</span></span>';
-  box.appendChild(d);
-  S.replies++;
-  const sc = box.parentElement;
-  if (sc) {
-    const dy = box.getBoundingClientRect().bottom - sc.getBoundingClientRect().bottom + 70;
-    if (dy > 0) sc.scrollTop += dy;
+  toast('답글은 베타 이후에 열어드릴게요');
+}
+
+/* ── 한마디 상세를 진짜로 ────────────────────────────────────────────
+   pc1 화면 HTML 은 설계 때의 예시 인물로 가득하다. 진짜로 받은 한마디
+   (S.pcCm)로 전부 갈아끼운다. 진짜 데이터가 없는 구역은 걷어낸다 —
+   그럴듯한 예시가 남아 있으면 어느 게 진짜인지 알 수 없다. */
+const PC1URL = {};                 // 스윙 영상 주소 — 한 번 받아 세션 동안 재사용
+function applyPc1() {
+  const body = Array.from(root().querySelectorAll('div')).find(e => {
+    const st = e.getAttribute('style') || '';
+    return /flex:\s*1/.test(st) && /overflow-y:\s*auto/.test(st);
+  });
+  const all = window.__COMMENTS || [];
+  const c = all.find(x => x.id === S.pcCm) || all[0];
+  if (!c) {
+    return emptyBody('아직 받은 한마디가 없어요',
+                     '스윙을 올리면 이도형 프로가 직접 남겨드려요');
   }
-  toast('답글을 남겼어요 · 프로에게 알림이 갑니다');
+  const secOf = el => {
+    let e = el;
+    while (e && e !== body && e.parentElement !== body) e = e.parentElement;
+    return e === body ? null : e;
+  };
+  const hm = d => d.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' });
+
+  // 날짜 줄 — 이 한마디가 달린 스윙의 날
+  const when = c.swAt ? new Date(c.swAt) : new Date(c.at);
+  const dl = byText('7월 22일 (수)')[0];
+  if (dl) dl.textContent = md(when) + ' (' + DOW[when.getDay()] + ')';
+  const tl = byText('연습 오후 7:24')[0];
+  if (tl) tl.textContent = c.swAt ? '연습 ' + hm(new Date(c.swAt)) : '';
+
+  // 영상 — 목업 재생판을 진짜 <video> 로 갈아끼운다
+  const vidBox = root().querySelector('[data-pc-video]');
+  if (vidBox) {
+    const st = vidBox.getAttribute('style') || '';
+    if (!/position:/.test(st)) vidBox.style.position = 'relative';
+    vidBox.innerHTML =
+      '<video controls playsinline preload="metadata" style="position:absolute;inset:0;'
+      + 'width:100%;height:100%;object-fit:contain;background:#14181A;border-radius:inherit"></video>'
+      + '<span style="position:absolute;left:10px;top:10px;padding:3px 8px;border-radius:6px;'
+      + 'background:rgba(20,24,22,.62);color:#fff;' + P_FONT + 'font-size:10px;font-weight:600;'
+      + 'pointer-events:none">' + safe(c.view || '스윙') + '</span>';
+    const v = vidBox.querySelector('video');
+    if (PC1URL[c.swingId]) v.src = PC1URL[c.swingId];
+    else {
+      const rec = (window.__SWINGS || []).find(r => r.remoteId === c.swingId);
+      const getU = (rec && !rec.remote) ? VAULT.url(rec.id)
+                 : (window.NS && c.swPath ? NS.link(c.swPath) : Promise.resolve(null));
+      getU.then(u => { if (!u) return; PC1URL[c.swingId] = u;
+                       if (v.isConnected) v.src = u; }).catch(() => {});
+    }
+  }
+
+  // 프로가 짚은 지점 — 지점 데이터가 없다. 예시 채로 두지 않는다.
+  const jump1 = byText('프로가 짚은 지점')[0];
+  const jumpSec = jump1 && secOf(jump1);
+  if (jumpSec) jumpSec.remove();
+
+  // 내가 남긴 기록 — 스윙에 붙인 메모가 있으면 그것만, 없으면 구역째
+  const noteHead = byText('내가 남긴 기록')[0];
+  const noteSec = noteHead && secOf(noteHead);
+  if (noteSec) {
+    if (c.note && c.note.trim()) {
+      ['클럽', '시간', '느낌'].forEach(k => {
+        const e = byText(k).find(x => noteSec.contains(x));
+        if (e && e.parentElement) e.parentElement.remove();
+      });
+      const q = Array.from(noteSec.querySelectorAll('*')).find(e =>
+        !e.childElementCount && /^[“"]/.test(e.textContent.trim()));
+      if (q) q.textContent = '“' + c.note.trim() + '”';
+    } else noteSec.remove();
+  }
+
+  // 프로 말풍선 — 예시 문단·비교 사진·조언 카드를 전부 진짜 글과 사진으로
+  const bubble = root().querySelector('[data-pc-body]');
+  if (bubble) {
+    const at = new Date(c.at);
+    const gapH = c.swAt
+      ? Math.max(1, Math.round((at - new Date(c.swAt)) / 36e5)) : null;
+    bubble.innerHTML =
+      '<span style="display:flex;align-items:center;gap:9px;padding-bottom:9px">'
+      + '<span style="flex:none;width:30px;height:30px;border-radius:50%;'
+      + 'background:rgba(125,93,46,.14);color:var(--ns-bronze);display:flex;align-items:center;'
+      + 'justify-content:center;' + P_FONT + 'font-size:12px;font-weight:700">이</span>'
+      + '<span style="display:flex;flex-direction:column;gap:1px;min-width:0">'
+      + '<span style="' + P_FONT + 'font-size:12.5px;font-weight:700;color:var(--ns-ink)">'
+      + '이도형 프로</span>'
+      + '<span style="' + P_FONT + 'font-size:10.5px;color:var(--ns-ink3)">'
+      + md(at) + ' ' + hm(at) + (gapH ? ' · 답장까지 ' + gapH + '시간' : '') + '</span>'
+      + '</span></span>'
+      + '<span style="display:block;' + P_FONT + 'font-size:13px;line-height:1.85;'
+      + 'color:var(--ns-ink);white-space:pre-wrap;word-break:break-word">'
+      + safe(c.body) + '</span>'
+      + (c.photos && c.photos.length
+          ? '<div style="margin-top:10px">' + shotStrip(c.photos) + '</div>' : '');
+    wireShots(bubble, c.photos || []);
+  }
+
+  // 오른쪽 위 「4 / 6회」 — 진짜 남은 횟수로
+  const { cap, left } = quota();
+  const qb = byText('4 / 6회')[0];
+  if (qb) {
+    qb.textContent = left + ' / ' + cap + '회';
+    tap(qb, () => toast('이번 달 프로 한마디 ' + (cap - left) + '회 사용 · ' + left + '회 남았어요'));
+  }
 }
 
 /* ── 화면별 배선 ───────────────────────────────────────────────── */
@@ -2960,24 +3066,20 @@ const WIRE = {
     tap(root().querySelector('[data-cm-older]'), () => toast('6월 한마디 5개를 보여드릴게요'));
   },
 
-  /* ── 프로 한마디 (그날 연습 영상에 프로가 남기는 코멘트) ────────── */
+  /* ── 프로 한마디 (그날 연습 영상에 프로가 남기는 코멘트) ──────────
+     화면 HTML 은 설계 때의 예시 인물(드라이버 · 45분 · 짚은 지점 0:07…)로
+     가득하다. 베타는 실사용이다 — 진짜로 받은 한마디로 전부 갈아끼우고,
+     진짜 데이터가 없는 구역(짚은 지점 · 비교 사진 · 다음 연습 카드)은
+     그럴듯하게 두지 않고 걷어낸다. */
   pc1() {
     // '이게 다야?' 하고 실망하는 걸 막는 한 줄. 둘의 차이를 바로 볼 수 있게 잇는다.
     onSel('[data-pc-fb]', () => go('cx'));
-    wirePlayer();
-    onText('크게 보기', () => go('pc3'));
-    const ph = root().querySelector('[data-pc-photo]');
-    if (ph) tap(ph, () => go('pc3'));
+    applyPc1();
     pcToggle('[data-pc-react]', '프로에게 전달했어요', '표시를 해제했어요');
     pcToggle('[data-pc-save]', '저장한 한마디에 담았어요', '저장을 해제했어요');
     tap(root().querySelector('[data-pc-input]'), pcReply);
     tap(root().querySelector('[data-pc-send]'), pcReply);
-    tap(root().querySelector('[data-pc-clip]'), () => toast('사진 1장까지 함께 보낼 수 있어요'));
-    root().querySelectorAll('[data-pc-past]').forEach(r => tap(r, () => {
-      const d = r.firstElementChild.textContent.trim();
-      toast(d + ' 한마디를 불러왔어요');
-    }));
-    onText('4 / 6회', () => toast('이번 달 프로 한마디 2회 사용 · 4회 남았어요'));
+    tap(root().querySelector('[data-pc-clip]'), pcReply);
   },
 
   pc2() {

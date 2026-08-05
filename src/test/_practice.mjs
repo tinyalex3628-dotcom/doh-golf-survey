@@ -10,7 +10,7 @@ const RAW = fs.readFileSync(path.join(HERE, '..', 'nextswing-v3.html'), 'utf8');
 const A = RAW.indexOf('const SB_URL');
 const B = RAW.indexOf('window.NS = NS;') + 'window.NS = NS;'.length;
 const STUB = `
-window.__SW = [];
+window.__SW = window.__SW || [];
 const NS = { ready:()=>Promise.resolve({id:'u-1',is_anonymous:false}), isPro:()=>false,
   mine:()=>Promise.resolve(JSON.parse(JSON.stringify(window.__SW))),
   push:()=>Promise.reject(new Error('no')), link:()=>Promise.resolve(null),
@@ -24,7 +24,14 @@ const srv = http.createServer((q,r)=>{r.writeHead(200,{'content-type':'text/html
 const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
 const ctx = await b.newContext({viewport:{width:430,height:900}});
 const p = await ctx.newPage();
-await p.addInitScript(()=>{try{sessionStorage.setItem('ns-open-seen','1');}catch(e){}});
+await p.addInitScript(()=>{
+  try{sessionStorage.setItem('ns-open-seen','1');}catch(e){}
+  const now = new Date().toISOString();
+  window.__SW = [{ id:'rw-1', view:'정면', path:'a', size:10, note:'왼팔이 접혀요',
+    want_comment:false, created_at: now,
+    comments:[{ id:'c1', body:'어깨 회전이 덜 돌아서예요', photos:[],
+      created_at: now, read_at: now }] }];
+});
 p.on('pageerror', e=>console.log('ERR', String(e).slice(0,160)));
 await p.goto('http://127.0.0.1:8881/');
 await p.waitForTimeout(600);
@@ -95,5 +102,47 @@ const v = await p.evaluate(() => {
   };
 });
 console.log('달력이 보이는가', JSON.stringify(v));
-console.log(v.스크롤없이보임 && v.달력칸수 === 1 && !v.기록버튼 ? '통과' : '실패!');
+/* ── 날짜를 고르면 그날 것이 밑에 뜬다 ────────────────────────────
+   전에는 날짜를 누르면 팝업이 떴고, 기록 없는 날은 토스트만 나왔다.
+   이제 검은 동그라미가 그날로 옮겨 가고 달력 밑 칸이 그날 것으로 바뀐다. */
+const day = async n => {
+  await p.click('[data-day="' + n + '"]');
+  await p.waitForTimeout(350);
+  return p.evaluate(() => {
+    const pan = document.querySelector('[data-daypanel]');
+    const on = [...document.querySelectorAll('[data-day]')].find(e =>
+      /background:\s*var\(--ns-ink\)/.test(e.firstElementChild.getAttribute('style') || ''));
+    return {
+      검은동그라미: on ? on.dataset.day : null,
+      머리: pan ? (pan.firstElementChild.textContent || '').trim() : null,
+      한마디: pan ? pan.querySelectorAll('[data-dp-cm]').length : 0,
+      스윙: pan ? pan.querySelectorAll('[data-dp-sw]').length : 0,
+      없다고말함: pan ? /이 날의 기록이 없어요/.test(pan.textContent) : false,
+    };
+  });
+};
+const 오늘 = new Date().getDate();
+const 어제 = 오늘 > 1 ? 오늘 - 1 : 1;
+const 기록있는날 = await day(오늘);
+const 빈날 = await day(어제);
+await p.screenshot({ path: '_2b_day.png' });
+
+// 요약 칸의 한마디를 누르면 상세(pc1)로
+await p.click('[data-day="' + 오늘 + '"]');
+await p.waitForTimeout(300);
+const 눌러서상세 = await p.evaluate(async () => {
+  const e = document.querySelector('[data-dp-cm]');
+  if (!e) return { 없음: true };
+  e.click();
+  await new Promise(r => setTimeout(r, 400));
+  return { 화면: S.route };
+});
+
+console.log('오늘(기록 있음)', JSON.stringify(기록있는날));
+console.log('어제(기록 없음)', JSON.stringify(빈날));
+console.log('한마디 눌러서 ', JSON.stringify(눌러서상세));
+console.log(v.스크롤없이보임 && v.달력칸수 === 1 && !v.기록버튼
+  && String(기록있는날.검은동그라미) === String(오늘)
+  && String(빈날.검은동그라미) === String(어제) && 빈날.없다고말함
+  ? '통과' : '실패!');
 await b.close(); srv.close();
