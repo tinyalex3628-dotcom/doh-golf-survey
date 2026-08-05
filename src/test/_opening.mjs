@@ -165,14 +165,48 @@ window.__OPENMEM = null;`;
   await ctx.close();
 }
 
-/* ⑧ 요일 슬로건 일곱 개가 다 나오는가 */
+/* ⑧ 여는 화면이 붙기 전에 앱이 한 프레임 번쩍이지 않는가 —
+      런타임이 먼저 그리고 여는 화면은 데이터를 기다렸다 붙어서, 그 사이에
+      앱이 0.1초쯤 보였다 사라졌다. 매 프레임 무대가 보이는지 지켜본다. */
+{
+  const ctx = await b.newContext({ viewport: { width: 430, height: 900 } });
+  const p = await ctx.newPage();
+  p.on('pageerror', e => errs.push('번쩍임: ' + String(e).slice(0, 140)));
+  await p.addInitScript(`${기본}
+    window.__SAW = [];
+    const tick = () => {
+      const st = document.getElementById('stage');
+      const op = document.getElementById('openscr');
+      // 「그려진 앱이 보였나」 — 무대가 비어 있는 프레임은 번쩍임이 아니다
+      if (st) window.__SAW.push({
+        무대보임: getComputedStyle(st).visibility !== 'hidden'
+                  && st.childElementCount > 0,
+        여는화면: !!op,
+      });
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);`);
+  await p.goto('http://127.0.0.1:8871/');
+  await p.waitForTimeout(1600);
+  const 번쩍 = await p.evaluate(() => {
+    /* 여는 화면이 처음 뜨기 「전」 구간만 본다. 그 구간에 무대가 보인
+       프레임이 있으면 그게 번쩍임이다. (닫힌 뒤는 당연히 보여야 한다) */
+    const saw = window.__SAW || [];
+    const i = saw.findIndex(f => f.여는화면);
+    return (i < 0 ? saw : saw.slice(0, i)).filter(f => f.무대보임).length;
+  });
+  console.log('⑧ 앱이 미리 보인 프레임', 번쩍, 번쩍 === 0 ? '· 없음' : '· 번쩍임!');
+  await ctx.close();
+}
+
+/* ⑨ 요일 슬로건 일곱 개가 다 나오는가 */
 {
   const ctx = await b.newContext({ viewport: { width: 430, height: 900 } });
   const p = await ctx.newPage();
   await p.goto('http://127.0.0.1:8871/');
   await p.waitForTimeout(300);
   const slo = await p.evaluate(() => OPEN.WEEKSLO);
-  console.log('⑧ 요일 슬로건          ', slo.length + '개 ·', JSON.stringify(slo.slice(0, 3)));
+  console.log('⑨ 요일 슬로건          ', slo.length + '개 ·', JSON.stringify(slo.slice(0, 3)));
   await ctx.close();
 }
 

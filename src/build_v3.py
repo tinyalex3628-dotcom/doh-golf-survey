@@ -322,6 +322,11 @@ html.demo body{background:#EDEAE3}
   font-family:Pretendard,-apple-system,sans-serif;font-size:12px;font-weight:600;
   color:var(--ns-green)}
 
+/* 여는 화면이 올라오기 전 한 프레임 동안 앱이 번쩍이던 것 —
+   런타임이 먼저 그리고, 여는 화면은 데이터를 기다렸다 붙어서 그 사이에
+   한 번 그려졌다. 붙을 때까지 무대를 감춰 둔다(자리는 그대로 잡아둔다). */
+html.ns-boot #stage{visibility:hidden}
+
 /* ── 여는 화면 · 오늘의 한 장 ────────────────────────────────────────
    머리는 애니메이션이 없다 — 열자마자 그냥 거기 있다. 브랜드가 움직이면
    매번 「보여주는 것」이 되고, 매일 보면 그게 제일 지겹다.
@@ -421,10 +426,27 @@ html.demo body{background:#EDEAE3}
 .bmark:active{opacity:.7}
 """
 
+BOOT_JS = """
+if (!/[?&]dev(=|&|$)/.test(location.search)) {
+  document.documentElement.classList.add('demo');
+  /* 여는 화면이 붙기 전에 앱이 한 프레임 번쩍이던 것 — 여기서 미리 감춘다.
+     런타임 뒤(opening.js)에서 감추면 그 사이 한 프레임이 이미 그려진다.
+     이 세션에 여는 화면이 뜰 때만, 그리고 무슨 일이 있어도 3초 뒤엔 걷힌다. */
+  try {
+    if (sessionStorage.getItem('ns-open-seen') !== '1') {
+      document.documentElement.classList.add('ns-boot');
+      setTimeout(function () {
+        document.documentElement.classList.remove('ns-boot');
+      }, 3000);
+    }
+  } catch (e) {}
+}
+"""
+
 html = f"""<script>
 /* 이 파일은 이제 베타 링크로 그대로 나간다 — 화면 점프 · 등급 전환기가 보이는 쪽이
    예외다. ?dev=1 을 붙였을 때만 개발자 패널을 켠다. */
-if (!/[?&]dev(=|&|$)/.test(location.search)) document.documentElement.classList.add('demo');
+{BOOT_JS}
 </script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">

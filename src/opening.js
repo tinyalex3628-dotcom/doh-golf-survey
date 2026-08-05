@@ -9,6 +9,12 @@
    핵심은 「얼마 만에 왔나(gap)」가 갈래 순서를 정한다는 것이다.
    같은 사람도 사흘 만과 스무 날 만은 다른 말을 들어야 한다. */
 
+/* 무대를 감추는 건 문서 맨 앞 스크립트가 한다(build_v3.py) — 런타임보다
+   먼저여야 한 프레임도 안 새어 나간다. 여기서는 걷는 쪽만 맡는다. */
+window.__unboot = () => {
+  try { document.documentElement.classList.remove('ns-boot'); } catch (e) {}
+};
+
 const OPEN = (() => {
 
   /* ── 그림 부품 ── */

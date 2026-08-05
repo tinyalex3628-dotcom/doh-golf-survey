@@ -1,7 +1,22 @@
 <script>
 /* 이 파일은 이제 베타 링크로 그대로 나간다 — 화면 점프 · 등급 전환기가 보이는 쪽이
    예외다. ?dev=1 을 붙였을 때만 개발자 패널을 켠다. */
-if (!/[?&]dev(=|&|$)/.test(location.search)) document.documentElement.classList.add('demo');
+
+if (!/[?&]dev(=|&|$)/.test(location.search)) {
+  document.documentElement.classList.add('demo');
+  /* 여는 화면이 붙기 전에 앱이 한 프레임 번쩍이던 것 — 여기서 미리 감춘다.
+     런타임 뒤(opening.js)에서 감추면 그 사이 한 프레임이 이미 그려진다.
+     이 세션에 여는 화면이 뜰 때만, 그리고 무슨 일이 있어도 3초 뒤엔 걷힌다. */
+  try {
+    if (sessionStorage.getItem('ns-open-seen') !== '1') {
+      document.documentElement.classList.add('ns-boot');
+      setTimeout(function () {
+        document.documentElement.classList.remove('ns-boot');
+      }, 3000);
+    }
+  } catch (e) {}
+}
+
 </script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -307,6 +322,11 @@ html.demo body{background:#EDEAE3}
 .cmn-alt{border:0;background:none;cursor:pointer;padding:7px 0 0;
   font-family:Pretendard,-apple-system,sans-serif;font-size:12px;font-weight:600;
   color:var(--ns-green)}
+
+/* 여는 화면이 올라오기 전 한 프레임 동안 앱이 번쩍이던 것 —
+   런타임이 먼저 그리고, 여는 화면은 데이터를 기다렸다 붙어서 그 사이에
+   한 번 그려졌다. 붙을 때까지 무대를 감춰 둔다(자리는 그대로 잡아둔다). */
+html.ns-boot #stage{visibility:hidden}
 
 /* ── 여는 화면 · 오늘의 한 장 ────────────────────────────────────────
    머리는 애니메이션이 없다 — 열자마자 그냥 거기 있다. 브랜드가 움직이면
@@ -9734,6 +9754,12 @@ window.__vaultSync().then(l => {
    핵심은 「얼마 만에 왔나(gap)」가 갈래 순서를 정한다는 것이다.
    같은 사람도 사흘 만과 스무 날 만은 다른 말을 들어야 한다. */
 
+/* 무대를 감추는 건 문서 맨 앞 스크립트가 한다(build_v3.py) — 런타임보다
+   먼저여야 한 프레임도 안 새어 나간다. 여기서는 걷는 쪽만 맡는다. */
+window.__unboot = () => {
+  try { document.documentElement.classList.remove('ns-boot'); } catch (e) {}
+};
+
 const OPEN = (() => {
 
   /* ── 그림 부품 ── */
@@ -10240,16 +10266,24 @@ window.__openScreen = openScreen;
      안 오면 그냥 연다 — 첫 방문으로 쳐도 카드는 나온다. */
   let seen = false;
   try { seen = sessionStorage.getItem(KEY) === '1'; } catch (e) {}
+  const unboot = window.__unboot || (() => {});
   const gate = () => { if (!DEV && !seen) open(); };
 
   let opened = false;
   try { opened = sessionStorage.getItem('ns-open-seen') === '1'; } catch (e) {}
 
-  if (DEV || opened || !window.__openScreen) return gate();
+  if (DEV || opened || !window.__openScreen) { unboot(); return gate(); }
   try { sessionStorage.setItem('ns-open-seen', '1'); } catch (e) {}
 
   let went = false;
-  const start = () => { if (went) return; went = true; window.__openScreen(gate); };
+  /* 여는 화면을 붙인 「뒤에」 무대를 드러낸다 — 순서가 반대면 그 한 프레임에
+     앱이 보인다. openScreen 은 동기라 돌아온 시점엔 이미 덮여 있다. */
+  const start = () => {
+    if (went) return;
+    went = true;
+    window.__openScreen(gate);
+    unboot();
+  };
   /* 스윙·한마디가 와 있어야 카드가 제대로 갈린다. 그 신호를 기다리되
      1.2초까지만 — 데이터가 늦는다고 흰 화면을 계속 보여줄 수는 없다.
      늦게 오면 그냥 응원 카드가 나온다. 틀린 말은 아니다. */

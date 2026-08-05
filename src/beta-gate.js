@@ -145,16 +145,24 @@
      안 오면 그냥 연다 — 첫 방문으로 쳐도 카드는 나온다. */
   let seen = false;
   try { seen = sessionStorage.getItem(KEY) === '1'; } catch (e) {}
+  const unboot = window.__unboot || (() => {});
   const gate = () => { if (!DEV && !seen) open(); };
 
   let opened = false;
   try { opened = sessionStorage.getItem('ns-open-seen') === '1'; } catch (e) {}
 
-  if (DEV || opened || !window.__openScreen) return gate();
+  if (DEV || opened || !window.__openScreen) { unboot(); return gate(); }
   try { sessionStorage.setItem('ns-open-seen', '1'); } catch (e) {}
 
   let went = false;
-  const start = () => { if (went) return; went = true; window.__openScreen(gate); };
+  /* 여는 화면을 붙인 「뒤에」 무대를 드러낸다 — 순서가 반대면 그 한 프레임에
+     앱이 보인다. openScreen 은 동기라 돌아온 시점엔 이미 덮여 있다. */
+  const start = () => {
+    if (went) return;
+    went = true;
+    window.__openScreen(gate);
+    unboot();
+  };
   /* 스윙·한마디가 와 있어야 카드가 제대로 갈린다. 그 신호를 기다리되
      1.2초까지만 — 데이터가 늦는다고 흰 화면을 계속 보여줄 수는 없다.
      늦게 오면 그냥 응원 카드가 나온다. 틀린 말은 아니다. */
