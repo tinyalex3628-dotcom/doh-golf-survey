@@ -13,3 +13,6 @@ src/nextswing-admin.html
 
 # 테스트가 남기는 화면 사진
 src/_*.png
+
+# 테스트용 playwright — 세션 스크래치패드로 잇는 링크다
+src/node_modules
