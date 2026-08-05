@@ -175,9 +175,11 @@ await p.waitForTimeout(400);
 const big = await p.evaluate(() => ({ 큰화면: !!document.getElementById('shotbig'),
   시트안뜸: !document.getElementById('cmnew') }));
 await p.evaluate(() => { const x = document.getElementById('shotbig'); if (x) x.remove(); });
-await p.click('[data-cm-open]');
+/* 카드 밑 한 줄을 누르면 상세로 — 팝업(cmnew)은 이제 없다 */
+await p.click('[data-cm-all]');
 await p.waitForTimeout(400);
-const sheet = await p.evaluate(() => ({ 시트: !!document.getElementById('cmnew') }));
+const sheet = await p.evaluate(() => ({ 화면: S.route,
+  팝업안뜸: !document.getElementById('cmnew') }));
 
 console.log('① 아무것도 없을 때', JSON.stringify(a, null, 0));
 console.log('② 답 기다리는 중  ', JSON.stringify(c, null, 0));
@@ -219,6 +221,40 @@ await p.evaluate(async () => {
 });
 await p.waitForTimeout(500);
 const 이후 = await 머리();
+
+/* ⑥ 「계속 읽기」는 잘린 글 바로 밑 · 사진보다 위에 있어야 한다.
+      카드 밑에는 한 줄만 남는다. */
+await p.evaluate(async () => {
+  const long = '머리가 너무 높고 이상하게 절로 갑니다\n다운스윙에서 상체가 일찍 '
+    + '일어나면서 클럽이 밖에서 들어옵니다\n7번 아이언으로 천천히 스무 번만 '
+    + '해보세요\n네 번째 줄은 잘려야 합니다\n다섯 번째 줄';
+  const c = window.__SW[0].comments[window.__SW[0].comments.length - 1];
+  c.body = long;
+  // 사진이 있어야 「글 밑 · 사진 위」인지 잴 수 있다
+  c.photos = ['data:image/svg+xml;base64,' + btoa(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="360" height="640">'
+    + '<rect width="360" height="640" fill="#2C3A30"/></svg>')];
+  await loadComments(); jump('2a');
+});
+await p.waitForTimeout(400);
+const 자리 = await p.evaluate(() => {
+  const row = document.querySelector('[data-cm-row]');
+  const bd = row.querySelector('[data-cm-body]');
+  const more = row.querySelector('[data-cm-more]');
+  const wall = row.querySelector('.cm-wall');
+  const all = document.querySelector('[data-cm-all]');
+  const y = e => e ? Math.round(e.getBoundingClientRect().top) : null;
+  return {
+    잘림: bd.scrollHeight > bd.clientHeight + 2,
+    계속읽기보임: more ? !more.hidden : false,
+    글밑에: more && !more.hidden ? y(more) > y(bd) : null,
+    사진위에: more && !more.hidden && wall ? y(more) < y(wall) : null,
+    하단: all ? all.textContent.replace(/\s+/g, ' ').trim() : null,
+    하단이하나: document.querySelectorAll('[data-cm-all]').length,
+  };
+});
+await p.screenshot({ path: '_pro_card.png' });
+console.log('⑥ 계속 읽기 자리 ', JSON.stringify(자리));
 
 console.log('⑤ 예전 답만 있을 때', JSON.stringify(이전));
 console.log('   새 답이 온 뒤   ', JSON.stringify(이후));
