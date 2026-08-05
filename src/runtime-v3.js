@@ -3170,8 +3170,10 @@ const WIRE = {
      진짜 데이터가 없는 구역(짚은 지점 · 비교 사진 · 다음 연습 카드)은
      그럴듯하게 두지 않고 걷어낸다. */
   pc1() {
-    // '이게 다야?' 하고 실망하는 걸 막는 한 줄. 둘의 차이를 바로 볼 수 있게 잇는다.
-    onSel('[data-pc-fb]', () => go('cx'));
+    // 「올린 스윙 하나에 대한 답이에요 · 뭐가 다른가요」 안내띠 — 뗀다.
+    // 답장 읽으러 온 화면 맨 위에서 딴 얘기부터 하고 있었다.
+    const kind = root().querySelector('[data-pc-kind]');
+    if (kind) kind.remove();
     applyPc1();
     pcToggle('[data-pc-react]', '프로에게 전달했어요', '표시를 해제했어요');
     pcToggle('[data-pc-save]', '저장한 한마디에 담았어요', '저장을 해제했어요');
