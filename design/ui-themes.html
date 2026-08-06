@@ -1,0 +1,724 @@
+<!doctype html><html lang="ko"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>NEXT SWING · UI 시안 3벌</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Pretendard,-apple-system,'Malgun Gothic',sans-serif;background:#EDEAE3;
+  color:#1D2420;-webkit-font-smoothing:antialiased;padding:34px 26px 80px}
+h1{font-size:21px;letter-spacing:-.02em}
+.lede{font-size:12.5px;color:#6E6858;line-height:1.8;margin:8px 0 6px;max-width:640px}
+section{margin-top:44px}
+section header h2{font-size:16px;letter-spacing:-.02em}
+section header p{font-size:12px;color:#6E6858;margin-top:4px}
+.strip{display:flex;gap:22px;overflow-x:auto;padding:18px 4px 6px;align-items:flex-start}
+.col{flex:none}
+.cap{text-align:center;font-size:11px;color:#8A8375;padding-top:9px}
+.fit{font-size:12.5px;color:#41544A;font-weight:600;margin-top:10px}
+.ph{width:340px;border-radius:30px;overflow:hidden;border:1px solid #D8D2C6;
+  box-shadow:0 16px 38px -22px rgba(38,40,42,.45);display:flex;flex-direction:column;min-height:700px}
+.ph-top{display:flex;align-items:center;justify-content:space-between;padding:11px 18px 5px;
+  font-size:11px;font-weight:700}
+.ph-top .batt{width:16px;height:9px;border-radius:2px;background:currentColor;opacity:.85}
+.beta{font-style:normal;font-size:9.5px;font-weight:800;border-radius:99px;padding:2px 9px}
+.ph-body{flex:1}
+
+.t-toss{background:#FFFFFF;color:#191F28}
+.t-toss .ph-top{color:#191F28}
+.t-toss .beta{background:#E8F1FE;color:#3182F6}
+.t-toss .ph-head{font-size:22px;font-weight:800;
+  padding:18px 22px 4px;letter-spacing:-.03em;
+  }
+.t-toss .ph-body{padding:10px 22px 20px}
+.t-toss .kick{font-size:12px;font-weight:700;color:#3182F6;padding:6px 0 8px;
+  }
+.t-toss .h1{font-size:26px;font-weight:800;line-height:1.32;
+  letter-spacing:-.035em;padding-bottom:12px}
+.t-toss .quote{font-size:14px;line-height:1.7;color:#4E5968;padding-bottom:16px}
+.t-toss .cta{background:#3182F6;color:#fff;border-radius:18px;text-align:center;
+  padding:16px;font-size:15px;font-weight:700;margin-bottom:22px}
+.t-toss .row{display:flex;justify-content:space-between;align-items:baseline;padding:2px 0 8px}
+.t-toss .row-t{font-size:13px;font-weight:700}
+.t-toss .row-n{font-size:12px;font-weight:700;color:#3182F6}
+.t-toss .bar{height:8px;border-radius:99px;background:#F4F6F8;
+  overflow:hidden;margin-bottom:8px;}
+.t-toss .bar i{display:block;height:100%;background:#3182F6;border-radius:99px}
+.t-toss .mini{font-size:12px;color:#8B95A1;padding-bottom:20px}
+.t-toss .mini b{color:#191F28}
+.t-toss .sec{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:13px;font-weight:800;color:#4E5968;
+  padding:14px 2px 8px;}
+.t-toss .sec em{font-style:normal;font-size:11px;font-weight:600;color:#8B95A1}
+.t-toss .card{background:#F4F6F8;border-radius:18px;padding:15px;margin-bottom:10px;
+  
+  }
+.t-toss .card.slim{padding:13px 15px}
+.t-toss .card.dim2{opacity:.78}
+.t-toss .meta{display:flex;gap:7px;align-items:center;font-size:11.5px;font-weight:600;
+  color:#8B95A1;padding-bottom:7px}
+.t-toss .new{background:#3182F6;color:#fff;font-size:9px;font-weight:800;
+  border-radius:5px;padding:2px 6px;letter-spacing:.06em}
+.t-toss .tag{background:#E8F1FE;color:#3182F6;font-size:10px;font-weight:800;
+  border-radius:5px;padding:2px 7px}
+.t-toss .who{font-size:13.5px;font-weight:800;padding-bottom:5px}
+.t-toss .body2,.t-toss .body3{font-size:13.5px;line-height:1.68;color:#191F28;
+  display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+.t-toss .body2{-webkit-line-clamp:2} .t-toss .body3{-webkit-line-clamp:3}
+.t-toss .wall{position:relative;height:150px;border-radius:12px;margin-top:10px;
+  background:#232A26}
+.t-toss .bd{position:absolute;left:9px;top:9px;background:rgba(0,0,0,.5);color:#fff;
+  font-size:10px;font-weight:700;border-radius:6px;padding:3px 8px}
+.t-toss .bd.b2{top:34px;opacity:.85;font-weight:600}
+.t-toss .more{font-size:12.5px;font-weight:700;color:#3182F6;padding-top:11px;
+  border-top:1px solid #EAEDF0;margin-top:11px}
+.t-toss .cal{background:#F4F6F8;border-radius:18px;padding:13px 13px 11px;
+  
+  }
+.t-toss .cal-h{text-align:center;font-size:13px;font-weight:800;padding-bottom:10px}
+.t-toss .cal-w,.t-toss .cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.t-toss .cal-w s{text-decoration:none;font-size:10px;font-weight:700;color:#8B95A1;padding:3px 0}
+.t-toss .cal-g s{text-decoration:none;font-size:12px;font-weight:600;color:#4E5968;
+  height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.t-toss .cal-g s.off{color:#8B95A1;opacity:.45}
+.t-toss .cal-g s.sel{background:#191F28;color:#fff;font-weight:800}
+.t-toss .cal-g s.today{box-shadow:inset 0 0 0 1.5px #191F28;font-weight:800}
+.t-toss .cal-g s.has{position:relative}
+.t-toss .cal-g s.has:after{content:'';position:absolute;bottom:1px;left:50%;margin-left:-2px;
+  width:4px;height:4px;border-radius:50%;background:#12B76A}
+.t-toss .cal-l{display:flex;justify-content:center;gap:4px;align-items:center;
+  font-size:10px;color:#8B95A1;padding-top:9px}
+.t-toss .st{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px}
+.t-toss .dayrow{display:flex;align-items:center;gap:8px;padding:2px 2px 10px}
+.t-toss .thumb{width:34px;height:46px;border-radius:8px;background:#28302B}
+.t-toss .thumb.l2{background:#3A4640}
+.t-toss .day-t{font-size:12.5px;font-weight:700;color:#4E5968}
+.t-toss .donebar{display:flex;align-items:center;gap:7px;background:#F4F6F8;
+  border-radius:12px;padding:12px 14px;font-size:12.5px;font-weight:600;margin-top:4px;
+  }
+.t-toss .donebar em{font-style:normal;margin-left:auto;font-weight:800;color:#3182F6;font-size:12px}
+.t-toss .chips{display:flex;gap:6px;overflow:hidden;padding-bottom:4px}
+.t-toss .chip{flex:none;font-size:12px;font-weight:700;border-radius:99px;
+  padding:8px 13px;background:#F4F6F8;color:#4E5968;
+  }
+.t-toss .chip.on{background:#3182F6;color:#fff}
+.t-toss .grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding-bottom:6px}
+.t-toss .cell{position:relative;aspect-ratio:3/4;border-radius:12px;
+  background:#232A26}
+.t-toss .cell.lite{background:#39443E}
+.t-toss .cell.add{background:#F4F6F8;display:flex;flex-direction:column;gap:4px;
+  align-items:center;justify-content:center;color:#3182F6;font-size:26px;font-weight:300;
+  border:1.5px dashed #EAEDF0}
+.t-toss .cell.add b{font-size:12px;font-weight:700}
+.t-toss .cs{position:absolute;left:9px;bottom:8px;display:flex;align-items:center;
+  color:#fff;font-size:10.5px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.t-toss .mynote{font-size:11px;font-weight:700;color:#8B95A1;padding:4px 0 12px}
+.t-toss .mynote b{display:block;font-size:13px;font-weight:500;color:#191F28;
+  line-height:1.65;padding-top:6px}
+.t-toss .thread{border-top:1px solid #EAEDF0;padding-top:12px}
+.t-toss .th-h{display:flex;gap:9px;align-items:flex-start;padding-bottom:7px}
+.t-toss .th-h b{display:block;font-size:12.5px;font-weight:800}
+.t-toss .th-h i{font-style:normal;font-size:10.5px;color:#8B95A1}
+.t-toss .av{flex:none;width:30px;height:30px;border-radius:50%;background:#E8F1FE;
+  color:#3182F6;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800}
+.t-toss .av.big{width:44px;height:44px;font-size:16px}
+.t-toss .shots{margin-left:auto;display:flex;gap:5px}
+.t-toss .shots s{width:30px;height:40px;border-radius:6px;background:#28302B;display:block}
+.t-toss .th-b{font-size:13.5px;line-height:1.7;padding-left:39px}
+.t-toss .vlab{font-size:10.5px;font-weight:800;letter-spacing:.1em;color:#8B95A1;
+  padding:14px 0 7px}
+.t-toss .video{position:relative;height:170px;border-radius:12px;background:#171D1A}
+.t-toss .play{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px;
+  border-radius:50%;background:rgba(255,255,255,.22)}
+.t-toss .play:after{content:'';position:absolute;left:16px;top:12px;
+  border-left:12px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent}
+.t-toss .lock{background:#F4F6F8;border-radius:12px;padding:13px 15px;font-size:12.5px;
+  font-weight:800;color:#4E5968;margin-top:4px;
+  }
+.t-toss .lock span{display:block;font-size:11.5px;font-weight:500;color:#8B95A1;padding-top:3px}
+.t-toss .me{display:flex;gap:12px;align-items:center;padding:8px 2px 16px}
+.t-toss .me b{display:block;font-size:17px;font-weight:800}
+.t-toss .me i{font-style:normal;font-size:11.5px;color:#8B95A1}
+.t-toss .plan{background:#3182F6;
+  color:#fff;border-radius:18px;padding:16px;margin-bottom:12px;position:relative}
+.t-toss .plan b{font-size:16px;font-weight:800;display:block}
+.t-toss .plan span{font-size:11.5px;opacity:.85}
+.t-toss .plan em{font-style:normal;position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  font-size:11px;font-weight:700;background:rgba(255,255,255,.18);border-radius:8px;padding:6px 10px}
+.t-toss .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-bottom:14px}
+.t-toss .stats span{background:#F4F6F8;border-radius:12px;text-align:center;padding:12px 0;
+  }
+.t-toss .stats b{display:block;font-size:18px;font-weight:800;
+  font-variant-numeric:tabular-nums}
+.t-toss .stats i{font-style:normal;font-size:10.5px;color:#8B95A1}
+.t-toss .list{background:#F4F6F8;border-radius:18px;overflow:hidden;
+  }
+.t-toss .list span{display:flex;justify-content:space-between;padding:15px 16px;font-size:13.5px;
+  font-weight:600;border-bottom:1px solid #EAEDF0}
+.t-toss .list span:last-child{border-bottom:0}
+.t-toss .list i{font-style:normal;font-size:11.5px;color:#8B95A1}
+.t-toss .tabs{display:flex;background:#FFFFFF;border-top:1px solid #F0F2F4;
+  padding:7px 0 9px}
+.t-toss .tb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  color:#8B95A1}
+.t-toss .tb b{font-size:9.5px;font-weight:600}
+.t-toss .tb.on{color:#3182F6}
+
+.t-garmin{background:#F3F5F2;color:#13251B}
+.t-garmin .ph-top{color:#13251B}
+.t-garmin .beta{background:#E3EFE7;color:#0B5C38}
+.t-garmin .ph-head{font-size:17px;font-weight:800;
+  padding:12px 18px 4px;letter-spacing:-.03em;
+  color:#fff;background:#0E2A1D;padding:14px 18px 12px;margin-bottom:2px}
+.t-garmin .ph-body{padding:10px 16px 18px}
+.t-garmin .kick{font-size:12px;font-weight:700;color:#0B5C38;padding:6px 0 8px;
+  text-transform:uppercase;letter-spacing:.08em}
+.t-garmin .h1{font-size:22px;font-weight:800;line-height:1.32;
+  letter-spacing:-.035em;padding-bottom:12px}
+.t-garmin .quote{font-size:14px;line-height:1.7;color:#41544A;padding-bottom:16px}
+.t-garmin .cta{background:#0B5C38;color:#fff;border-radius:10px;text-align:center;
+  padding:13px;font-size:15px;font-weight:700;margin-bottom:22px}
+.t-garmin .row{display:flex;justify-content:space-between;align-items:baseline;padding:2px 0 8px}
+.t-garmin .row-t{font-size:13px;font-weight:700}
+.t-garmin .row-n{font-size:12px;font-weight:700;color:#0B5C38}
+.t-garmin .bar{height:6px;border-radius:99px;background:#FFFFFF;
+  overflow:hidden;margin-bottom:8px;border:1px solid #DFE5DD}
+.t-garmin .bar i{display:block;height:100%;background:#0B5C38;border-radius:99px}
+.t-garmin .mini{font-size:12px;color:#7C8B81;padding-bottom:20px}
+.t-garmin .mini b{color:#13251B}
+.t-garmin .sec{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:12px;font-weight:800;color:#41544A;
+  padding:14px 2px 8px;text-transform:uppercase;letter-spacing:.07em}
+.t-garmin .sec em{font-style:normal;font-size:11px;font-weight:600;color:#7C8B81}
+.t-garmin .card{background:#FFFFFF;border-radius:10px;padding:15px;margin-bottom:10px;
+  border:1px solid #DFE5DD
+  }
+.t-garmin .card.slim{padding:13px 15px}
+.t-garmin .card.dim2{opacity:.78}
+.t-garmin .meta{display:flex;gap:7px;align-items:center;font-size:11.5px;font-weight:600;
+  color:#7C8B81;padding-bottom:7px}
+.t-garmin .new{background:#0B5C38;color:#fff;font-size:9px;font-weight:800;
+  border-radius:5px;padding:2px 6px;letter-spacing:.06em}
+.t-garmin .tag{background:#E3EFE7;color:#0B5C38;font-size:10px;font-weight:800;
+  border-radius:5px;padding:2px 7px}
+.t-garmin .who{font-size:13.5px;font-weight:800;padding-bottom:5px}
+.t-garmin .body2,.t-garmin .body3{font-size:13.5px;line-height:1.68;color:#13251B;
+  display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+.t-garmin .body2{-webkit-line-clamp:2} .t-garmin .body3{-webkit-line-clamp:3}
+.t-garmin .wall{position:relative;height:150px;border-radius:7px;margin-top:10px;
+  background:#10241A}
+.t-garmin .bd{position:absolute;left:9px;top:9px;background:rgba(0,0,0,.5);color:#fff;
+  font-size:10px;font-weight:700;border-radius:6px;padding:3px 8px}
+.t-garmin .bd.b2{top:34px;opacity:.85;font-weight:600}
+.t-garmin .more{font-size:12.5px;font-weight:700;color:#0B5C38;padding-top:11px;
+  border-top:1px solid #DFE5DD;margin-top:11px}
+.t-garmin .cal{background:#FFFFFF;border-radius:10px;padding:13px 13px 11px;
+  border:1px solid #DFE5DD
+  }
+.t-garmin .cal-h{text-align:center;font-size:13px;font-weight:800;padding-bottom:10px}
+.t-garmin .cal-w,.t-garmin .cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.t-garmin .cal-w s{text-decoration:none;font-size:10px;font-weight:700;color:#7C8B81;padding:3px 0}
+.t-garmin .cal-g s{text-decoration:none;font-size:12px;font-weight:600;color:#41544A;
+  height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.t-garmin .cal-g s.off{color:#7C8B81;opacity:.45}
+.t-garmin .cal-g s.sel{background:#13251B;color:#fff;font-weight:800}
+.t-garmin .cal-g s.today{box-shadow:inset 0 0 0 1.5px #13251B;font-weight:800}
+.t-garmin .cal-g s.has{position:relative}
+.t-garmin .cal-g s.has:after{content:'';position:absolute;bottom:1px;left:50%;margin-left:-2px;
+  width:4px;height:4px;border-radius:50%;background:#0B8A4B}
+.t-garmin .cal-l{display:flex;justify-content:center;gap:4px;align-items:center;
+  font-size:10px;color:#7C8B81;padding-top:9px}
+.t-garmin .st{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px}
+.t-garmin .dayrow{display:flex;align-items:center;gap:8px;padding:2px 2px 10px}
+.t-garmin .thumb{width:34px;height:46px;border-radius:8px;background:#28302B}
+.t-garmin .thumb.l2{background:#3A4640}
+.t-garmin .day-t{font-size:12.5px;font-weight:700;color:#41544A}
+.t-garmin .donebar{display:flex;align-items:center;gap:7px;background:#FFFFFF;
+  border-radius:7px;padding:12px 14px;font-size:12.5px;font-weight:600;margin-top:4px;
+  border:1px solid #DFE5DD}
+.t-garmin .donebar em{font-style:normal;margin-left:auto;font-weight:800;color:#0B5C38;font-size:12px}
+.t-garmin .chips{display:flex;gap:6px;overflow:hidden;padding-bottom:4px}
+.t-garmin .chip{flex:none;font-size:12px;font-weight:700;border-radius:7px;
+  padding:8px 13px;background:#FFFFFF;color:#41544A;
+  border:1px solid #DFE5DD}
+.t-garmin .chip.on{background:#0B5C38;color:#fff}
+.t-garmin .grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding-bottom:6px}
+.t-garmin .cell{position:relative;aspect-ratio:3/4;border-radius:7px;
+  background:#10241A}
+.t-garmin .cell.lite{background:#39443E}
+.t-garmin .cell.add{background:#FFFFFF;display:flex;flex-direction:column;gap:4px;
+  align-items:center;justify-content:center;color:#0B5C38;font-size:26px;font-weight:300;
+  border:1.5px dashed #B9C7BC}
+.t-garmin .cell.add b{font-size:12px;font-weight:700}
+.t-garmin .cs{position:absolute;left:9px;bottom:8px;display:flex;align-items:center;
+  color:#fff;font-size:10.5px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.t-garmin .mynote{font-size:11px;font-weight:700;color:#7C8B81;padding:4px 0 12px}
+.t-garmin .mynote b{display:block;font-size:13px;font-weight:500;color:#13251B;
+  line-height:1.65;padding-top:6px}
+.t-garmin .thread{border-top:1px solid #DFE5DD;padding-top:12px}
+.t-garmin .th-h{display:flex;gap:9px;align-items:flex-start;padding-bottom:7px}
+.t-garmin .th-h b{display:block;font-size:12.5px;font-weight:800}
+.t-garmin .th-h i{font-style:normal;font-size:10.5px;color:#7C8B81}
+.t-garmin .av{flex:none;width:30px;height:30px;border-radius:50%;background:#E3EFE7;
+  color:#0B5C38;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800}
+.t-garmin .av.big{width:44px;height:44px;font-size:16px}
+.t-garmin .shots{margin-left:auto;display:flex;gap:5px}
+.t-garmin .shots s{width:30px;height:40px;border-radius:6px;background:#28302B;display:block}
+.t-garmin .th-b{font-size:13.5px;line-height:1.7;padding-left:39px}
+.t-garmin .vlab{font-size:10.5px;font-weight:800;letter-spacing:.1em;color:#7C8B81;
+  padding:14px 0 7px}
+.t-garmin .video{position:relative;height:170px;border-radius:7px;background:#171D1A}
+.t-garmin .play{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px;
+  border-radius:50%;background:rgba(255,255,255,.22)}
+.t-garmin .play:after{content:'';position:absolute;left:16px;top:12px;
+  border-left:12px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent}
+.t-garmin .lock{background:#FFFFFF;border-radius:7px;padding:13px 15px;font-size:12.5px;
+  font-weight:800;color:#41544A;margin-top:4px;
+  border:1px solid #DFE5DD}
+.t-garmin .lock span{display:block;font-size:11.5px;font-weight:500;color:#7C8B81;padding-top:3px}
+.t-garmin .me{display:flex;gap:12px;align-items:center;padding:8px 2px 16px}
+.t-garmin .me b{display:block;font-size:17px;font-weight:800}
+.t-garmin .me i{font-style:normal;font-size:11.5px;color:#7C8B81}
+.t-garmin .plan{background:linear-gradient(0deg,#0B5C38,#0B5C38);
+  color:#fff;border-radius:10px;padding:16px;margin-bottom:12px;position:relative}
+.t-garmin .plan b{font-size:16px;font-weight:800;display:block}
+.t-garmin .plan span{font-size:11.5px;opacity:.85}
+.t-garmin .plan em{font-style:normal;position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  font-size:11px;font-weight:700;background:rgba(255,255,255,.18);border-radius:8px;padding:6px 10px}
+.t-garmin .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-bottom:14px}
+.t-garmin .stats span{background:#FFFFFF;border-radius:7px;text-align:center;padding:12px 0;
+  border:1px solid #DFE5DD}
+.t-garmin .stats b{display:block;font-size:20px;font-weight:800;
+  font-variant-numeric:tabular-nums}
+.t-garmin .stats i{font-style:normal;font-size:10.5px;color:#7C8B81}
+.t-garmin .list{background:#FFFFFF;border-radius:10px;overflow:hidden;
+  border:1px solid #DFE5DD}
+.t-garmin .list span{display:flex;justify-content:space-between;padding:15px 16px;font-size:13.5px;
+  font-weight:600;border-bottom:1px solid #DFE5DD}
+.t-garmin .list span:last-child{border-bottom:0}
+.t-garmin .list i{font-style:normal;font-size:11.5px;color:#7C8B81}
+.t-garmin .tabs{display:flex;background:#0E2A1D;border-top:1px solid #0E2A1D;
+  padding:7px 0 9px}
+.t-garmin .tb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  color:rgba(255,255,255,.55)}
+.t-garmin .tb b{font-size:9.5px;font-weight:600}
+.t-garmin .tb.on{color:#fff}
+
+.t-kakao{background:#F5F6F8;color:#1A1C20}
+.t-kakao .ph-top{color:#1A1C20}
+.t-kakao .beta{background:#E9F7EF;color:#06A755}
+.t-kakao .ph-head{font-size:17px;font-weight:800;
+  padding:12px 18px 4px;letter-spacing:-.03em;
+  }
+.t-kakao .ph-body{padding:10px 16px 18px}
+.t-kakao .kick{font-size:12px;font-weight:700;color:#06A755;padding:6px 0 8px;
+  }
+.t-kakao .h1{font-size:22px;font-weight:800;line-height:1.32;
+  letter-spacing:-.035em;padding-bottom:12px}
+.t-kakao .quote{font-size:14px;line-height:1.7;color:#52565E;padding-bottom:16px}
+.t-kakao .cta{background:#06A755;color:#fff;border-radius:20px;text-align:center;
+  padding:13px;font-size:15px;font-weight:700;margin-bottom:22px}
+.t-kakao .row{display:flex;justify-content:space-between;align-items:baseline;padding:2px 0 8px}
+.t-kakao .row-t{font-size:13px;font-weight:700}
+.t-kakao .row-n{font-size:12px;font-weight:700;color:#06A755}
+.t-kakao .bar{height:6px;border-radius:99px;background:#FFFFFF;
+  overflow:hidden;margin-bottom:8px;}
+.t-kakao .bar i{display:block;height:100%;background:#06A755;border-radius:99px}
+.t-kakao .mini{font-size:12px;color:#9198A3;padding-bottom:20px}
+.t-kakao .mini b{color:#1A1C20}
+.t-kakao .sec{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:13px;font-weight:800;color:#52565E;
+  padding:14px 2px 8px;}
+.t-kakao .sec em{font-style:normal;font-size:11px;font-weight:600;color:#9198A3}
+.t-kakao .card{background:#FFFFFF;border-radius:20px;padding:15px;margin-bottom:10px;
+  
+  box-shadow:0 1px 4px rgba(26,28,32,.05)}
+.t-kakao .card.slim{padding:13px 15px}
+.t-kakao .card.dim2{opacity:.78}
+.t-kakao .meta{display:flex;gap:7px;align-items:center;font-size:11.5px;font-weight:600;
+  color:#9198A3;padding-bottom:7px}
+.t-kakao .new{background:#06A755;color:#fff;font-size:9px;font-weight:800;
+  border-radius:5px;padding:2px 6px;letter-spacing:.06em}
+.t-kakao .tag{background:#E9F7EF;color:#06A755;font-size:10px;font-weight:800;
+  border-radius:5px;padding:2px 7px}
+.t-kakao .who{font-size:13.5px;font-weight:800;padding-bottom:5px}
+.t-kakao .body2,.t-kakao .body3{font-size:13.5px;line-height:1.68;color:#1A1C20;
+  display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+.t-kakao .body2{-webkit-line-clamp:2} .t-kakao .body3{-webkit-line-clamp:3}
+.t-kakao .wall{position:relative;height:150px;border-radius:14px;margin-top:10px;
+  background:#232A26}
+.t-kakao .bd{position:absolute;left:9px;top:9px;background:rgba(0,0,0,.5);color:#fff;
+  font-size:10px;font-weight:700;border-radius:6px;padding:3px 8px}
+.t-kakao .bd.b2{top:34px;opacity:.85;font-weight:600}
+.t-kakao .more{font-size:12.5px;font-weight:700;color:#06A755;padding-top:11px;
+  border-top:1px solid #EDEFF2;margin-top:11px}
+.t-kakao .cal{background:#FFFFFF;border-radius:20px;padding:13px 13px 11px;
+  
+  box-shadow:0 1px 4px rgba(26,28,32,.05)}
+.t-kakao .cal-h{text-align:center;font-size:13px;font-weight:800;padding-bottom:10px}
+.t-kakao .cal-w,.t-kakao .cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.t-kakao .cal-w s{text-decoration:none;font-size:10px;font-weight:700;color:#9198A3;padding:3px 0}
+.t-kakao .cal-g s{text-decoration:none;font-size:12px;font-weight:600;color:#52565E;
+  height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.t-kakao .cal-g s.off{color:#9198A3;opacity:.45}
+.t-kakao .cal-g s.sel{background:#1A1C20;color:#fff;font-weight:800}
+.t-kakao .cal-g s.today{box-shadow:inset 0 0 0 1.5px #1A1C20;font-weight:800}
+.t-kakao .cal-g s.has{position:relative}
+.t-kakao .cal-g s.has:after{content:'';position:absolute;bottom:1px;left:50%;margin-left:-2px;
+  width:4px;height:4px;border-radius:50%;background:#06A755}
+.t-kakao .cal-l{display:flex;justify-content:center;gap:4px;align-items:center;
+  font-size:10px;color:#9198A3;padding-top:9px}
+.t-kakao .st{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px}
+.t-kakao .dayrow{display:flex;align-items:center;gap:8px;padding:2px 2px 10px}
+.t-kakao .thumb{width:34px;height:46px;border-radius:8px;background:#28302B}
+.t-kakao .thumb.l2{background:#3A4640}
+.t-kakao .day-t{font-size:12.5px;font-weight:700;color:#52565E}
+.t-kakao .donebar{display:flex;align-items:center;gap:7px;background:#FFFFFF;
+  border-radius:14px;padding:12px 14px;font-size:12.5px;font-weight:600;margin-top:4px;
+  }
+.t-kakao .donebar em{font-style:normal;margin-left:auto;font-weight:800;color:#06A755;font-size:12px}
+.t-kakao .chips{display:flex;gap:6px;overflow:hidden;padding-bottom:4px}
+.t-kakao .chip{flex:none;font-size:12px;font-weight:700;border-radius:99px;
+  padding:8px 13px;background:#FFFFFF;color:#52565E;
+  }
+.t-kakao .chip.on{background:#06A755;color:#fff}
+.t-kakao .grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding-bottom:6px}
+.t-kakao .cell{position:relative;aspect-ratio:3/4;border-radius:14px;
+  background:#232A26}
+.t-kakao .cell.lite{background:#39443E}
+.t-kakao .cell.add{background:#FFFFFF;display:flex;flex-direction:column;gap:4px;
+  align-items:center;justify-content:center;color:#06A755;font-size:26px;font-weight:300;
+  border:1.5px dashed #EDEFF2}
+.t-kakao .cell.add b{font-size:12px;font-weight:700}
+.t-kakao .cs{position:absolute;left:9px;bottom:8px;display:flex;align-items:center;
+  color:#fff;font-size:10.5px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.t-kakao .mynote{font-size:11px;font-weight:700;color:#9198A3;padding:4px 0 12px}
+.t-kakao .mynote b{display:block;font-size:13px;font-weight:500;color:#1A1C20;
+  line-height:1.65;padding-top:6px}
+.t-kakao .thread{border-top:1px solid #EDEFF2;padding-top:12px}
+.t-kakao .th-h{display:flex;gap:9px;align-items:flex-start;padding-bottom:7px}
+.t-kakao .th-h b{display:block;font-size:12.5px;font-weight:800}
+.t-kakao .th-h i{font-style:normal;font-size:10.5px;color:#9198A3}
+.t-kakao .av{flex:none;width:30px;height:30px;border-radius:50%;background:#E9F7EF;
+  color:#06A755;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800}
+.t-kakao .av.big{width:44px;height:44px;font-size:16px}
+.t-kakao .shots{margin-left:auto;display:flex;gap:5px}
+.t-kakao .shots s{width:30px;height:40px;border-radius:6px;background:#28302B;display:block}
+.t-kakao .th-b{font-size:13.5px;line-height:1.7;padding-left:39px}
+.t-kakao .vlab{font-size:10.5px;font-weight:800;letter-spacing:.1em;color:#9198A3;
+  padding:14px 0 7px}
+.t-kakao .video{position:relative;height:170px;border-radius:14px;background:#171D1A}
+.t-kakao .play{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px;
+  border-radius:50%;background:rgba(255,255,255,.22)}
+.t-kakao .play:after{content:'';position:absolute;left:16px;top:12px;
+  border-left:12px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent}
+.t-kakao .lock{background:#FFFFFF;border-radius:14px;padding:13px 15px;font-size:12.5px;
+  font-weight:800;color:#52565E;margin-top:4px;
+  }
+.t-kakao .lock span{display:block;font-size:11.5px;font-weight:500;color:#9198A3;padding-top:3px}
+.t-kakao .me{display:flex;gap:12px;align-items:center;padding:8px 2px 16px}
+.t-kakao .me b{display:block;font-size:17px;font-weight:800}
+.t-kakao .me i{font-style:normal;font-size:11.5px;color:#9198A3}
+.t-kakao .plan{background:#06A755;
+  color:#fff;border-radius:20px;padding:16px;margin-bottom:12px;position:relative}
+.t-kakao .plan b{font-size:16px;font-weight:800;display:block}
+.t-kakao .plan span{font-size:11.5px;opacity:.85}
+.t-kakao .plan em{font-style:normal;position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  font-size:11px;font-weight:700;background:rgba(255,255,255,.18);border-radius:8px;padding:6px 10px}
+.t-kakao .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-bottom:14px}
+.t-kakao .stats span{background:#FFFFFF;border-radius:14px;text-align:center;padding:12px 0;
+  }
+.t-kakao .stats b{display:block;font-size:18px;font-weight:800;
+  font-variant-numeric:tabular-nums}
+.t-kakao .stats i{font-style:normal;font-size:10.5px;color:#9198A3}
+.t-kakao .list{background:#FFFFFF;border-radius:20px;overflow:hidden;
+  }
+.t-kakao .list span{display:flex;justify-content:space-between;padding:15px 16px;font-size:13.5px;
+  font-weight:600;border-bottom:1px solid #EDEFF2}
+.t-kakao .list span:last-child{border-bottom:0}
+.t-kakao .list i{font-style:normal;font-size:11.5px;color:#9198A3}
+.t-kakao .tabs{display:flex;background:#FFFFFF;border-top:1px solid #EDEFF2;
+  padding:7px 0 9px}
+.t-kakao .tb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  color:#9198A3}
+.t-kakao .tb b{font-size:9.5px;font-weight:600}
+.t-kakao .tb.on{color:#06A755}
+
+</style>
+<h1>NEXT SWING · UI 시안 3벌</h1>
+<p class="lede">베타에 실제로 있는 다섯 화면(홈 · 연습기록 · 스윙 · 레슨기록 · 마이)을,
+데이터도 실제 것 그대로 세 가지 디자인 언어로 입혔다.
+스윙 스코어 · AI 분석 · 3단 위계 리포트는 베타에 없으므로 그리지 않았다 —
+정기 피드백은 잠금 카드로만 보인다. 열 가지 주제 중 이 앱 사용자층
+(앱에 익숙하지 않은 20~60대)에 맞는 셋을 골랐다. 나머지가 궁금하면 번호로 말해달라.</p>
+
+<section>
+  <header><h2>⑤ 토스형</h2><p>화이트 + 블루 하나 · 여백을 극단적으로 넓게 · 한 화면에 한 가지</p></header>
+  <div class="strip"><div class="col"><div class="ph t-toss"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">홈</div><div class="ph-body">
+<div class="kick">프로 한마디 · 도착</div>
+<div class="h1">이도형 프로가<br>한마디를 남겼어요</div>
+<div class="quote">“톱에서 왼팔이 접히는 건 팔 힘이 아니라 어깨 회전이 덜 돌아서 그래요.”</div>
+<div class="cta">한마디 확인하기</div>
+<div class="row">
+  <span class="row-t">8월 프로 한마디</span><span class="row-n">3회 남음</span>
+</div>
+<div class="bar"><i style="width:40%"></i></div>
+<div class="mini">지금까지 이도형 프로가 <b>2번</b> 봐줬어요</div>
+<div class="sec">받은 프로 한마디 <em>2회</em></div>
+<div class="card">
+  <div class="meta"><b class="new">NEW</b> 방금 · 8월 5일 스윙</div>
+  <div class="who">이도형 프로</div>
+  <div class="body3">한 번 더 보니 하체는 확실히 좋아졌어요. 이번 주는 어깨 하나만 봅시다.</div>
+  <div class="wall"><span class="bd">정면</span></div>
+  <div class="more">프로 코멘트 2개 모두 보기</div>
+</div></div><div class="tabs"><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">홈</div></div><div class="col"><div class="ph t-toss"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">연습기록</div><div class="ph-body">
+<div class="cal">
+  <div class="cal-h">‹ &nbsp;2026년 8월&nbsp; ›</div>
+  <div class="cal-w"><s>일</s><s>월</s><s>화</s><s>수</s><s>목</s><s>금</s><s>토</s></div>
+  <div class="cal-g">
+    <s></s><s></s><s></s><s></s><s></s><s></s><s>1</s>
+    <s>2</s><s>3</s><s class="has">4</s><s class="sel">5</s><s class="today">6</s><s class="off">7</s><s class="off">8</s>
+    <s class="off">9</s><s class="off">10</s><s class="off">11</s><s class="off">12</s><s class="off">13</s><s class="off">14</s><s class="off">15</s>
+  </div>
+  <div class="cal-l"><i class="st" style="background:#12B76A"></i>스윙 &nbsp;<i class="st" style="background:#B08830"></i>한마디 &nbsp;<i class="st" style="background:#39506B"></i>피드백일</div>
+</div>
+<div class="sec">8월 5일 (수)</div>
+<div class="dayrow"><span class="thumb"></span><span class="thumb l2"></span>
+  <span class="day-t">올린 스윙 2개</span></div>
+<div class="card slim">
+  <div class="meta"><b class="tag">프로 한마디</b> 사진 1</div>
+  <div class="body2">톱에서 왼팔이 접히는 건 팔 힘이 아니라 어깨 회전이 덜 돌아서 그래요.</div>
+  <div class="more">자세히</div>
+</div>
+<div class="donebar"><i class="st" style="background:#12B76A"></i> 오늘 스윙 1개 올렸어요 <em>측면 올리기 +</em></div></div><div class="tabs"><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">연습기록</div></div><div class="col"><div class="ph t-toss"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">스윙 갤러리</div><div class="ph-body">
+<div class="chips"><span class="chip on">전체</span><span class="chip">정면</span><span class="chip">측면</span><span class="chip">드라이버</span><span class="chip">아이언</span><span class="chip">한마디 받음</span></div>
+<div class="sec">2026. 8. 6 (목) <em>2개</em></div>
+<div class="grid">
+  <div class="cell"><span class="bd">정면</span><span class="bd b2">드라이버</span><span class="cs"><i class="st" style="background:#12B76A"></i>한마디 1</span></div>
+  <div class="cell"><span class="bd">측면</span><span class="bd b2">드라이버</span><span class="cs"><i class="st" style="background:#F0A100"></i>보는 중</span></div>
+</div>
+<div class="sec">2026. 8. 4 (화) <em>1개</em></div>
+<div class="grid">
+  <div class="cell"><span class="bd">정면</span><span class="bd b2">아이언</span><span class="cs"><i class="st" style="background:#9AA79E"></i>전달됨</span></div>
+  <div class="cell add">+<b>스윙 올리기</b></div>
+</div></div><div class="tabs"><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">스윙 갤러리</div></div><div class="col"><div class="ph t-toss"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">레슨기록</div><div class="ph-body">
+<div class="sec">받은 프로 한마디 <em>2회</em></div>
+<div class="card slim">
+  <div class="meta">방금 · 측면 스윙 <b class="new">NEW</b></div>
+  <div class="body2">한 번 더 보니 하체는 확실히 좋아졌어요. 이번 주는 어깨 하나만 봅시다.</div>
+</div>
+<div class="card slim dim2">
+  <div class="meta">8월 5일 · 정면 스윙 · 사진 2</div>
+  <div class="body2">톱에서 왼팔이 접히는 건 팔 힘이 아니라 어깨 회전이 덜 돌아서 그래요.</div>
+</div>
+<div class="sec">한마디 상세</div>
+<div class="card">
+  <div class="meta">8월 5일 (수) · 연습 오후 7:24</div>
+  <div class="mynote">내가 남긴 기록<b>“톱에서 왼팔이 자꾸 접히는 느낌이 있어요. 힘을 빼면 클럽이 안 올라가고요.”</b></div>
+  <div class="thread">
+    <div class="th-h"><span class="av">이</span>
+      <span><b>이도형 프로</b><i>8월 5일 오후 9:40 · 답장까지 2시간</i></span>
+      <span class="shots"><s></s><s></s></span></div>
+    <div class="th-b">톱에서 왼팔이 접히는 건 팔 힘이 아니라 어깨 회전이 덜 돌아서 그래요.</div>
+  </div>
+  <div class="vlab">내 스윙 영상</div>
+  <div class="video"><span class="bd">정면</span><span class="play"></span></div>
+</div>
+<div class="lock">정기 피드백 · 베타 이후 <span>한 달치를 모아 리포트로 만들어드려요</span></div></div><div class="tabs"><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">레슨기록</div></div><div class="col"><div class="ph t-toss"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">마이</div><div class="ph-body">
+<div class="me"><span class="av big">골</span>
+  <span><b>골프러버</b><i>beta.nextswing.app</i></span></div>
+<div class="plan"><b>Coaching</b><span>베타 기간 무료 이용 중</span><em>구독 안내</em></div>
+<div class="stats">
+  <span><b>3</b><i>연습일</i></span><span><b>9</b><i>영상</i></span>
+  <span><b>2</b><i>한마디</i></span><span><b>3</b><i>연속</i></span>
+</div>
+<div class="list">
+  <span>계정 · 아이디 관리</span>
+  <span>알림 설정</span>
+  <span>구독 · 결제 <i>베타 무료</i></span>
+  <span>약관 · 개인정보</span>
+  <span>문의하기</span>
+</div></div><div class="tabs"><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">마이</div></div></div>
+  <p class="fit">→ 앱이 낯선 사람에게 제일 편하다 — 화면마다 할 일이 하나뿐이라 헤맬 곳이 없다.</p>
+</section>
+<section>
+  <header><h2>⑦ 가민 · 골프샷형</h2><p>딥그린 + 화이트 · 수치 계기판 · 스포츠 유틸리티</p></header>
+  <div class="strip"><div class="col"><div class="ph t-garmin"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">홈</div><div class="ph-body">
+<div class="kick">프로 한마디 · 도착</div>
+<div class="h1">이도형 프로가<br>한마디를 남겼어요</div>
+<div class="quote">“톱에서 왼팔이 접히는 건 팔 힘이 아니라 어깨 회전이 덜 돌아서 그래요.”</div>
+<div class="cta">한마디 확인하기</div>
+<div class="row">
+  <span class="row-t">8월 프로 한마디</span><span class="row-n">3회 남음</span>
+</div>
+<div class="bar"><i style="width:40%"></i></div>
+<div class="mini">지금까지 이도형 프로가 <b>2번</b> 봐줬어요</div>
+<div class="sec">받은 프로 한마디 <em>2회</em></div>
+<div class="card">
+  <div class="meta"><b class="new">NEW</b> 방금 · 8월 5일 스윙</div>
+  <div class="who">이도형 프로</div>
+  <div class="body3">한 번 더 보니 하체는 확실히 좋아졌어요. 이번 주는 어깨 하나만 봅시다.</div>
+  <div class="wall"><span class="bd">정면</span></div>
+  <div class="more">프로 코멘트 2개 모두 보기</div>
+</div></div><div class="tabs"><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">홈</div></div><div class="col"><div class="ph t-garmin"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">연습기록</div><div class="ph-body">
+<div class="cal">
+  <div class="cal-h">‹ &nbsp;2026년 8월&nbsp; ›</div>
+  <div class="cal-w"><s>일</s><s>월</s><s>화</s><s>수</s><s>목</s><s>금</s><s>토</s></div>
+  <div class="cal-g">
+    <s></s><s></s><s></s><s></s><s></s><s></s><s>1</s>
+    <s>2</s><s>3</s><s class="has">4</s><s class="sel">5</s><s class="today">6</s><s class="off">7</s><s class="off">8</s>
+    <s class="off">9</s><s class="off">10</s><s class="off">11</s><s class="off">12</s><s class="off">13</s><s class="off">14</s><s class="off">15</s>
+  </div>
+  <div class="cal-l"><i class="st" style="background:#0B8A4B"></i>스윙 &nbsp;<i class="st" style="background:#B08830"></i>한마디 &nbsp;<i class="st" style="background:#39506B"></i>피드백일</div>
+</div>
+<div class="sec">8월 5일 (수)</div>
+<div class="dayrow"><span class="thumb"></span><span class="thumb l2"></span>
+  <span class="day-t">올린 스윙 2개</span></div>
+<div class="card slim">
+  <div class="meta"><b class="tag">프로 한마디</b> 사진 1</div>
+  <div class="body2">톱에서 왼팔이 접히는 건 팔 힘이 아니라 어깨 회전이 덜 돌아서 그래요.</div>
+  <div class="more">자세히</div>
+</div>
+<div class="donebar"><i class="st" style="background:#0B8A4B"></i> 오늘 스윙 1개 올렸어요 <em>측면 올리기 +</em></div></div><div class="tabs"><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">연습기록</div></div><div class="col"><div class="ph t-garmin"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">스윙 갤러리</div><div class="ph-body">
+<div class="chips"><span class="chip on">전체</span><span class="chip">정면</span><span class="chip">측면</span><span class="chip">드라이버</span><span class="chip">아이언</span><span class="chip">한마디 받음</span></div>
+<div class="sec">2026. 8. 6 (목) <em>2개</em></div>
+<div class="grid">
+  <div class="cell"><span class="bd">정면</span><span class="bd b2">드라이버</span><span class="cs"><i class="st" style="background:#0B8A4B"></i>한마디 1</span></div>
+  <div class="cell"><span class="bd">측면</span><span class="bd b2">드라이버</span><span class="cs"><i class="st" style="background:#C98A12"></i>보는 중</span></div>
+</div>
+<div class="sec">2026. 8. 4 (화) <em>1개</em></div>
+<div class="grid">
+  <div class="cell"><span class="bd">정면</span><span class="bd b2">아이언</span><span class="cs"><i class="st" style="background:#9AA79E"></i>전달됨</span></div>
+  <div class="cell add">+<b>스윙 올리기</b></div>
+</div></div><div class="tabs"><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">스윙 갤러리</div></div><div class="col"><div class="ph t-garmin"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">레슨기록</div><div class="ph-body">
+<div class="sec">받은 프로 한마디 <em>2회</em></div>
+<div class="card slim">
+  <div class="meta">방금 · 측면 스윙 <b class="new">NEW</b></div>
+  <div class="body2">한 번 더 보니 하체는 확실히 좋아졌어요. 이번 주는 어깨 하나만 봅시다.</div>
+</div>
+<div class="card slim dim2">
+  <div class="meta">8월 5일 · 정면 스윙 · 사진 2</div>
+  <div class="body2">톱에서 왼팔이 접히는 건 팔 힘이 아니라 어깨 회전이 덜 돌아서 그래요.</div>
+</div>
+<div class="sec">한마디 상세</div>
+<div class="card">
+  <div class="meta">8월 5일 (수) · 연습 오후 7:24</div>
+  <div class="mynote">내가 남긴 기록<b>“톱에서 왼팔이 자꾸 접히는 느낌이 있어요. 힘을 빼면 클럽이 안 올라가고요.”</b></div>
+  <div class="thread">
+    <div class="th-h"><span class="av">이</span>
+      <span><b>이도형 프로</b><i>8월 5일 오후 9:40 · 답장까지 2시간</i></span>
+      <span class="shots"><s></s><s></s></span></div>
+    <div class="th-b">톱에서 왼팔이 접히는 건 팔 힘이 아니라 어깨 회전이 덜 돌아서 그래요.</div>
+  </div>
+  <div class="vlab">내 스윙 영상</div>
+  <div class="video"><span class="bd">정면</span><span class="play"></span></div>
+</div>
+<div class="lock">정기 피드백 · 베타 이후 <span>한 달치를 모아 리포트로 만들어드려요</span></div></div><div class="tabs"><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">레슨기록</div></div><div class="col"><div class="ph t-garmin"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">마이</div><div class="ph-body">
+<div class="me"><span class="av big">골</span>
+  <span><b>골프러버</b><i>beta.nextswing.app</i></span></div>
+<div class="plan"><b>Coaching</b><span>베타 기간 무료 이용 중</span><em>구독 안내</em></div>
+<div class="stats">
+  <span><b>3</b><i>연습일</i></span><span><b>9</b><i>영상</i></span>
+  <span><b>2</b><i>한마디</i></span><span><b>3</b><i>연속</i></span>
+</div>
+<div class="list">
+  <span>계정 · 아이디 관리</span>
+  <span>알림 설정</span>
+  <span>구독 · 결제 <i>베타 무료</i></span>
+  <span>약관 · 개인정보</span>
+  <span>문의하기</span>
+</div></div><div class="tabs"><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">마이</div></div></div>
+  <p class="fit">→ 숫자로 관리하는 맛을 아는 사람 — 골프 워치 쓰는 40~50대가 바로 알아본다.</p>
+</section>
+<section>
+  <header><h2>⑨ 카카오 · 네이버형</h2><p>밝은 회색 바탕 + 화이트 카드 · 친근하고 둥근 느낌</p></header>
+  <div class="strip"><div class="col"><div class="ph t-kakao"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">홈</div><div class="ph-body">
+<div class="kick">프로 한마디 · 도착</div>
+<div class="h1">이도형 프로가<br>한마디를 남겼어요</div>
+<div class="quote">“톱에서 왼팔이 접히는 건 팔 힘이 아니라 어깨 회전이 덜 돌아서 그래요.”</div>
+<div class="cta">한마디 확인하기</div>
+<div class="row">
+  <span class="row-t">8월 프로 한마디</span><span class="row-n">3회 남음</span>
+</div>
+<div class="bar"><i style="width:40%"></i></div>
+<div class="mini">지금까지 이도형 프로가 <b>2번</b> 봐줬어요</div>
+<div class="sec">받은 프로 한마디 <em>2회</em></div>
+<div class="card">
+  <div class="meta"><b class="new">NEW</b> 방금 · 8월 5일 스윙</div>
+  <div class="who">이도형 프로</div>
+  <div class="body3">한 번 더 보니 하체는 확실히 좋아졌어요. 이번 주는 어깨 하나만 봅시다.</div>
+  <div class="wall"><span class="bd">정면</span></div>
+  <div class="more">프로 코멘트 2개 모두 보기</div>
+</div></div><div class="tabs"><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">홈</div></div><div class="col"><div class="ph t-kakao"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">연습기록</div><div class="ph-body">
+<div class="cal">
+  <div class="cal-h">‹ &nbsp;2026년 8월&nbsp; ›</div>
+  <div class="cal-w"><s>일</s><s>월</s><s>화</s><s>수</s><s>목</s><s>금</s><s>토</s></div>
+  <div class="cal-g">
+    <s></s><s></s><s></s><s></s><s></s><s></s><s>1</s>
+    <s>2</s><s>3</s><s class="has">4</s><s class="sel">5</s><s class="today">6</s><s class="off">7</s><s class="off">8</s>
+    <s class="off">9</s><s class="off">10</s><s class="off">11</s><s class="off">12</s><s class="off">13</s><s class="off">14</s><s class="off">15</s>
+  </div>
+  <div class="cal-l"><i class="st" style="background:#06A755"></i>스윙 &nbsp;<i class="st" style="background:#B08830"></i>한마디 &nbsp;<i class="st" style="background:#39506B"></i>피드백일</div>
+</div>
+<div class="sec">8월 5일 (수)</div>
+<div class="dayrow"><span class="thumb"></span><span class="thumb l2"></span>
+  <span class="day-t">올린 스윙 2개</span></div>
+<div class="card slim">
+  <div class="meta"><b class="tag">프로 한마디</b> 사진 1</div>
+  <div class="body2">톱에서 왼팔이 접히는 건 팔 힘이 아니라 어깨 회전이 덜 돌아서 그래요.</div>
+  <div class="more">자세히</div>
+</div>
+<div class="donebar"><i class="st" style="background:#06A755"></i> 오늘 스윙 1개 올렸어요 <em>측면 올리기 +</em></div></div><div class="tabs"><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">연습기록</div></div><div class="col"><div class="ph t-kakao"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">스윙 갤러리</div><div class="ph-body">
+<div class="chips"><span class="chip on">전체</span><span class="chip">정면</span><span class="chip">측면</span><span class="chip">드라이버</span><span class="chip">아이언</span><span class="chip">한마디 받음</span></div>
+<div class="sec">2026. 8. 6 (목) <em>2개</em></div>
+<div class="grid">
+  <div class="cell"><span class="bd">정면</span><span class="bd b2">드라이버</span><span class="cs"><i class="st" style="background:#06A755"></i>한마디 1</span></div>
+  <div class="cell"><span class="bd">측면</span><span class="bd b2">드라이버</span><span class="cs"><i class="st" style="background:#E8A21A"></i>보는 중</span></div>
+</div>
+<div class="sec">2026. 8. 4 (화) <em>1개</em></div>
+<div class="grid">
+  <div class="cell"><span class="bd">정면</span><span class="bd b2">아이언</span><span class="cs"><i class="st" style="background:#9AA79E"></i>전달됨</span></div>
+  <div class="cell add">+<b>스윙 올리기</b></div>
+</div></div><div class="tabs"><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">스윙 갤러리</div></div><div class="col"><div class="ph t-kakao"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">레슨기록</div><div class="ph-body">
+<div class="sec">받은 프로 한마디 <em>2회</em></div>
+<div class="card slim">
+  <div class="meta">방금 · 측면 스윙 <b class="new">NEW</b></div>
+  <div class="body2">한 번 더 보니 하체는 확실히 좋아졌어요. 이번 주는 어깨 하나만 봅시다.</div>
+</div>
+<div class="card slim dim2">
+  <div class="meta">8월 5일 · 정면 스윙 · 사진 2</div>
+  <div class="body2">톱에서 왼팔이 접히는 건 팔 힘이 아니라 어깨 회전이 덜 돌아서 그래요.</div>
+</div>
+<div class="sec">한마디 상세</div>
+<div class="card">
+  <div class="meta">8월 5일 (수) · 연습 오후 7:24</div>
+  <div class="mynote">내가 남긴 기록<b>“톱에서 왼팔이 자꾸 접히는 느낌이 있어요. 힘을 빼면 클럽이 안 올라가고요.”</b></div>
+  <div class="thread">
+    <div class="th-h"><span class="av">이</span>
+      <span><b>이도형 프로</b><i>8월 5일 오후 9:40 · 답장까지 2시간</i></span>
+      <span class="shots"><s></s><s></s></span></div>
+    <div class="th-b">톱에서 왼팔이 접히는 건 팔 힘이 아니라 어깨 회전이 덜 돌아서 그래요.</div>
+  </div>
+  <div class="vlab">내 스윙 영상</div>
+  <div class="video"><span class="bd">정면</span><span class="play"></span></div>
+</div>
+<div class="lock">정기 피드백 · 베타 이후 <span>한 달치를 모아 리포트로 만들어드려요</span></div></div><div class="tabs"><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">레슨기록</div></div><div class="col"><div class="ph t-kakao"><div class="ph-top"><span>9:41</span><i class="beta">베타</i><span class="batt"></span></div><div class="ph-head">마이</div><div class="ph-body">
+<div class="me"><span class="av big">골</span>
+  <span><b>골프러버</b><i>beta.nextswing.app</i></span></div>
+<div class="plan"><b>Coaching</b><span>베타 기간 무료 이용 중</span><em>구독 안내</em></div>
+<div class="stats">
+  <span><b>3</b><i>연습일</i></span><span><b>9</b><i>영상</i></span>
+  <span><b>2</b><i>한마디</i></span><span><b>3</b><i>연속</i></span>
+</div>
+<div class="list">
+  <span>계정 · 아이디 관리</span>
+  <span>알림 설정</span>
+  <span>구독 · 결제 <i>베타 무료</i></span>
+  <span>약관 · 개인정보</span>
+  <span>문의하기</span>
+</div></div><div class="tabs"><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><b>홈</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><b>연습기록</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><b>스윙</b></span><span class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg><b>레슨기록</b></span><span class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><b>마이</b></span></div></div><div class="cap">마이</div></div></div>
+  <p class="fit">→ 국민 메신저 · 포털에 익숙한 사람 — 40~60대가 배우지 않고도 쓴다.</p>
+</section>
+</html>
