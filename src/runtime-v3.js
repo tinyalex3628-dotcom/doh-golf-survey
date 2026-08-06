@@ -3162,6 +3162,22 @@ const WIRE = {
       if (sec && todayCard && sec.nextElementSibling !== todayCard) {
         body2b.insertBefore(sec, todayCard);
       }
+      /* 「지난 기록 · 날짜를 누르면…」 머리줄을 옅게 줄이고 달력을 끌어올린다.
+         이 화면에서 달력이 곧 본문이라, 머리줄이 자리를 잡아먹을 이유가 없다.
+         위 20px + 줄 아래 9px 이 달력을 밀어내고 있었다. */
+      if (sec) {
+        sec.style.marginTop = '8px';
+        const head = byText('지난 기록')[0];
+        const row = head && head.parentElement;
+        if (row) {
+          row.setAttribute('style', (row.getAttribute('style') || '')
+            .replace(/padding:[^;]*/, 'padding:0 1px 5px'));
+          head.style.fontSize = '10px';
+          head.style.color = 'var(--ns-ink3)';
+          const sub = head.nextElementSibling;
+          if (sub) { sub.style.fontSize = '9.5px'; sub.style.opacity = '.75'; }
+        }
+      }
 
       /* 오늘 이미 올렸으면 「오늘」 카드를 한 줄로 접는다. 하루에 한 번
          쓰는 자리가 늘 같은 크기로 서 있을 이유가 없다. 아직 안 올린
