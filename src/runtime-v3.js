@@ -3152,11 +3152,41 @@ const WIRE = {
       let sec = past;
       while (sec && sec.parentElement !== body2b) sec = sec.parentElement;
       /* 자리 기준은 「오늘」 카드다 — 몇 번째 칸이냐로 잡으면 위에 배너가
-         끼는 순간 달력이 오늘 카드 위로 올라가버린다. 실제로 그랬다. */
+         끼는 순간 달력이 오늘 카드 위로 올라가버린다. 실제로 그랬다.
+
+         달력이 「오늘」 카드보다 위다. 이 화면의 일은 기록을 보는 것이고,
+         올리는 일은 홈에서 바로 2c 로 간다 — 여기를 거치지 않는다.
+         업로드가 첫 화면을 차지할 이유가 없다. */
       let todayCard = root().querySelector('[data-today]');
       while (todayCard && todayCard.parentElement !== body2b) todayCard = todayCard.parentElement;
-      if (sec && todayCard && sec !== todayCard.nextElementSibling) {
-        body2b.insertBefore(sec, todayCard.nextElementSibling);
+      if (sec && todayCard && sec.nextElementSibling !== todayCard) {
+        body2b.insertBefore(sec, todayCard);
+      }
+
+      /* 오늘 이미 올렸으면 「오늘」 카드를 한 줄로 접는다. 하루에 한 번
+         쓰는 자리가 늘 같은 크기로 서 있을 이유가 없다. 아직 안 올린
+         날에는 그대로 크게 둔다 — 그날은 그게 할 일이다. */
+      const t0 = new Date().setHours(0, 0, 0, 0);
+      const upT = (window.__SWINGS || []).filter(r => r.at >= t0);
+      if (todayCard && upT.length) {
+        const room = Math.max(0, UP_MAX - upT.length);
+        const next = VIEWS[upT.length] || '측면';
+        todayCard.setAttribute('style', 'flex:none;display:flex;align-items:center;gap:9px;'
+          + 'margin-bottom:14px;padding:12px 14px;border-radius:13px;background:var(--ns-card);'
+          + 'border:1px solid #EAE4DA');
+        todayCard.innerHTML =
+          '<span style="flex:none;width:22px;height:22px;border-radius:50%;background:#21402F;'
+          + 'display:flex;align-items:center;justify-content:center">'
+          + '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" '
+          + 'stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px">'
+          + '<path d="m5 12.5 5 5 9-10"></path></svg></span>'
+          + '<span style="flex:1;min-width:0;' + P_FONT + 'font-size:12.5px;font-weight:600;'
+          + 'color:var(--ns-ink)">오늘 스윙 ' + upT.length + '개 올렸어요</span>'
+          + (room
+              ? '<span data-up-more style="flex:none;' + P_FONT + 'font-size:12px;'
+                + 'font-weight:700;color:var(--ns-green)">' + next + ' 올리기 +</span>'
+              : '');
+        tap(todayCard, () => go('2c'));
       }
     }
 
