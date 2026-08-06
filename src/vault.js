@@ -37,7 +37,7 @@ const VAULT = (() => {
   }));
 
   /* 목록에는 영상 덩어리를 싣지 않는다 — 12개만 돼도 수백 MB 를 메모리에 올리게 된다 */
-  const meta = r => ({ id: r.id, name: r.name, size: r.size, view: r.view,
+  const meta = r => ({ id: r.id, name: r.name, size: r.size, view: r.view, club: r.club,
                        at: r.at, poster: r.poster, sent: r.sent,
                        remoteId: r.remoteId, path: r.path, err: r.err });
 
@@ -76,13 +76,13 @@ const VAULT = (() => {
        썸네일 뽑기는 영상을 열어 한 프레임 그리는 일이라 큰 영상에선 몇 초씩 걸린다.
        그걸 앞에 두면 「올리기」를 누르고 몇 초를 멍하니 기다리게 된다.
        저장은 즉시 끝내고 화면을 띄운 다음, 그림은 뒤에서 채워 넣는다. */
-    add(file, view) {
+    add(file, view, club) {
       if (file.size > MAX) return Promise.reject(new Error('too-big'));
       const rec = {
         id: 'sw-' + Date.now() + '-' + Math.round(performance.now() * 1000),
         name: file.name || '스윙.mp4',
         size: file.size, type: file.type || 'video/mp4',
-        view: view, at: Date.now(), poster: null, sent: false, blob: file,
+        view: view, club: club || null, at: Date.now(), poster: null, sent: false, blob: file,
         remoteId: null, path: null, err: null,
       };
       return run('readwrite', s => s.put(rec)).then(() => {

@@ -54,6 +54,7 @@ const S = { route: '2a', hist: [], step: 1, picked: null, vids: 0, viaLoading: f
             acct: 'new', mine: { vids: 0, days: 0, streak: 0 },
             // 달력이 보고 있는 달 — 처음엔 이번 달
             cal: { y: new Date().getFullYear(), m: new Date().getMonth() },
+            gal: '전체',        // 갤러리 필터 칩
             // 오늘 기록에 실제로 적어 넣은 것 — 대기 화면(pc2)이 이걸 그대로 보여준다
             log: { feel: null, mins: null, memo: '', at: null },
             // 한마디 요청 — 언제 했고, 이번 달 몇 번 썼는지. 「6시간 전」 같은 건 전부 여기서 계산한다
@@ -391,50 +392,117 @@ function playSwing(rec) {
 }
 
 /* 갤러리 — 보관함에 있는 그대로 그린다. 없으면 빈 상태가 남는다. */
+/* 스윙 하나의 지금 상태 — 색 하나가 글자보다 빨리 읽힌다.
+   「전달됨」만으로는 프로가 봤는지 아직인지가 안 보였다. */
+function swState(r) {
+  if (!r.sent) {
+    if (r.err) return { t: '재전송 필요', c: '#C0392B' };
+    if (UPPCT[r.id] != null) return { t: '보내는 중 ' + UPPCT[r.id] + '%', c: '#E8C07A' };
+    return { t: '대기 중', c: '#E8C07A' };
+  }
+  const n = (window.__COMMENTS || []).filter(c => c.swingId === r.remoteId).length;
+  if (n) return { t: '한마디 ' + n, c: '#8FBFA3', done: true };
+  if ((window.__WAIT || []).some(w => w.id === r.remoteId))
+    return { t: '보는 중', c: '#E8C07A' };
+  return { t: '전달됨', c: '#B9C7BC' };
+}
+
+/* 갤러리 — 날짜로 묶고, 위에 필터 칩을 세운다.
+   전에는 8.5 · 8.4 · 8.4 가 칸마다 작게 적혀 있어서 언제 찍은 것인지
+   눈으로 묶이지 않았다. 사진앱처럼 날짜가 머리글로 서면 한 번에 읽힌다.
+   칩은 실제로 가진 것만 세운다 — 퍼터를 한 번도 안 올린 사람에게
+   퍼터 칩을 보여주면 눌러도 빈 화면이다. */
 function paintGallery(host) {
-  const list = window.__SWINGS;
-  if (!host || !list.length) return false;
+  const all = window.__SWINGS;
+  if (!host || !all.length) return false;
+
+  const have = k => all.some(r => r.club === k);
+  const chips = ['전체'].concat(VIEWS.filter(v => all.some(r => r.view === v)))
+    .concat(CLUBS.filter(have))
+    .concat(all.some(r => swState(r).done) ? ['한마디 받음'] : []);
+  const on = chips.indexOf(S.gal) >= 0 ? S.gal : '전체';
+  const list = all.filter(r =>
+    on === '전체' ? true
+    : on === '한마디 받음' ? swState(r).done
+    : (r.view === on || r.club === on));
+
   host.innerHTML =
-    '<div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 2px 9px">'
-    + '<span style="font-family:Pretendard,-apple-system,sans-serif;font-size:12px;font-weight:600;'
-    + 'color:var(--ns-ink2)">올린 스윙</span>'
-    + '<span style="font-family:Pretendard,-apple-system,sans-serif;font-size:11px;'
-    + 'color:var(--ns-ink3)">' + list.length + '개</span></div>'
-    + '<div data-swgrid style="display:grid;grid-template-columns:1fr 1fr;gap:9px"></div>';
-  const stuck = list.filter(r => !r.sent && r.err).length;
+    '<div data-galchips style="display:flex;gap:6px;overflow-x:auto;padding:0 2px 11px;'
+    + '-webkit-overflow-scrolling:touch">'
+    + chips.map(t => '<span data-galchip="' + t + '" style="flex:none;' + P_FONT
+        + 'font-size:12px;font-weight:600;padding:7px 12px;border-radius:9px;cursor:pointer;'
+        + (t === on ? 'background:var(--ns-green);color:#fff;border:1px solid var(--ns-green)'
+                    : 'background:var(--ns-card);color:var(--ns-ink2);border:1px solid var(--ns-line)')
+        + '">' + t + '</span>').join('')
+    + '</div><div data-galbody></div>';
+
+  const body = host.querySelector('[data-galbody]');
+  if (!list.length) {
+    body.innerHTML = '<div style="padding:26px 0;text-align:center;' + P_FONT
+      + 'font-size:12.5px;color:var(--ns-ink3)">이 조건에 맞는 스윙이 없어요</div>';
+  } else {
+    // 날짜로 묶는다 — 최신 날이 위
+    const days = [];
+    list.forEach(r => {
+      const k = dkey(new Date(r.at));
+      const g = days.find(x => x.k === k);
+      (g || days[days.push({ k: k, at: r.at, rows: [] }) - 1]).rows.push(r);
+    });
+    body.innerHTML = days.map((g, gi) => {
+      const d = new Date(g.at);
+      return '<div style="' + (gi ? 'margin-top:18px;' : '')
+        + 'display:flex;align-items:baseline;justify-content:space-between;'
+        + 'padding:0 2px 8px;border-top:' + (gi ? '1px solid var(--ns-line)' : '0')
+        + ';padding-top:' + (gi ? '14px' : '0') + '">'
+        + '<span style="' + P_FONT + 'font-size:12.5px;font-weight:700;color:var(--ns-ink)">'
+        + d.getFullYear() + '. ' + (d.getMonth() + 1) + '. ' + d.getDate()
+        + ' (' + DOW[d.getDay()] + ')</span>'
+        + '<span style="' + P_FONT + 'font-size:11px;color:var(--ns-ink3)">'
+        + g.rows.length + '개</span></div>'
+        + '<div data-swgrid style="display:grid;grid-template-columns:1fr 1fr;gap:9px">'
+        + g.rows.map(r => {
+            const st = swState(r);
+            return '<span data-galcell="' + r.id + '" style="position:relative;display:block;'
+              + 'aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:'
+              + (r.poster ? '#1D2420' : 'var(--ns-sand)') + ';border:1px solid var(--ns-line)">'
+              + (r.poster ? '<img src="' + r.poster + '" alt="" style="width:100%;height:100%;'
+                  + 'object-fit:cover;display:block">' : '')
+              // 왼쪽 위 — 각도, 그 밑에 클럽
+              + '<span style="position:absolute;left:8px;top:8px;display:flex;'
+              + 'flex-direction:column;align-items:flex-start;gap:4px">'
+              + '<span style="padding:3px 7px;border-radius:6px;background:rgba(20,24,22,.62);'
+              + 'color:#fff;' + P_FONT + 'font-size:10px;font-weight:600">' + safe(r.view) + '</span>'
+              + (r.club ? '<span style="padding:3px 7px;border-radius:6px;'
+                  + 'background:rgba(20,24,22,.5);color:#fff;' + P_FONT
+                  + 'font-size:9.5px;font-weight:600">' + safe(r.club) + '</span>' : '')
+              + '</span>'
+              // 아래 — 상태 한 줄. 색이 글자보다 먼저 읽힌다
+              + '<span style="position:absolute;left:8px;right:8px;bottom:7px;display:flex;'
+              + 'align-items:center;gap:5px;color:#fff;' + P_FONT + 'font-size:10.5px;'
+              + 'font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.6)">'
+              + '<span style="width:6px;height:6px;border-radius:50%;flex:none;'
+              + 'background:' + st.c + '"></span><span>' + st.t + '</span></span>'
+              + '</span>';
+          }).join('')
+        + '</div>';
+    }).join('');
+  }
+
+  const stuck = all.filter(r => !r.sent && r.err).length;
   if (stuck) host.insertAdjacentHTML('beforeend',
-    '<div data-resend style="margin-top:10px;display:flex;align-items:center;gap:9px;'
+    '<div data-resend style="margin-top:14px;display:flex;align-items:center;gap:9px;'
     + 'padding:11px 13px;border-radius:12px;background:rgba(192,57,43,.07);'
     + 'border:1px solid rgba(192,57,43,.24)">'
-    + '<span style="flex:1;font-family:Pretendard,-apple-system,sans-serif;font-size:11.5px;'
-    + 'color:var(--ns-ink2)">' + stuck + '개가 아직 프로에게 안 갔어요</span>'
-    + '<span style="flex:none;font-family:Pretendard,-apple-system,sans-serif;font-size:11.5px;'
-    + 'font-weight:700;color:var(--ns-danger)">다시 보내기</span></div>');
-  const grid = host.querySelector('[data-swgrid]');
-  list.forEach(r => {
-    const cell = document.createElement('span');
-    cell.setAttribute('style',
-      'position:relative;display:block;aspect-ratio:3/4;border-radius:12px;overflow:hidden;'
-      + 'background:' + (r.poster ? '#1D2420' : 'var(--ns-sand)')
-      + ';border:1px solid var(--ns-line)');
-    cell.innerHTML =
-      (r.poster ? '<img src="' + r.poster + '" alt="" style="width:100%;height:100%;'
-        + 'object-fit:cover;display:block">' : '')
-      + '<span style="position:absolute;left:8px;top:8px;padding:3px 7px;border-radius:6px;'
-      + 'background:rgba(20,24,22,.62);color:#fff;font-family:Pretendard,-apple-system,sans-serif;'
-      + 'font-size:10px;font-weight:600">' + r.view + '</span>'
-      + '<span style="position:absolute;left:8px;right:8px;bottom:7px;display:flex;'
-      + 'align-items:baseline;justify-content:space-between;gap:6px;color:#fff;'
-      + 'font-family:Pretendard,-apple-system,sans-serif;font-size:10.5px;font-weight:500;'
-      + 'text-shadow:0 1px 3px rgba(0,0,0,.6)">'
-      + '<span>' + new Date(r.at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })
-      + '</span><span style="font-weight:700;color:' + (r.sent ? '#8FBFA3' : '#E8C07A') + '">'
-      + (r.sent ? '전달됨'
-         : (r.err ? '재전송 필요'
-         : (UPPCT[r.id] != null ? '보내는 중 ' + UPPCT[r.id] + '%' : '대기 중')))
-      + '</span></span>';
-    tap(cell, () => playSwing(r));
-    grid.appendChild(cell);
+    + '<span style="flex:1;' + P_FONT + 'font-size:11.5px;color:var(--ns-ink2)">'
+    + stuck + '개가 아직 프로에게 안 갔어요</span>'
+    + '<span style="flex:none;' + P_FONT + 'font-size:11.5px;font-weight:700;'
+    + 'color:var(--ns-danger)">다시 보내기</span></div>');
+
+  host.querySelectorAll('[data-galchip]').forEach(c =>
+    tap(c, () => { S.gal = c.getAttribute('data-galchip'); render(); }));
+  host.querySelectorAll('[data-galcell]').forEach(c => {
+    const r = all.find(x => x.id === c.getAttribute('data-galcell'));
+    if (r) tap(c, () => playSwing(r));
   });
   const again = host.querySelector('[data-resend]');
   if (again) tap(again, () => { toast('다시 보내는 중이에요'); resendAll(); });
@@ -2137,6 +2205,63 @@ function upStart() {
   upPicker().click();
 }
 
+/* 회원이 올릴 때 고르는 것은 둘뿐이다 — 어느 클럽으로, 어느 각도에서.
+   더 물으면 올리는 일이 숙제가 된다. 이 둘은 나중에 갤러리에서 찾을 때
+   실제로 쓰는 값이고, 프로도 무엇으로 친 스윙인지 알고 봐야 한다. */
+const CLUBS = ['드라이버', '우드 · 유틸', '아이언', '웨지', '퍼터'];
+
+/* 고르고 나서 올린다. 파일 창은 이미 닫힌 뒤라 시트를 띄워도 안 끊긴다. */
+function clubSheet(n, onOk) {
+  const frame = root();
+  if (getComputedStyle(frame).position === 'static') frame.style.position = 'relative';
+  frame.querySelectorAll('[data-club-sheet]').forEach(x => x.remove());
+  let club = null, view = VIEWS[0];
+  const box = document.createElement('div');
+  box.setAttribute('data-club-sheet', '');
+  box.setAttribute('style', 'position:absolute;inset:0;z-index:95;display:flex;'
+    + 'align-items:flex-end;background:rgba(20,26,22,.45)');
+  const chip = (t, on) => '<span data-pick="' + t + '" style="' + P_FONT
+    + 'font-size:12.5px;font-weight:600;padding:9px 13px;border-radius:10px;cursor:pointer;'
+    + (on ? 'background:var(--ns-green);color:#fff;border:1px solid var(--ns-green)'
+          : 'background:var(--ns-card);color:var(--ns-ink2);border:1px solid var(--ns-line)')
+    + '">' + t + '</span>';
+  const draw = () => {
+    box.innerHTML = '<div style="width:100%;background:#FFFDF9;border-radius:20px 20px 0 0;'
+      + 'padding:20px 20px 18px;display:flex;flex-direction:column;gap:13px">'
+      + '<span style="' + P_FONT + 'font-size:15px;font-weight:700;color:var(--ns-ink)">'
+      + '무엇으로 치셨어요?</span>'
+      + '<div data-clubs style="display:flex;flex-wrap:wrap;gap:7px">'
+      + CLUBS.map(t => chip(t, t === club)).join('') + '</div>'
+      + (n === 1
+          ? '<span style="' + P_FONT + 'font-size:12px;font-weight:600;color:var(--ns-ink3);'
+            + 'padding-top:3px">어느 쪽에서 찍었어요?</span>'
+            + '<div data-views style="display:flex;gap:7px">'
+            + VIEWS.map(t => chip(t, t === view)).join('') + '</div>'
+          : '<span style="' + P_FONT + 'font-size:11.5px;color:var(--ns-ink3)">'
+            + '두 편은 정면 · 측면 순서로 들어갑니다</span>')
+      + '<div data-club-go style="margin-top:5px;background:var(--ns-green);color:#fff;'
+      + 'border-radius:13px;padding:14px;text-align:center;' + P_FONT
+      + 'font-size:14px;font-weight:700;cursor:pointer">올리기</div>'
+      + '<div data-club-skip style="padding:10px;text-align:center;' + P_FONT
+      + 'font-size:12.5px;font-weight:500;color:var(--ns-ink3);cursor:pointer">'
+      + '나중에 고를게요</div></div>';
+  };
+  draw();
+  box.addEventListener('click', ev => {
+    const pick = ev.target.closest('[data-pick]');
+    if (pick) {
+      const t = pick.getAttribute('data-pick');
+      if (CLUBS.indexOf(t) >= 0) club = (club === t ? null : t); else view = t;
+      return draw();
+    }
+    if (ev.target.closest('[data-club-go]')) { box.remove(); return onOk(club, view); }
+    if (ev.target.closest('[data-club-skip]') || ev.target === box) {
+      box.remove(); return onOk(null, view);
+    }
+  });
+  frame.appendChild(box);
+}
+
 function upTake(files) {
   /* 하루 두 개(정면·측면)가 상한이다. 한 번에 두 개 제한만 있으면
      나눠 올리는 걸로 뚫린다 — 이미 올린 것까지 세서 남은 자리만 받는다. */
@@ -2149,6 +2274,10 @@ function upTake(files) {
   if (take.some(f => f.size > VAULT.MAX)) {
     return toast('영상이 너무 커요 · 10초 안쪽으로 잘라서 올려주세요');
   }
+  clubSheet(take.length, (club, view1) => upGo(take, over, already, club, view1));
+}
+
+function upGo(take, over, already, club, view1) {
   S.up = { p: 0, done: false, failed: false, n: take.length,
            names: take.map(f => f.name || '스윙.mp4') };
   upPaint();
@@ -2163,8 +2292,8 @@ function upTake(files) {
   const next = () => {
     if (i >= take.length) return upFinish();
     const file = take[i];
-    VAULT.add(file, VIEWS[already + i] || '측면').then(rec => {
-      sendUp(rec, file);            // 기기에 넣었으면 그다음 프로에게 보낸다
+    VAULT.add(file, take.length === 1 ? view1 : (VIEWS[already + i] || '측면'), club).then(rec => {
+      sendUp(rec, file, club);      // 기기에 넣었으면 그다음 프로에게 보낸다
       i += 1;
       if (!S.up) return;                   // 그새 화면을 떠났으면 그린 것도 없다
       S.up.p = Math.round(i / take.length * 100);
@@ -2190,7 +2319,7 @@ function upTake(files) {
    타석은 지하가 많고 데이터가 자주 끊긴다 — 전송이 실패해도 찍은 건 남아야 하고,
    나중에 다시 보낼 수 있어야 한다. 그래서 「보냈다/못 보냈다」를 기기에 적어둔다. */
 const UPPCT = {};                       // 지금 몇 % 올라갔는지 (칸마다)
-function sendUp(rec, file) {
+function sendUp(rec, file, club) {
   if (!window.NS) return;
   UPPCT[rec.id] = 0;
   let last = 0;
@@ -2198,7 +2327,7 @@ function sendUp(rec, file) {
     UPPCT[rec.id] = pct;
     // 10% 단위로만 다시 그린다 — 매 프레임 그리면 올리는 것보다 그리는 게 무겁다
     if (pct - last >= 10 || pct === 100) { last = pct; if (S.route === 'ge') render(); }
-  }).then(row => {
+  }, club != null ? club : rec.club).then(row => {
     delete UPPCT[rec.id];
     VAULT.mark(rec.id, { sent: true, remoteId: row.id, path: row.path, err: null })
       .then(window.__vaultSync).then(() => { if (S.route === 'ge') render(); });
@@ -2266,7 +2395,7 @@ function syncRemote(list) {
   S.cmUsed = days.size;
   window.__REMOTE = list.map(sw => ({
     id: 'sv-' + sw.id, remoteId: sw.id, path: sw.path,
-    view: sw.view || '스윙', size: sw.size || 0, name: '',
+    view: sw.view || '스윙', club: sw.club || null, size: sw.size || 0, name: '',
     at: new Date(sw.created_at).getTime() || Date.now(),
     poster: RPOSTER[sw.id] || null, sent: true, remote: true, err: null,
   }));
@@ -3921,15 +4050,31 @@ const WIRE = {
   },
 
   '09'() {   // 스윙 탭의 첫 화면
-    // 필터 칩을 걷어내고 그 자리를 분석 도구에 줬다.
-    // 갤러리가 이미 '이번 주 / 7월 초 / 6월'로 묶여 있어 칩 없이도 찾아진다.
     const tools = root().querySelectorAll('[data-swtool]');
     tools.length === 3 || miss('분석 도구 줄 (' + tools.length + '개)');
     wireTools();
-    // 썸네일 → 그 스윙 상세(영상 + 내 기록 + 그때 그 한마디). 새 화면이 아니라 pc1 이다.
+    /* 화면에 박혀 있는 예시 썸네일(이번 주 · 7월 초 · 6월)을 걷어내고
+       진짜 올린 스윙으로 갈아끼운다 — 날짜로 묶고 위에 필터 칩이 선다. */
+    const body = Array.from(root().querySelectorAll('div')).find(e => {
+      const st = e.getAttribute('style') || '';
+      return /flex:\s*1/.test(st) && /overflow-y:\s*auto/.test(st);
+    });
     const tiles = root().querySelectorAll('[style*="aspect-ratio"]');
-    tiles.length ? tiles.forEach(t => tap(t, () => go('pc1'))) : miss('갤러리 썸네일');
-    onText('스윙 갤러리', () => toast('전체 12개를 보여드릴게요'));
+    if (body && (window.__SWINGS || []).length) {
+      /* 예시 썸네일이 든 구역을 통째로 지우고 그 자리에 우리 갤러리를 세운다.
+         도구 줄은 남긴다 — 지우면 스윙 분석으로 들어갈 문이 사라진다. */
+      Array.from(body.children).forEach(sec => {
+        if (sec.querySelector('[data-swtool], [data-swcmp]')) return;
+        if (sec.querySelector('[style*="aspect-ratio"]')
+            || /이번 주|7월 초|6월/.test(sec.textContent)) sec.remove();
+      });
+      const host = document.createElement('div');
+      host.setAttribute('style', 'flex:none;padding-top:4px');
+      body.appendChild(host);
+      paintGallery(host);
+    } else if (tiles.length) {
+      tiles.forEach(t => tap(t, () => go('09')));
+    }
   },
 
 

@@ -86,6 +86,7 @@ node test/_home_hero.mjs      # 홈 첫 화면이 한마디 한 바퀴를 따라
 node test/_shots.mjs          # 프로가 붙인 사진 — 글이 먼저 · 스크롤 없이 · 눌러서 크게
 node test/_opening.mjs        # 여는 화면 — 「얼마 만에 왔나」가 카드를 가르는가
 node test/_practice.mjs       # 연습기록 — 달력이 스크롤 없이 보이는가
+node test/_gallery.mjs        # 갤러리 — 날짜 묶음 · 필터 칩 · 클럽이 끝까지 가는가
 ```
 
 > **테스트는 서버를 흉내 낸다.** 이 실행 환경의 프록시가 `*.supabase.co` 를

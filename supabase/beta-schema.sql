@@ -50,6 +50,9 @@ create table if not exists public.swings (
 );
 alter table public.swings add column if not exists note text;
 alter table public.swings add column if not exists want_comment boolean not null default false;
+-- 클럽(드라이버 · 7번 아이언 …). 올릴 때 회원이 고른다.
+-- 갤러리 필터가 이걸로 갈리고, 프로도 무엇으로 친 스윙인지 알고 본다.
+alter table public.swings add column if not exists club text;
 create index if not exists swings_owner_idx on public.swings (owner, created_at desc);
 
 -- ── 프로 한마디 ─────────────────────────────────────────────

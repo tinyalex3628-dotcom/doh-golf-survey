@@ -175,7 +175,7 @@ const NS = (() => {
 
   /* 영상 한 편을 서버로. 파일은 창고에, 「누가·언제·어느 각도」는 표에.
      경로 앞자리가 회원 ID 다 — 접근 규칙이 그 앞자리로 남의 영상을 막는다. */
-  async function push(file, view, note, onStep) {
+  async function push(file, view, note, onStep, club) {
     const c = client();
     const u = await ready();
     if (!c || !u) throw new Error('offline');
@@ -206,6 +206,7 @@ const NS = (() => {
 
     const row = await c.from('swings').insert({
       owner: u.id, view: view, path: path, size: file.size, note: note || null,
+      club: club || null,
     }).select().single();
     if (row.error) {
       // 표에 못 넣었으면 올린 파일도 치운다 — 주인 없는 파일이 창고에 남지 않게
@@ -221,7 +222,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
-      .select('id,view,path,size,note,want_comment,created_at,comments(id,body,photos,created_at,read_at)')
+      .select('id,view,path,size,note,club,want_comment,created_at,comments(id,body,photos,created_at,read_at)')
       .order('created_at', { ascending: false });
     return r.error ? [] : (r.data || []);
   }
@@ -232,7 +233,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
-      .select('id,owner,view,path,size,note,want_comment,created_at,comments(id,body,photos,created_at,read_at)')
+      .select('id,owner,view,path,size,note,club,want_comment,created_at,comments(id,body,photos,created_at,read_at)')
       .order('created_at', { ascending: false }).limit(200);
     return r.error ? [] : (r.data || []);
   }
