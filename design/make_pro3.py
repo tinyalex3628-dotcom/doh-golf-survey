@@ -1,0 +1,455 @@
+# -*- coding: utf-8 -*-
+"""같은 골격 · 같은 살림, 팔레트만 「전문가」로 — 세 벌 비교.
+
+스튜디오 샌드가 아마추어처럼 보인 원인은 조판이 아니라 색이었다:
+크림+테라코타는 카페/베이커리의 색이지 코치의 색이 아니다. 골격(인사 →
+히어로 → 행동 하나 → 흐린 안내)과 마감(면·헤어라인·코너 라벨)은 한 글자도
+안 바꾸고, 색과 헤딩 폰트만 갈아입힌다. 화면은 전부 실기능 풀 콘텐츠다.
+
+  V 클럽하우스 그린 — 아이보리 + 딥그린 + 브론즈 (우리 앱 DNA · 골프의 정색)
+  W 차콜 코냑       — 웜화이트 + 차콜 + 코냑 (레더 굿즈 · 스튜디오의 절제)
+  X 슬레이트 브라스 — 콜드아이보리 + 네이비 + 브라스 (컨트리클럽 · 회원제)
+
+문안·상태·규칙은 runtime-v3.js / opening.js 의 실제 값 그대로.
+"""
+import os
+HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(HERE, 'ux-pro3.html')
+
+CM = '톱에서 왼팔이 접히는 건 팔 힘이 아니라 어깨 회전이 덜 돌아서 그래요. 백스윙 절반에서 왼쪽 어깨로 턱을 밀어낸다고 생각하고 스무 번만 천천히.'
+CM_S = '톱에서 왼팔이 접히는 건 팔 힘이 아니라 어깨 회전이 덜 돌아서 그래요.'
+CM2 = '하체는 확실히 좋아졌어요. 이번 주는 어깨 하나만 봅시다.'
+NOTE = '톱에서 왼팔이 자꾸 접히는 느낌이 있어요. 힘을 빼면 클럽이 안 올라가고요.'
+CLUBS = ['드라이버', '우드 · 유틸', '아이언', '웨지', '퍼터']
+
+TABS = ['홈', '연습기록', '스윙', '레슨기록', '마이']
+ICONS = {
+    '홈': '<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/>',
+    '연습기록': '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/>',
+    '스윙': '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',
+    '레슨기록': '<path d="M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/>',
+    '마이': '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/>',
+}
+
+
+def icon(name, sz=18):
+    return (f'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '
+            f'stroke-linecap="round" stroke-linejoin="round" '
+            f'style="width:{sz}px;height:{sz}px;display:block">{ICONS[name]}</svg>')
+
+GOLFER = ('<svg viewBox="0 0 60 80" style="position:absolute;left:50%;bottom:8%;width:30%;'
+          'transform:translateX(-54%)"><g fill="var(--fig)">'
+          '<circle cx="34" cy="12" r="6"/>'
+          '<path d="M30 18c-6 2-9 8-10 16l-3 22 6 20h5l-3-19 5-14 8 13 2 20h5l-1-22-6-16'
+          'c3-6 2-14-1-18-2-2-4-3-7-2z"/>'
+          '<path d="m28 26-16 20 2 2 17-16z"/></g>'
+          '<rect x="10" y="45" width="3" height="3" rx="1.5" fill="#fff"/></svg>')
+
+
+def scene(h=140, extra=''):
+    return (f'<div class="scene" style="height:{h}px;flex:none;{extra}">'
+            f'<i class="sky"></i><i class="mid"></i><i class="grass"></i>{GOLFER}</div>')
+
+
+def st(kind, text):
+    """상태 배지 — 색은 테마 변수(swState 의 의미는 유지)."""
+    return f'<span class="st {kind}"><i></i><b>{text}</b></span>'
+
+
+def tabbar(on):
+    return ('<div class="tabs">'
+            + ''.join(f'<span class="tb{" on" if n == on else ""}">{icon(n)}<b>{n}</b></span>'
+                      for n in TABS) + '</div>')
+
+
+def frame(tab, body, cls, notabs=False):
+    return (f'<div class="ph {cls}"><div class="ph-top"><span>9:41</span>'
+            f'<i class="beta">베타</i><span class="batt"></span></div>'
+            f'<div class="ph-body">{body}</div>' + ('' if notabs else tabbar(tab)) + '</div>')
+
+
+def hero(kick, title, body='', cta='', small=False):
+    return (f'<div class="hero"><div class="hk">{kick}</div>'
+            f'<div class="big">{title}</div>'
+            + (f'<div class="hb">{body}</div>' if body else '')
+            + (f'<div class="cta{" sm" if small else ""}">{cta}</div>' if cta else '')
+            + '</div>')
+
+
+CMCARD = f'''
+<div class="card cmc">
+  <div class="cch"><span class="cav">이</span>
+  <span class="ccw"><b>새 프로 한마디</b><i>방금 · 8월 5일 스윙</i></span>
+  <span class="pbdg">사진 2</span></div>
+  <div class="cct">“{CM_S} 백스윙 절반에서 왼쪽 어깨로…”</div>
+  <div class="ccm">계속 읽기</div>
+</div>'''
+
+RECLINE = ('<div class="rec"><span>오늘 기록하기</span>'
+           '<em>최근 기록 · 8월 5일 · 연속 5일</em></div>')
+
+home_arrived = (hero('프로 한마디 · 도착', '이도형 프로가<br>한마디를 남겼어요', '', '한마디 확인하기')
+                + CMCARD + RECLINE)
+home_wait = (hero('프로 한마디 · 확인 중', '이도형 프로가<br>스윙을 보고 있어요',
+                  '2시간 전 요청했어요 · 보통 하루 안에 도착해요', '올린 스윙 보기')
+             + CMCARD + RECLINE)
+
+rec_full = f'''
+<div class="bnr">프로에게 답장이 왔어요 <em>확인하기 ›</em></div>
+<div class="card cal">
+  <div class="cal-h">‹ &nbsp;2026년 8월&nbsp; ›</div>
+  <div class="cal-w"><s>일</s><s>월</s><s>화</s><s>수</s><s>목</s><s>금</s><s>토</s></div>
+  <div class="cal-g">
+    <s></s><s></s><s></s><s></s><s></s><s></s><s>1</s>
+    <s>2</s><s>3</s><s class="d-ans">4</s><s class="sel d-ans">5</s><s class="today d-wait">6</s><s class="off">7</s><s class="off">8</s>
+  </div>
+  <div class="cal-l"><i class="lg done"></i>답장 받음<i class="lg busy"></i>보는 중<i class="lg sent"></i>보내기만</div>
+</div>
+<div class="fold">오늘 스윙 1개 올렸어요 <em>기록 남기기 +</em></div>
+<div class="card day">
+  <div class="ch row">8월 5일 (수) <em>스윙 2 · 한마디 1</em></div>
+  <div class="dsw">{scene(52, 'width:40px')}{scene(52, 'width:40px')}
+    <span class="dst">{st('done', '한마디 1')}{st('sent', '전달됨')}</span></div>
+  <div class="ct">“{CM2}”</div>
+  <div class="dnote">내 메모 — “{NOTE}”</div>
+</div>'''
+
+gal_full = f'''
+<div class="chips"><span class="on">전체</span><span>정면</span><span>측면</span>
+<span>드라이버</span><span>아이언</span><span>한마디 받음</span></div>
+<div class="sec">2026. 8. 6 (목) <em>2개</em></div>
+<div class="grid">
+  <div class="gc">{scene(0)}<span class="gv">정면 · 드라이버</span><span class="gst">{st('busy', '보는 중')}</span></div>
+  <div class="gc">{scene(0)}<span class="gv">측면 · 드라이버</span><span class="gst">{st('sent', '전달됨')}</span></div>
+</div>
+<div class="sec">2026. 8. 5 (수) <em>4개</em></div>
+<div class="grid">
+  <div class="gc">{scene(0)}<span class="gv">정면 · 아이언</span><span class="gst">{st('done', '한마디 1')}</span></div>
+  <div class="gc">{scene(0)}<span class="gv">측면 · 아이언</span><span class="gst">{st('busy', '보내는 중 62%')}</span></div>
+  <div class="gc">{scene(0)}<span class="gv">정면 · 웨지</span><span class="gst">{st('busy', '대기 중')}</span></div>
+  <div class="gc">{scene(0)}<span class="gv">측면 · 퍼터</span><span class="gst">{st('err', '재전송 필요')}</span></div>
+</div>
+<div class="soft">오늘 2편을 다 올렸어요 — 두 편은 정면 · 측면 순서로 들어갑니다</div>'''
+
+sheet = f'''
+<div class="dimback">{scene(150, 'opacity:.4')}</div>
+<div class="grow"></div>
+<div class="sheetbox">
+  <div class="sh-t">무엇으로 치셨어요?</div>
+  <div class="chips wrap">{''.join(f'<span class="{"on" if c == "아이언" else ""}">{c}</span>' for c in CLUBS)}</div>
+  <div class="sh-s">어느 쪽에서 찍었어요?</div>
+  <div class="chips"><span class="on">정면</span><span>측면</span></div>
+  <div class="cta">올리기</div>
+  <div class="sh-skip">나중에 고를게요</div>
+</div>'''
+
+
+def crow(when, nphoto, body, first=False):
+    shots = (f'<span class="rs">{"".join("<s></s>" for _ in range(nphoto))}</span>' if nphoto else '')
+    return (f'<div class="crow{"" if first else " nx"}">'
+            f'<span class="crh"><span class="cav">이</span>'
+            f'<span class="ccw"><b>이도형 프로</b><i>{when}</i></span>{shots}</span>'
+            f'<span class="cbody">{body}</span></div>')
+
+
+les_full = f'''
+<div class="seg"><span class="off">정기 피드백</span><span class="on">프로 한마디</span></div>
+<div class="segn">정기 피드백은 베타 이후에 열립니다 · 월 1회</div>
+<div class="dl">8월 5일 (수) 스윙에 달린 한마디</div>
+<div class="card pad">
+{crow('8월 5일 오후 9:40 · 사진 2', 2, f'“{CM}”', True)}
+{crow('8월 6일 오전 8:12', 0, '“어제 말한 어깨, 오늘 영상에선 확실히 좋아졌어요.”')}
+</div>
+<div class="myv">{scene(76, 'width:118px')}<em>내 스윙 영상 — 글이 먼저, 영상은 맨 뒤</em></div>'''
+
+my_full = '''
+<div class="hi"><span class="cav">골</span>골프러버 님 <i>이도형 프로와 32일째</i></div>
+<div class="card st4w"><div class="ch">이번 달</div>
+<div class="st4"><span><b>12</b><i>연습일</i></span><span><b>14</b><i>영상</i></span>
+<span><b>6</b><i>한마디</i></span><span><b>9</b><i>최장 연속</i></span></div></div>
+<div class="idc"><b>아이디 만들기</b><i>폰을 바꿔도 스윙과 한마디가 그대로 이어져요</i></div>
+<div class="card quote">“꾸준히 오는 회원이 제일 늘어요. 이번 달도 잘 부탁합니다.”</div>
+<div class="list"><span>알림 설정</span><span>구독 · 결제 <i>베타 무료</i></span>
+<span>약관 · 개인정보</span><span>문의하기</span></div>'''
+
+opening = '''
+<div class="op">
+  <div class="op-ns">NS</div>
+  <div class="op-name">NEXT SWING</div>
+  <div class="op-slo">스윙 하나에 한마디 하나</div>
+  <div class="op-card">
+    <div class="op-k">오늘의 한 장</div>
+    <div class="op-t">이도형 프로가<br>한마디를 남겼어요</div>
+    <div class="op-s">아직 안 읽으셨어요</div>
+  </div>
+  <div class="op-skip">눌러서 건너뛰기</div>
+</div>'''
+
+SCREENS = [
+    ('', opening, True, '여는 화면 · 오늘의 한 장',
+     '요일 슬로건 + 데이터로 고른 카드 한 장. 색이 바뀌면 첫인상이 통째로 바뀐다.'),
+    ('홈', home_arrived, False, '홈 · 한마디 도착',
+     'kick → 제목 → CTA → 최근 한마디 카드 → 기록 줄. 히어로가 화면의 40%.'),
+    ('홈', home_wait, False, '홈 · 확인 중',
+     '기다림도 상태. 「2시간 전 요청 · 보통 하루 안에 도착해요」'),
+    ('연습기록', rec_full, False, '연습기록 전체',
+     '배너 → 달력(상태 점·범례) → 오늘 접힘 → 날짜 요약(스윙·한마디·내 메모).'),
+    ('스윙', gal_full, False, '스윙 · 상태 6종',
+     '칩 · 날짜 머리글 · 3:4 셀 · 보는 중/전달됨/한마디/62%/대기/재전송.'),
+    ('스윙', sheet, False, '업로드 시트',
+     '클럽 5종 + 각도 + 나중에 고를게요 — clubSheet() 원문.'),
+    ('레슨기록', les_full, False, '레슨기록 · pc1 스레드',
+     '세그먼트(베타 잠금) + 댓글줄 두 개 + 내 스윙 영상 맨 뒤.'),
+    ('마이', my_full, False, '마이 · 4칸 + 이어붙이기',
+     '연습일·영상·한마디·최장 연속, 아이디 카드가 구독보다 위.'),
+]
+
+THEMES = [
+    ('vv', 'V. 클럽하우스 그린', '아이보리 + 딥그린 + 브론즈 — 우리 앱의 DNA',
+     '골프가 원래 쓰는 정색이다. 진한 것은 CTA(딥그린)와 프로가 닿는 자리(브론즈)뿐이라 '
+     '화면이 조용하고, 상태색(앰버·그린)도 이 팔레트 안에서 자연스럽게 읽힌다. '
+     '지금 앱 본편과 같은 색이라 이식 비용이 0에 가깝다.'),
+    ('ww', 'W. 차콜 코냑', '웜화이트 + 차콜 + 코냑 — 레더 굿즈의 절제',
+     '샌드의 따뜻함은 남기되 채도를 낮춰 스튜디오 톤으로. 헤딩이 차콜 700이라 문장이 '
+     '단단해지고, 코냑(짙은 갈색빨강)은 CTA와 라벨에만 쓴다. 셋 중 가장 중립적 — '
+     '골프 색이 아니라 「잘 만든 도구」의 색.'),
+    ('xx', 'X. 슬레이트 브라스', '콜드아이보리 + 네이비 + 브라스 — 회원제 클럽',
+     '네이비는 신뢰의 색이고 브라스(금동)는 명패의 색이다. 한국 골프장 회원권·아카데미가 '
+     '실제로 쓰는 조합이라 「전문 코치」라는 인상이 가장 빨리 선다. 셋 중 가장 격식.'),
+]
+
+sections = ''
+for cls, name, tag, desc in THEMES:
+    phones = ''.join(
+        f'<div class="col">{frame(tab, b, cls, nt)}<div class="why"><b>{t}</b>{w}</div></div>'
+        for tab, b, nt, t, w in SCREENS)
+    sections += (f'<div class="th"><h2>{name} <em>{tag}</em></h2>'
+                 f'<p class="lede">{desc}</p><div class="strip">{phones}</div></div>')
+
+html = f'''<!doctype html><html lang="ko"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>NEXT SWING · 같은 골격, 전문가 팔레트 3벌</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;900&family=Noto+Serif+KR:wght@500;700&display=swap');
+*{{margin:0;padding:0;box-sizing:border-box}}
+body{{font-family:'Noto Sans KR',sans-serif;background:#15171A;color:#E9ECEF;
+  -webkit-font-smoothing:antialiased;padding:38px 28px 90px}}
+h1{{font-size:22px;letter-spacing:-.02em}}
+h2{{font-size:16px;margin:0 0 6px}}
+h2 em{{font-style:normal;font-size:12px;color:#C9A45C;font-weight:600;margin-left:8px}}
+.lede{{font-size:12.5px;color:#A6ABB0;line-height:1.8;max-width:720px}}
+.th{{margin-top:44px;padding-top:26px;border-top:1px solid #2A2E33}}
+.strip{{display:flex;gap:22px;overflow-x:auto;padding:20px 4px 8px;align-items:flex-start}}
+.col{{flex:none;width:330px}}
+.why{{font-size:11.5px;color:#A6ABB0;line-height:1.75;padding:12px 6px 0}}
+.why b{{display:block;color:#E9ECEF;font-size:12px;padding-bottom:3px}}
+
+.ph{{width:330px;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;
+  min-height:690px;position:relative;box-shadow:0 18px 44px -18px rgba(0,0,0,.75);
+  background:var(--bg);color:var(--ink);font-family:var(--fbody)}}
+.ph-top{{display:flex;align-items:center;justify-content:space-between;padding:11px 18px 4px;
+  font-size:11px;font-weight:700}}
+.ph-top .batt{{width:16px;height:9px;border-radius:2px;background:currentColor;opacity:.8}}
+.beta{{font-style:normal;font-size:9.5px;font-weight:800;border-radius:99px;padding:2px 9px;
+  background:var(--card2);color:var(--sub)}}
+.ph-body{{flex:1;padding:12px 18px 18px;display:flex;flex-direction:column;position:relative}}
+.tabs{{display:flex;padding:8px 0 10px;background:var(--card);border-top:1px solid var(--line)}}
+.tb{{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--dim)}}
+.tb b{{font-size:9px;font-weight:700}}
+.tb.on{{color:var(--acc)}}
+.grow{{flex:1}}
+.scene{{position:relative;border-radius:var(--r-img);overflow:hidden;display:flex;flex-direction:column}}
+.scene .sky{{background:var(--sky);height:44%}}
+.scene .mid{{background:var(--midc);height:16%}}
+.scene .grass{{background:var(--grassc);flex:1}}
+.soft{{text-align:center;font-size:12px;color:var(--dim);padding-top:16px;line-height:1.7}}
+
+.st{{display:inline-flex;align-items:center;gap:5px}}
+.st i{{width:6px;height:6px;border-radius:50%;display:inline-block}}
+.st b{{font-size:10.5px;font-weight:800}}
+.st.done i{{background:var(--ok)}} .st.done b{{color:var(--ok)}}
+.st.busy i{{background:var(--amber)}} .st.busy b{{color:var(--amber)}}
+.st.sent i{{background:var(--dim)}} .st.sent b{{color:var(--dim)}}
+.st.err i{{background:var(--err)}} .st.err b{{color:var(--err)}}
+
+.hero{{background:var(--card);border-radius:var(--r-card);padding:24px 22px 20px;
+  border:1px solid var(--line)}}
+.hk{{font-size:11.5px;font-weight:800;color:var(--acc2);padding-bottom:8px}}
+.big{{font-size:25px;line-height:1.5;font-family:var(--fhead);font-weight:var(--whead)}}
+.hb{{font-size:11.5px;color:var(--sub);line-height:1.7;padding-top:10px}}
+.cta{{background:var(--acc);color:var(--onacc);border-radius:var(--r-cta);text-align:center;
+  padding:14px;font-size:14.5px;font-weight:700;margin-top:18px}}
+.cta.sm{{padding:10px;font-size:12px;background:var(--card2);color:var(--sub);
+  width:82%;margin:16px auto 0}}
+
+.card{{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);
+  padding:17px 17px 14px;margin-top:14px}}
+.card.pad{{padding:16px}}
+.cch,.crh{{display:flex;align-items:flex-start;gap:9px}}
+.cav{{flex:none;width:30px;height:30px;border-radius:50%;background:var(--accsoft);
+  color:var(--acc2);display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800}}
+.ccw{{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}}
+.ccw b{{font-size:12.5px;font-weight:700}}
+.ccw i{{font-style:normal;font-size:10.5px;color:var(--dim)}}
+.pbdg{{flex:none;font-size:10px;font-weight:700;color:var(--sub);background:var(--card2);
+  border-radius:6px;padding:3px 7px}}
+.cct{{font-size:13px;line-height:1.8;padding-top:10px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}}
+.ccm{{font-size:12px;font-weight:800;color:var(--acc);text-align:right;padding-top:8px}}
+.rec{{display:flex;justify-content:space-between;align-items:center;background:var(--card);
+  border:1px solid var(--line);border-radius:var(--r-cta);padding:12px 15px;margin-top:12px}}
+.rec span{{font-size:12.5px;font-weight:700}}
+.rec em{{font-style:normal;font-size:10.5px;color:var(--dim)}}
+.bnr{{background:var(--accsoft);color:var(--acc2);border-radius:var(--r-cta);padding:12px 15px;
+  font-size:12.5px;font-weight:800;display:flex;justify-content:space-between}}
+.bnr em{{font-style:normal}}
+.fold{{display:flex;justify-content:space-between;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r-cta);padding:12px 15px;font-size:12px;color:var(--sub);margin-top:12px;
+  font-weight:600}}
+.fold em{{font-style:normal;font-weight:800;color:var(--acc)}}
+
+.cal-h{{text-align:center;font-size:13px;font-weight:700;padding-bottom:10px}}
+.cal-w,.cal-g{{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}}
+.cal-w s{{text-decoration:none;font-size:10px;font-weight:700;color:var(--dim);padding:3px 0}}
+.cal-g s{{text-decoration:none;font-size:12.5px;font-weight:600;color:var(--sub);height:31px;
+  display:flex;align-items:center;justify-content:center;border-radius:50%;position:relative}}
+.cal-g s.off{{opacity:.35}}
+.cal-g s.sel{{background:var(--ink);color:var(--bg);font-weight:800}}
+.cal-g s.today{{box-shadow:inset 0 0 0 1.5px var(--ink);font-weight:800}}
+.cal-g s.d-ans:after,.cal-g s.d-wait:after{{content:'';position:absolute;bottom:0;left:50%;
+  margin-left:-2.5px;width:5px;height:5px;border-radius:50%}}
+.cal-g s.d-ans:after{{background:var(--ok)}}
+.cal-g s.d-wait:after{{background:var(--amber)}}
+.cal-l{{display:flex;justify-content:center;align-items:center;font-size:10px;
+  color:var(--dim);padding-top:9px}}
+.lg{{display:inline-block;width:6px;height:6px;border-radius:50%;margin:0 3px 0 9px}}
+.lg.done{{background:var(--ok)}} .lg.busy{{background:var(--amber)}} .lg.sent{{background:var(--dim)}}
+.ch{{font-size:11.5px;font-weight:800;color:var(--acc2);padding-bottom:9px}}
+.ch.row{{display:flex;justify-content:space-between;color:var(--ink)}}
+.ch.row em{{font-style:normal;font-size:10.5px;color:var(--dim);font-weight:600}}
+.ct{{font-size:13.5px;line-height:1.85}}
+.dsw{{display:flex;gap:7px;align-items:center;padding-bottom:10px}}
+.dst{{margin-left:auto;display:flex;flex-direction:column;gap:5px;align-items:flex-end}}
+.dnote{{font-size:11.5px;color:var(--sub);line-height:1.7;border-top:1px dashed var(--line);
+  margin-top:10px;padding-top:9px}}
+
+.chips{{display:flex;gap:6px;overflow:hidden;padding-bottom:12px}}
+.chips.wrap{{flex-wrap:wrap;overflow:visible}}
+.chips span{{flex:none;font-size:12px;font-weight:600;border-radius:var(--r-chip);padding:8px 13px;
+  background:var(--card);color:var(--sub);border:1px solid var(--line)}}
+.chips .on{{background:var(--acc);color:var(--onacc);border-color:var(--acc)}}
+.sec{{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;
+  font-weight:700;padding:8px 2px}}
+.sec em{{font-style:normal;font-size:11px;color:var(--dim);font-weight:600}}
+.grid{{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding-bottom:6px}}
+.gc{{position:relative;aspect-ratio:3/4;border-radius:var(--r-card);overflow:hidden;
+  border:1px solid var(--line)}}
+.gc .scene{{position:absolute;inset:0;height:auto!important;border-radius:0}}
+.gv{{position:absolute;left:8px;top:8px;background:var(--vbadge);color:var(--onacc);
+  font-size:9.5px;font-weight:800;border-radius:5px;padding:3px 7px;z-index:2}}
+.gst{{position:absolute;left:8px;bottom:8px;background:var(--stbg);
+  border-radius:7px;padding:4px 8px;z-index:2}}
+
+.dimback{{position:absolute;inset:0;background:var(--card2)}}
+.dimback .scene{{position:absolute;inset:0;height:auto!important;border-radius:0}}
+.sheetbox{{position:relative;z-index:2;background:var(--card);border-radius:22px 22px 0 0;
+  margin:0 -18px -18px;padding:20px 20px 16px;box-shadow:0 -14px 30px -18px rgba(0,0,0,.35)}}
+.sh-t{{font-size:15.5px;font-weight:700;padding-bottom:10px;font-family:var(--fhead)}}
+.sh-s{{font-size:12px;font-weight:700;color:var(--dim);padding:4px 0 8px}}
+.sh-skip{{text-align:center;font-size:12.5px;color:var(--dim);padding-top:12px}}
+
+.seg{{display:flex;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r-card);padding:4px}}
+.seg span{{flex:1;text-align:center;font-size:12.5px;font-weight:800;padding:9px 0;
+  border-radius:calc(var(--r-card) - 6px)}}
+.seg .on{{background:var(--acc);color:var(--onacc)}}
+.seg .off{{color:var(--dim)}}
+.segn{{font-size:10.5px;color:var(--dim);text-align:center;padding:8px 0 4px}}
+.dl{{font-size:11px;font-weight:800;color:var(--dim);text-align:center;padding:8px 0 2px}}
+.crow{{display:flex;flex-direction:column;gap:7px}}
+.crow.nx{{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}}
+.rs{{display:flex;gap:4px}}
+.rs s{{width:30px;height:40px;border-radius:6px;display:block;
+  background:linear-gradient(var(--sky) 44%,var(--grassc) 44%)}}
+.cbody{{display:block;padding-left:39px;font-size:13px;line-height:1.9}}
+.myv{{display:flex;gap:10px;align-items:center;margin-top:16px}}
+.myv em{{font-style:normal;font-size:11px;color:var(--dim);line-height:1.7}}
+
+.hi{{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:700;
+  color:var(--sub);padding:8px 0 18px}}
+.hi i{{font-style:normal;font-size:11px;color:var(--acc2);margin-left:auto;font-weight:700}}
+.st4w .ch{{color:var(--dim)}}
+.st4{{display:flex}}
+.st4 span{{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  border-right:1px solid var(--line)}}
+.st4 span:last-child{{border-right:0}}
+.st4 b{{font-size:19px;font-family:var(--fhead);font-weight:700;color:var(--acc)}}
+.st4 i{{font-style:normal;font-size:9.5px;font-weight:700;color:var(--dim)}}
+.idc{{background:var(--accsoft);border-radius:var(--r-card);padding:14px 16px;margin-top:12px}}
+.idc b{{display:block;font-size:13px;color:var(--acc2);padding-bottom:3px;font-weight:800}}
+.idc i{{font-style:normal;font-size:11px;color:var(--sub);line-height:1.6}}
+.card.quote{{font-size:13px;line-height:1.85;color:var(--sub)}}
+.list{{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);
+  overflow:hidden;margin-top:12px}}
+.list span{{display:flex;justify-content:space-between;padding:14px 16px;font-size:13px;
+  border-bottom:1px solid var(--line);font-weight:600}}
+.list span:last-child{{border-bottom:0}}
+.list i{{font-style:normal;font-size:11px;color:var(--dim)}}
+
+.op{{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center}}
+.op-ns{{width:58px;height:58px;border-radius:50%;background:var(--acc);color:var(--onacc);
+  display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;
+  letter-spacing:.04em}}
+.op-name{{font-size:14px;letter-spacing:.34em;padding:16px 0 6px;font-weight:700}}
+.op-slo{{font-size:12px;color:var(--dim);padding-bottom:40px}}
+.op-card{{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);
+  padding:24px 26px;width:88%}}
+.op-k{{font-size:10.5px;font-weight:800;color:var(--acc2);letter-spacing:.14em;padding-bottom:12px}}
+.op-t{{font-size:20px;line-height:1.55;font-family:var(--fhead);font-weight:var(--whead)}}
+.op-s{{font-size:12px;color:var(--dim);padding-top:10px}}
+.op-skip{{font-size:11px;color:var(--dim);padding-top:34px}}
+
+/* ══ V. 클럽하우스 그린 — 우리 DNA ══ */
+.ph.vv{{--bg:#F5F1E9;--card:#FFFDF8;--card2:#EBE5D7;--line:#E3DCCD;
+  --ink:#1D2420;--sub:#4A503F;--dim:#948E79;
+  --acc:#21402F;--onacc:#F5F1E9;--acc2:#8A6428;--accsoft:#EDE4D2;
+  --ok:#3F7350;--amber:#B8862A;--err:#A5372B;
+  --sky:#CBDFEC;--midc:#A9C9A4;--grassc:#6FA477;--fig:#22301F;
+  --vbadge:rgba(29,36,32,.62);--stbg:rgba(255,253,248,.93);
+  --r-card:16px;--r-cta:14px;--r-chip:9px;--r-img:8px;
+  --fbody:'Noto Sans KR',sans-serif;--fhead:'Noto Serif KR',serif;--whead:700}}
+
+/* ══ W. 차콜 코냑 — 레더 굿즈 ══ */
+.ph.ww{{--bg:#F4F2ED;--card:#FCFBF8;--card2:#E8E5DD;--line:#E0DDD5;
+  --ink:#26241F;--sub:#4F4C44;--dim:#9C978C;
+  --acc:#2E2B26;--onacc:#F7F5F0;--acc2:#9B5A34;--accsoft:#F0E6DC;
+  --ok:#4E7355;--amber:#A8802F;--err:#A2382A;
+  --sky:#D6DCDE;--midc:#C4CDB6;--grassc:#9CAF95;--fig:#3D423A;
+  --vbadge:rgba(38,36,31,.62);--stbg:rgba(252,251,248,.93);
+  --r-card:12px;--r-cta:10px;--r-chip:8px;--r-img:6px;
+  --fbody:'Noto Sans KR',sans-serif;--fhead:'Noto Sans KR',sans-serif;--whead:700}}
+
+/* ══ X. 슬레이트 브라스 — 회원제 클럽 ══ */
+.ph.xx{{--bg:#F2F3F1;--card:#FBFCFB;--card2:#E4E7E6;--line:#DDE1E0;
+  --ink:#17232E;--sub:#3C4A56;--dim:#8B979E;
+  --acc:#1B3348;--onacc:#F4F6F5;--acc2:#9A7B33;--accsoft:#E7EAEE;
+  --ok:#39664F;--amber:#A9822C;--err:#9C3A32;
+  --sky:#C7D6DF;--midc:#B4C6A9;--grassc:#7C9C82;--fig:#1F2C25;
+  --vbadge:rgba(23,35,46,.62);--stbg:rgba(251,252,251,.93);
+  --r-card:10px;--r-cta:8px;--r-chip:6px;--r-img:4px;
+  --fbody:'Noto Sans KR',sans-serif;--fhead:'Gowun Batang',serif;--whead:700}}
+</style>
+
+<h1>같은 골격 · 같은 살림, 팔레트만 전문가로</h1>
+<p class="lede">샌드가 가벼워 보인 건 조판이 아니라 색이었다 — 크림+테라코타는 카페의 색이지
+코치의 색이 아니다. 골격(인사 → 히어로 → 행동 하나 → 흐린 안내)과 마감(면 · 헤어라인 ·
+코너 라벨)은 그대로 두고 색과 헤딩 서체, 모서리 반경만 바꿨다. 화면은 전부 실기능 풀
+콘텐츠(문안은 runtime-v3.js · opening.js 실제 값). 위에서부터 격식이 올라간다.</p>
+{sections}
+</html>'''
+
+open(OUT, 'w', encoding='utf-8').write(html)
+print(f'{os.path.getsize(OUT)/1024:.0f} KB → {os.path.basename(OUT)}')
