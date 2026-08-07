@@ -68,7 +68,7 @@ window.NS = NS;`;
   const r2 = await p.evaluate(() => window.__STAMPED.slice());
 
   // 다른 스윙을 「알리지 않고 보기」로 열면 도장이 안 나간다
-  await p.evaluate(() => { IN.asked = {}; IN.list[1].seen_at = null; IN.sel = 'sw-b'; render(); });
+  await p.evaluate(() => { IN.list[1].seen_at = null; IN.sel = 'sw-b'; render(); });
   await p.waitForTimeout(500);
   await p.click('[data-as-no]');
   await p.waitForTimeout(400);
@@ -77,9 +77,30 @@ window.NS = NS;`;
     알림: (document.getElementById('toast') || {}).textContent,
   }));
 
+  // 「알리지 않고 보기」를 골랐어도, 다시 들어오면 또 묻는다
+  await p.evaluate(() => { IN.sel = 'sw-a'; render(); });
+  await p.waitForTimeout(300);
+  await p.evaluate(() => { IN.sel = 'sw-b'; render(); });
+  await p.waitForTimeout(500);
+  const again = await p.evaluate(() => ({
+    또물음: !!document.getElementById('askseen'),
+    아직안보냄: window.__STAMPED.indexOf('sw-b') < 0,
+  }));
+  // 이번엔 알리기로 하면 그때 나간다
+  if (await p.$('[data-as-yes]')) { await p.click('[data-as-yes]'); await p.waitForTimeout(400); }
+  const later = await p.evaluate(() => window.__STAMPED.slice());
+  // 도장이 찍힌 뒤로는 다시 안 묻는다
+  await p.evaluate(() => { IN.sel = 'sw-a'; render(); });
+  await p.waitForTimeout(300);
+  await p.evaluate(() => { IN.sel = 'sw-b'; render(); });
+  await p.waitForTimeout(500);
+  const done2 = await p.evaluate(() => ({ 안물음: !document.getElementById('askseen') }));
+
   console.log('① 물어보기', JSON.stringify(ask));
   console.log('   찍은 뒤 ', JSON.stringify(r1), '· 재열람', JSON.stringify(r2));
   console.log('   알리지 않고', JSON.stringify(quiet));
+  console.log('   다시 들어오면', JSON.stringify(again), '· 그때 알리기', JSON.stringify(later));
+  console.log('   찍힌 뒤엔  ', JSON.stringify(done2));
   console.log('   JS 오류', errs.length ? errs : '없음');
   await p.close(); srv.close();
 }

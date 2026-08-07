@@ -780,7 +780,7 @@ function inAskSeen(s) {
     <button class="as-go" type="button" data-as-yes>확인했다고 알리고 열기</button>
     <button class="as-alt" type="button" data-as-no>알리지 않고 보기</button>
   </div>`;
-  const shut = () => { box.remove(); IN.asked[s.id] = true; };
+  const shut = () => box.remove();
   box.addEventListener('click', ev => {
     if (ev.target.closest('[data-as-no]')) {
       shut();
@@ -802,7 +802,7 @@ function inAskSeen(s) {
 const IN = {
   busy: false, ready: false, err: null,
   list: [], who: {}, people: [], sel: null, draft: {}, photos: {}, lines: {}, urlCache: {},
-  blobCache: {}, at: {}, zoom: {}, mode: 'draw', asked: {},
+  blobCache: {}, at: {}, zoom: {}, mode: 'draw',
   uid: null, pro: false,
 };
 
@@ -1090,8 +1090,11 @@ function inMount() {
   /* 봤어요 도장 — 전에는 스윙을 여는 순간 자동으로 찍혔다.
      그런데 이건 회원에게 「봤습니다」가 나가는 일이라, 실수로 눌렀거나
      그냥 확인만 하려던 참이면 되돌릴 방법이 없다. 물어보고 찍는다.
-     한 번 정하면 그 스윙은 다시 안 묻는다. */
-  if (s && !s.seen_at && NS.seen && !IN.asked[s.id]) inAskSeen(s);
+
+     한 번 「알리지 않고 보기」를 골랐어도 다시 들어오면 또 묻는다 —
+     그때는 그냥 확인만 하려던 것이고 지금은 답장을 쓰러 온 것일 수 있다.
+     아직 도장이 안 찍힌 스윙이면 열 때마다 묻는 것이 맞다. */
+  if (s && !s.seen_at && NS.seen) inAskSeen(s);
   /* [data-v] 는 상단 PC/모바일 전환 버튼이 이미 쓰고 있다 — 그걸 잡으면
      버튼에 src 를 꽂는 촌극이 벌어진다. 실제로 벌어졌다. */
   const v = document.querySelector('[data-vid]');
