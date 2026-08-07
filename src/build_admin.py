@@ -16,6 +16,8 @@ sb_app = open(os.path.join(HERE, 'sb.js'), encoding='utf-8').read()
 inbox = open(os.path.join(HERE, 'admin-inbox.js'), encoding='utf-8').read()
 # 회원 명부 — 서버 데이터에서 상태(새싹·활성·침묵…)를 계산해 그린다
 crm = open(os.path.join(HERE, 'admin-crm.js'), encoding='utf-8').read()
+# 월간 요약 — 숫자와 반복 주제는 기계가, 마지막 한 줄은 프로가
+rev = open(os.path.join(HERE, 'admin-review.js'), encoding='utf-8').read()
 
 CSS = """
 /* 회원 앱과 같은 토큰을 쓴다. 프로가 보는 화면과 회원이 보는 화면의 색이
@@ -117,6 +119,9 @@ if (/[?&]demo(=|&|$)/.test(location.search)) document.documentElement.classList.
 </script>
 <script>
 {crm}
+</script>
+<script>
+{rev}
 </script>
 <script>
 {rt}

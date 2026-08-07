@@ -1022,6 +1022,7 @@ function renderPC() {
              : S.nav === 'members' ? crmMembers()
              : S.nav === 'stats' ? crmStatsPage()
              : S.nav === 'member' ? pageMember()
+             : S.nav === 'fb' ? rvPage()
              : S.nav === 'set' ? pageSet()
              : pageSoon(S.nav);
   return `<div style="display:flex;height:100%;background:var(--ns-bg)">${sidebar()}
@@ -1518,7 +1519,7 @@ function pageMember() {
 /* ── 그리기 ─────────────────────────────────────────────────────── */
 function render() {
   // 도착함·회원 관리·대시보드가 같은 서버 데이터를 본다
-  if (['inbox', 'members', 'home', 'stats'].includes(S.nav)) inLoad();
+  if (['inbox', 'members', 'home', 'stats', 'fb'].includes(S.nav)) inLoad();
   const pc = S.view === 'pc';
   document.documentElement.classList.toggle('pcmode', pc);
   $('#frame').innerHTML = pc
@@ -1534,6 +1535,7 @@ function on(sel, ev, fn) { document.querySelectorAll(sel).forEach(e => e.addEven
 function wire() {
   inWire();
   crmWire();
+  rvWire();
   const q = cur();
   on('[data-q]', 'click', e => {
     S.pick = e.currentTarget.dataset.q;

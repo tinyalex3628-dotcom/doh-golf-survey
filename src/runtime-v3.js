@@ -1455,8 +1455,37 @@ function applyFresh() {
     }
   }
 
-  // 레슨기록 · 정기 피드백 탭 — 베타엔 아직 없는 기능이라 예시 리포트를 걷어낸다
-  if (S.route === '2f' && !can('fb')) {
+  /* 레슨기록 › 정기 피드백 — 받은 월간 요약이 있으면 그게 이 탭의 내용이다.
+     「베타 이후에 열립니다」는 못 받았을 때만 하는 말이다. */
+  if (S.route === '2f' && (window.__REVIEWS || []).length) {
+    const body = scrollBody();
+    if (body) {
+      body.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.setAttribute('style', 'display:flex;flex-direction:column;gap:9px;padding:14px 16px 18px');
+      wrap.innerHTML = '<span style="' + P_FONT + 'font-size:11.5px;font-weight:700;'
+        + 'letter-spacing:.02em;color:var(--ns-bronze);padding:2px 2px 4px">받은 월간 요약</span>'
+        + window.__REVIEWS.map(r => '<div data-rv-row="' + r.id + '" style="background:var(--ns-card);'
+          + 'border:1px solid ' + (r.read_at ? 'var(--ns-line)' : 'var(--ns-green)')
+          + ';border-radius:13px;padding:14px 15px;display:flex;flex-direction:column;gap:7px">'
+          + '<span style="display:flex;align-items:center;gap:7px">'
+          + '<span style="' + P_FONT + 'font-size:13.5px;font-weight:700;color:var(--ns-ink)">'
+          + rvMon(r.month) + ' 한 달</span>'
+          + (r.read_at ? '' : '<span style="' + P_FONT + 'font-size:9px;font-weight:800;'
+            + 'letter-spacing:.08em;color:#fff;background:var(--ns-green);border-radius:5px;'
+            + 'padding:2.5px 6px">NEW</span>')
+          + '<span style="flex:1"></span>'
+          + '<span style="' + P_FONT + 'font-size:10.5px;color:var(--ns-ink3)">'
+          + ((r.stats || {}).days || 0) + '일 · 영상 ' + ((r.stats || {}).vids || 0) + '개</span>'
+          + '</span>'
+          + '<span style="' + P_FONT + 'font-size:12.5px;line-height:1.7;color:var(--ns-ink2);'
+          + 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'
+          + safe(r.pro_line) + '</span></div>').join('');
+      body.appendChild(wrap);
+      wrap.querySelectorAll('[data-rv-row]').forEach(e =>
+        tap(e, () => rvSheet(e.getAttribute('data-rv-row'))));
+    }
+  } else if (S.route === '2f' && !can('fb')) {
     /* 못 받는 기능이라도 「어떻게 오는지」는 봐야 기다릴 마음이 생긴다.
        실제 리포트 한 장을 그대로 열어준다 — 예시라고 위에 적어두고. */
     emptyBody('정기 피드백은 베타 이후에 열립니다',
@@ -2693,9 +2722,93 @@ function goCm(id) {
 }
 window.__goCm = goCm;
 
+/* ── 월간 요약 ────────────────────────────────────────────────────────
+   한 달치를 한 장으로. 숫자와 「반복해서 말한 것」은 기계가 세고,
+   마지막 한 줄은 이도형 프로가 쓴다 — 그 한 줄이 이 장의 이유다. */
+window.__REVIEWS = [];
+function loadReviews() {
+  if (!window.NS || !NS.reviews) return Promise.resolve([]);
+  return NS.reviews().then(list => {
+    const had = window.__REVIEWS.length;
+    window.__REVIEWS = list || [];
+    const fresh = window.__REVIEWS.filter(r => !r.read_at);
+    if (fresh.length) rvAnnounce(fresh);
+    if (window.__REVIEWS.length !== had) render();
+    return window.__REVIEWS;
+  }).catch(() => []);
+}
+
+const rvTold = new Set();
+function rvAnnounce(fresh) {
+  const unseen = fresh.filter(r => !rvTold.has(r.id));
+  if (!unseen.length) return;
+  unseen.forEach(r => rvTold.add(r.id));
+  /* 한마디 시트가 먼저 뜨는 중이면 겹치지 않게 알림으로만 — 한 번에 두 장이
+     겹쳐 뜨면 어느 것부터 읽어야 하는지 알 수 없다. */
+  toast('이도형 프로의 ' + rvMon(unseen[0].month) + ' 요약이 왔어요',
+    { label: '보기', fn: () => rvSheet(unseen[0].id) });
+}
+
+const rvMon = k => (+String(k || '').split('-')[1] || 0) + '월';
+
+/* 받은 요약 한 장 — 프로가 쓴 마지막 줄이 제일 크게 선다.
+   숫자는 그 줄을 받쳐주는 것이지 주인공이 아니다. */
+function rvSheet(id) {
+  const list = window.__REVIEWS || [];
+  const r = id ? list.find(x => x.id === id) : list.filter(x => !x.read_at)[0] || list[0];
+  if (!r) return;
+  const old = document.getElementById('rvnew');
+  if (old) old.remove();
+  const st = r.stats || {};
+  const picks = r.picks || [];
+  const dd = (now, was) => {
+    if (was == null) return '';
+    const d = (now || 0) - was;
+    if (!d) return '<span class="rv-d">지난달과 같아요</span>';
+    return '<span class="rv-d">지난달 ' + was + ' → ' + (now || 0) + '</span>';
+  };
+  const box = document.createElement('div');
+  box.id = 'rvnew';
+  box.innerHTML = '<div class="rv-card">'
+    + '<span class="rv-tag">' + rvMon(r.month) + ' 한 달</span>'
+    + '<span class="rv-t">이도형 프로가 한 달을<br>정리해드렸어요</span>'
+    + '<div class="rv-nums">'
+    + '<span class="rv-n"><b>' + (st.days || 0) + '</b>일<em>연습한 날</em>'
+      + dd(st.days, st.prevDays) + '</span>'
+    + '<span class="rv-n"><b>' + (st.vids || 0) + '</b>개<em>올린 영상</em>'
+      + dd(st.vids, st.prevVids) + '</span>'
+    + '<span class="rv-n"><b>' + (st.cms || 0) + '</b>개<em>받은 한마디</em></span>'
+    + '</div>'
+    + (r.theme
+        ? '<div class="rv-theme"><span class="rv-th-l">이번 달 자주 나온 이야기</span>'
+          + '<span class="rv-th-w">' + safe(r.theme) + '</span></div>' : '')
+    + (picks.length
+        ? '<div class="rv-picks"><span class="rv-pl">프로가 남긴 말 중에서</span>'
+          + picks.map(p => '<span class="rv-p">' + safe(p.body) + '</span>').join('')
+          + '</div>' : '')
+    + '<div class="rv-line"><span class="rv-ll">이도형 프로</span>'
+      + '<span class="rv-lb">' + safe(r.pro_line) + '</span></div>'
+    + '<div class="rv-foot"><button class="rv-btn" type="button" data-rv-ok>잘 봤어요</button></div>'
+    + '</div>';
+  box.addEventListener('click', ev => {
+    if (ev.target !== box && !ev.target.closest('[data-rv-ok]')) return;
+    box.remove();
+    if (!r.read_at) {
+      r.read_at = new Date().toISOString();
+      if (window.NS && NS.readReview) NS.readReview(r.id);
+    }
+    render();
+  });
+  document.body.appendChild(box);
+  requestAnimationFrame(() => box.classList.add('on'));
+}
+window.__rvSheet = rvSheet;
+
 /* 앱을 보고 있는 동안에도 계속 확인한다 — 프로는 아무 때나 답한다 */
-setInterval(() => { if (!document.hidden) loadComments(); }, 60000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) loadComments(); });
+setInterval(() => { if (!document.hidden) { loadComments(); loadReviews(); } }, 60000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { loadComments(); loadReviews(); }
+});
 
 /* 앱을 열 때 · 「다시 보내기」를 누를 때 — 아직 안 간 것을 밀어 보낸다 */
 function resendAll() {
@@ -4579,6 +4692,7 @@ if (window.NS) NS.ready().then(u => {
   resendAll();
   /* 여는 화면이 이 신호를 기다린다 — 스윙·한마디가 와 있어야 카드가 제대로
      갈린다. 실패해도 신호는 준다. 안 주면 여는 화면이 끝까지 기다린다. */
+  loadReviews();                  // 월간 요약 — 늦게 와도 화면은 돈다
   loadComments().then(bootDone, bootDone);
 }).catch(bootDone);
 if (!window.NS) bootDone();

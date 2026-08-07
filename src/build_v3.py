@@ -255,6 +255,55 @@ html.demo body{background:#EDEAE3}
   font-family:Pretendard,-apple-system,sans-serif;font-size:12px;font-weight:600;
   color:var(--ns-green)}
 
+/* 월간 요약 — 한 달치 한 장. 프로가 쓴 마지막 줄이 제일 크게 선다. */
+#rvnew{position:fixed;inset:0;z-index:235;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(20,24,22,0);transition:background .2s}
+#rvnew.on{background:rgba(20,24,22,.6)}
+.rv-card{width:100%;max-width:390px;background:var(--ns-card);border-radius:20px 20px 0 0;
+  padding:20px 20px 0;display:flex;flex-direction:column;gap:11px;max-height:90vh;
+  overflow-y:auto;box-shadow:0 -20px 54px -22px rgba(20,24,22,.55);
+  transform:translateY(100%);transition:transform .24s cubic-bezier(.2,.8,.3,1)}
+#rvnew.on .rv-card{transform:none}
+.rv-tag{align-self:flex-start;font-family:Pretendard,-apple-system,sans-serif;font-size:9.5px;
+  font-weight:700;letter-spacing:.12em;color:#fff;background:var(--ns-green);
+  border-radius:6px;padding:3px 8px}
+.rv-t{font-family:Hahmlet,serif;font-size:18px;font-weight:600;color:var(--ns-ink);
+  letter-spacing:-.025em;line-height:1.45}
+.rv-nums{display:flex;gap:8px}
+.rv-n{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;padding:12px 11px;
+  border-radius:12px;background:var(--ns-sand);
+  font-family:Pretendard,-apple-system,sans-serif}
+.rv-n b{font-size:21px;font-weight:700;color:var(--ns-ink);letter-spacing:-.02em}
+.rv-n em{font-style:normal;font-size:10.5px;font-weight:600;color:var(--ns-ink3);margin-top:2px}
+.rv-d{font-size:9.5px;font-weight:600;color:var(--ns-ink3);margin-top:3px}
+.rv-theme{display:flex;align-items:center;gap:9px;padding:12px 14px;border-radius:12px;
+  border:1px solid var(--ns-line);background:#FBFAF6}
+.rv-th-l{font-family:Pretendard,-apple-system,sans-serif;font-size:11.5px;font-weight:600;
+  color:var(--ns-ink3)}
+.rv-th-w{font-family:Pretendard,-apple-system,sans-serif;font-size:13px;font-weight:800;
+  color:#fff;background:var(--ns-bronze);border-radius:8px;padding:3px 10px}
+.rv-picks{display:flex;flex-direction:column;gap:7px;padding:13px 14px;border-radius:12px;
+  background:#FBFAF6;border:1px solid var(--ns-line)}
+.rv-pl{font-family:Pretendard,-apple-system,sans-serif;font-size:11px;font-weight:700;
+  color:var(--ns-ink3);letter-spacing:.02em}
+.rv-p{position:relative;padding-left:13px;font-family:Pretendard,-apple-system,sans-serif;
+  font-size:12.5px;line-height:1.72;color:var(--ns-ink2)}
+.rv-p::before{content:'';position:absolute;left:2px;top:9px;width:4px;height:4px;
+  border-radius:50%;background:var(--ns-bronze)}
+/* 프로가 쓴 한 줄 — 이 장에서 제일 큰 자리. 나머지는 이걸 받쳐주는 것이다 */
+.rv-line{display:flex;flex-direction:column;gap:6px;padding:16px 16px;border-radius:14px;
+  background:var(--ns-green)}
+.rv-ll{font-family:Pretendard,-apple-system,sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.14em;color:rgba(255,255,255,.62)}
+.rv-lb{font-family:Hahmlet,serif;font-size:15px;font-weight:500;line-height:1.75;color:#fff;
+  white-space:pre-wrap;word-break:break-word}
+.rv-foot{position:sticky;bottom:0;margin:2px -20px 0;padding:11px 20px 16px;
+  background:var(--ns-card);border-top:1px solid var(--ns-line)}
+.rv-btn{width:100%;min-height:48px;border:0;border-radius:12px;cursor:pointer;
+  background:var(--ns-green);color:#fff;font-family:Pretendard,-apple-system,sans-serif;
+  font-size:14px;font-weight:700}
+.rv-btn:active{opacity:.8}
+
 /* 회원 탈퇴 — 되돌릴 수 없는 일이라, 무엇이 사라지는지 다 적고 나서 묻는다 */
 #quit{position:fixed;inset:0;z-index:240;display:flex;align-items:center;justify-content:center;
   background:rgba(20,24,22,0);transition:background .2s;padding:20px 16px}

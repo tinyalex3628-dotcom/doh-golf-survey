@@ -198,6 +198,36 @@ const NS = (() => {
     return Object.fromEntries((r.data || []).map(p => [p.id, p.nickname]));
   }
 
+  /* ── 월간 요약 ────────────────────────────────────────────────────
+     접근 규칙이 알아서 가른다 — 회원이 부르면 자기 것만, 프로가 부르면 전부. */
+  async function reviews() {
+    const c = client();
+    const u = await ready();
+    if (!c || !u) return [];
+    const r = await c.from('reviews')
+      .select('id,owner,month,stats,theme,picks,pro_line,created_at,read_at')
+      .order('month', { ascending: false }).limit(400);
+    return r.error ? [] : (r.data || []);
+  }
+
+  /* 한 회원에게 한 달에 한 장. 고쳐 보내면 덮어쓴다 —
+     두 장이 남으면 어느 것이 진짜인지 회원이 알 수 없다. */
+  async function sendReview(owner, month, body) {
+    const c = client();
+    await ready();
+    const row = Object.assign({ owner: owner, month: month }, body);
+    const r = await c.from('reviews').upsert(row, { onConflict: 'owner,month' })
+      .select().single();
+    if (r.error) throw r.error;
+    return r.data;
+  }
+
+  async function readReview(id) {
+    const c = client();
+    await ready();
+    await c.from('reviews').update({ read_at: new Date().toISOString() }).eq('id', id);
+  }
+
   /* ── 탈퇴 ─────────────────────────────────────────────────────────
      앱 안에서 계정을 정말로 지운다. 순서가 중요하다 —
        ① 창고의 영상 파일부터 (표가 사라지면 경로를 잃어서 못 지운다)
@@ -313,6 +343,7 @@ const NS = (() => {
   return {
     ready, push, mine, all, comment, markRead, seen, link, remove, people, profiles,
     setName, setPlan, note, want, wipe,
+    reviews, sendReview, readReview,
     saveOpen, refresh,
     signUp, signIn,
     nick: () => nickname,

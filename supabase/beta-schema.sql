@@ -76,6 +76,27 @@ alter table public.comments add column if not exists photos jsonb;
 alter table public.comments add column if not exists read_at timestamptz;
 create index if not exists comments_swing_idx on public.comments (swing_id);
 
+-- ── 월간 요약 ───────────────────────────────────────────────
+-- 한 달치를 한 장으로. 숫자와 「반복해서 말한 것」은 기계가 세고,
+-- 마지막 한 줄은 프로가 쓴다 — pro_line 이 not null 인 이유다.
+--
+-- stats 를 굳혀서 넣는 까닭: 회원이 나중에 영상을 지우면 다시 세는 값이
+-- 바뀐다. 8월에 보낸 요약이 9월에 다른 숫자가 되면 그건 기록이 아니다.
+create table if not exists public.reviews (
+  id         uuid primary key default gen_random_uuid(),
+  owner      uuid not null references auth.users(id) on delete cascade,
+  month      text not null,              -- '2026-08'
+  stats      jsonb,                       -- 보낸 그 시점의 숫자
+  theme      text,                        -- 이번 달 반복해서 말한 것
+  picks      jsonb,                       -- 프로가 고른 문장 [{body, at}]
+  pro_line   text not null,
+  created_at timestamptz not null default now(),
+  read_at    timestamptz
+);
+-- 한 회원에게 한 달에 한 장. 다시 보내면 덮어쓴다.
+create unique index if not exists reviews_owner_month
+  on public.reviews (owner, month);
+
 -- ── 접근 규칙 ───────────────────────────────────────────────
 -- 자기 것만 보인다. 프로만 전부 본다.
 -- is_pro() 는 security definer 다 — 규칙 안에서 profiles 를 읽어야 하는데
@@ -88,6 +109,7 @@ $$;
 alter table public.profiles enable row level security;
 alter table public.swings   enable row level security;
 alter table public.comments enable row level security;
+alter table public.reviews  enable row level security;
 
 drop policy if exists p_sel on public.profiles;
 create policy p_sel on public.profiles for select
@@ -128,6 +150,17 @@ create policy c_upd on public.comments for update
   using (public.is_pro()
       or exists (select 1 from public.swings s
                   where s.id = comments.swing_id and s.owner = auth.uid()));
+
+-- 월간 요약 — 받은 사람과 프로만. 쓰는 건 프로, 읽음은 받은 사람이 찍는다.
+drop policy if exists r_sel on public.reviews;
+create policy r_sel on public.reviews for select
+  using (owner = auth.uid() or public.is_pro());
+drop policy if exists r_ins on public.reviews;
+create policy r_ins on public.reviews for insert with check (public.is_pro());
+drop policy if exists r_upd on public.reviews;
+create policy r_upd on public.reviews for update
+  using (owner = auth.uid() or public.is_pro())
+  with check (owner = auth.uid() or public.is_pro());
 
 -- ── 창고 ────────────────────────────────────────────────────
 -- 비공개 버킷이다. 주소만으로는 못 연다 — 한 시간짜리 서명 링크로 연다.
