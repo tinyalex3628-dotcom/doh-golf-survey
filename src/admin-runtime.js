@@ -16,6 +16,7 @@ const S = {
   quiet: true,         // 조용한 시간
   fold: false,         // 요청함 접기 (영상에 집중할 때)
   mview: 'board',      // 회원 관리 보기: 등급별 | 목록
+  mstate: '전체',      // 회원 관리 상태 거르개 (admin-crm.js)
   mtab: 'sum',         // 회원 세부 안의 부제목
   back: [],            // 어디서 왔는지 (뒤로 가기)
   pick: 'q2',          // 지금 고른 요청
@@ -416,12 +417,12 @@ function qmini(q, on) {
    세로줄은 '어디로 갈 수 있나', 대시보드는 '지금 뭘 해야 하나' 다. */
 function sidebar() {
   const badge = k => k === 'queue' ? waiting().length
-                   : k === 'members' ? sleeping().length
+                   : k === 'members' ? crmCallN()
                    : k === 'fb' ? 1 : 0;
   const item = ([k, name, d]) => {
     const on = S.nav === k;
     const n = badge(k);
-    const hot = (k === 'queue' && urgentN()) || (k === 'members' && sleeping().length);
+    const hot = (k === 'queue' && urgentN()) || (k === 'members' && crmCallN());
     return `<div data-nav="${k}" style="display:flex;align-items:center;gap:10px;padding:9px 11px;
       border-radius:9px;cursor:pointer;background:${on ? 'rgba(237,237,232,.13)' : 'transparent'}">
       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
@@ -634,6 +635,7 @@ function pageHome() {
       <div style="display:flex;flex-direction:column;gap:6px">
         <span style="font-size:24px;font-weight:700;letter-spacing:-.03em;color:var(--ns-ink)">오늘 할 일</span>
         <span style="font-size:13.5px;font-weight:400;color:var(--ns-ink3)">7월 22일 수요일</span></div>
+      ${crmCallBox(3)}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(206px,1fr));gap:12px">
         ${TODAY.map(t => {
           const hot = (t.k === 'urgent' && u > 0) || (t.k === 'sleep' && sl > 0);
@@ -1016,7 +1018,7 @@ function renderPC() {
   const page = S.nav === 'inbox' ? pageInbox()
              : S.nav === 'home' ? pageHome()
              : S.nav === 'queue' ? pageQueue()
-             : S.nav === 'members' ? pageMembers()
+             : S.nav === 'members' ? crmMembers()
              : S.nav === 'stats' ? pageStats()
              : S.nav === 'member' ? pageMember()
              : S.nav === 'set' ? pageSet()
@@ -1099,7 +1101,10 @@ function renderMO() {
   }
 
   if (S.nav === 'members') {
-    // 모바일에선 세로줄을 나란히 못 놓는다. 등급별로 위아래로 쌓는다 — 순서는 같다.
+    // 진짜 명부 — 상태별로 위아래로 쌓는다 (admin-crm.js)
+    return page(bar('회원 관리', 0, '') + crmMembersMO());
+  }
+  if (false) {
     return page(`${bar('회원 관리', 0, `<span style="font-size:11.5px;font-weight:600;
       color:var(--ns-ink3)">${Object.keys(M).length}명</span>`)}
       <div style="flex:1;overflow-y:auto;padding:12px 12px 18px;display:flex;flex-direction:column;gap:16px">
@@ -1507,7 +1512,8 @@ function pageMember() {
 
 /* ── 그리기 ─────────────────────────────────────────────────────── */
 function render() {
-  if (S.nav === 'inbox') inLoad();   // 열 때 서버에서 받아온다
+  // 도착함·회원 관리·대시보드가 같은 서버 데이터를 본다
+  if (['inbox', 'members', 'home'].includes(S.nav)) inLoad();
   const pc = S.view === 'pc';
   document.documentElement.classList.toggle('pcmode', pc);
   $('#frame').innerHTML = pc
@@ -1522,6 +1528,7 @@ function on(sel, ev, fn) { document.querySelectorAll(sel).forEach(e => e.addEven
 
 function wire() {
   inWire();
+  crmWire();
   const q = cur();
   on('[data-q]', 'click', e => {
     S.pick = e.currentTarget.dataset.q;

@@ -28,6 +28,7 @@ cp nextswing-admin.html ../docs/admin.html
 | `build_admin.py` | 관리자 콘솔 조립 |
 | `runtime-v3.js` | 회원 앱 런타임(~2700줄). 화면 배선·상태·서버 연동 전부 |
 | `admin-inbox.js` | 관리자 「도착함」 — 영상 작업대(확대·선 긋기·캡처)와 답장 |
+| `admin-crm.js` | 회원 명부 — 서버 데이터에서 상태(새싹·활성·복귀·침묵·휴면)를 계산해 그린다 |
 | `admin-runtime.js` | 관리자 나머지 화면(아직 설계도) |
 | `sb.js` | 서버 층. 회원 앱과 관리자가 **같은 파일**을 쓴다 |
 | `vault.js` | 기기 보관함(IndexedDB). 영상은 여기 먼저 들어가고 그다음 서버로 |
@@ -85,6 +86,8 @@ node test/_gallery_remote.mjs # 폰을 바꿔도 갤러리가 서버에서 보�
 node test/_home_hero.mjs      # 홈 첫 화면이 한마디 한 바퀴를 따라가는가
 node test/_shots.mjs          # 프로가 붙인 사진 — 글이 먼저 · 스크롤 없이 · 눌러서 크게
 node test/_opening.mjs        # 여는 화면 — 「얼마 만에 왔나」가 카드를 가르는가
+node test/_seen.mjs           # 봤어요 도장 — CRM 이 찍고 회원이 보는 한 바퀴
+node test/_crm_roster.mjs     # 회원 명부 — 상태 자동 분류 · 먼저 연락할 사람
 node test/_practice.mjs       # 연습기록 — 달력이 스크롤 없이 보이는가
 node test/_gallery.mjs        # 갤러리 — 날짜 묶음 · 필터 칩 · 클럽이 끝까지 가는가
 ```

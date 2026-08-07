@@ -170,6 +170,17 @@ const NS = (() => {
 
   /* 회원 이름표 — swings.owner 는 auth.users 를 가리켜서 profiles 와 자동으로
      이어지지 않는다. 따로 받아서 id 로 맞춘다. */
+  /* 회원 명부 — 닉네임만이 아니라 가입일·실명까지. 「가입만 하고 아직
+     한 개도 안 올린 사람」은 스윙 표에 없어서, 이걸 안 읽으면 명부에서
+     통째로 빠진다. 제일 챙겨야 할 사람이 안 보이는 셈이다. */
+  async function profiles() {
+    const c = client();
+    await ready();
+    if (!c) return [];
+    const r = await c.from('profiles').select('id,nickname,real_name,is_pro,created_at');
+    return r.error ? [] : (r.data || []);
+  }
+
   async function people() {
     const c = client();
     await ready();
@@ -270,7 +281,8 @@ const NS = (() => {
   }
 
   return {
-    ready, push, mine, all, comment, markRead, seen, link, remove, people, setName, note, want,
+    ready, push, mine, all, comment, markRead, seen, link, remove, people, profiles,
+    setName, note, want,
     saveOpen, refresh,
     signUp, signIn,
     nick: () => nickname,

@@ -9,7 +9,7 @@
 
 const IN = {
   busy: false, ready: false, err: null,
-  list: [], who: {}, sel: null, draft: {}, photos: {}, lines: {}, urlCache: {},
+  list: [], who: {}, people: [], sel: null, draft: {}, photos: {}, lines: {}, urlCache: {},
   blobCache: {}, at: {}, zoom: {}, mode: 'draw',
   uid: null, pro: false,
 };
@@ -26,9 +26,10 @@ function inLoad(force) {
     return NS.refresh ? NS.refresh() : NS.isPro();
   }).then(pro => {
     IN.pro = !!pro;
-    return Promise.all([NS.all(), NS.people()]);
-  }).then(([list, who]) => {
-    IN.list = list; IN.who = who;
+    return Promise.all([NS.all(), NS.people(),
+      NS.profiles ? NS.profiles() : Promise.resolve([])]);
+  }).then(([list, who, people]) => {
+    IN.list = list; IN.who = who; IN.people = people || [];
     IN.busy = false; IN.ready = true;
     if (!IN.sel && list.length) IN.sel = list[0].id;
     render();
