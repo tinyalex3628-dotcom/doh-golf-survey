@@ -1,0 +1,515 @@
+<title>NEXT SWING 운영 설계서</title>
+<style>
+:root{
+  --bg:#F3EFE8; --card:#FFFDF9; --sand:#EFE9DE; --line:#E4DED2;
+  --ink:#1D2420; --ink2:#4A4638; --ink3:#686253;
+  --green:#21402F; --green2:#1D4534; --soft:#F2F8F4;
+  --bronze:#7D5D2E; --bronze-soft:#F4EDDF; --danger:#B0392B; --danger-soft:#F7E9E5;
+  --on-green:#FFFFFF; --green-tint:#8FBFA3;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#171B18; --card:#1F2521; --sand:#242B26; --line:#333B34;
+    --ink:#E8E5DC; --ink2:#C4BFB0; --ink3:#8F8A7B;
+    --green:#8FBFA3; --green2:#A5CDB5; --soft:#203026;
+    --bronze:#C9A25E; --bronze-soft:#2E2820; --danger:#E08A76; --danger-soft:#332119;
+    --on-green:#121712; --green-tint:#2E4437;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#171B18; --card:#1F2521; --sand:#242B26; --line:#333B34;
+  --ink:#E8E5DC; --ink2:#C4BFB0; --ink3:#8F8A7B;
+  --green:#8FBFA3; --green2:#A5CDB5; --soft:#203026;
+  --bronze:#C9A25E; --bronze-soft:#2E2820; --danger:#E08A76; --danger-soft:#332119;
+  --on-green:#121712; --green-tint:#2E4437;
+}
+:root[data-theme="light"]{
+  --bg:#F3EFE8; --card:#FFFDF9; --sand:#EFE9DE; --line:#E4DED2;
+  --ink:#1D2420; --ink2:#4A4638; --ink3:#686253;
+  --green:#21402F; --green2:#1D4534; --soft:#F2F8F4;
+  --bronze:#7D5D2E; --bronze-soft:#F4EDDF; --danger:#B0392B; --danger-soft:#F7E9E5;
+  --on-green:#FFFFFF; --green-tint:#8FBFA3;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg); color:var(--ink2);
+  font-family:"Pretendard","Pretendard Variable","Apple SD Gothic Neo","Noto Sans KR",-apple-system,sans-serif;
+  font-size:15px; line-height:1.85; -webkit-font-smoothing:antialiased; padding:0 20px 90px}
+.page{max-width:780px; margin:0 auto}
+.serif{font-family:"Nanum Myeongjo","Noto Serif KR",Batang,Georgia,serif}
+
+header{padding:64px 0 40px; border-bottom:2px solid var(--ink)}
+.eyebrow{font-size:11px; font-weight:700; letter-spacing:.22em; color:var(--bronze); text-transform:uppercase}
+h1{font-size:clamp(26px,5vw,36px); line-height:1.42; font-weight:800; letter-spacing:-.035em;
+  color:var(--ink); margin:16px 0 18px; text-wrap:balance}
+h1 em{font-style:normal; color:var(--green)}
+.meta{display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--ink3)}
+.meta b{color:var(--ink2); font-weight:600}
+.premise{margin:30px 0 0; padding:18px 20px; background:var(--sand); border-radius:12px;
+  font-size:13.5px; line-height:1.8}
+.premise b{color:var(--ink)}
+
+section{margin-top:62px}
+.sec-head{display:flex; align-items:baseline; gap:14px; padding-bottom:12px;
+  border-bottom:1px solid var(--line); margin-bottom:24px}
+.sec-n{font-family:Georgia,serif; font-size:15px; font-weight:700; color:var(--bronze); flex:none;
+  font-variant-numeric:tabular-nums}
+h2{font-size:21px; font-weight:800; letter-spacing:-.025em; color:var(--ink); text-wrap:balance}
+.sec-sub{display:block; font-size:12.5px; font-weight:500; color:var(--ink3); margin-top:3px}
+h3{font-size:15px; font-weight:800; color:var(--ink); margin:28px 0 10px; letter-spacing:-.02em}
+p{margin-bottom:13px; max-width:68ch}
+p b, li b, td b{color:var(--ink); font-weight:700}
+.hl{background:linear-gradient(transparent 62%, color-mix(in srgb, var(--green-tint) 45%, transparent) 62%)}
+.note{font-size:12.5px; color:var(--ink3); padding:12px 15px; background:var(--sand);
+  border-radius:10px; margin:12px 0; line-height:1.7}
+.note b{color:var(--ink2)}
+
+/* 표 */
+.tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:13px; background:var(--card); margin:14px 0}
+table{width:100%; border-collapse:collapse; font-size:13px; min-width:560px}
+th{text-align:left; font-size:11px; font-weight:800; letter-spacing:.07em; color:var(--ink3);
+  padding:12px 14px; border-bottom:1.5px solid var(--line); white-space:nowrap; vertical-align:bottom}
+td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.65}
+tr:last-child td{border-bottom:0}
+.num{font-variant-numeric:tabular-nums; white-space:nowrap}
+.tag{display:inline-block; font-size:10px; font-weight:800; padding:2px 7px; border-radius:5px;
+  background:var(--soft); color:var(--green); white-space:nowrap; margin-left:4px}
+.tag.b{background:var(--bronze-soft); color:var(--bronze)}
+.tag.d{background:var(--danger-soft); color:var(--danger)}
+
+/* 타임라인 */
+.tl{border-left:2px solid var(--line); margin:8px 0 8px 7px; padding-left:24px}
+.tl-item{position:relative; padding-bottom:26px}
+.tl-item:last-child{padding-bottom:4px}
+.tl-item::before{content:''; position:absolute; left:-31px; top:7px; width:12px; height:12px;
+  border-radius:50%; background:var(--green); border:2.5px solid var(--bg)}
+.tl-when{font-size:11px; font-weight:800; letter-spacing:.1em; color:var(--bronze)}
+.tl-item h4{font-size:15px; font-weight:800; color:var(--ink); margin:3px 0 6px}
+.tl-item p{font-size:13px; margin:0; line-height:1.75}
+.tl-goal{margin-top:8px; font-size:12.5px; padding:9px 13px; background:var(--soft);
+  border-radius:9px; color:var(--green2)}
+.tl-goal b{color:var(--green2)}
+
+/* 하루 시간표 */
+.day{border:1px solid var(--line); border-radius:13px; background:var(--card); overflow:hidden; margin:14px 0}
+.day-row{display:flex; gap:14px; padding:13px 16px; border-bottom:1px solid var(--line); font-size:13px}
+.day-row:last-child{border-bottom:0}
+.day-t{flex:none; width:88px; font-family:Georgia,serif; font-weight:700; color:var(--bronze);
+  font-variant-numeric:tabular-nums; font-size:12.5px; padding-top:1px}
+.day-row div p{margin:0; font-size:13px}
+.day-row div .sub{font-size:12px; color:var(--ink3); margin-top:2px}
+
+/* 스크립트(말 예문) */
+.script{margin:10px 0; padding:14px 16px 14px 18px; background:var(--card); border:1px solid var(--line);
+  border-left:3px solid var(--bronze); border-radius:10px; font-size:13.5px; line-height:1.8}
+.script .who{display:block; font-size:10.5px; font-weight:800; letter-spacing:.1em;
+  color:var(--bronze); margin-bottom:5px}
+.script q{quotes:'“' '”'; font-family:"Nanum Myeongjo","Noto Serif KR",Batang,Georgia,serif; color:var(--ink)}
+
+/* 지표 카드 */
+.kpi{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:11px; margin:14px 0}
+.kpi-box{padding:15px 16px; background:var(--card); border:1px solid var(--line); border-radius:12px}
+.kpi-box b{display:block; font-size:13.5px; color:var(--ink); margin-bottom:4px}
+.kpi-box p{font-size:12px; margin:0; line-height:1.65; color:var(--ink3)}
+.kpi-box .warn{display:block; margin-top:7px; padding-top:7px; border-top:1px dashed var(--line);
+  font-size:11.5px; color:var(--danger); font-weight:600}
+
+.thesis{margin-top:40px; padding:30px 28px; background:var(--green); border-radius:16px; color:var(--on-green)}
+.thesis .t-label{font-size:10.5px; font-weight:800; letter-spacing:.2em; opacity:.65; margin-bottom:11px}
+.thesis p{font-size:clamp(17px,3vw,21px); line-height:1.65; font-weight:700; letter-spacing:-.02em;
+  color:var(--on-green); margin:0; max-width:none; text-wrap:balance}
+.thesis .t-follow{font-size:13px; font-weight:400; opacity:.8; margin-top:12px; line-height:1.75}
+
+.check{list-style:none; margin:10px 0}
+.check li{position:relative; padding:8px 0 8px 30px; border-bottom:1px dashed var(--line);
+  font-size:13.5px; line-height:1.7}
+.check li:last-child{border-bottom:0}
+.check li::before{content:''; position:absolute; left:2px; top:14px; width:15px; height:15px;
+  border:2px solid var(--green); border-radius:5px}
+footer{margin-top:64px; padding-top:18px; border-top:1px solid var(--line);
+  font-size:11.5px; color:var(--ink3); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px}
+</style>
+
+<div class="page">
+
+<header>
+  <div class="eyebrow">Next Swing · 운영 설계서 — 전략 보고서 2부</div>
+  <h1 class="serif">월요일 아침, 프로는<br>무엇을 <em>하는가</em></h1>
+  <div class="meta">
+    <span><b>작성</b> 2026. 08</span>
+    <span><b>전제</b> ① 전역 후 앱(iOS·Android)으로 정식 출시 ② 지금 베타는 수요조사</span>
+  </div>
+  <div class="premise">
+    1부(전략 보고서)가 「무엇을 왜 파는가」였다면, 이 문서는 <b>「그걸 매일 어떻게
+    돌리는가」</b>다. 시간표 · 가격 숫자 · 상태별 대응 스크립트 · 전역 후 90일 로드맵까지,
+    실제 운영을 시뮬레이션하며 썼다. 숫자 중 <b>시세·세무·심사 규정은 가설/확인
+    필요로 표시</b>했다 — 보고서가 아는 척하는 순간부터 틀리기 시작한다.
+  </div>
+</header>
+
+<div class="thesis">
+  <div class="t-label">전제가 바뀌며 달라지는 단 하나</div>
+  <p>지금 베타의 목적은 회원을 늘리는 것이 아니다.<br>
+  정식 출시 날 쓸 <b>답</b>을 모아두는 것이다.</p>
+  <div class="t-follow">얼마면 낼 것인가 · 얼마나 자주 올리는가 · 답장은 얼마나 빨라야
+  하는가 · 누가 창립 멤버가 될 것인가. 이 네 가지 답을 들고 전역하는 것이 베타의
+  성공 조건이다. 회원 수는 지표가 아니다.</div>
+</div>
+
+<!-- ══════════════ 01 로드맵 ══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-n">01</span>
+    <h2>로드맵 — 전역일을 D-Day로 <span class="sec-sub">각 단계는 앞 단계의 답이 있어야 시작할 수 있다</span></h2></div>
+
+  <div class="tl">
+    <div class="tl-item">
+      <span class="tl-when">PHASE 0 · 지금 ~ 전역 — 「수요조사 베타」</span>
+      <h4>돈 안 드는 것만 한다. 대신 답을 모은다</h4>
+      <p>웹 베타 유지(비용 0원). 회원 20~30명 상한 — 군 복무 중 답장 가능한 선.
+      기능 추가는 봤어요 도장·숙제 등 <b>운영 데이터를 만드는 것</b>만.
+      매주 일요일 10분, 지표 5개 기록(08장).</p>
+      <div class="tl-goal"><b>전역 전 반드시 손에 쥘 것 —</b> ① 가격 전수조사 결과(회원별
+      「월 O원이면 계속?」) ② 회원별 업로드 빈도 분포 ③ 실측 평균 답장 시간
+      ④ 창립 멤버 약속 명단 ⑤ 「돈 내고라도 쓰겠다」고 말한 사람 수</div>
+    </div>
+    <div class="tl-item">
+      <span class="tl-when">PHASE 1 · 전역 + 0 ~ 30일 — 「법인격 만들기」</span>
+      <h4>코드보다 서류가 먼저다</h4>
+      <p>사업자등록 → 통신판매업 신고 → PG(결제) 계약 → 이용약관·개인정보처리방침·
+      영상보관정책 → 카카오 비즈니스 채널(알림톡). 이 순서대로 해야 다음 것의
+      전제가 된다. 병행: 유출됐던 서버 키 전부 재발급, 도메인 구입.
+      상세 체크리스트는 06장.</p>
+      <div class="tl-goal"><b>이 달의 완료 조건 —</b> 테스트 결제 1건이 내 통장에
+      들어왔다 · 알림톡 1건이 내 폰에 도착했다.</div>
+    </div>
+    <div class="tl-item">
+      <span class="tl-when">PHASE 1.5 · 전역 + 30 ~ 90일 — 「앱 전환 + 유료 소프트런칭」</span>
+      <h4>새로 만들지 않는다. 지금 것을 앱 껍데기에 넣는다</h4>
+      <p>검증된 55개 화면을 버리고 재개발하는 것은 1인 팀의 자살이다. 지금 웹 자산을
+      Capacitor(또는 동급 래퍼)로 감싸 <b>푸시 알림·카메라·스토어 배포</b>만 네이티브로
+      얹는다(05장). 스토어 심사 기간을 감안해 60일차 제출 목표.</p>
+      <p style="margin-top:8px">앱 심사와 <b>병행</b>하여 베타 회원에게 유료 전환 제안 —
+      창립 멤버 가격으로. 이 30명이 첫 매출이자 첫 후기다.</p>
+      <div class="tl-goal"><b>이 분기의 완료 조건 —</b> 스토어에 앱이 있다 · 유료 회원
+      15명 이상 · 첫 달 이탈 20% 미만.</div>
+    </div>
+    <div class="tl-item">
+      <span class="tl-when">PHASE 2 · 전역 + 90일 ~ — 「정원 운영」</span>
+      <h4>이때부터가 이 문서의 본편이다</h4>
+      <p>02~04장과 07~09장의 운영 리듬으로 진입. 오프라인 레슨 재개와 맞물리는
+      시점 — 앱이 레슨의 깔때기가 되는 구조(04장 손익)가 여기서 완성된다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 02 하루 ══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-n">02</span>
+    <h2>프로의 하루 — 시간 예산부터 <span class="sec-sub">정원 30명 기준. 이 시간표가 무너지면 서비스가 무너진다</span></h2></div>
+
+  <p>먼저 산수. 30명 × 월 5회 = <b>월 150건</b>, 하루 평균 <b>5건</b>이다.
+  한 건의 작업 단위는 「영상 보기(2분) → 선 긋고 캡처(2분) → 한마디 + 숙제 쓰기(2분)」
+  = <b>6분</b>. 하루 답장 노동은 <span class="hl">약 30분</span>이다. 이걸 알고 있어야
+  「감당 가능한가」라는 막연한 불안이 「하루 30분짜리 일」이라는 계획이 된다.</p>
+
+  <div class="day">
+    <div class="day-row"><span class="day-t">아침 (5분)</span><div>
+      <p><b>도착함 훑기 + 도장만.</b> 밤사이 올라온 스윙을 열어본다 — 여는 순간 봤어요
+      도장이 자동으로 찍힌다. 답장은 안 쓴다.</p>
+      <p class="sub">회원의 아침: 「이도형 프로가 확인했습니다 · 오전 7:40」을 보고 출근한다.
+      답장이 늦어도 이미 반응은 받았다 — 이게 도장의 존재 이유다.</p></div></div>
+    <div class="day-row"><span class="day-t">저녁 (30분)</span><div>
+      <p><b>답장 블록.</b> 도착함을 위에서부터, 「답 기다림」 표시 순으로. 한 건 6분,
+      끝나면 도착함 제로. 몰아서 하는 이유 — 답장은 전환 비용이 큰 일이라 쪼개면
+      건당 10분이 된다.</p>
+      <p class="sub">규칙 하나: <b>어제 온 것을 오늘 넘기지 않는다.</b> 24시간 약속(1부)의
+      실행형이다.</p></div></div>
+    <div class="day-row"><span class="day-t">월요일 +10분</span><div>
+      <p><b>조용한 회원 점검.</b> CRM의 「10일 무업로드」 목록에서 이번 주 2명에게만
+      선제 연락(03장 스크립트). 전원에게 보내면 단체문자가 되고, 2명이면 편지가 된다.</p></div></div>
+    <div class="day-row"><span class="day-t">금요일 +10분</span><div>
+      <p><b>주간 지표 5개 기록</b>(08장). 스프레드시트 한 줄이면 된다. 기록하지 않은
+      주는 운영하지 않은 주다.</p></div></div>
+    <div class="day-row"><span class="day-t">월말 +2시간</span><div>
+      <p><b>월간 리뷰 데이(Elite 대상).</b> 회원당 한 달치 스윙 훑고 리포트 한 장 —
+      마지막 줄은 반드시 「다음 달 과제 중 ③은 대면으로 잡는 게 빠릅니다」 형식(1부 04장).</p></div></div>
+  </div>
+
+  <div class="note"><b>확장 한계선이 여기서 나온다.</b> 하루 60분을 상한으로 잡으면
+  정원은 약 50명. 그 위로는 답장 품질이 먼저 죽는다 — 가격을 올려서라도 50명을
+  넘기지 않는 것이 이 사업의 규율이다. 더 벌고 싶은 힘은 정원 확대가 아니라
+  레슨 전환(04장)으로 흘려보낸다.</div>
+</section>
+
+<!-- ══════════════ 03 회원 상태머신 ══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-n">03</span>
+    <h2>회원 상태별 플레이북 <span class="sec-sub">회원은 6개 상태 중 하나에 있다. 상태마다 「시스템이 하는 일」과 「프로가 하는 일」을 가른다 — 사람이 할 일을 시스템에 시키면 차가워지고, 시스템이 할 일을 사람이 하면 지친다</span></h2></div>
+
+  <div class="tblwrap"><table>
+    <thead><tr><th>상태</th><th>정의</th><th>시스템이 (자동)</th><th>프로가 (수동)</th></tr></thead>
+    <tbody>
+      <tr><td><b>새싹</b></td><td class="num">가입 ~ 첫 업로드 전</td>
+        <td>가입 직후 환영 화면에서 「첫 스윙 24시간 약속」 고지. 48시간 무업로드 시
+        푸시 1회 — <i>“대충 찍어도 됩니다. 각도 안 맞아도 제가 봅니다.”</i></td>
+        <td>첫 업로드가 오면 <b>그날 안에</b> 한마디 + 숙제. 이 답장 하나에 이
+        회원의 6개월이 걸려 있다.</td></tr>
+      <tr><td><b>활성</b></td><td class="num">7일 내 업로드 있음</td>
+        <td>봤어요 도장 · 숙제 표시 · 남은 횟수 관리. 건드리지 않는다 —
+        잘 도는 루프에 알림을 얹으면 소음이다.</td>
+        <td>평소 답장 루틴뿐. 단, 답장에 가끔 이력을 인용한다 —
+        <i>“3주 전보다 확실히 좋아졌어요.”</i> 기억하고 있다는 증거.</td></tr>
+      <tr><td><b>침묵</b></td><td class="num">10일 무업로드</td>
+        <td>CRM 「조용한 회원」 목록에 올린다. <b>회원에게는 아무것도 안 보낸다</b> —
+        자동 리마인드는 이 상태에서 역효과다.</td>
+        <td>월요일 점검에서 주 2명 선제 연락(아래 스크립트 A).</td></tr>
+      <tr><td><b>휴면</b></td><td class="num">30일 무업로드</td>
+        <td>월 구독이라면 결제 전 안내 — <i>“이번 달 이용이 없으셨어요”</i> +
+        일시정지 선택지. <b>몰래 결제되게 두지 않는다.</b> 한 달 몰래 받은 돈이
+        영원한 해지를 만든다.</td>
+        <td>일시정지를 고르면 스크립트 B로 배웅. 계절 요인이면 겨울 모드 안내.</td></tr>
+      <tr><td><b>복귀</b></td><td class="num">침묵·휴면 후 업로드</td>
+        <td>여는 화면이 comeback 카드(이미 설계됨). 밀린 것 언급 금지.</td>
+        <td>답장 첫 문장을 복귀 인사로 — 스크립트 C. 숫자로 혼내지 않는다.</td></tr>
+      <tr><td><b>해지</b></td><td class="num">구독 종료</td>
+        <td>데이터 90일 보관 후 삭제 예고(정책 고지). 재가입 시 이력 복원 —
+        <b>떠나도 이력은 남는다는 것이 재가입의 이유다.</b></td>
+        <td>해지 설문 1문항: “무엇이 있었으면 남으셨을까요?” 답장하지 않는다.
+        읽기만 한다.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>선제 연락 스크립트 — 자동화 티가 나면 죽는다. 반드시 그 회원의 지난 스윙이 들어가야 한다</h3>
+  <div class="script"><span class="who">A · 침묵 10일 회원에게 (월요일)</span>
+    <q>OO님, 요즘 연습 어떠세요? 지난번 올려주신 드라이버에서 어깨 먼저 도는 게
+    좋아지고 있었는데, 그 감 잊기 전에 하나만 찍어서 보여주세요. 이번 주에 보이면
+    바로 봐드릴게요.</q></div>
+  <div class="script"><span class="who">B · 일시정지를 고른 회원에게</span>
+    <q>알겠습니다, 쉬어가는 것도 연습입니다. 기록은 그대로 두겠습니다 —
+    돌아오시면 지난 어깨부터 이어서 볼게요.</q></div>
+  <div class="script"><span class="who">C · 3주 만에 복귀한 회원의 답장 첫 문장</span>
+    <q>돌아오셨네요. 스윙은 몸이 기억하고 있으니 걱정 마시고 — 오늘 영상 보면
+    지난번 잡았던 하체는 그대로 살아 있습니다.</q></div>
+</section>
+
+<!-- ══════════════ 04 가격과 손익 ══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-n">04</span>
+    <h2>가격 설계와 손익 <span class="sec-sub">아래 숫자는 가설이다 — 베타 전수조사(Phase 0)와 지역 레슨 시세로 보정한 뒤 확정한다</span></h2></div>
+
+  <p>가격의 앵커는 하나다: <span class="hl">「레슨 한 번 값으로, 한 달 내내 관리받는다」</span>.
+  개인 레슨 1회를 5~10만원대로 가정하면(지역 시세로 보정할 것), 최상위 플랜이
+  레슨 1회 값 언저리, 중간 플랜이 그 절반이어야 이 문장이 성립한다.</p>
+
+  <div class="tblwrap"><table>
+    <thead><tr><th>플랜</th><th>월 가격 (가설)</th><th>내용</th><th>답장 약속</th></tr></thead>
+    <tbody>
+      <tr><td><b>Basic</b></td><td class="num">19,000원</td>
+        <td>한마디 3회 · 봤어요 도장 무제한 · 갤러리·기록 전부</td><td class="num">48시간</td></tr>
+      <tr><td><b>Coaching</b> <span class="tag">기본 추천</span></td><td class="num">39,000원</td>
+        <td>한마디 5회 · 숙제 관리 · 원포인트 할인 20%</td><td class="num">24시간</td></tr>
+      <tr><td><b>Elite</b></td><td class="num">79,000원</td>
+        <td>한마디 8회 · <b>월간 리뷰 리포트</b> · 정기레슨 15% 할인</td><td class="num">12시간 우선</td></tr>
+      <tr><td colspan="4" style="font-size:12.5px; color:var(--ink3)">창립 멤버(베타 참여자):
+        위 가격에서 <b>평생 30% 할인</b> — 첫 신뢰에 대한 값이자, 첫 후기 30개의 값이다.
+        「무료 → 유료」의 벽을 「무료 → 반값」으로 낮추는 장치이기도 하다.</td></tr>
+    </tbody>
+  </table></div>
+
+  <p><b>답장 속도를 플랜으로 팔았다</b>는 점이 이 표의 핵심이다. 한마디 횟수만 늘리면
+  프로의 노동이 정비례로 늘지만, 우선순위는 같은 노동을 재배열하는 것이라 공짜다.
+  그리고 회원 입장에서 「빨리 봐주는 것」이야말로 돈을 내는 실감이다.</p>
+
+  <h3>손익 시뮬레이션 — 정원 30명이 찼을 때 (가설 가격 기준)</h3>
+  <div class="tblwrap"><table>
+    <thead><tr><th>항목</th><th>계산</th><th>월액</th></tr></thead>
+    <tbody>
+      <tr><td>구독 매출</td><td class="num">Basic 10 × 1.9 + Coaching 15 × 3.9 + Elite 5 × 7.9</td>
+        <td class="num"><b>약 117만원</b></td></tr>
+      <tr><td>창립 30% 할인 반영</td><td class="num">첫 해 대부분이 창립 멤버라면</td>
+        <td class="num">약 82만원</td></tr>
+      <tr><td>앱 전환 레슨</td><td class="num">월 8건 × 7만원 (04장 전환 장치 경유)</td>
+        <td class="num"><b>+56만원</b></td></tr>
+      <tr><td>비용</td><td class="num">서버·스토리지·알림톡·결제수수료·스토어 (소규모 구간)</td>
+        <td class="num">약 −10~20만원</td></tr>
+      <tr><td><b>합계</b></td><td></td><td class="num"><b>월 120~150만원대</b></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note"><b>정직한 결론 —</b> 앱 단독으로는 생계가 아니다. 이 사업의 진짜
+  모델은 <b>「앱 = 레슨업의 CRM이자 깔때기」</b>다. 앱이 하는 일: ① 레슨 사이 6일을
+  점유해 회원을 안 떠나게 하고 ② 레슨이 필요한 순간을 진단해 전환하고 ③ 월 구독으로
+  기초 현금흐름을 깐다. 레슨 단가와 회수가 올라갈수록 앱의 가치도 커진다 — 앱과
+  레슨은 경쟁 관계가 아니라 서로의 배수기다.</div>
+
+  <div class="note"><b>결제 실무 (앱 출시 시 확인 필수) —</b> 인앱결제 수수료는 15~30%다.
+  단, 애플 심사지침에는 <b>1:1 대인 서비스(개인 교습 등)는 인앱결제 외 결제를 쓸 수
+  있다는 조항(3.1.3(d) 계열)</b>이 있다 — 우리 서비스는 1:1 코칭이라 해당 가능성이
+  높지만, <b>제출 시점의 지침과 국내 심사 사례를 반드시 재확인</b>할 것. 안전한 설계:
+  웹 결제(구독 관리 페이지)를 기본으로 두고 앱은 콘텐츠 소비 중심으로 —
+  단 이 구조도 심사에서 문구를 타므로, 결제 유도 문구를 앱 안에 두지 않는 것까지가
+  설계다.</div>
+</section>
+
+<!-- ══════════════ 05 앱 전환 ══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-n">05</span>
+    <h2>웹 → 앱 전환 실무 <span class="sec-sub">원칙 — 검증된 화면 55개를 버리지 않는다</span></h2></div>
+
+  <p><b>권고: 재개발이 아니라 래핑이다.</b> 지금 단일 HTML 앱을 Capacitor 같은
+  하이브리드 래퍼에 넣고, 네이티브가 꼭 필요한 세 가지만 브리지로 얹는다.
+  1인 개발에서 React Native 재작성은 6개월짜리 도박이고, 그 6개월간 운영이 멈춘다.</p>
+
+  <div class="tblwrap"><table>
+    <thead><tr><th>얹는 것</th><th>왜 네이티브여야 하나</th><th>운영에서의 의미</th></tr></thead>
+    <tbody>
+      <tr><td><b>푸시 알림</b> <span class="tag">최우선</span></td>
+        <td>웹은 재방문해야 아는 구조다. 앱은 먼저 두드릴 수 있다.</td>
+        <td>보낼 알림은 <b>단 세 종류로 제한</b> — ① 한마디 도착 ② 봤어요 도장
+        ③ 프로의 선제 연락. 연습 리마인드·마케팅 푸시는 안 보낸다. 알림이 전부
+        「프로의 반응」이면 알림 허용률이 유지된다.</td></tr>
+      <tr><td><b>카메라·앨범 연동</b></td>
+        <td>찍고 바로 올리는 동선 단축. 업로드 마찰(1부 약점 8)의 정면 해결.</td>
+        <td>목표 동선: 타석에서 <b>3탭</b> — 앱 열기 → 촬영 → 올리기.</td></tr>
+      <tr><td><b>백그라운드 업로드</b></td>
+        <td>지하 연습장에서 찍고 나오면 지상에서 마저 올라간다.</td>
+        <td>local-first 구조(이미 구현)가 그대로 살고, 앱이 이어서 전송만 맡는다.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>스토어 심사 대비 — 미리 알아야 두 번 안 낸다</h3>
+  <ul class="check">
+    <li><b>계정 삭제 기능 필수</b> — 앱 안에서 회원 탈퇴가 가능해야 한다(양대 스토어 공통
+    요구). 지금 웹엔 없다 · 만들 것.</li>
+    <li><b>테스트 계정 제출</b> — 심사관용 계정에 실제 한마디가 와 있는 상태로 준비.
+    빈 앱은 리젝 사유가 된다.</li>
+    <li><b>권한 문구</b> — 카메라·앨범 접근 사유를 한국어로 구체적으로.</li>
+    <li><b>결제 문구 점검</b> — 04장 결제 실무 참조. 외부 결제 링크·유도 문구가 심사
+    쟁점이 된다.</li>
+    <li><b>영상 프라이버시 고지</b> — 개인정보처리방침 URL 필수 입력.</li>
+  </ul>
+</section>
+
+<!-- ══════════════ 06 행정 ══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-n">06</span>
+    <h2>전역 후 30일 행정 체크리스트 <span class="sec-sub">순서가 있다 — 뒤의 것은 앞의 것이 있어야 신청 가능하다. 세무·법무 세부는 반드시 전문가 확인(표기: ⚖)</span></h2></div>
+  <ul class="check">
+    <li><b>1주차 · 사업자등록</b> — 업태·종목은 세무사와 상의(⚖ 교습업/정보통신업 구분에
+    따라 부가세가 달라질 수 있다). 홈택스로 신청 가능.</li>
+    <li><b>1주차 · 유출 키 전부 재발급</b> — 베타 중 노출된 service_role 키·DB 비밀번호
+    로테이션. 유료 회원을 받기 전이 마지막 기회다.</li>
+    <li><b>2주차 · 통신판매업 신고</b> — 구독 판매의 전제. 사업자등록증 필요.</li>
+    <li><b>2주차 · PG 계약</b> — 소규모는 토스페이먼츠·포트원 등 온라인 신청.
+    정기결제(빌링) 지원 여부를 반드시 확인하고 계약.</li>
+    <li><b>3주차 · 약관 3종</b> — 이용약관 · 개인정보처리방침 · <b>영상 보관/삭제 정책</b>
+    (몇 년 보관, 해지 후 90일, 프로만 열람). 표준약관 기반으로 만들되 영상 조항은
+    직접 쓰고 검토받기(⚖).</li>
+    <li><b>3주차 · 환불 규정</b> — 구독 중도 해지 시 일할 환불 기준을 미리 정해 약관에.
+    분쟁의 90%는 환불이다.</li>
+    <li><b>4주차 · 카카오 비즈니스 채널 + 알림톡 템플릿 승인</b> — 사업자 필요.
+    템플릿은 승인제라 미리 낸다: 「한마디 도착」 「결제 예정」 「일시정지 안내」 세 개면 된다.</li>
+    <li><b>4주차 · 도메인 + 스토어 개발자 계정</b> — Apple 연 $99 · Google 일회 $25.
+    Apple은 승인에 시간이 걸리니 먼저 신청.</li>
+  </ul>
+</section>
+
+<!-- ══════════════ 07 정원 운영 ══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-n">07</span>
+    <h2>정원과 대기석 운영 <span class="sec-sub">「30석」은 마케팅 문구가 아니라 02장 시간 예산의 결과다 — 그래서 지킬 수 있다</span></h2></div>
+  <p><b>공석이 생기는 순간의 규칙:</b> 해지 발생 → 대기 명단 맨 앞에게 초대 발송 →
+  <b>48시간 내 미응답 시 다음 사람에게.</b> 초대에 유효기간이 있어야 대기가 진짜가 되고,
+  대기가 진짜여야 정원이 진짜가 된다.</p>
+  <p><b>대기석은 그 자체가 마케팅 채널이다.</b> 대기 등록자에게는 한 달에 한 번,
+  프로의 공개 한마디(회원 동의를 받은 익명 사례 하나)를 보낸다 — 기다리는 동안
+  「이런 걸 받게 된다」를 보여주는 것. 광고가 아니라 견본이다.</p>
+  <p><b>정원 문구는 홈이 아니라 가입 문 앞에 건다</b> — “이도형 프로가 직접 관리하는
+  자리는 30석입니다. 현재 27석 사용 중.” 이미 들어온 회원에게 희소성 문구는 소음이고,
+  들어오려는 사람에게는 결정 이유다.</p>
+</section>
+
+<!-- ══════════════ 08 지표 ══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-n">08</span>
+    <h2>주간 지표 5개 — 금요일 10분 <span class="sec-sub">다섯 개를 넘기지 않는다. 지표가 많으면 안 본다</span></h2></div>
+  <div class="kpi">
+    <div class="kpi-box"><b>① 주간 업로드율</b>
+      <p>활성 회원 중 이번 주 1개 이상 올린 비율. <b>이 서비스의 심장박동.</b></p>
+      <span class="warn">60% 밑으로 2주 연속 → 원인 조사(답장 지연? 계절?)</span></div>
+    <div class="kpi-box"><b>② 평균 답장 시간</b>
+      <p>업로드 → 한마디까지. 중앙값으로 본다(하루 자리 비운 날이 평균을 왜곡).</p>
+      <span class="warn">24시간 초과 → 그 주는 신규 받지 않는다</span></div>
+    <div class="kpi-box"><b>③ 한마디 소진율</b>
+      <p>회원별 월 5회 중 몇 회를 썼나. <b>3회 미만이 계속되는 회원 = 가치를 못 느끼는 중.</b></p>
+      <span class="warn">소진율 낮은 회원이 30% 넘으면 → 횟수가 아니라 답장 내용 문제</span></div>
+    <div class="kpi-box"><b>④ 침묵 회원 수</b>
+      <p>10일 무업로드. 월요일 선제 연락의 대상 풀.</p>
+      <span class="warn">5명 초과 → 주 2명 규칙을 3명으로</span></div>
+    <div class="kpi-box"><b>⑤ 레슨 전환 수</b>
+      <p>이번 주 앱 경유 레슨 예약. 04장 손익의 두 번째 기둥.</p>
+      <span class="warn">한 달 0건 → 전환 장치(반복 지적 → 대면 처방)가 안 돌고 있다는 뜻</span></div>
+  </div>
+  <p style="font-size:13px; color:var(--ink3)">기록처는 스프레드시트 한 장이면 충분하다.
+  대시보드를 만드는 데 쓸 시간에 답장을 쓴다.</p>
+</section>
+
+<!-- ══════════════ 09 부재 프로토콜 ══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-n">09</span>
+    <h2>부재·사고 프로토콜 <span class="sec-sub">1인 서비스의 보험은 돈이 아니라 「미리 정해둔 말」이다</span></h2></div>
+  <div class="tblwrap"><table>
+    <thead><tr><th>상황</th><th>발동</th><th>하는 일</th></tr></thead>
+    <tbody>
+      <tr><td><b>짧은 부재</b> (1~3일)</td><td>훈련·이동·개인 사정</td>
+        <td>홈 공지 한 줄 — <i>“O일까지 답장이 늦습니다. 올려주신 건 순서대로 다
+        봅니다.”</i> 아침 도장 5분만 유지. 복귀 후 밀린 것부터 처리.</td></tr>
+      <tr><td><b>긴 부재</b> (1주 이상)</td><td>병가·훈련</td>
+        <td>공지 + <b>그 달 한마디 횟수 이월 또는 구독 일시정지를 먼저 제안.</b>
+        회원이 요구하기 전에 주는 보상은 신뢰가 되고, 요구받고 주는 보상은 배상이 된다.</td></tr>
+      <tr><td><b>답장 밀림</b> (도착함 10건+)</td><td>수요 급증</td>
+        <td>우선순위 재배열: 새싹 회원 → Elite → 나머지. 그리고 그 주 신규 가입을 닫는다.
+        밀린 채로 받는 신규는 나쁜 첫인상 예약이다.</td></tr>
+      <tr><td><b>데이터 사고</b></td><td>영상 유출·오삭제</td>
+        <td>은폐가 사망 원인이다. 24시간 내 당사자에게 직접 고지 → 전체 공지 →
+        조치 내용 공유. 개인정보 유출은 법정 신고 의무 확인(⚖).</td></tr>
+      <tr><td><b>회복 불능</b></td><td>장기 운영 불가</td>
+        <td>미리 약관에 넣어둘 것: 서비스 종료 시 60일 전 고지 + 잔여 기간 전액 환불 +
+        회원 영상 일괄 다운로드 제공. <b>끝을 미리 설계해 둔 서비스만이 끝까지 신뢰받는다.</b></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ══════════════ 10 베타에서 건질 것 ══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-n">10</span>
+    <h2>지금 베타에서 실제로 할 일 <span class="sec-sub">수요조사라는 목적에 맞게 — 이 장만은 오늘부터다</span></h2></div>
+  <ul class="check">
+    <li><b>2주차에 1문항</b> — 앱 안에서 묻는다: “한마디 받아보니 어떠셨어요?” (자유 답변,
+    프로에게 카톡으로 와도 됨). 만족 측정이 아니라 <b>불만의 언어를 수집</b>하는 것.</li>
+    <li><b>베타 종료 2주 전, 가격 전수조사</b> — 회원별 1:1로: “정식 오픈 때 월
+    19,000 / 39,000 / 79,000원 세 가지로 열립니다. 어느 쪽이면 계속 쓰시겠어요?
+    안 쓰신다면 얼마면 쓰시겠어요?” <b>익명 설문이 아니라 기명 대화로</b> — 30명이라
+    가능하고, 기명 답변이 진짜 지불 의사에 가깝다.</li>
+    <li><b>창립 멤버 약속</b> — 가격 조사에서 긍정한 회원에게 그 자리에서: “정식 오픈 때
+    그 가격의 30% 평생 할인으로 모실게요. 자리 잡아둘까요?” — 명단이 곧 첫 매출 예측이다.</li>
+    <li><b>실측 3종 기록</b> — 회원별 업로드 빈도 · 업로드→답장 시간 · 한마디 소진율.
+    지금 DB에 이미 쌓이고 있다. 전역 전에 뽑아서 02장·04장의 가설 숫자를 실측으로 교체.</li>
+    <li><b>답장에 쓴 문장 아카이브</b> — 베타 동안 쓴 한마디 전부가 정식 오픈 후
+    「자주 쓰는 표현 서랍」의 원료다. 지우지 말 것.</li>
+  </ul>
+</section>
+
+<div class="thesis" style="margin-top:70px">
+  <div class="t-label">이 문서의 한 줄 요약</div>
+  <p>하루 30분의 답장 블록, 월요일의 편지 두 통,<br>
+  금요일의 숫자 다섯 개, 그리고 어기지 않는 24시간.</p>
+  <div class="t-follow">운영이란 이 네 가지 리듬을 지키는 일이고, 이 리듬을 지킬 수
+  있는 정원(30석)을 지키는 일이다. 나머지는 전부 이 리듬을 보호하기 위한 장치다.</div>
+</div>
+
+<footer>
+  <span>NEXT SWING · 이도형 프로 — 운영 설계서 (전략 보고서 2부)</span>
+  <span>가설 숫자는 베타 실측으로 교체할 것</span>
+</footer>
+
+</div>
