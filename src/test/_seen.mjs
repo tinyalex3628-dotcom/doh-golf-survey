@@ -124,7 +124,24 @@ window.NS = NS;`;
     };
   });
 
+  /* ③ 요청 없이 올린 스윙에 도장만 찍힌 경우 — 홈 프로 줄이 바로 말하는가 */
+  await p.evaluate(() => {
+    window.__SW = [{ id: 'r3', view: '정면', path: 'p/3', size: 1e6, note: null, club: null,
+      want_comment: false, seen_at: new Date(Date.now() - 3 * 36e5).toISOString(),
+      created_at: new Date(Date.now() - 8 * 36e5).toISOString(), comments: [] }];
+    return loadComments();
+  });
+  await p.evaluate(() => window.__vaultSync && window.__vaultSync());
+  await p.waitForTimeout(500);
+  await p.evaluate(() => jump('2a'));
+  await p.waitForTimeout(400);
+  const proLine = await p.evaluate(() => {
+    const el = document.querySelector('[data-h-pro]');
+    return el ? el.textContent.replace(/\s+/g, ' ').trim() : null;
+  });
+
   console.log('② 회원 홈', JSON.stringify(home));
+  console.log('③ 도장만 있는 홈 프로 줄:', JSON.stringify(proLine));
   console.log('   갤러리 칩', JSON.stringify(gal));
   console.log('   JS 오류', errs.length ? errs : '없음');
   console.log('   빠진 배선', await p.evaluate(() => (window.__MISS || []).slice(0, 4)));

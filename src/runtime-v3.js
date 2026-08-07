@@ -1348,12 +1348,24 @@ function applyFresh() {
     const qbox = root().querySelector('[data-h-quota]');
     if (qbox && !qbox.querySelector('[data-h-pro]')) {
       const wait = (window.__WAIT || []).length;
-      const seenN = (window.__COMMENTS || []).length;
-      const line = (wait && HERO_KIND !== 'waiting')
-        ? '이도형 프로가 스윙 ' + wait + '개를 보고 있어요'
-        : seenN ? '지금까지 이도형 프로가 ' + seenN + '번 봐줬어요'
-        // 히어로가 「보고 있어요」를 이미 말한 참이다. 그다음 일을 적는다.
-        : wait ? '확인이 끝나면 바로 알려드려요'
+      const gotN = (window.__COMMENTS || []).length;
+      /* 봤어요 도장 중 가장 최근 것 — 「프로가 지금도 보고 있다」는 살아 있는
+         증거라, 지난 합계(N번 봐줬어요)보다 앞선다. 일주일 넘게 지난 도장은
+         내리고 합계로 돌아간다 — 「20일 전 확인했어요」는 신선함이 아니라
+         뜸함을 광고하는 문장이 된다. */
+      const stamps = Object.values(window.__SEEN || {}).map(t => new Date(t).getTime());
+      const last = stamps.length ? Math.max.apply(null, stamps) : 0;
+      const freshStamp = last && (Date.now() - last) < 7 * 864e5;
+      const stampAgo = t => {
+        const h = Math.floor((Date.now() - t) / 36e5);
+        return h < 1 ? '방금' : h < 24 ? h + '시간 전' : Math.floor(h / 24) + '일 전';
+      };
+      const line = HERO_KIND === 'waiting'
+        // 히어로가 도장·요청을 이미 말한 참이다. 여기서는 그다음 일을 적는다.
+        ? '확인이 끝나면 바로 알려드려요'
+        : wait ? '이도형 프로가 스윙 ' + wait + '개를 보고 있어요'
+        : freshStamp ? stampAgo(last) + ' 이도형 프로가 스윙을 확인했어요'
+        : gotN ? '지금까지 이도형 프로가 ' + gotN + '번 봐줬어요'
         : '스윙을 올리면 이도형 프로가 직접 봐요';
       const el = document.createElement('div');
       el.setAttribute('data-h-pro', '');
