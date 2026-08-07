@@ -3032,6 +3032,88 @@ function applyPc1() {
 }
 
 /* ── 화면별 배선 ───────────────────────────────────────────────── */
+/* ── 회원 탈퇴 ────────────────────────────────────────────────────────
+   구독 해지와 다르다. 해지는 「돈만 안 낸다」, 탈퇴는 「전부 지운다」다.
+   같은 화면에 두되 확실히 갈라 놔야 잘못 누르지 않는다.
+
+   되돌릴 수 없는 일이라 관문을 둘 둔다 — 무엇이 사라지는지 다 적고,
+   그다음 닉네임을 손으로 치게 한다. 「정말요?」 한 번은 아무도 안 읽는다.
+
+   스토어가 요구하는 것이기도 하다 — 앱 안에서 계정을 지울 수 있어야
+   심사를 통과한다. 사업자 없이도 지금 만들 수 있는 준비물이다. */
+function tmQuit() {
+  const host = root().querySelector('[data-tm-ask]');
+  if (!host || !host.parentElement || root().querySelector('[data-tm-quit]')) return;
+  const signed = window.NS && NS.named();
+  const el = document.createElement('span');
+  el.setAttribute('data-tm-quit', '');
+  el.setAttribute('style', 'display:block;margin-top:18px;padding-top:16px;'
+    + 'border-top:1px solid var(--ns-line);text-align:center;' + P_FONT
+    + 'font-size:12px;font-weight:600;color:var(--ns-ink3);cursor:pointer');
+  el.textContent = '회원 탈퇴';
+  host.parentElement.insertBefore(el, host.nextSibling);
+  tap(el, () => quitSheet(signed));
+}
+
+function quitSheet(signed) {
+  const old = document.getElementById('quit');
+  if (old) old.remove();
+  const n = (window.__SWINGS || []).length;
+  const c = (window.__COMMENTS || []).length;
+  const box = document.createElement('div');
+  box.id = 'quit';
+  box.innerHTML = `
+  <div class="quit-card">
+    <span class="quit-t">회원 탈퇴</span>
+    <p class="quit-p">지우면 되돌릴 수 없어요. 아래가 전부 사라집니다.</p>
+    <ul class="quit-ul">
+      <li>올린 스윙 영상 <b>${n}개</b> — 서버와 이 기기에서 모두</li>
+      <li>이도형 프로가 남긴 한마디 <b>${c}개</b></li>
+      <li>연습 기록 · 닉네임 · 계정</li>
+    </ul>
+    <p class="quit-n">영상만 지우고 계정은 남기고 싶다면, 갤러리에서 하나씩 지우면 돼요.</p>
+    ${signed ? `<label class="quit-l">확인을 위해 <b>${safe(S.nick || NS.nick() || '')}</b> 를 입력해주세요</label>
+      <input class="quit-i" data-q-name autocomplete="off" placeholder="닉네임">` : ''}
+    <button class="quit-go" type="button" data-q-go>탈퇴하기</button>
+    <button class="quit-x" type="button" data-q-x>그만두기</button>
+  </div>`;
+  box.addEventListener('click', ev => {
+    if (ev.target === box || ev.target.closest('[data-q-x]')) return box.remove();
+    if (!ev.target.closest('[data-q-go]')) return;
+    const want = S.nick || (window.NS && NS.nick()) || '';
+    const got = (box.querySelector('[data-q-name]') || {}).value;
+    if (signed && String(got || '').trim() !== String(want).trim()) {
+      return toast('닉네임이 달라요');
+    }
+    const go = box.querySelector('[data-q-go]');
+    go.textContent = '지우는 중…';
+    go.disabled = true;
+    const done = () => {
+      box.remove();
+      /* 지운 뒤 화면에 옛 숫자가 남으면 안 지워진 것처럼 보인다.
+         기억하고 있던 것을 전부 비우고 처음 화면으로 되돌린다. */
+      window.__SWINGS = []; window.__REMOTE = []; window.__COMMENTS = [];
+      window.__WAIT = []; window.__SEEN = {}; window.__ANSWERED = {};
+      S.nick = null; S.mine = { vids: 0, days: 0, streak: 0 };
+      S.cm = 'none'; S.cmUsed = 0; S.unread = 0; S.upDone = false;
+      try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+      toast('탈퇴했어요 · 그동안 감사했습니다');
+      setTimeout(() => location.reload(), 1200);
+    };
+    const wipeLocal = () => (window.VAULT ? VAULT.clear().catch(() => {}) : Promise.resolve());
+    if (!window.NS || NS.down()) return wipeLocal().then(done);
+    NS.wipe()
+      .then(() => wipeLocal())
+      .then(done)
+      .catch(e => {
+        go.textContent = '탈퇴하기'; go.disabled = false;
+        toast('지우지 못했어요 · ' + ((e && e.message) || '잠시 뒤 다시 해주세요'));
+      });
+  });
+  document.body.appendChild(box);
+  requestAnimationFrame(() => box.classList.add('on'));
+}
+
 const WIRE = {
   '2a'() {
     /* 글래스 워시 홈. 히어로는 applyFresh 가 통째로 다시 쓴다 —
@@ -4360,6 +4442,7 @@ const WIRE = {
       () => toast('해지 예약했어요 · 8월 25일부터 무료 플랜', { label: '되돌리기',
         fn: () => toast('해지를 취소했어요. 구독이 그대로 이어집니다') })));
     onSel('[data-tm-ask]', () => go('cs'));
+    tmQuit();
   },
 
   '22'() {

@@ -255,6 +255,44 @@ html.demo body{background:#EDEAE3}
   font-family:Pretendard,-apple-system,sans-serif;font-size:12px;font-weight:600;
   color:var(--ns-green)}
 
+/* 회원 탈퇴 — 되돌릴 수 없는 일이라, 무엇이 사라지는지 다 적고 나서 묻는다 */
+#quit{position:fixed;inset:0;z-index:240;display:flex;align-items:center;justify-content:center;
+  background:rgba(20,24,22,0);transition:background .2s;padding:20px 16px}
+#quit.on{background:rgba(20,24,22,.62)}
+.quit-card{width:100%;max-width:340px;background:var(--ns-card);border-radius:18px;
+  padding:22px 20px 18px;display:flex;flex-direction:column;gap:9px;max-height:92vh;
+  overflow-y:auto;box-shadow:0 26px 60px -22px rgba(20,24,22,.55);
+  transform:scale(.96);transition:transform .2s}
+#quit.on .quit-card{transform:none}
+.quit-t{font-family:Hahmlet,serif;font-size:17px;font-weight:600;color:var(--ns-ink);
+  letter-spacing:-.02em}
+.quit-p{font-family:Pretendard,-apple-system,sans-serif;font-size:12.5px;line-height:1.7;
+  color:var(--ns-danger);font-weight:600}
+.quit-ul{list-style:none;display:flex;flex-direction:column;gap:7px;margin:4px 0 2px;
+  padding:13px 14px;background:var(--ns-sand);border-radius:12px}
+.quit-ul li{position:relative;padding-left:13px;font-family:Pretendard,-apple-system,sans-serif;
+  font-size:12.5px;line-height:1.6;color:var(--ns-ink2)}
+.quit-ul li::before{content:'';position:absolute;left:1px;top:8px;width:4px;height:4px;
+  border-radius:50%;background:var(--ns-ink3)}
+.quit-ul b{color:var(--ns-ink);font-weight:700}
+.quit-n{font-family:Pretendard,-apple-system,sans-serif;font-size:11.5px;line-height:1.65;
+  color:var(--ns-ink3)}
+.quit-l{font-family:Pretendard,-apple-system,sans-serif;font-size:11.5px;font-weight:600;
+  color:var(--ns-ink2);margin-top:6px}
+.quit-l b{color:var(--ns-ink);font-weight:800}
+.quit-i{width:100%;min-height:44px;padding:0 13px;border:1px solid var(--ns-line);
+  border-radius:10px;background:#FBFAF6;font-family:Pretendard,-apple-system,sans-serif;
+  font-size:14px;color:var(--ns-ink);outline:none}
+.quit-i:focus{border-color:var(--ns-danger)}
+.quit-go{width:100%;min-height:48px;margin-top:8px;border:0;border-radius:12px;cursor:pointer;
+  background:var(--ns-danger);color:#fff;font-family:Pretendard,-apple-system,sans-serif;
+  font-size:14px;font-weight:700}
+.quit-go:active{opacity:.8}
+.quit-go:disabled{opacity:.55;cursor:default}
+.quit-x{border:0;background:none;cursor:pointer;padding:9px 0 2px;
+  font-family:Pretendard,-apple-system,sans-serif;font-size:12.5px;font-weight:700;
+  color:var(--ns-ink2)}
+
 /* 프로 한마디 도착 — 서버에 진짜로 온 것만 뜬다.
    아래에서 올라오는 시트다. 위에서 덮는 창은 「닫아야 하는 일」로 읽히고,
    이건 닫을 일이 아니라 읽을 일이다. */

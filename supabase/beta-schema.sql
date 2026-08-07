@@ -145,6 +145,25 @@ drop policy if exists sw_del on storage.objects;
 create policy sw_del on storage.objects for delete using (
   bucket_id = 'swings' and (storage.foldername(name))[1] = auth.uid()::text);
 
+-- ── 회원 탈퇴 ───────────────────────────────────────────────
+-- 앱 안에서 계정을 정말로 지울 수 있어야 한다(양대 스토어 공통 요구).
+-- 브라우저는 auth.users 를 못 건드리므로, 본인만 자기 줄을 지우는 함수를
+-- 하나 두고 그걸 부른다. profiles · swings · comments 는 전부
+-- on delete cascade 라 같이 사라진다.
+--   창고(storage)의 영상 파일은 cascade 가 안 걸린다 — 앱이 이 함수를
+--   부르기 전에 먼저 지운다(sb.js 의 wipe()).
+create or replace function public.delete_own_account() returns void
+language plpgsql security definer set search_path = public, auth as $$
+begin
+  if auth.uid() is null then
+    raise exception '로그인 상태가 아닙니다';
+  end if;
+  delete from auth.users where id = auth.uid();
+end $$;
+
+revoke all on function public.delete_own_account() from public;
+grant execute on function public.delete_own_account() to authenticated;
+
 -- ── 프로 지정 ───────────────────────────────────────────────
 -- 이도형 프로 계정으로 로그인한 뒤 한 번만. (아이디는 실제로 만든 것으로)
 --   update public.profiles set is_pro = true

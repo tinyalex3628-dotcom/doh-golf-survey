@@ -198,6 +198,28 @@ const NS = (() => {
     return Object.fromEntries((r.data || []).map(p => [p.id, p.nickname]));
   }
 
+  /* ── 탈퇴 ─────────────────────────────────────────────────────────
+     앱 안에서 계정을 정말로 지운다. 순서가 중요하다 —
+       ① 창고의 영상 파일부터 (표가 사라지면 경로를 잃어서 못 지운다)
+       ② 계정 (표는 cascade 로 같이 사라진다)
+       ③ 로그아웃
+     ①이 실패해도 ②는 간다. 계정을 못 지우는 것보다는 파일 몇 개가
+     남는 게 낫다 — 남은 파일은 주인 없는 파일이라 아무도 못 연다. */
+  async function wipe() {
+    const c = client();
+    const u = await ready();
+    if (!c || !u) throw new Error('서버에 연결하지 못했어요');
+    try {
+      const r = await c.from('swings').select('path').eq('owner', u.id);
+      const paths = (r.data || []).map(x => x.path).filter(Boolean);
+      if (paths.length) await c.storage.from(SB_BUCKET).remove(paths);
+    } catch (e) {}
+    const d = await c.rpc('delete_own_account');
+    if (d.error) throw d.error;
+    try { await c.auth.signOut(); } catch (e) {}
+    me = null; pro = false; nickname = null;
+  }
+
   /* ── 가입 · 로그인 ────────────────────────────────────────────────
      아이디 · 비밀번호 방식이다. 서버는 이메일 꼴을 요구하므로 아이디 뒤에
      우리 도메인을 붙여 이메일처럼 만든다 — 진짜 메일은 오가지 않는다.
@@ -290,7 +312,7 @@ const NS = (() => {
 
   return {
     ready, push, mine, all, comment, markRead, seen, link, remove, people, profiles,
-    setName, setPlan, note, want,
+    setName, setPlan, note, want, wipe,
     saveOpen, refresh,
     signUp, signIn,
     nick: () => nickname,
