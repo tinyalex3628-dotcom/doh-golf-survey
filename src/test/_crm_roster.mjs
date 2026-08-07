@@ -40,15 +40,17 @@ const SW = [
 ];
 const PF = [
   { id: 'pro-1',  nickname: '이도형', real_name: null, is_pro: true,  created_at: ago(90) },
-  { id: 'u-live', nickname: '김활성', real_name: '김활', is_pro: false, created_at: ago(60) },
+  { id: 'u-live', nickname: '김활성', real_name: '김활', is_pro: false, plan: 'Coaching', created_at: ago(60) },
   { id: 'u-quiet',nickname: '박침묵', real_name: null,  is_pro: false, created_at: ago(50) },
   { id: 'u-sleep',nickname: '최휴면', real_name: null,  is_pro: false, created_at: ago(80) },
-  { id: 'u-back', nickname: '정복귀', real_name: null,  is_pro: false, created_at: ago(70) },
+  { id: 'u-back', nickname: '정복귀', real_name: null,  is_pro: false, plan: 'Elite', created_at: ago(70) },
   { id: 'u-seed', nickname: '한새싹', real_name: null,  is_pro: false, created_at: ago(5) },
   { id: 'u-new',  nickname: '오늘온', real_name: null,  is_pro: false, created_at: ago(0) },
 ];
+window.__PLANSET = [];
 const NS = {
   ready: () => Promise.resolve({ id: 'pro-1' }), isPro: () => true,
+  setPlan: (id, plan) => { window.__PLANSET.push(id + '=' + plan); return Promise.resolve(); },
   refresh: () => Promise.resolve(true),
   all: () => Promise.resolve(JSON.parse(JSON.stringify(SW))),
   people: () => Promise.resolve(Object.fromEntries(PF.map(p => [p.id, p.nickname]))),
@@ -147,6 +149,30 @@ const mo = await p.evaluate(() => ({
 }));
 await p.screenshot({ path: '/tmp/_crm_mo.png' });
 
+// ⑧ 등급별 보기 — 축이 살아 있는가
+await p.evaluate(() => { S.view = 'pc'; S.nav = 'members'; S.mstate = '전체'; render(); });
+await p.waitForTimeout(400);
+await p.click('[data-mview="plan"]');
+await p.waitForTimeout(400);
+const tiers = await p.evaluate(() => {
+  const t = document.body.innerText;
+  return {
+    보기: S.mview,
+    등급머리: ['베타', 'Coaching', 'Elite'].filter(x => t.includes(x)),
+    줄수: [...document.querySelectorAll('[data-crm-mem]')]
+      .filter(e => !e.closest('[data-crm-callbox]')).length,
+    고르개: document.querySelectorAll('[data-crm-plan]').length,
+  };
+});
+// 등급을 바꾸면 서버로 가고, 화면이 도착함으로 안 넘어간다
+await p.selectOption('[data-crm-plan="u-quiet"]', 'Basic');
+await p.waitForTimeout(500);
+const planned = await p.evaluate(() => ({
+  보낸것: window.__PLANSET, nav: S.nav,
+  반영: (IN.people.find(x => x.id === 'u-quiet') || {}).plan,
+}));
+await p.screenshot({ path: '/tmp/_crm_tier.png' });
+
 console.log('① 상태  ', JSON.stringify(states));
 console.log('② 명부  ', JSON.stringify(roster));
 console.log('③ 연락  ', JSON.stringify(call));
@@ -154,6 +180,7 @@ console.log('④ 배지  ', JSON.stringify(badges));
 console.log('⑤ 거르기', JSON.stringify(filtered));
 console.log('⑥ 눌러서 이동', JSON.stringify(jumped));
 console.log('⑦ 대시보드', JSON.stringify(dash), '· 모바일', JSON.stringify(mo));
+console.log('⑧ 등급별', JSON.stringify(tiers), '· 바꾸기', JSON.stringify(planned));
 console.log('JS 오류', errs.length ? errs : '없음');
 
 await b.close(); srv.close();

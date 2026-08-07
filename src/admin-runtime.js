@@ -17,6 +17,7 @@ const S = {
   fold: false,         // 요청함 접기 (영상에 집중할 때)
   mview: 'board',      // 회원 관리 보기: 등급별 | 목록
   mstate: '전체',      // 회원 관리 상태 거르개 (admin-crm.js)
+  wback: 0,            // 주간 지표: 0 = 이번 주, 1 = 지난주
   mtab: 'sum',         // 회원 세부 안의 부제목
   back: [],            // 어디서 왔는지 (뒤로 가기)
   pick: 'q2',          // 지금 고른 요청
@@ -1019,7 +1020,7 @@ function renderPC() {
              : S.nav === 'home' ? pageHome()
              : S.nav === 'queue' ? pageQueue()
              : S.nav === 'members' ? crmMembers()
-             : S.nav === 'stats' ? pageStats()
+             : S.nav === 'stats' ? crmStatsPage()
              : S.nav === 'member' ? pageMember()
              : S.nav === 'set' ? pageSet()
              : pageSoon(S.nav);
@@ -1138,6 +1139,10 @@ function renderMO() {
   }
 
   if (S.nav === 'stats') {
+    // 진짜 지표 — PC 와 같은 것을 좁게 쌓는다 (admin-crm.js)
+    return page(bar('이번 주', 0, '') + crmStatsPage());
+  }
+  if (false) {
     const pct = Math.round(STAT.keep.hit / STAT.keep.all * 100);
     const card = (t, v, sub, col) => `<div style="background:var(--ns-card);border:1px solid var(--ns-line);
       border-radius:12px;padding:13px 14px;display:flex;flex-direction:column;gap:5px">
@@ -1513,7 +1518,7 @@ function pageMember() {
 /* ── 그리기 ─────────────────────────────────────────────────────── */
 function render() {
   // 도착함·회원 관리·대시보드가 같은 서버 데이터를 본다
-  if (['inbox', 'members', 'home'].includes(S.nav)) inLoad();
+  if (['inbox', 'members', 'home', 'stats'].includes(S.nav)) inLoad();
   const pc = S.view === 'pc';
   document.documentElement.classList.toggle('pcmode', pc);
   $('#frame').innerHTML = pc

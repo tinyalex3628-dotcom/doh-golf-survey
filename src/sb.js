@@ -177,8 +177,16 @@ const NS = (() => {
     const c = client();
     await ready();
     if (!c) return [];
-    const r = await c.from('profiles').select('id,nickname,real_name,is_pro,created_at');
+    const r = await c.from('profiles').select('id,nickname,real_name,is_pro,plan,created_at');
     return r.error ? [] : (r.data || []);
+  }
+
+  /* 등급 바꾸기 — 프로만. 결제가 열리기 전까지는 프로가 손으로 적는다. */
+  async function setPlan(id, plan) {
+    const c = client();
+    await ready();
+    const r = await c.from('profiles').update({ plan: plan }).eq('id', id);
+    if (r.error) throw r.error;
   }
 
   async function people() {
@@ -282,7 +290,7 @@ const NS = (() => {
 
   return {
     ready, push, mine, all, comment, markRead, seen, link, remove, people, profiles,
-    setName, note, want,
+    setName, setPlan, note, want,
     saveOpen, refresh,
     signUp, signIn,
     nick: () => nickname,

@@ -23,6 +23,9 @@ alter table public.profiles add column if not exists real_name text;
 -- 된다. 「얼마 만에 왔나」가 카드를 고르는 기준이라 여기 있어야 한다.
 --   { "last": 1754300000000, "seen": ["cheer","quota"], "seenG": ["cheer","goal"] }
 alter table public.profiles add column if not exists open_mem jsonb;
+-- 구독 등급. 베타에는 하나뿐이라 전부 '베타' 지만, 결제가 열리면 이 칸이
+-- 회원 관리의 세로축이 된다. 프로가 CRM 에서 직접 바꾼다.
+alter table public.profiles add column if not exists plan text not null default '베타';
 
 -- 계정이 생기면 프로필도 같이 생긴다 (익명 계정 포함 — 링크만 누르고 들어온 사람)
 create or replace function public.on_new_user() returns trigger
@@ -89,9 +92,11 @@ alter table public.comments enable row level security;
 drop policy if exists p_sel on public.profiles;
 create policy p_sel on public.profiles for select
   using (id = auth.uid() or public.is_pro());
+-- 닉네임·실명은 본인이, 등급(plan)은 프로가 적는다
 drop policy if exists p_upd on public.profiles;
 create policy p_upd on public.profiles for update
-  using (id = auth.uid()) with check (id = auth.uid());
+  using (id = auth.uid() or public.is_pro())
+  with check (id = auth.uid() or public.is_pro());
 
 drop policy if exists s_sel on public.swings;
 create policy s_sel on public.swings for select
