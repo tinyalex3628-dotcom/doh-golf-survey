@@ -402,6 +402,8 @@ function swState(r) {
   }
   const n = (window.__COMMENTS || []).filter(c => c.swingId === r.remoteId).length;
   if (n) return { t: '한마디 ' + n, c: '#8FBFA3', done: true };
+  // 봤어요 도장 — 「보는 중」(요청함)보다 진한 사실이라 먼저 이긴다
+  if ((window.__SEEN || {})[r.remoteId]) return { t: '프로 확인', c: '#8FBFA3' };
   if ((window.__WAIT || []).some(w => w.id === r.remoteId))
     return { t: '보는 중', c: '#E8C07A' };
   return { t: '전달됨', c: '#B9C7BC' };
@@ -1250,11 +1252,16 @@ function homeHero() {
 
   // ③ 요청해두고 기다리는 중
   if (waiting.length) {
+    /* 도장이 찍혔으면 그 사실이 「요청했어요」보다 진하다 — 프로가 이미
+       열어봤다는 뜻이니까. 단, 「쓰는 중」이라고는 안 한다. 언제 답할지는
+       도장이 약속하는 게 아니다. */
+    const st = (window.__SEEN || {})[waiting[0].id];
     return {
       html: heroHTML('프로 한마디 · 확인 중',
         '이도형 프로가<br>스윙을 보고 있어요',
         /* 「에」를 붙이면 ago 가 '방금'일 때 「방금에」가 된다 */
-        ago(waiting[0].at) + ' 요청했어요 · 보통 하루 안에 도착해요',
+        st ? ago(new Date(st).getTime()) + ' 프로가 확인했어요 · 보통 하루 안에 답이 와요'
+           : ago(waiting[0].at) + ' 요청했어요 · 보통 하루 안에 도착해요',
         '올린 스윙 보기'),
       go: () => go(S.acct === 'new' ? 'ge' : '09'),
       kind: 'waiting',
@@ -2373,6 +2380,11 @@ function syncRemote(list) {
      서버가 기억하니 새로고침해도 폰을 바꿔도 그대로 남는다. */
   window.__WAIT = list.filter(sw => sw.want_comment && !(sw.comments || []).length)
     .map(sw => ({ id: sw.id, view: sw.view, at: new Date(sw.created_at).getTime() }));
+
+  /* 봤어요 도장 — 프로가 영상을 연 시각. 한마디가 오기 전에도
+     「프로가 확인했다」는 사실이 회원에게 먼저 닿는다. */
+  window.__SEEN = {};
+  list.forEach(sw => { if (sw.seen_at) window.__SEEN[sw.id] = sw.seen_at; });
 
   /* 프로가 답을 단 스윙 — 여는 화면의 「하나씩 보고 있어요」가 이걸 센다 */
   window.__ANSWERED = {};

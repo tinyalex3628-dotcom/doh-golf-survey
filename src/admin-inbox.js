@@ -128,6 +128,8 @@ function inRow(s, on) {
         : s.want_comment
           ? `<span style="font-size:10.5px;font-weight:700;color:var(--ns-bronze)">답 기다림</span>`
           : `<span style="font-size:10.5px;font-weight:600;color:var(--ns-ink3)">새 스윙</span>`}
+      ${(!s.seen_at && !c) ? `<span title="아직 안 열어본 스윙" style="width:6px;height:6px;
+          border-radius:50%;background:var(--ns-danger);flex:none"></span>` : ''}
     </span></div>`;
 }
 
@@ -283,6 +285,16 @@ function pageInbox() {
 /* ── 작업대 배선 — 렌더마다 다시 붙는다 ───────────────────────────── */
 function inMount() {
   const s = inPick();
+  /* 봤어요 도장 — 프로가 이 스윙을 연 순간 찍힌다. 한마디를 아직 못 써도
+     회원 앱에는 「이도형 프로가 확인했습니다」가 바로 뜬다.
+     실패해도 조용히 둔다 — 도장은 부가물이지 작업을 막을 일이 아니다. */
+  if (s && !s.seen_at && NS.seen) {
+    s.seen_at = new Date().toISOString();
+    NS.seen(s.id).catch(() => { s.seen_at = null; });
+    // 목록의 「안 봄」 점 — 이번 렌더는 이미 그려졌으니 그 점만 직접 끈다
+    const row = document.querySelector('[data-in-row="' + s.id + '"] [title*="안 열어본"]');
+    if (row) row.remove();
+  }
   /* [data-v] 는 상단 PC/모바일 전환 버튼이 이미 쓰고 있다 — 그걸 잡으면
      버튼에 src 를 꽂는 촌극이 벌어진다. 실제로 벌어졌다. */
   const v = document.querySelector('[data-vid]');

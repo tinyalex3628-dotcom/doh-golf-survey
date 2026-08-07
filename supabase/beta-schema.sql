@@ -53,6 +53,9 @@ alter table public.swings add column if not exists want_comment boolean not null
 -- 클럽(드라이버 · 7번 아이언 …). 올릴 때 회원이 고른다.
 -- 갤러리 필터가 이걸로 갈리고, 프로도 무엇으로 친 스윙인지 알고 본다.
 alter table public.swings add column if not exists club text;
+-- 봤어요 도장. 프로가 CRM 에서 영상을 연 순간 찍힌다. 한마디를 아직 못 써도
+-- 「프로가 확인했습니다」는 바로 회원에게 간다 — 반응의 최소 단위.
+alter table public.swings add column if not exists seen_at timestamptz;
 create index if not exists swings_owner_idx on public.swings (owner, created_at desc);
 
 -- ── 프로 한마디 ─────────────────────────────────────────────
@@ -96,10 +99,12 @@ create policy s_sel on public.swings for select
 drop policy if exists s_ins on public.swings;
 create policy s_ins on public.swings for insert
   with check (owner = auth.uid());
--- 오늘 기록의 메모(note)와 한마디 요청 표시(want_comment)를 나중에 붙인다
+-- 오늘 기록의 메모(note)와 한마디 요청 표시(want_comment)는 회원이,
+-- 봤어요 도장(seen_at)은 프로가 적는다 — 그래서 프로도 update 가 열려 있어야 한다
 drop policy if exists s_upd on public.swings;
 create policy s_upd on public.swings for update
-  using (owner = auth.uid()) with check (owner = auth.uid());
+  using (owner = auth.uid() or public.is_pro())
+  with check (owner = auth.uid() or public.is_pro());
 drop policy if exists s_del on public.swings;
 create policy s_del on public.swings for delete
   using (owner = auth.uid());

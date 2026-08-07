@@ -222,7 +222,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
-      .select('id,view,path,size,note,club,want_comment,created_at,comments(id,body,photos,created_at,read_at)')
+      .select('id,view,path,size,note,club,want_comment,seen_at,created_at,comments(id,body,photos,created_at,read_at)')
       .order('created_at', { ascending: false });
     return r.error ? [] : (r.data || []);
   }
@@ -233,7 +233,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
-      .select('id,owner,view,path,size,note,club,want_comment,created_at,comments(id,body,photos,created_at,read_at)')
+      .select('id,owner,view,path,size,note,club,want_comment,seen_at,created_at,comments(id,body,photos,created_at,read_at)')
       .order('created_at', { ascending: false }).limit(200);
     return r.error ? [] : (r.data || []);
   }
@@ -247,6 +247,16 @@ const NS = (() => {
     }).select().single();
     if (r.error) throw r.error;
     return r.data;
+  }
+
+  /* 봤어요 도장 — 프로가 영상을 연 순간 찍힌다.
+     한마디를 쓸 시간이 없어도 「봤다」는 사실은 바로 회원에게 간다.
+     반응의 최소 단위다. 한 번 찍히면 다시 안 찍는다. */
+  async function seen(swingId) {
+    const c = client();
+    await ready();
+    await c.from('swings').update({ seen_at: new Date().toISOString() })
+      .eq('id', swingId).is('seen_at', null);
   }
 
   async function markRead(commentId) {
@@ -372,7 +382,7 @@ const NS = (() => {
   }
 
   return {
-    ready, push, mine, all, comment, markRead, link, remove, people, setName, note, want,
+    ready, push, mine, all, comment, markRead, seen, link, remove, people, setName, note, want,
     saveOpen, refresh,
     signUp, signIn,
     nick: () => nickname,
@@ -783,6 +793,8 @@ function inRow(s, on) {
         : s.want_comment
           ? `<span style="font-size:10.5px;font-weight:700;color:var(--ns-bronze)">답 기다림</span>`
           : `<span style="font-size:10.5px;font-weight:600;color:var(--ns-ink3)">새 스윙</span>`}
+      ${(!s.seen_at && !c) ? `<span title="아직 안 열어본 스윙" style="width:6px;height:6px;
+          border-radius:50%;background:var(--ns-danger);flex:none"></span>` : ''}
     </span></div>`;
 }
 
@@ -938,6 +950,16 @@ function pageInbox() {
 /* ── 작업대 배선 — 렌더마다 다시 붙는다 ───────────────────────────── */
 function inMount() {
   const s = inPick();
+  /* 봤어요 도장 — 프로가 이 스윙을 연 순간 찍힌다. 한마디를 아직 못 써도
+     회원 앱에는 「이도형 프로가 확인했습니다」가 바로 뜬다.
+     실패해도 조용히 둔다 — 도장은 부가물이지 작업을 막을 일이 아니다. */
+  if (s && !s.seen_at && NS.seen) {
+    s.seen_at = new Date().toISOString();
+    NS.seen(s.id).catch(() => { s.seen_at = null; });
+    // 목록의 「안 봄」 점 — 이번 렌더는 이미 그려졌으니 그 점만 직접 끈다
+    const row = document.querySelector('[data-in-row="' + s.id + '"] [title*="안 열어본"]');
+    if (row) row.remove();
+  }
   /* [data-v] 는 상단 PC/모바일 전환 버튼이 이미 쓰고 있다 — 그걸 잡으면
      버튼에 src 를 꽂는 촌극이 벌어진다. 실제로 벌어졌다. */
   const v = document.querySelector('[data-vid]');

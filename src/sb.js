@@ -110,7 +110,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
-      .select('id,view,path,size,note,club,want_comment,created_at,comments(id,body,photos,created_at,read_at)')
+      .select('id,view,path,size,note,club,want_comment,seen_at,created_at,comments(id,body,photos,created_at,read_at)')
       .order('created_at', { ascending: false });
     return r.error ? [] : (r.data || []);
   }
@@ -121,7 +121,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
-      .select('id,owner,view,path,size,note,club,want_comment,created_at,comments(id,body,photos,created_at,read_at)')
+      .select('id,owner,view,path,size,note,club,want_comment,seen_at,created_at,comments(id,body,photos,created_at,read_at)')
       .order('created_at', { ascending: false }).limit(200);
     return r.error ? [] : (r.data || []);
   }
@@ -135,6 +135,16 @@ const NS = (() => {
     }).select().single();
     if (r.error) throw r.error;
     return r.data;
+  }
+
+  /* 봤어요 도장 — 프로가 영상을 연 순간 찍힌다.
+     한마디를 쓸 시간이 없어도 「봤다」는 사실은 바로 회원에게 간다.
+     반응의 최소 단위다. 한 번 찍히면 다시 안 찍는다. */
+  async function seen(swingId) {
+    const c = client();
+    await ready();
+    await c.from('swings').update({ seen_at: new Date().toISOString() })
+      .eq('id', swingId).is('seen_at', null);
   }
 
   async function markRead(commentId) {
@@ -260,7 +270,7 @@ const NS = (() => {
   }
 
   return {
-    ready, push, mine, all, comment, markRead, link, remove, people, setName, note, want,
+    ready, push, mine, all, comment, markRead, seen, link, remove, people, setName, note, want,
     saveOpen, refresh,
     signUp, signIn,
     nick: () => nickname,
