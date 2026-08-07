@@ -2786,6 +2786,10 @@ function rvSheet(id) {
         ? '<div class="rv-picks"><span class="rv-pl">프로가 남긴 말 중에서</span>'
           + picks.map(p => '<span class="rv-p">' + safe(p.body) + '</span>').join('')
           + '</div>' : '')
+    + ((r.photos || []).length
+        ? '<div class="rv-shots"><span class="rv-pl">프로가 짚어준 장면</span>'
+          + '<div class="rv-ss">' + r.photos.map((u, i) =>
+              '<img src="' + u + '" data-shot="' + i + '" alt="">').join('') + '</div></div>' : '')
     + '<div class="rv-line"><span class="rv-ll">이도형 프로</span>'
       + '<span class="rv-lb">' + safe(r.pro_line) + '</span></div>'
     + '<div class="rv-foot"><button class="rv-btn" type="button" data-rv-ok>잘 봤어요</button></div>'
@@ -2800,6 +2804,8 @@ function rvSheet(id) {
     render();
   });
   document.body.appendChild(box);
+  // 사진은 눌러서 크게 — 한마디 시트와 같은 창을 쓴다
+  wireShots(box, r.photos || []);
   requestAnimationFrame(() => box.classList.add('on'));
 }
 window.__rvSheet = rvSheet;

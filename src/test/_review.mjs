@@ -90,7 +90,7 @@ const built = await pa.evaluate(() => {
   return { 달: m, 숫자: x.stats, 주제: x.theme,
            후보: x.cands.length, 미리체크: x.cands.filter(c => c.on).length };
 });
-await pa.screenshot({ path: '/tmp/_rv_crm.png' });
+await pa.screenshot({ path: '/tmp/_rv_crm.png', fullPage: true });
 
 // ② 한 줄 없이 보내기 → 막힌다
 await pa.click('[data-rv-send]');
@@ -99,6 +99,46 @@ const noLine = await pa.evaluate(() => ({
   보낸것: window.__REV.length,
   알림: (document.getElementById('toast') || {}).textContent,
 }));
+
+// ③-0 작업대 — 스윙 골라 열고 캡처해서 요약에 붙인다
+const wb0 = await pa.evaluate(() => ({
+  스윙칩: document.querySelectorAll('[data-rv-sw]').length,
+  영상열림: !!document.querySelector('[data-vid]'),
+}));
+await pa.click('[data-rv-sw]');
+await pa.waitForTimeout(600);
+const wb1 = await pa.evaluate(() => ({
+  영상칸: !!document.querySelector('[data-v-box]'),
+  캡처버튼: !!document.querySelector('[data-v-shot]'),
+  확대버튼: !!document.querySelector('[data-v-zin]'),
+  선모드: !!document.querySelector('[data-v-md-draw]'),
+}));
+// 캡처는 진짜 영상이 있어야 되므로, 붙는 자리만 확인한다
+await pa.evaluate(() => {
+  const sw = rvSwing();
+  IN.photos[sw.id] = ['data:image/gif;base64,R0lGODlhAQABAIAAAP8AAAAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=='];
+  render();
+});
+await pa.waitForTimeout(400);
+const wb2 = await pa.evaluate(() => ({
+  붙은사진: document.querySelectorAll('[data-rv-shotx]').length,
+  안내: /요약에 붙는 사진/.test(document.body.innerText),
+}));
+
+// ③-1 AI 물어볼 글 — 클립보드에 담기는가
+const ai = await pa.evaluate(async () => {
+  let got = null;
+  navigator.clipboard.writeText = t => { got = t; return Promise.resolve(); };
+  document.querySelector('[data-rv-ai]').click();
+  await new Promise(r => setTimeout(r, 300));
+  return got ? {
+    길이: got.length,
+    한마디담김: (got.match(/^- /gm) || []).length,
+    주제담김: /반복해서 말한 것: 어깨/.test(got),
+    채점금지: /채점하지 않는다/.test(got),
+    세가지안: /세 가지 안/.test(got),
+  } : { none: true };
+});
 
 // ③ 문장 하나 더 고르고, 한 줄 쓰고 보내기
 await pa.evaluate(() => {
@@ -114,7 +154,7 @@ await pa.waitForTimeout(700);
 const sent = await pa.evaluate(() => {
   const r = window.__REV[0] || {};
   return { 개수: window.__REV.length, 주제: r.theme, 문장수: (r.picks || []).length,
-           한줄: r.pro_line, 숫자: r.stats };
+           사진수: (r.photos || []).length, 한줄: r.pro_line };
 });
 await pa.close(); srvA.close();
 
@@ -129,6 +169,7 @@ const REV = JSON.stringify([{
   theme: '어깨',
   picks: [{ body: '톱에서 어깨 회전이 덜 돌아서 왼팔이 접힙니다.', at: new Date().toISOString() },
           { body: '오늘도 어깨가 먼저 열리네요.', at: new Date().toISOString() }],
+  photos: ['data:image/gif;base64,R0lGODlhAQABAIAAAP8AAAAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=='],
   pro_line: '한 달 잘 하셨습니다. 어깨는 잡혔으니 다음 달은 하체만 봅시다.',
   created_at: new Date().toISOString(), read_at: null,
 }]);
@@ -184,6 +225,7 @@ const sheet = await pm.evaluate(() => {
     주제: g('.rv-th-w'),
     문장: s.querySelectorAll('.rv-p').length,
     프로한줄: g('.rv-lb'),
+    사진: s.querySelectorAll('.rv-ss img').length,
     // 프로가 쓴 줄이 이 장에서 제일 큰 자리를 차지하는가
     한줄크기: s.querySelector('.rv-lb')
       ? Math.round(s.querySelector('.rv-line').getBoundingClientRect().height) : 0,
@@ -210,6 +252,8 @@ const tab = await pm.evaluate(() => ({
 
 console.log('① 셈       ', JSON.stringify(built));
 console.log('② 한 줄 없이', JSON.stringify(noLine));
+console.log('②-3 AI 초안 ', JSON.stringify(ai));
+console.log('②-2 작업대 ', JSON.stringify(wb0), JSON.stringify(wb1), JSON.stringify(wb2));
 console.log('③ 보낸 것   ', JSON.stringify(sent));
 console.log('④ 회원 알림 ', JSON.stringify(notice));
 console.log('   시트     ', JSON.stringify(sheet));

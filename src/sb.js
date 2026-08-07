@@ -205,7 +205,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('reviews')
-      .select('id,owner,month,stats,theme,picks,pro_line,created_at,read_at')
+      .select('id,owner,month,stats,theme,picks,photos,pro_line,created_at,read_at')
       .order('month', { ascending: false }).limit(400);
     return r.error ? [] : (r.data || []);
   }

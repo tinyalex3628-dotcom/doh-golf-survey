@@ -1517,9 +1517,31 @@ function pageMember() {
 }
 
 /* ── 그리기 ─────────────────────────────────────────────────────── */
+/* 화면을 통째로 다시 그리므로 스크롤이 매번 맨 위로 튄다.
+   거르개 칩 하나 눌렀는데 보던 자리를 잃으면 다시 찾아 내려가야 한다 —
+   화면(S.nav)마다 위치를 기억했다가 그린 뒤 되돌린다.
+   그리기 전 위치를 먼저 걷어야 한다. 그린 다음에는 이미 0 이다. */
+const SCROLLS = {};
+function scrollBoxes() {
+  return Array.from(document.querySelectorAll('#frame *'))
+    .filter(e => e.scrollHeight > e.clientHeight + 4
+      && /auto|scroll/.test(getComputedStyle(e).overflowY));
+}
+function keepScroll() {
+  const b = scrollBoxes();
+  if (b.length) SCROLLS[S.nav] = b.map(e => e.scrollTop);
+}
+function putScroll() {
+  const want = SCROLLS[S.nav];
+  if (!want) return;
+  const b = scrollBoxes();
+  b.forEach((e, i) => { if (want[i]) e.scrollTop = want[i]; });
+}
+
 function render() {
   // 도착함·회원 관리·대시보드가 같은 서버 데이터를 본다
   if (['inbox', 'members', 'home', 'stats', 'fb'].includes(S.nav)) inLoad();
+  keepScroll();
   const pc = S.view === 'pc';
   document.documentElement.classList.toggle('pcmode', pc);
   $('#frame').innerHTML = pc
@@ -1528,7 +1550,11 @@ function render() {
   $('#over').innerHTML = renderMark();
   document.querySelectorAll('.vtab').forEach(b => b.classList.toggle('on', b.dataset.v === S.view));
   wire();
+  putScroll();
 }
+
+/* 화면을 옮길 때는 위에서부터 읽어야 한다 — 기억한 위치를 버린다 */
+function goNav(k) { delete SCROLLS[k]; S.nav = k; render(); }
 
 function on(sel, ev, fn) { document.querySelectorAll(sel).forEach(e => e.addEventListener(ev, fn)); }
 
@@ -1581,6 +1607,7 @@ function wire() {
     render();
   });
   on('[data-nav]', 'click', e => {
+    delete SCROLLS[e.currentTarget.dataset.nav];
     const to = e.currentTarget.dataset.nav;
     if (to !== S.nav) S.back.push({ nav: S.nav, card: S.card, mtab: S.mtab });
     S.nav = to; S.card = null; S.more = false; S.bell = false;

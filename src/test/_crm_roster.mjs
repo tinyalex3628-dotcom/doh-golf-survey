@@ -173,6 +173,24 @@ const planned = await p.evaluate(() => ({
 }));
 await p.screenshot({ path: '/tmp/_crm_tier.png' });
 
+// ⑨ 거르개를 눌러도 보던 자리를 잃지 않는다 (좁은 화면이라야 스크롤이 생긴다)
+await p.setViewportSize({ width: 1100, height: 420 });
+await p.evaluate(() => { S.view = 'pc'; S.nav = 'members'; S.mstate = '전체'; S.mview = 'state'; render(); });
+await p.waitForTimeout(400);
+const scroll = await p.evaluate(async () => {
+  const box = [...document.querySelectorAll('#frame *')]
+    .find(e => e.scrollHeight > e.clientHeight + 40 && /auto|scroll/.test(getComputedStyle(e).overflowY));
+  if (!box) return { none: true };
+  box.scrollTop = 120;
+  await new Promise(r => setTimeout(r, 60));
+  const before = box.scrollTop;
+  document.querySelector('[data-mview="plan"]').click();
+  await new Promise(r => setTimeout(r, 120));
+  const now = [...document.querySelectorAll('#frame *')]
+    .find(e => e.scrollHeight > e.clientHeight + 40 && /auto|scroll/.test(getComputedStyle(e).overflowY));
+  return { 눌렀을때: before, 누른뒤: now ? now.scrollTop : null };
+});
+
 console.log('① 상태  ', JSON.stringify(states));
 console.log('② 명부  ', JSON.stringify(roster));
 console.log('③ 연락  ', JSON.stringify(call));
@@ -181,6 +199,7 @@ console.log('⑤ 거르기', JSON.stringify(filtered));
 console.log('⑥ 눌러서 이동', JSON.stringify(jumped));
 console.log('⑦ 대시보드', JSON.stringify(dash), '· 모바일', JSON.stringify(mo));
 console.log('⑧ 등급별', JSON.stringify(tiers), '· 바꾸기', JSON.stringify(planned));
+console.log('⑨ 스크롤 유지', JSON.stringify(scroll));
 console.log('JS 오류', errs.length ? errs : '없음');
 
 await b.close(); srv.close();

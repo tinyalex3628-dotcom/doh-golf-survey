@@ -292,6 +292,12 @@ html.demo body{background:#EDEAE3}
 .rv-p::before{content:'';position:absolute;left:2px;top:9px;width:4px;height:4px;
   border-radius:50%;background:var(--ns-bronze)}
 /* 프로가 쓴 한 줄 — 이 장에서 제일 큰 자리. 나머지는 이걸 받쳐주는 것이다 */
+.rv-shots{display:flex;flex-direction:column;gap:8px;padding:13px 14px;border-radius:12px;
+  background:#FBFAF6;border:1px solid var(--ns-line)}
+.rv-ss{display:flex;gap:8px;flex-wrap:wrap}
+.rv-ss img{width:62px;height:83px;object-fit:cover;border-radius:9px;display:block;
+  border:1px solid var(--ns-line);background:#1D2420;cursor:pointer}
+.rv-ss img:active{opacity:.75}
 .rv-line{display:flex;flex-direction:column;gap:6px;padding:16px 16px;border-radius:14px;
   background:var(--ns-green)}
 .rv-ll{font-family:Pretendard,-apple-system,sans-serif;font-size:10px;font-weight:700;
@@ -5380,7 +5386,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('reviews')
-      .select('id,owner,month,stats,theme,picks,pro_line,created_at,read_at')
+      .select('id,owner,month,stats,theme,picks,photos,pro_line,created_at,read_at')
       .order('month', { ascending: false }).limit(400);
     return r.error ? [] : (r.data || []);
   }
@@ -8450,6 +8456,10 @@ function rvSheet(id) {
         ? '<div class="rv-picks"><span class="rv-pl">프로가 남긴 말 중에서</span>'
           + picks.map(p => '<span class="rv-p">' + safe(p.body) + '</span>').join('')
           + '</div>' : '')
+    + ((r.photos || []).length
+        ? '<div class="rv-shots"><span class="rv-pl">프로가 짚어준 장면</span>'
+          + '<div class="rv-ss">' + r.photos.map((u, i) =>
+              '<img src="' + u + '" data-shot="' + i + '" alt="">').join('') + '</div></div>' : '')
     + '<div class="rv-line"><span class="rv-ll">이도형 프로</span>'
       + '<span class="rv-lb">' + safe(r.pro_line) + '</span></div>'
     + '<div class="rv-foot"><button class="rv-btn" type="button" data-rv-ok>잘 봤어요</button></div>'
@@ -8464,6 +8474,8 @@ function rvSheet(id) {
     render();
   });
   document.body.appendChild(box);
+  // 사진은 눌러서 크게 — 한마디 시트와 같은 창을 쓴다
+  wireShots(box, r.photos || []);
   requestAnimationFrame(() => box.classList.add('on'));
 }
 window.__rvSheet = rvSheet;

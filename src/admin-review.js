@@ -168,7 +168,29 @@ if (typeof module !== 'undefined' && module.exports) {
 /* ── CRM 화면 ─────────────────────────────────────────────────────────
    왼쪽에 회원, 오른쪽에 그 사람의 한 달. 도착함과 같은 짜임이라
    프로가 새로 배울 것이 없다. */
-const RV = { sel: null, month: null, on: {}, line: {}, busy: false, list: null };
+const RV = { sel: null, month: null, on: {}, line: {}, busy: false, list: null, sw: null };
+
+/* 이 화면이 지금 열어 둔 스윙. 도착함의 작업대(inMount)가 이걸 보고
+   같은 배선을 붙인다 — 선 긋기·확대·캡처가 그대로 돈다. */
+function rvSwing() {
+  const list = (IN.list || []).filter(x => x.id === RV.sw);
+  return list[0] || null;
+}
+
+/* 이번 달에 이 회원 스윙에서 캡처한 사진 전부 — 어느 스윙에서 찍었든
+   한 달 요약에는 같이 실린다. */
+function rvShots(memberId, monthKey) {
+  const [y, m] = monthKey.split('-').map(Number);
+  const from = new Date(y, m - 1, 1).getTime(), to = new Date(y, m, 1).getTime();
+  const out = [];
+  (IN.list || []).forEach(sw => {
+    if (sw.owner !== memberId) return;
+    const t = new Date(sw.created_at).getTime();
+    if (t < from || t >= to) return;
+    (IN.photos[sw.id] || []).forEach(u => out.push(u));
+  });
+  return out;
+}
 
 function rvMonths() {
   const now = new Date();
@@ -314,6 +336,25 @@ function rvPage() {
           이번 달에 보낸 한마디가 없어요. 숫자만 보내거나, 한마디를 먼저 남기세요.</span>`}
     </div>
 
+    ${rvWorkbench(sel, month, mo)}
+
+    <div style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:13px;
+      padding:15px 16px;display:flex;flex-direction:column;gap:9px">
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:700;color:var(--ns-ink)">AI 로 초안 뽑기</span>
+        <span style="font-size:11.5px;color:var(--ns-ink3)">
+          이번 달 한마디 ${b.comments.length}개를 물어볼 글로 만들어 복사합니다</span>
+      </div>
+      <span style="font-size:11.5px;color:var(--ns-ink3);line-height:1.7">
+        누르면 클립보드에 담깁니다. ChatGPT·클로드에 붙여넣고 나온 초안을
+        <b style="color:var(--ns-ink2)">고쳐서</b> 아래 한 줄에 쓰세요 —
+        그대로 붙여넣지는 마세요. 회원이 읽는 마지막 문장은 프로가 쓴 것이어야 합니다.
+      </span>
+      <span data-rv-ai style="align-self:flex-start;padding:9px 15px;border-radius:10px;
+        border:1px solid var(--ns-green);color:var(--ns-green);font-size:12px;font-weight:700;
+        cursor:pointer;background:var(--ns-card)">물어볼 글 복사하기</span>
+    </div>
+
     <div style="background:var(--ns-card);border:1.5px solid var(--ns-green);border-radius:13px;
       padding:15px 16px;display:flex;flex-direction:column;gap:9px">
       <div style="display:flex;align-items:baseline;gap:8px">
@@ -341,7 +382,151 @@ function rvPage() {
     ${mo ? 'flex-direction:column;overflow-y:auto' : ''}">${left}${right}</div>`;
 }
 
+/* 한 달 안의 스윙을 골라 열고, 선 긋고, 캡처해서 요약에 붙인다.
+   도착함과 같은 작업대다 — 프로가 새로 배울 것이 없다. */
+function rvWorkbench(sel, month, mo) {
+  const [y, m] = month.split('-').map(Number);
+  const from = new Date(y, m - 1, 1).getTime(), to = new Date(y, m, 1).getTime();
+  const ups = (IN.list || []).filter(sw => {
+    if (sw.owner !== sel.id) return false;
+    const t = new Date(sw.created_at).getTime();
+    return t >= from && t < to;
+  }).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  const shots = rvShots(sel.id, month);
+
+  const head = `<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:700;color:var(--ns-ink)">스윙에서 사진 뽑기</span>
+    <span style="font-size:11.5px;color:var(--ns-ink3)">
+      ${ups.length ? '이번 달 올린 ' + ups.length + '개 중에서 골라 선을 긋고 캡처하세요'
+                   : '이번 달에 올린 스윙이 없어요'}</span>
+    ${shots.length ? `<span style="flex:1"></span>
+      <span style="font-size:11.5px;font-weight:700;color:var(--ns-green)">
+        ${shots.length}장 붙어 있어요</span>` : ''}
+  </div>`;
+
+  if (!ups.length) {
+    return `<div style="background:var(--ns-card);border:1px solid var(--ns-line);
+      border-radius:13px;padding:15px 16px">${head}</div>`;
+  }
+
+  const chips = `<div style="display:flex;gap:6px;flex-wrap:wrap">
+    ${ups.map(sw => {
+      const on = RV.sw === sw.id;
+      const n = (IN.photos[sw.id] || []).length;
+      return `<span data-rv-sw="${esc(sw.id)}" style="font-size:11.5px;font-weight:${on ? 700 : 600};
+        color:${on ? '#FFF' : 'var(--ns-ink2)'};
+        background:${on ? 'var(--ns-green)' : 'var(--ns-sand)'};border-radius:8px;
+        padding:5px 10px;cursor:pointer">${esc(inWhen(sw.created_at))} · ${esc(sw.view)}
+        ${n ? ' 📷' + n : ''}</span>`;
+    }).join('')}
+    ${RV.sw ? `<span data-rv-swx style="font-size:11.5px;font-weight:600;color:var(--ns-ink3);
+      background:transparent;border:1px solid var(--ns-line);border-radius:8px;
+      padding:5px 10px;cursor:pointer">닫기</span>` : ''}
+  </div>`;
+
+  const open = rvSwing();
+  return `<div style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:13px;
+      padding:15px 16px;display:flex;flex-direction:column;gap:10px">
+    ${head}${chips}
+    ${open ? `<div style="display:flex;${mo ? 'flex-direction:column' : ''};gap:12px;
+      border-top:1px solid var(--ns-line);padding-top:12px">${wbVideo(open, mo)}</div>` : ''}
+    ${shots.length ? `<div style="display:flex;flex-direction:column;gap:8px;padding:11px 12px;
+        border:1.5px solid var(--ns-green);border-radius:12px;background:var(--ns-soft)">
+      <span style="font-size:11.5px;font-weight:700;color:var(--ns-green)">
+        📷 요약에 붙는 사진 ${shots.length}장</span>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">${shots.map((u, i) =>
+        `<span style="position:relative;display:block;width:78px">
+          <img src="${u}" style="width:78px;border-radius:9px;display:block;
+            border:1px solid var(--ns-line)">
+          <span data-rv-shotx="${i}" title="빼기" style="position:absolute;right:-6px;top:-6px;
+            width:20px;height:20px;border-radius:50%;background:var(--ns-danger);color:#fff;
+            display:flex;align-items:center;justify-content:center;font-size:12px;
+            font-weight:700;cursor:pointer">×</span></span>`).join('')}</div>
+    </div>` : ''}
+  </div>`;
+}
+
+/* AI 에게 물어볼 글을 만든다.
+   앱이 직접 AI 를 부르지 않는 이유 — 브라우저에 들어가는 열쇠는 누구나 꺼내
+   쓸 수 있어서, 그 순간 요금이 남의 손에 넘어간다. 서버가 생기기 전까지는
+   프로가 직접 붙여넣는 것이 가장 안전하고 가장 빠르다.
+   대신 「무엇을 물을지」는 앱이 정해준다 — 프롬프트가 곧 품질이다. */
+/* 클립보드가 막힌 브라우저(구형·비보안 출처)에서는 옛 방법으로 */
+function rvFallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('style', 'position:fixed;left:-9999px;top:0');
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); done(); }
+  catch (e) { toast('복사가 안 돼요 · 브라우저를 확인해주세요'); }
+  ta.remove();
+}
+
+function rvPrompt(sel, month, b) {
+  const st = b.stats;
+  const lines = b.comments.slice()
+    .sort((a, c) => new Date(a.created_at) - new Date(c.created_at))
+    .map(c => {
+      const d = new Date(c.created_at);
+      // 괄호를 빼면 '- ' + 7 + 1 이 되어 「71월」이 된다
+      return '- ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일: '
+        + String(c.body || '').replace(/\s+/g, ' ');
+    });
+  return [
+    '너는 골프 레슨 프로의 글쓰기를 돕는다. 아래는 내가 한 회원에게 이번 달에 보낸',
+    '피드백 전부다. 이걸 회원에게 보낼 「월간 요약」의 마지막 한 줄 초안으로 만들어라.',
+    '',
+    '조건:',
+    '- 두세 문장, 존댓말, 담백하게. 과장·칭찬 남발 금지.',
+    '- 이번 달 반복해서 지적한 것 하나와, 다음 달에 볼 것 하나를 담아라.',
+    '- 점수·등급·실력 평가는 쓰지 마라. 스윙을 채점하지 않는다.',
+    '- 이모지, 「회원님」 표현은 쓰지 마라.',
+    '- 서로 다른 세 가지 안을 제시해라.',
+    '',
+    '회원: ' + sel.name,
+    '기간: ' + rvLabel(month),
+    '연습한 날 ' + st.days + '일 · 올린 영상 ' + st.vids + '개 · 보낸 한마디 ' + st.cms + '개',
+    (b.theme ? '반복해서 말한 것: ' + b.theme.w + ' (한마디 ' + b.theme.n + '개에 나옴)' : ''),
+    '',
+    '내가 보낸 피드백:',
+  ].filter(x => x !== null).join('\n') + '\n' + lines.join('\n');
+}
+
 function rvWire() {
+  on('[data-rv-ai]', 'click', () => {
+    const m = RV.month || rvMonths()[0];
+    const people = crmRoster().filter(x => x.n > 0);
+    const sel = people.find(x => x.id === RV.sel) || people[0];
+    if (!sel) return;
+    const b = rvBuild(sel.id, m);
+    if (!b.comments.length) return toast('이번 달 보낸 한마디가 없어요');
+    const text = rvPrompt(sel, m, b);
+    const done = () => toast('복사했어요 · ChatGPT 에 붙여넣으세요');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, () => rvFallbackCopy(text, done));
+    } else rvFallbackCopy(text, done);
+  });
+  on('[data-rv-sw]', 'click', e => { RV.sw = e.currentTarget.dataset.rvSw; render(); });
+  on('[data-rv-swx]', 'click', () => { RV.sw = null; render(); });
+  on('[data-rv-shotx]', 'click', e => {
+    const m = RV.month || rvMonths()[0];
+    const people = crmRoster().filter(x => x.n > 0);
+    const sel = people.find(x => x.id === RV.sel) || people[0];
+    if (!sel) return;
+    // 몇 번째 사진인지로 어느 스윙의 것인지 되짚는다
+    let k = +e.currentTarget.dataset.rvShotx;
+    const [y, mm] = m.split('-').map(Number);
+    const from = new Date(y, mm - 1, 1).getTime(), to = new Date(y, mm, 1).getTime();
+    const ups = (IN.list || []).filter(sw => sw.owner === sel.id
+      && new Date(sw.created_at).getTime() >= from && new Date(sw.created_at).getTime() < to);
+    for (let i = 0; i < ups.length; i++) {
+      const arr = IN.photos[ups[i].id] || [];
+      if (k < arr.length) { arr.splice(k, 1); break; }
+      k -= arr.length;
+    }
+    render();
+  });
   on('[data-rv-month]', 'click', e => { RV.month = e.currentTarget.dataset.rvMonth; render(); });
   on('[data-rv-mem]', 'click', e => { RV.sel = e.currentTarget.dataset.rvMem; render(); });
   on('[data-rv-line]', 'input', e => {
@@ -383,8 +568,10 @@ function rvWire() {
     const keys = RV.on[k] || b.cands.filter(x => x.on).map(x => x.key);
     const picks = b.cands.filter(x => keys.indexOf(x.key) >= 0)
       .map(x => ({ body: x.body, at: x.at }));
+    const shots = rvShots(sel.id, m);
     NS.sendReview(sel.id, m, {
       stats: b.stats, theme: b.theme ? b.theme.w : null, picks: picks, pro_line: line,
+      photos: shots.length ? shots : null,
     }).then(() => {
       toast(sel.name + '님에게 ' + rvLabel(m) + ' 요약을 보냈어요');
       RV.list = null; rvLoad(true); render();

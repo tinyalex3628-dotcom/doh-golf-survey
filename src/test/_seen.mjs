@@ -45,6 +45,16 @@ window.NS = NS;`;
   await p.evaluate(() => { S.nav = 'inbox'; render(); });
   await p.waitForTimeout(600);
 
+  // 이제는 물어보고 찍는다 — 창이 떠 있고 아직 안 보냈어야 한다
+  const ask = await p.evaluate(() => ({
+    창: !!document.getElementById('askseen'),
+    아직안보냄: window.__STAMPED.length === 0,
+    글: (document.querySelector('.as-t') || {}).textContent,
+    안전장치: !!document.querySelector('[data-as-no]'),
+  }));
+  await p.click('[data-as-yes]');
+  await p.waitForTimeout(400);
+
   const r1 = await p.evaluate(() => ({
     // 처음 열린 스윙(sw-a)에 도장이 자동으로 찍혔는가
     stamped: window.__STAMPED.slice(),
@@ -57,7 +67,19 @@ window.NS = NS;`;
   await p.waitForTimeout(400);
   const r2 = await p.evaluate(() => window.__STAMPED.slice());
 
-  console.log('① CRM 도장', JSON.stringify(r1), '· 재열람 후', JSON.stringify(r2));
+  // 다른 스윙을 「알리지 않고 보기」로 열면 도장이 안 나간다
+  await p.evaluate(() => { IN.asked = {}; IN.list[1].seen_at = null; IN.sel = 'sw-b'; render(); });
+  await p.waitForTimeout(500);
+  await p.click('[data-as-no]');
+  await p.waitForTimeout(400);
+  const quiet = await p.evaluate(() => ({
+    보낸것: window.__STAMPED.slice(), 창닫힘: !document.getElementById('askseen'),
+    알림: (document.getElementById('toast') || {}).textContent,
+  }));
+
+  console.log('① 물어보기', JSON.stringify(ask));
+  console.log('   찍은 뒤 ', JSON.stringify(r1), '· 재열람', JSON.stringify(r2));
+  console.log('   알리지 않고', JSON.stringify(quiet));
   console.log('   JS 오류', errs.length ? errs : '없음');
   await p.close(); srv.close();
 }

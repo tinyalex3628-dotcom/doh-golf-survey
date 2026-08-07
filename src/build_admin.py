@@ -76,6 +76,25 @@ html.demo .pcbox{height:100vh}
 .vbtn-on{background:var(--ns-green);border-color:var(--ns-green);color:#fff}
 input[type=range]{height:26px}
 
+/* 도장 확인 — 회원에게 나가는 일이라 한 번 묻는다 */
+#askseen{position:fixed;inset:0;z-index:250;display:flex;align-items:center;justify-content:center;
+  background:rgba(20,24,22,0);transition:background .18s;padding:20px}
+#askseen.on{background:rgba(20,24,22,.6)}
+.as-card{width:100%;max-width:380px;background:var(--ns-card);border-radius:16px;
+  padding:22px 22px 18px;display:flex;flex-direction:column;gap:9px;
+  box-shadow:0 26px 60px -22px rgba(20,24,22,.55);transform:scale(.96);transition:transform .18s}
+#askseen.on .as-card{transform:none}
+.as-t{font-size:15.5px;font-weight:700;color:var(--ns-ink);letter-spacing:-.02em;line-height:1.5}
+.as-p{font-size:12.5px;line-height:1.75;color:var(--ns-ink3)}
+.as-p b{color:var(--ns-ink2);font-weight:700}
+.as-go{width:100%;min-height:46px;margin-top:8px;border:0;border-radius:11px;cursor:pointer;
+  background:var(--ns-green);color:#fff;font-family:inherit;font-size:13.5px;font-weight:700}
+.as-go:active{opacity:.85}
+.as-alt{width:100%;min-height:42px;border:1px solid var(--ns-line);border-radius:11px;
+  cursor:pointer;background:var(--ns-card);font-family:inherit;font-size:12.5px;
+  font-weight:700;color:var(--ns-ink2)}
+.as-alt:active{opacity:.7}
+
 textarea::placeholder{color:#A9A392}
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-thumb{background:#D5CEC0;border-radius:9px;border:2px solid transparent;

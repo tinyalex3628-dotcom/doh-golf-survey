@@ -291,6 +291,12 @@ html.demo body{background:#EDEAE3}
 .rv-p::before{content:'';position:absolute;left:2px;top:9px;width:4px;height:4px;
   border-radius:50%;background:var(--ns-bronze)}
 /* 프로가 쓴 한 줄 — 이 장에서 제일 큰 자리. 나머지는 이걸 받쳐주는 것이다 */
+.rv-shots{display:flex;flex-direction:column;gap:8px;padding:13px 14px;border-radius:12px;
+  background:#FBFAF6;border:1px solid var(--ns-line)}
+.rv-ss{display:flex;gap:8px;flex-wrap:wrap}
+.rv-ss img{width:62px;height:83px;object-fit:cover;border-radius:9px;display:block;
+  border:1px solid var(--ns-line);background:#1D2420;cursor:pointer}
+.rv-ss img:active{opacity:.75}
 .rv-line{display:flex;flex-direction:column;gap:6px;padding:16px 16px;border-radius:14px;
   background:var(--ns-green)}
 .rv-ll{font-family:Pretendard,-apple-system,sans-serif;font-size:10px;font-weight:700;

@@ -7,10 +7,45 @@
    세우고 답장 기둥을 오른쪽에 길게 붙인다.
    영상 위에 선을 긋고, 그 장면을 캡처하면 답장에 사진으로 붙는다. */
 
+/* 도장을 찍을지 물어보는 창.
+   기본은 「확인했다고 알리기」다 — 대개 그게 맞고, 회원에게도 그게 좋다.
+   옆에 「알리지 않고 보기」를 둔다. 눌렀다는 사실 자체를 없던 일로 할 수는
+   없으니, 나가는 것만 막는다. */
+function inAskSeen(s) {
+  if (document.getElementById('askseen')) return;
+  const box = document.createElement('div');
+  box.id = 'askseen';
+  box.innerHTML = `
+  <div class="as-card">
+    <span class="as-t">${esc(inName(s.owner))}님에게 「확인했습니다」를 보낼까요?</span>
+    <p class="as-p">보내면 회원 앱에 <b>「이도형 프로가 확인했어요」</b>가 바로 뜹니다.
+      한마디는 나중에 쓰셔도 돼요 — 답이 언제 갈지는 약속하지 않습니다.</p>
+    <button class="as-go" type="button" data-as-yes>확인했다고 알리고 열기</button>
+    <button class="as-alt" type="button" data-as-no>알리지 않고 보기</button>
+  </div>`;
+  const shut = () => { box.remove(); IN.asked[s.id] = true; };
+  box.addEventListener('click', ev => {
+    if (ev.target.closest('[data-as-no]')) {
+      shut();
+      return toast('알리지 않고 열었어요 · 답장을 보내면 그때 알려집니다');
+    }
+    if (ev.target !== box && !ev.target.closest('[data-as-yes]')) return;
+    shut();
+    if (ev.target === box) return;                 // 바깥을 누른 건 「나중에」다
+    s.seen_at = new Date().toISOString();
+    NS.seen(s.id).catch(() => { s.seen_at = null; toast('알리지 못했어요'); });
+    const dot = document.querySelector('[data-in-row="' + s.id + '"] [title*="안 열어본"]');
+    if (dot) dot.remove();
+    toast('확인했다고 알렸어요');
+  });
+  document.body.appendChild(box);
+  requestAnimationFrame(() => box.classList.add('on'));
+}
+
 const IN = {
   busy: false, ready: false, err: null,
   list: [], who: {}, people: [], sel: null, draft: {}, photos: {}, lines: {}, urlCache: {},
-  blobCache: {}, at: {}, zoom: {}, mode: 'draw',
+  blobCache: {}, at: {}, zoom: {}, mode: 'draw', asked: {},
   uid: null, pro: false,
 };
 
@@ -136,15 +171,11 @@ function inRow(s, on) {
 
 /* ── 상세 = 작업대 ──────────────────────────────────────────────────
    왼쪽: 세로 영상 + 슬라이더 + 선 긋기 + 캡처.  오른쪽: 답장 기둥. */
-function inDetail() {
-  const s = inPick();
-  if (!s) return `<div style="flex:1;display:flex;align-items:center;justify-content:center;
-    color:var(--ns-ink3);font-size:13px">왼쪽에서 스윙을 고르세요</div>`;
-  const mo = S.view === 'mo';
-  const past = (s.comments || []).slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  const shots = IN.photos[s.id] || [];
-
-  const video = `
+/* 영상 작업대 — 도착함과 월간 요약이 같은 것을 쓴다.
+   선 긋기·확대·캡처 배선(inMount)은 화면에 있는 [data-v-*] 를 찾아 붙으므로,
+   markup 만 같으면 어느 화면에 놓아도 그대로 돈다. */
+function wbVideo(s, mo) {
+  return `
   <div style="flex:none;${mo ? 'width:100%' : 'width:clamp(300px,32vw,420px)'};
       display:flex;flex-direction:column;gap:9px;padding:16px;
       ${mo ? '' : 'border-right:1px solid var(--ns-line);overflow-y:auto'}">
@@ -189,6 +220,17 @@ function inDetail() {
       끌면 곧은 선이 그어져요. 확대한 다음 <b>✋ 이동</b>으로 잡고 옮기면 됩니다.
       캡처는 <b>지금 보이는 그대로</b> 오른쪽 답장에 붙습니다.</span>
   </div>`;
+}
+
+function inDetail() {
+  const s = inPick();
+  if (!s) return `<div style="flex:1;display:flex;align-items:center;justify-content:center;
+    color:var(--ns-ink3);font-size:13px">왼쪽에서 스윙을 고르세요</div>`;
+  const mo = S.view === 'mo';
+  const past = (s.comments || []).slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const shots = IN.photos[s.id] || [];
+
+  const video = wbVideo(s, mo);
 
   const reply = `
   <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto">
@@ -285,17 +327,14 @@ function pageInbox() {
 
 /* ── 작업대 배선 — 렌더마다 다시 붙는다 ───────────────────────────── */
 function inMount() {
-  const s = inPick();
-  /* 봤어요 도장 — 프로가 이 스윙을 연 순간 찍힌다. 한마디를 아직 못 써도
-     회원 앱에는 「이도형 프로가 확인했습니다」가 바로 뜬다.
-     실패해도 조용히 둔다 — 도장은 부가물이지 작업을 막을 일이 아니다. */
-  if (s && !s.seen_at && NS.seen) {
-    s.seen_at = new Date().toISOString();
-    NS.seen(s.id).catch(() => { s.seen_at = null; });
-    // 목록의 「안 봄」 점 — 이번 렌더는 이미 그려졌으니 그 점만 직접 끈다
-    const row = document.querySelector('[data-in-row="' + s.id + '"] [title*="안 열어본"]');
-    if (row) row.remove();
-  }
+  /* 월간 요약도 같은 작업대를 쓴다 — 그 화면이 고른 스윙을 먼저 본다.
+     화면에 영상 칸이 없으면 아래에서 조용히 빠져나간다. */
+  const s = (typeof rvSwing === 'function' && S.nav === 'fb') ? rvSwing() : inPick();
+  /* 봤어요 도장 — 전에는 스윙을 여는 순간 자동으로 찍혔다.
+     그런데 이건 회원에게 「봤습니다」가 나가는 일이라, 실수로 눌렀거나
+     그냥 확인만 하려던 참이면 되돌릴 방법이 없다. 물어보고 찍는다.
+     한 번 정하면 그 스윙은 다시 안 묻는다. */
+  if (s && !s.seen_at && NS.seen && !IN.asked[s.id]) inAskSeen(s);
   /* [data-v] 는 상단 PC/모바일 전환 버튼이 이미 쓰고 있다 — 그걸 잡으면
      버튼에 src 를 꽂는 촌극이 벌어진다. 실제로 벌어졌다. */
   const v = document.querySelector('[data-vid]');

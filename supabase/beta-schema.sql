@@ -90,9 +90,11 @@ create table if not exists public.reviews (
   theme      text,                        -- 이번 달 반복해서 말한 것
   picks      jsonb,                       -- 프로가 고른 문장 [{body, at}]
   pro_line   text not null,
+  photos     jsonb,                       -- 작업대에서 캡처한 사진
   created_at timestamptz not null default now(),
   read_at    timestamptz
 );
+alter table public.reviews add column if not exists photos jsonb;
 -- 한 회원에게 한 달에 한 장. 다시 보내면 덮어쓴다.
 create unique index if not exists reviews_owner_month
   on public.reviews (owner, month);

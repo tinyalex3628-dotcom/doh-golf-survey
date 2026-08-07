@@ -79,6 +79,25 @@ html.demo .pcbox{height:100vh}
 .vbtn-on{background:var(--ns-green);border-color:var(--ns-green);color:#fff}
 input[type=range]{height:26px}
 
+/* 도장 확인 — 회원에게 나가는 일이라 한 번 묻는다 */
+#askseen{position:fixed;inset:0;z-index:250;display:flex;align-items:center;justify-content:center;
+  background:rgba(20,24,22,0);transition:background .18s;padding:20px}
+#askseen.on{background:rgba(20,24,22,.6)}
+.as-card{width:100%;max-width:380px;background:var(--ns-card);border-radius:16px;
+  padding:22px 22px 18px;display:flex;flex-direction:column;gap:9px;
+  box-shadow:0 26px 60px -22px rgba(20,24,22,.55);transform:scale(.96);transition:transform .18s}
+#askseen.on .as-card{transform:none}
+.as-t{font-size:15.5px;font-weight:700;color:var(--ns-ink);letter-spacing:-.02em;line-height:1.5}
+.as-p{font-size:12.5px;line-height:1.75;color:var(--ns-ink3)}
+.as-p b{color:var(--ns-ink2);font-weight:700}
+.as-go{width:100%;min-height:46px;margin-top:8px;border:0;border-radius:11px;cursor:pointer;
+  background:var(--ns-green);color:#fff;font-family:inherit;font-size:13.5px;font-weight:700}
+.as-go:active{opacity:.85}
+.as-alt{width:100%;min-height:42px;border:1px solid var(--ns-line);border-radius:11px;
+  cursor:pointer;background:var(--ns-card);font-family:inherit;font-size:12.5px;
+  font-weight:700;color:var(--ns-ink2)}
+.as-alt:active{opacity:.7}
+
 textarea::placeholder{color:#A9A392}
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-thumb{background:#D5CEC0;border-radius:9px;border:2px solid transparent;
@@ -317,7 +336,7 @@ const NS = (() => {
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('reviews')
-      .select('id,owner,month,stats,theme,picks,pro_line,created_at,read_at')
+      .select('id,owner,month,stats,theme,picks,photos,pro_line,created_at,read_at')
       .order('month', { ascending: false }).limit(400);
     return r.error ? [] : (r.data || []);
   }
@@ -745,10 +764,45 @@ const MEMO = {
    세우고 답장 기둥을 오른쪽에 길게 붙인다.
    영상 위에 선을 긋고, 그 장면을 캡처하면 답장에 사진으로 붙는다. */
 
+/* 도장을 찍을지 물어보는 창.
+   기본은 「확인했다고 알리기」다 — 대개 그게 맞고, 회원에게도 그게 좋다.
+   옆에 「알리지 않고 보기」를 둔다. 눌렀다는 사실 자체를 없던 일로 할 수는
+   없으니, 나가는 것만 막는다. */
+function inAskSeen(s) {
+  if (document.getElementById('askseen')) return;
+  const box = document.createElement('div');
+  box.id = 'askseen';
+  box.innerHTML = `
+  <div class="as-card">
+    <span class="as-t">${esc(inName(s.owner))}님에게 「확인했습니다」를 보낼까요?</span>
+    <p class="as-p">보내면 회원 앱에 <b>「이도형 프로가 확인했어요」</b>가 바로 뜹니다.
+      한마디는 나중에 쓰셔도 돼요 — 답이 언제 갈지는 약속하지 않습니다.</p>
+    <button class="as-go" type="button" data-as-yes>확인했다고 알리고 열기</button>
+    <button class="as-alt" type="button" data-as-no>알리지 않고 보기</button>
+  </div>`;
+  const shut = () => { box.remove(); IN.asked[s.id] = true; };
+  box.addEventListener('click', ev => {
+    if (ev.target.closest('[data-as-no]')) {
+      shut();
+      return toast('알리지 않고 열었어요 · 답장을 보내면 그때 알려집니다');
+    }
+    if (ev.target !== box && !ev.target.closest('[data-as-yes]')) return;
+    shut();
+    if (ev.target === box) return;                 // 바깥을 누른 건 「나중에」다
+    s.seen_at = new Date().toISOString();
+    NS.seen(s.id).catch(() => { s.seen_at = null; toast('알리지 못했어요'); });
+    const dot = document.querySelector('[data-in-row="' + s.id + '"] [title*="안 열어본"]');
+    if (dot) dot.remove();
+    toast('확인했다고 알렸어요');
+  });
+  document.body.appendChild(box);
+  requestAnimationFrame(() => box.classList.add('on'));
+}
+
 const IN = {
   busy: false, ready: false, err: null,
   list: [], who: {}, people: [], sel: null, draft: {}, photos: {}, lines: {}, urlCache: {},
-  blobCache: {}, at: {}, zoom: {}, mode: 'draw',
+  blobCache: {}, at: {}, zoom: {}, mode: 'draw', asked: {},
   uid: null, pro: false,
 };
 
@@ -874,15 +928,11 @@ function inRow(s, on) {
 
 /* ── 상세 = 작업대 ──────────────────────────────────────────────────
    왼쪽: 세로 영상 + 슬라이더 + 선 긋기 + 캡처.  오른쪽: 답장 기둥. */
-function inDetail() {
-  const s = inPick();
-  if (!s) return `<div style="flex:1;display:flex;align-items:center;justify-content:center;
-    color:var(--ns-ink3);font-size:13px">왼쪽에서 스윙을 고르세요</div>`;
-  const mo = S.view === 'mo';
-  const past = (s.comments || []).slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  const shots = IN.photos[s.id] || [];
-
-  const video = `
+/* 영상 작업대 — 도착함과 월간 요약이 같은 것을 쓴다.
+   선 긋기·확대·캡처 배선(inMount)은 화면에 있는 [data-v-*] 를 찾아 붙으므로,
+   markup 만 같으면 어느 화면에 놓아도 그대로 돈다. */
+function wbVideo(s, mo) {
+  return `
   <div style="flex:none;${mo ? 'width:100%' : 'width:clamp(300px,32vw,420px)'};
       display:flex;flex-direction:column;gap:9px;padding:16px;
       ${mo ? '' : 'border-right:1px solid var(--ns-line);overflow-y:auto'}">
@@ -927,6 +977,17 @@ function inDetail() {
       끌면 곧은 선이 그어져요. 확대한 다음 <b>✋ 이동</b>으로 잡고 옮기면 됩니다.
       캡처는 <b>지금 보이는 그대로</b> 오른쪽 답장에 붙습니다.</span>
   </div>`;
+}
+
+function inDetail() {
+  const s = inPick();
+  if (!s) return `<div style="flex:1;display:flex;align-items:center;justify-content:center;
+    color:var(--ns-ink3);font-size:13px">왼쪽에서 스윙을 고르세요</div>`;
+  const mo = S.view === 'mo';
+  const past = (s.comments || []).slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const shots = IN.photos[s.id] || [];
+
+  const video = wbVideo(s, mo);
 
   const reply = `
   <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto">
@@ -1023,17 +1084,14 @@ function pageInbox() {
 
 /* ── 작업대 배선 — 렌더마다 다시 붙는다 ───────────────────────────── */
 function inMount() {
-  const s = inPick();
-  /* 봤어요 도장 — 프로가 이 스윙을 연 순간 찍힌다. 한마디를 아직 못 써도
-     회원 앱에는 「이도형 프로가 확인했습니다」가 바로 뜬다.
-     실패해도 조용히 둔다 — 도장은 부가물이지 작업을 막을 일이 아니다. */
-  if (s && !s.seen_at && NS.seen) {
-    s.seen_at = new Date().toISOString();
-    NS.seen(s.id).catch(() => { s.seen_at = null; });
-    // 목록의 「안 봄」 점 — 이번 렌더는 이미 그려졌으니 그 점만 직접 끈다
-    const row = document.querySelector('[data-in-row="' + s.id + '"] [title*="안 열어본"]');
-    if (row) row.remove();
-  }
+  /* 월간 요약도 같은 작업대를 쓴다 — 그 화면이 고른 스윙을 먼저 본다.
+     화면에 영상 칸이 없으면 아래에서 조용히 빠져나간다. */
+  const s = (typeof rvSwing === 'function' && S.nav === 'fb') ? rvSwing() : inPick();
+  /* 봤어요 도장 — 전에는 스윙을 여는 순간 자동으로 찍혔다.
+     그런데 이건 회원에게 「봤습니다」가 나가는 일이라, 실수로 눌렀거나
+     그냥 확인만 하려던 참이면 되돌릴 방법이 없다. 물어보고 찍는다.
+     한 번 정하면 그 스윙은 다시 안 묻는다. */
+  if (s && !s.seen_at && NS.seen && !IN.asked[s.id]) inAskSeen(s);
   /* [data-v] 는 상단 PC/모바일 전환 버튼이 이미 쓰고 있다 — 그걸 잡으면
      버튼에 src 를 꽂는 촌극이 벌어진다. 실제로 벌어졌다. */
   const v = document.querySelector('[data-vid]');
@@ -2000,7 +2058,29 @@ if (typeof module !== 'undefined' && module.exports) {
 /* ── CRM 화면 ─────────────────────────────────────────────────────────
    왼쪽에 회원, 오른쪽에 그 사람의 한 달. 도착함과 같은 짜임이라
    프로가 새로 배울 것이 없다. */
-const RV = { sel: null, month: null, on: {}, line: {}, busy: false, list: null };
+const RV = { sel: null, month: null, on: {}, line: {}, busy: false, list: null, sw: null };
+
+/* 이 화면이 지금 열어 둔 스윙. 도착함의 작업대(inMount)가 이걸 보고
+   같은 배선을 붙인다 — 선 긋기·확대·캡처가 그대로 돈다. */
+function rvSwing() {
+  const list = (IN.list || []).filter(x => x.id === RV.sw);
+  return list[0] || null;
+}
+
+/* 이번 달에 이 회원 스윙에서 캡처한 사진 전부 — 어느 스윙에서 찍었든
+   한 달 요약에는 같이 실린다. */
+function rvShots(memberId, monthKey) {
+  const [y, m] = monthKey.split('-').map(Number);
+  const from = new Date(y, m - 1, 1).getTime(), to = new Date(y, m, 1).getTime();
+  const out = [];
+  (IN.list || []).forEach(sw => {
+    if (sw.owner !== memberId) return;
+    const t = new Date(sw.created_at).getTime();
+    if (t < from || t >= to) return;
+    (IN.photos[sw.id] || []).forEach(u => out.push(u));
+  });
+  return out;
+}
 
 function rvMonths() {
   const now = new Date();
@@ -2146,6 +2226,25 @@ function rvPage() {
           이번 달에 보낸 한마디가 없어요. 숫자만 보내거나, 한마디를 먼저 남기세요.</span>`}
     </div>
 
+    ${rvWorkbench(sel, month, mo)}
+
+    <div style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:13px;
+      padding:15px 16px;display:flex;flex-direction:column;gap:9px">
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:700;color:var(--ns-ink)">AI 로 초안 뽑기</span>
+        <span style="font-size:11.5px;color:var(--ns-ink3)">
+          이번 달 한마디 ${b.comments.length}개를 물어볼 글로 만들어 복사합니다</span>
+      </div>
+      <span style="font-size:11.5px;color:var(--ns-ink3);line-height:1.7">
+        누르면 클립보드에 담깁니다. ChatGPT·클로드에 붙여넣고 나온 초안을
+        <b style="color:var(--ns-ink2)">고쳐서</b> 아래 한 줄에 쓰세요 —
+        그대로 붙여넣지는 마세요. 회원이 읽는 마지막 문장은 프로가 쓴 것이어야 합니다.
+      </span>
+      <span data-rv-ai style="align-self:flex-start;padding:9px 15px;border-radius:10px;
+        border:1px solid var(--ns-green);color:var(--ns-green);font-size:12px;font-weight:700;
+        cursor:pointer;background:var(--ns-card)">물어볼 글 복사하기</span>
+    </div>
+
     <div style="background:var(--ns-card);border:1.5px solid var(--ns-green);border-radius:13px;
       padding:15px 16px;display:flex;flex-direction:column;gap:9px">
       <div style="display:flex;align-items:baseline;gap:8px">
@@ -2173,7 +2272,151 @@ function rvPage() {
     ${mo ? 'flex-direction:column;overflow-y:auto' : ''}">${left}${right}</div>`;
 }
 
+/* 한 달 안의 스윙을 골라 열고, 선 긋고, 캡처해서 요약에 붙인다.
+   도착함과 같은 작업대다 — 프로가 새로 배울 것이 없다. */
+function rvWorkbench(sel, month, mo) {
+  const [y, m] = month.split('-').map(Number);
+  const from = new Date(y, m - 1, 1).getTime(), to = new Date(y, m, 1).getTime();
+  const ups = (IN.list || []).filter(sw => {
+    if (sw.owner !== sel.id) return false;
+    const t = new Date(sw.created_at).getTime();
+    return t >= from && t < to;
+  }).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  const shots = rvShots(sel.id, month);
+
+  const head = `<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:700;color:var(--ns-ink)">스윙에서 사진 뽑기</span>
+    <span style="font-size:11.5px;color:var(--ns-ink3)">
+      ${ups.length ? '이번 달 올린 ' + ups.length + '개 중에서 골라 선을 긋고 캡처하세요'
+                   : '이번 달에 올린 스윙이 없어요'}</span>
+    ${shots.length ? `<span style="flex:1"></span>
+      <span style="font-size:11.5px;font-weight:700;color:var(--ns-green)">
+        ${shots.length}장 붙어 있어요</span>` : ''}
+  </div>`;
+
+  if (!ups.length) {
+    return `<div style="background:var(--ns-card);border:1px solid var(--ns-line);
+      border-radius:13px;padding:15px 16px">${head}</div>`;
+  }
+
+  const chips = `<div style="display:flex;gap:6px;flex-wrap:wrap">
+    ${ups.map(sw => {
+      const on = RV.sw === sw.id;
+      const n = (IN.photos[sw.id] || []).length;
+      return `<span data-rv-sw="${esc(sw.id)}" style="font-size:11.5px;font-weight:${on ? 700 : 600};
+        color:${on ? '#FFF' : 'var(--ns-ink2)'};
+        background:${on ? 'var(--ns-green)' : 'var(--ns-sand)'};border-radius:8px;
+        padding:5px 10px;cursor:pointer">${esc(inWhen(sw.created_at))} · ${esc(sw.view)}
+        ${n ? ' 📷' + n : ''}</span>`;
+    }).join('')}
+    ${RV.sw ? `<span data-rv-swx style="font-size:11.5px;font-weight:600;color:var(--ns-ink3);
+      background:transparent;border:1px solid var(--ns-line);border-radius:8px;
+      padding:5px 10px;cursor:pointer">닫기</span>` : ''}
+  </div>`;
+
+  const open = rvSwing();
+  return `<div style="background:var(--ns-card);border:1px solid var(--ns-line);border-radius:13px;
+      padding:15px 16px;display:flex;flex-direction:column;gap:10px">
+    ${head}${chips}
+    ${open ? `<div style="display:flex;${mo ? 'flex-direction:column' : ''};gap:12px;
+      border-top:1px solid var(--ns-line);padding-top:12px">${wbVideo(open, mo)}</div>` : ''}
+    ${shots.length ? `<div style="display:flex;flex-direction:column;gap:8px;padding:11px 12px;
+        border:1.5px solid var(--ns-green);border-radius:12px;background:var(--ns-soft)">
+      <span style="font-size:11.5px;font-weight:700;color:var(--ns-green)">
+        📷 요약에 붙는 사진 ${shots.length}장</span>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">${shots.map((u, i) =>
+        `<span style="position:relative;display:block;width:78px">
+          <img src="${u}" style="width:78px;border-radius:9px;display:block;
+            border:1px solid var(--ns-line)">
+          <span data-rv-shotx="${i}" title="빼기" style="position:absolute;right:-6px;top:-6px;
+            width:20px;height:20px;border-radius:50%;background:var(--ns-danger);color:#fff;
+            display:flex;align-items:center;justify-content:center;font-size:12px;
+            font-weight:700;cursor:pointer">×</span></span>`).join('')}</div>
+    </div>` : ''}
+  </div>`;
+}
+
+/* AI 에게 물어볼 글을 만든다.
+   앱이 직접 AI 를 부르지 않는 이유 — 브라우저에 들어가는 열쇠는 누구나 꺼내
+   쓸 수 있어서, 그 순간 요금이 남의 손에 넘어간다. 서버가 생기기 전까지는
+   프로가 직접 붙여넣는 것이 가장 안전하고 가장 빠르다.
+   대신 「무엇을 물을지」는 앱이 정해준다 — 프롬프트가 곧 품질이다. */
+/* 클립보드가 막힌 브라우저(구형·비보안 출처)에서는 옛 방법으로 */
+function rvFallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('style', 'position:fixed;left:-9999px;top:0');
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); done(); }
+  catch (e) { toast('복사가 안 돼요 · 브라우저를 확인해주세요'); }
+  ta.remove();
+}
+
+function rvPrompt(sel, month, b) {
+  const st = b.stats;
+  const lines = b.comments.slice()
+    .sort((a, c) => new Date(a.created_at) - new Date(c.created_at))
+    .map(c => {
+      const d = new Date(c.created_at);
+      // 괄호를 빼면 '- ' + 7 + 1 이 되어 「71월」이 된다
+      return '- ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일: '
+        + String(c.body || '').replace(/\s+/g, ' ');
+    });
+  return [
+    '너는 골프 레슨 프로의 글쓰기를 돕는다. 아래는 내가 한 회원에게 이번 달에 보낸',
+    '피드백 전부다. 이걸 회원에게 보낼 「월간 요약」의 마지막 한 줄 초안으로 만들어라.',
+    '',
+    '조건:',
+    '- 두세 문장, 존댓말, 담백하게. 과장·칭찬 남발 금지.',
+    '- 이번 달 반복해서 지적한 것 하나와, 다음 달에 볼 것 하나를 담아라.',
+    '- 점수·등급·실력 평가는 쓰지 마라. 스윙을 채점하지 않는다.',
+    '- 이모지, 「회원님」 표현은 쓰지 마라.',
+    '- 서로 다른 세 가지 안을 제시해라.',
+    '',
+    '회원: ' + sel.name,
+    '기간: ' + rvLabel(month),
+    '연습한 날 ' + st.days + '일 · 올린 영상 ' + st.vids + '개 · 보낸 한마디 ' + st.cms + '개',
+    (b.theme ? '반복해서 말한 것: ' + b.theme.w + ' (한마디 ' + b.theme.n + '개에 나옴)' : ''),
+    '',
+    '내가 보낸 피드백:',
+  ].filter(x => x !== null).join('\n') + '\n' + lines.join('\n');
+}
+
 function rvWire() {
+  on('[data-rv-ai]', 'click', () => {
+    const m = RV.month || rvMonths()[0];
+    const people = crmRoster().filter(x => x.n > 0);
+    const sel = people.find(x => x.id === RV.sel) || people[0];
+    if (!sel) return;
+    const b = rvBuild(sel.id, m);
+    if (!b.comments.length) return toast('이번 달 보낸 한마디가 없어요');
+    const text = rvPrompt(sel, m, b);
+    const done = () => toast('복사했어요 · ChatGPT 에 붙여넣으세요');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, () => rvFallbackCopy(text, done));
+    } else rvFallbackCopy(text, done);
+  });
+  on('[data-rv-sw]', 'click', e => { RV.sw = e.currentTarget.dataset.rvSw; render(); });
+  on('[data-rv-swx]', 'click', () => { RV.sw = null; render(); });
+  on('[data-rv-shotx]', 'click', e => {
+    const m = RV.month || rvMonths()[0];
+    const people = crmRoster().filter(x => x.n > 0);
+    const sel = people.find(x => x.id === RV.sel) || people[0];
+    if (!sel) return;
+    // 몇 번째 사진인지로 어느 스윙의 것인지 되짚는다
+    let k = +e.currentTarget.dataset.rvShotx;
+    const [y, mm] = m.split('-').map(Number);
+    const from = new Date(y, mm - 1, 1).getTime(), to = new Date(y, mm, 1).getTime();
+    const ups = (IN.list || []).filter(sw => sw.owner === sel.id
+      && new Date(sw.created_at).getTime() >= from && new Date(sw.created_at).getTime() < to);
+    for (let i = 0; i < ups.length; i++) {
+      const arr = IN.photos[ups[i].id] || [];
+      if (k < arr.length) { arr.splice(k, 1); break; }
+      k -= arr.length;
+    }
+    render();
+  });
   on('[data-rv-month]', 'click', e => { RV.month = e.currentTarget.dataset.rvMonth; render(); });
   on('[data-rv-mem]', 'click', e => { RV.sel = e.currentTarget.dataset.rvMem; render(); });
   on('[data-rv-line]', 'input', e => {
@@ -2215,8 +2458,10 @@ function rvWire() {
     const keys = RV.on[k] || b.cands.filter(x => x.on).map(x => x.key);
     const picks = b.cands.filter(x => keys.indexOf(x.key) >= 0)
       .map(x => ({ body: x.body, at: x.at }));
+    const shots = rvShots(sel.id, m);
     NS.sendReview(sel.id, m, {
       stats: b.stats, theme: b.theme ? b.theme.w : null, picks: picks, pro_line: line,
+      photos: shots.length ? shots : null,
     }).then(() => {
       toast(sel.name + '님에게 ' + rvLabel(m) + ' 요약을 보냈어요');
       RV.list = null; rvLoad(true); render();
@@ -3745,9 +3990,31 @@ function pageMember() {
 }
 
 /* ── 그리기 ─────────────────────────────────────────────────────── */
+/* 화면을 통째로 다시 그리므로 스크롤이 매번 맨 위로 튄다.
+   거르개 칩 하나 눌렀는데 보던 자리를 잃으면 다시 찾아 내려가야 한다 —
+   화면(S.nav)마다 위치를 기억했다가 그린 뒤 되돌린다.
+   그리기 전 위치를 먼저 걷어야 한다. 그린 다음에는 이미 0 이다. */
+const SCROLLS = {};
+function scrollBoxes() {
+  return Array.from(document.querySelectorAll('#frame *'))
+    .filter(e => e.scrollHeight > e.clientHeight + 4
+      && /auto|scroll/.test(getComputedStyle(e).overflowY));
+}
+function keepScroll() {
+  const b = scrollBoxes();
+  if (b.length) SCROLLS[S.nav] = b.map(e => e.scrollTop);
+}
+function putScroll() {
+  const want = SCROLLS[S.nav];
+  if (!want) return;
+  const b = scrollBoxes();
+  b.forEach((e, i) => { if (want[i]) e.scrollTop = want[i]; });
+}
+
 function render() {
   // 도착함·회원 관리·대시보드가 같은 서버 데이터를 본다
   if (['inbox', 'members', 'home', 'stats', 'fb'].includes(S.nav)) inLoad();
+  keepScroll();
   const pc = S.view === 'pc';
   document.documentElement.classList.toggle('pcmode', pc);
   $('#frame').innerHTML = pc
@@ -3756,7 +4023,11 @@ function render() {
   $('#over').innerHTML = renderMark();
   document.querySelectorAll('.vtab').forEach(b => b.classList.toggle('on', b.dataset.v === S.view));
   wire();
+  putScroll();
 }
+
+/* 화면을 옮길 때는 위에서부터 읽어야 한다 — 기억한 위치를 버린다 */
+function goNav(k) { delete SCROLLS[k]; S.nav = k; render(); }
 
 function on(sel, ev, fn) { document.querySelectorAll(sel).forEach(e => e.addEventListener(ev, fn)); }
 
@@ -3809,6 +4080,7 @@ function wire() {
     render();
   });
   on('[data-nav]', 'click', e => {
+    delete SCROLLS[e.currentTarget.dataset.nav];
     const to = e.currentTarget.dataset.nav;
     if (to !== S.nav) S.back.push({ nav: S.nav, card: S.card, mtab: S.mtab });
     S.nav = to; S.card = null; S.more = false; S.bell = false;
