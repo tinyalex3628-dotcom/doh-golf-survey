@@ -1,0 +1,6 @@
+# DOH Vision 서버 의존성 (torch/torchvision 은 CUDA 버전이라 start.bat/가이드에서 따로 설치)
+fastapi
+uvicorn[standard]
+python-multipart
+opencv-python
+numpy

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DOH Club Detect — YOLO(onnxruntime-web) 클럽/공 자동검출</title>
+<!--
+  DOH Vision — 옵션 2 브라우저 추론 엔진 (코딩 시작본)
+  근거: DOH_Vision_Club_Detection_Plan_v1.0.md
+  하는 일:
+   - onnxruntime-web 으로 학습된 YOLO11n(ONNX) 을 브라우저에서 실행
+   - 프레임별 clubhead/ball 자동 검출(letterbox 640 + decode[1,4+nc,8400] + NMS)
+   - MediaPipe 포즈로 그립(손목) → clubhead = 샤프트선 → 각도 자동 계산(수동 클릭 불필요)
+  ※ 모델(best.onnx)은 club_model/train_export.py 로 학습해 호스팅한 뒤 URL 입력.
+    모델 없으면 포즈 그립만 표시(안내). 검증되면 analyzer2 Hough를 이 검출로 교체(v3).
+-->
+<style>
+  :root{--bg:#0f1216;--panel:#1a1f27;--ink:#e8edf2;--sub:#8b97a5;--accent:#4ea1ff;--ok:#3ecf8e;--warn:#ffb648;--club:#ff5d5d;--ball:#5dd0ff;--shaft:#ffd166;}
+  *{box-sizing:border-box;} body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;}
+  header{padding:14px 20px;border-bottom:1px solid #262d38;} header h1{margin:0;font-size:16px;} header p{margin:4px 0 0;color:var(--sub);font-size:12px;}
+  .wrap{display:grid;grid-template-columns:minmax(320px,440px) 1fr;gap:16px;padding:16px 20px;} @media(max-width:1000px){.wrap{grid-template-columns:1fr;}}
+  .panel{background:var(--panel);border:1px solid #262d38;border-radius:10px;padding:14px;}
+  .stage{position:relative;background:#000;border-radius:8px;overflow:hidden;aspect-ratio:9/16;max-height:64vh;margin:auto;}
+  .stage video,.stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;}
+  .row{display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;}
+  label.f{color:var(--sub);font-size:12px;min-width:64px;}
+  input[type=text],input[type=number]{flex:1;background:#222c39;color:var(--ink);border:1px solid #33404f;border-radius:6px;padding:7px;font-size:12px;}
+  input[type=file]{display:none;}
+  button,.filebtn{background:#222c39;color:var(--ink);border:1px solid #33404f;border-radius:8px;padding:9px 14px;cursor:pointer;font-size:13px;}
+  button:hover,.filebtn:hover{border-color:var(--accent);} button:disabled{opacity:.4;cursor:not-allowed;}
+  button.primary{background:var(--accent);color:#04121f;border-color:var(--accent);font-weight:600;}
+  .status{font-size:12px;color:var(--warn);min-height:16px;margin-top:8px;} .live{font-size:12px;color:var(--sub);} .live b{color:var(--ok);}
+  .note{color:var(--sub);font-size:11px;margin-top:10px;line-height:1.55;}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin:14px 0 8px;}
+  table{width:100%;border-collapse:collapse;font-size:12px;} th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #2a323d;} td.num{text-align:right;color:var(--accent);}
+  .pill{display:inline-block;padding:1px 7px;border-radius:5px;font-size:11px;margin-right:6px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>DOH Club Detect — YOLO 클럽/공 자동검출 (옵션 2 엔진)</h1>
+  <p>onnxruntime-web · 학습 ONNX 모델 URL을 넣으면 브라우저에서 매 프레임 자동 검출 → 샤프트 자동</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="stage"><video id="video" playsinline muted></video><canvas id="overlay"></canvas></div>
+    <canvas id="work" style="display:none"></canvas>
+    <div class="row"><label class="f">모델 URL</label><input id="modelUrl" type="text" placeholder="https://.../best.onnx (학습 후 호스팅)"/></div>
+    <div class="row"><label class="f">클래스</label><input id="classes" type="text" value="clubhead,ball"/></div>
+    <div class="row">
+      <label class="f">conf</label><input id="conf" type="number" value="0.35" step="0.05" min="0.05" max="0.95" style="max-width:80px"/>
+      <label class="f">입력크기</label><input id="imgsz" type="number" value="640" step="32" style="max-width:90px"/>
+    </div>
+    <div class="row">
+      <button id="loadModel" class="primary">모델 로드</button>
+      <label class="filebtn">영상 선택<input id="file" type="file" accept="video/*"/></label>
+      <select id="hand" style="background:#222c39;color:#e8edf2;border:1px solid #33404f;border-radius:6px;padding:8px"><option value="right">오른손잡이</option><option value="left">왼손잡이</option></select>
+      <button id="run" disabled>분석 시작</button>
+    </div>
+    <div class="status" id="status">라이브러리 로딩 대기…</div>
+    <div class="live" id="live"></div>
+    <div class="note">
+      <span class="pill" style="background:#3a1414;color:#ff5d5d">■ clubhead</span>
+      <span class="pill" style="background:#0e2a38;color:#5dd0ff">■ ball</span>
+      <span class="pill" style="background:#3a3410;color:#ffd166">■ 샤프트(그립→헤드)</span><br>
+      모델이 없으면 포즈 그립만 표시됩니다. 학습: <code>club_model/train_export.py</code> → best.onnx 호스팅 → 위 URL 입력.
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>검출 상태</h2>
+    <table><tbody>
+      <tr><td>모델</td><td class="num" id="mModel">미로드</td></tr>
+      <tr><td>실행 backend</td><td class="num" id="mBackend">—</td></tr>
+      <tr><td>처리 프레임</td><td class="num" id="mFrames">0</td></tr>
+      <tr><td>clubhead 검출률</td><td class="num" id="mClub">—</td></tr>
+      <tr><td>평균 추론시간</td><td class="num" id="mMs">—</td></tr>
+    </tbody></table>
+    <h2>샤프트 각도 (그립→클럽헤드, vs 수직)</h2>
+    <div id="shaftInfo" class="note">분석 후 표시. clubhead가 검출된 프레임에서 자동 계산됩니다.</div>
+    <h2>다음 단계</h2>
+    <div class="note">
+      검증 OK → analyzer2의 Hough 샤프트 검출을 이 YOLO 검출로 교체(v3).<br>
+      클럽헤드 궤적이 생기면 클럽패스·헤드스피드·페이스각·P2/P6/P8도 열립니다.
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.min.js"></script>
+<script type="module">
+import { FilesetResolver, PoseLandmarker }
+  from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+const $=id=>document.getElementById(id);
+const video=$("video"),overlay=$("overlay"),ctx=overlay.getContext("2d");
+const work=$("work"),wctx=work.getContext("2d",{willReadFrequently:true});
+let landmarker=null,session=null,running=false,J=null;
+let names=["clubhead","ball"], IMGSZ=640, CONF=0.35, IOU=0.45;
+let frameN=0, clubN=0, msSum=0, shaftAngles=[];
+
+const MP={L_WRI:15,R_WRI:16,L_SHO:11,R_SHO:12};
+const deg=r=>r*180/Math.PI;
+
+// onnxruntime-web wasm 경로
+if(window.ort){ ort.env.wasm.wasmPaths="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/"; }
+
+// ── MediaPipe 포즈 (그립용) ──
+async function initPose(){
+  const fs=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  landmarker=await PoseLandmarker.createFromOptions(fs,{
+    baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",delegate:"GPU"},
+    runningMode:"VIDEO",numPoses:1});
+  $("status").textContent="포즈 준비 완료. 모델 URL 입력 후 '모델 로드' → 영상 선택.";
+}
+initPose().catch(e=>$("status").textContent="포즈 로딩 실패: "+e.message);
+
+// ── 모델 로드 ──
+$("loadModel").addEventListener("click",async()=>{
+  const url=$("modelUrl").value.trim();
+  names=$("classes").value.split(",").map(s=>s.trim()).filter(Boolean);
+  IMGSZ=parseInt($("imgsz").value)||640; CONF=parseFloat($("conf").value)||0.35;
+  if(!url){$("status").textContent="모델 URL을 입력하세요 (best.onnx). 없으면 포즈 그립만 표시됩니다.";return;}
+  if(!window.ort){$("status").textContent="onnxruntime-web 로드 안됨(네트워크 확인).";return;}
+  try{
+    $("status").textContent="모델 로딩 중…";
+    let backend="wasm";
+    try{ session=await ort.InferenceSession.create(url,{executionProviders:["webgpu"]}); backend="webgpu"; }
+    catch(e){ session=await ort.InferenceSession.create(url,{executionProviders:["wasm"]}); backend="wasm"; }
+    $("mModel").textContent="로드됨"; $("mBackend").textContent=backend;
+    $("status").textContent=`모델 로드 완료 (${backend}). 영상 선택 → 분석.`;
+  }catch(e){ $("status").textContent="모델 로드 실패: "+e.message; session=null; $("mModel").textContent="실패"; }
+});
+
+$("file").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;
+  video.src=URL.createObjectURL(f);
+  video.onloadedmetadata=()=>{overlay.width=video.videoWidth;overlay.height=video.videoHeight;work.width=video.videoWidth;work.height=video.videoHeight;$("run").disabled=false;$("status").textContent="영상 준비 완료. '분석 시작'.";};});
+
+$("run").addEventListener("click",()=>{
+  running=true;frameN=0;clubN=0;msSum=0;shaftAngles=[];$("run").disabled=true;
+  J={LEAD_WRIST:$("hand").value==="right"?MP.L_WRI:MP.R_WRI, TRAIL_WRIST:$("hand").value==="right"?MP.R_WRI:MP.L_WRI,
+     LEAD_SHO:$("hand").value==="right"?MP.L_SHO:MP.R_SHO, TRAIL_SHO:$("hand").value==="right"?MP.R_SHO:MP.L_SHO};
+  video.currentTime=0;video.play();
+  if("requestVideoFrameCallback"in HTMLVideoElement.prototype)video.requestVideoFrameCallback(onF);else raf();
+});
+function onF(){if(!running)return;proc();video.requestVideoFrameCallback(onF);}
+function raf(){if(!running)return;proc();requestAnimationFrame(raf);}
+video.addEventListener("ended",()=>{running=false;$("run").disabled=false;summarize();});
+
+// ── 전처리 letterbox ──
+function preprocess(size){
+  const w0=video.videoWidth,h0=video.videoHeight,scale=Math.min(size/w0,size/h0);
+  const nw=Math.round(w0*scale),nh=Math.round(h0*scale),padX=Math.floor((size-nw)/2),padY=Math.floor((size-nh)/2);
+  wctx.fillStyle="rgb(114,114,114)";wctx.fillRect(0,0,size,size);
+  wctx.drawImage(video,0,0,w0,h0,padX,padY,nw,nh);
+  const d=wctx.getImageData(0,0,size,size).data, area=size*size, chw=new Float32Array(area*3);
+  for(let i=0;i<area;i++){ chw[i]=d[i*4]/255; chw[area+i]=d[i*4+1]/255; chw[2*area+i]=d[i*4+2]/255; }
+  return {tensor:new ort.Tensor("float32",chw,[1,3,size,size]),scale,padX,padY};
+}
+// ── 디코드 [1,4+nc,N] + NMS ──
+function decode(out,scale,padX,padY){
+  const data=out.data, dims=out.dims, nc=dims[1]-4, N=dims[2];
+  const boxes=[];
+  for(let n=0;n<N;n++){
+    let best=0,bi=-1;
+    for(let c=0;c<nc;c++){const s=data[(4+c)*N+n]; if(s>best){best=s;bi=c;}}
+    if(best<CONF)continue;
+    const cx=data[n],cy=data[N+n],w=data[2*N+n],h=data[3*N+n];
+    const x=(cx-w/2-padX)/scale, y=(cy-h/2-padY)/scale;
+    boxes.push({x,y,w:w/scale,h:h/scale,score:best,cls:bi});
+  }
+  return nms(boxes,IOU);
+}
+function iou(a,b){const x1=Math.max(a.x,b.x),y1=Math.max(a.y,b.y),x2=Math.min(a.x+a.w,b.x+b.w),y2=Math.min(a.y+a.h,b.y+b.h);
+  const iw=Math.max(0,x2-x1),ih=Math.max(0,y2-y1),i=iw*ih,u=a.w*a.h+b.w*b.h-i; return u<=0?0:i/u;}
+function nms(boxes,thr){boxes.sort((p,q)=>q.score-p.score);const keep=[];
+  for(const b of boxes){let ok=true;for(const k of keep){if(k.cls===b.cls&&iou(k,b)>thr){ok=false;break;}}if(ok)keep.push(b);}return keep;}
+
+function proc(){
+  if(video.readyState<2)return;
+  ctx.clearRect(0,0,overlay.width,overlay.height);
+  // 포즈 그립
+  const pres=landmarker.detectForVideo(video,performance.now());
+  let grip=null;
+  if(pres.landmarks&&pres.landmarks[0]){
+    const lm=pres.landmarks[0], lw=lm[J.LEAD_WRIST], tw=lm[J.TRAIL_WRIST];
+    grip={x:(lw.x+tw.x)/2*overlay.width,y:(lw.y+tw.y)/2*overlay.height};
+    ctx.fillStyle="#3ecf8e";ctx.beginPath();ctx.arc(grip.x,grip.y,6,0,7);ctx.fill();
+  }
+  // YOLO 검출
+  let club=null;
+  if(session){
+    const t0=performance.now();
+    const {tensor,scale,padX,padY}=preprocess(IMGSZ);
+    const feeds={}; feeds[session.inputNames[0]]=tensor;
+    session.run(feeds).then(res=>{
+      const out=res[session.outputNames[0]];
+      const dets=decode(out,scale,padX,padY);
+      drawDets(dets,grip);
+      msSum+=performance.now()-t0;
+    }).catch(()=>{});
+  }
+  frameN++; $("mFrames").textContent=frameN;
+}
+function drawDets(dets,grip){
+  const clubIdx=names.indexOf("clubhead"), ballIdx=names.indexOf("ball");
+  let club=null;
+  for(const d of dets){
+    const col = d.cls===clubIdx?"#ff5d5d":(d.cls===ballIdx?"#5dd0ff":"#aaaaaa");
+    ctx.strokeStyle=col;ctx.lineWidth=3;ctx.strokeRect(d.x,d.y,d.w,d.h);
+    ctx.fillStyle=col;ctx.font="12px sans-serif";ctx.fillText((names[d.cls]||d.cls)+" "+d.score.toFixed(2),d.x,Math.max(12,d.y-3));
+    if(d.cls===clubIdx&&(!club||d.score>club.score))club=d;
+  }
+  if(club){ clubN++;
+    const chx=club.x+club.w/2, chy=club.y+club.h/2;
+    if(grip){ ctx.strokeStyle="#ffd166";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(grip.x,grip.y);ctx.lineTo(chx,chy);ctx.stroke();
+      const dx=chx-grip.x,dy=chy-grip.y, ang=deg(Math.atan2(Math.abs(dx),Math.abs(dy)));
+      shaftAngles.push(ang);
+      $("live").innerHTML=`clubhead ✓ · 샤프트각 <b>${ang.toFixed(0)}°</b>`;
+    }
+  }
+  $("mClub").textContent=frameN?((clubN/frameN*100).toFixed(0)+"%"):"—";
+  $("mMs").textContent=frameN?((msSum/frameN).toFixed(1)+"ms"):"—";
+}
+function summarize(){
+  $("mClub").textContent=frameN?((clubN/frameN*100).toFixed(0)+"%"):"—";
+  if(shaftAngles.length){
+    const avg=shaftAngles.reduce((a,b)=>a+b,0)/shaftAngles.length;
+    $("shaftInfo").innerHTML=`검출 프레임 ${shaftAngles.length}개 · 샤프트각 범위 ${Math.min(...shaftAngles).toFixed(0)}°~${Math.max(...shaftAngles).toFixed(0)}° · 평균 ${avg.toFixed(0)}°`;
+  }else{
+    $("shaftInfo").innerHTML=session?"clubhead 미검출 — 모델/임계값(conf) 확인, 측면영상 권장.":"모델 미로드 — best.onnx URL 입력 후 '모델 로드'.";
+  }
+  $("status").textContent=`완료: ${frameN}프레임, clubhead ${clubN} 검출.`;
+}
+</script>
+</body>
+</html>

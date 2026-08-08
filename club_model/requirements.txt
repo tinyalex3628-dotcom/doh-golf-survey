@@ -1,0 +1,6 @@
+# DOH Vision 클럽 검출 모델 학습 (옵션 2)
+ultralytics>=8.3.0      # YOLO11 학습/export
+roboflow>=1.1.0         # 데이터셋 다운로드(선택)
+onnx>=1.16.0
+onnxslim>=0.1.31        # export simplify
+onnxruntime>=1.19.0     # 로컬 검증용(브라우저는 onnxruntime-web)

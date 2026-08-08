@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://doh.golf/schema/doh.vision.v1.schema.json",
+  "title": "DOH Vision JSON Contract v1",
+  "description": "LOCKED output contract between the DOH Vision Engine (Project C) and the DOH Knowledge Graph (Project A). The Vision Engine is a sensor: it emits observed facts (features) with confidence. It never emits diagnosis, node activation, or advice. See DOH_Vision_JSON_Contract_v1.0.md.",
+  "type": "object",
+  "required": ["schema", "generated_at", "source", "engines", "swing_events", "features", "quality"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "description": "Contract version tag. Locked to doh.vision.v1 for this schema.",
+      "const": "doh.vision.v1"
+    },
+    "generated_at": {
+      "description": "UTC timestamp (RFC3339) when this JSON was produced.",
+      "type": "string",
+      "format": "date-time"
+    },
+
+    "source": {
+      "description": "What was analysed and under what capture conditions (reproducibility).",
+      "type": "object",
+      "required": ["video_id", "handedness", "camera_view", "duration_frames"],
+      "additionalProperties": false,
+      "properties": {
+        "video_id": { "type": "string", "minLength": 1 },
+        "handedness": {
+          "description": "Governs lead/trail interpretation of every feature.",
+          "enum": ["right", "left"]
+        },
+        "camera_view": {
+          "description": "FO=face-on(정면) DTL=down-the-line(후면) SIDE=측면 unknown.",
+          "enum": ["FO", "DTL", "SIDE", "unknown"]
+        },
+        "fps_declared": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+        "fps_effective": {
+          "description": "Metadata-verified real fps (may differ from declared).",
+          "type": ["number", "null"], "exclusiveMinimum": 0
+        },
+        "resolution": {
+          "description": "[width, height] in pixels.",
+          "type": ["array", "null"],
+          "prefixItems": [{ "type": "integer" }, { "type": "integer" }],
+          "minItems": 2, "maxItems": 2
+        },
+        "duration_frames": { "type": "integer", "minimum": 1 }
+      }
+    },
+
+    "engines": {
+      "description": "Which model produced which layer of values (engine-swap traceability). Any engine may be null when that layer was not run.",
+      "type": "object",
+      "required": ["pose", "event", "object"],
+      "additionalProperties": false,
+      "properties": {
+        "pose":   { "$ref": "#/$defs/engineRef" },
+        "event":  { "$ref": "#/$defs/engineRef" },
+        "object": { "$ref": "#/$defs/engineRef" }
+      }
+    },
+
+    "swing_events": {
+      "description": "P1..P10 event frame indices with detection provenance. P2/P3/P5/P6/P8/P9 may be interpolated (method=interpolated).",
+      "type": "array",
+      "items": { "$ref": "#/$defs/swingEvent" }
+    },
+
+    "pose_track": {
+      "description": "Optional raw landmark track in DOH-standard vocabulary. May be omitted, stored inline, or referenced externally when large.",
+      "type": ["object", "null"],
+      "required": ["landmark_space", "coordinate", "storage"],
+      "additionalProperties": false,
+      "properties": {
+        "landmark_space": {
+          "description": "Pose-Adapter-normalized DOH-standard joint vocabulary.",
+          "const": "doh_standard"
+        },
+        "coordinate": { "enum": ["normalized", "world", "normalized+world"] },
+        "storage": { "enum": ["inline", "ref"] },
+        "ref": { "type": ["string", "null"] },
+        "fps": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+        "frames": { "type": ["array", "null"] }
+      }
+    },
+
+    "features": {
+      "description": "The payload DOH consumes: observed feature facts in DOH vocabulary (VF###). value:null means measured-but-unavailable; an omitted feature means not-attempted (DOH distinguishes 'absent' from 'zero').",
+      "type": "array",
+      "items": { "$ref": "#/$defs/feature" }
+    },
+
+    "quality": {
+      "description": "Whole-video reliability. DOH uses this to weight confidence.",
+      "type": "object",
+      "required": ["overall_confidence", "view_match"],
+      "additionalProperties": false,
+      "properties": {
+        "overall_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "mean_visibility": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "view_match": {
+          "description": "Is the camera_view appropriate for the requested analysis.",
+          "type": "boolean"
+        },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+
+  "$defs": {
+    "engineRef": {
+      "type": ["object", "null"],
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "variant": { "type": ["string", "null"] },
+        "version": { "type": ["string", "null"] }
+      }
+    },
+
+    "swingEvent": {
+      "type": "object",
+      "required": ["p", "frame", "confidence", "method"],
+      "additionalProperties": false,
+      "properties": {
+        "p": { "pattern": "^P([1-9]|10)$", "type": "string" },
+        "name": { "type": "string" },
+        "frame": { "type": "integer", "minimum": 0 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "method": { "enum": ["pose_rule", "swingnet", "hybrid", "interpolated", "manual"] }
+      }
+    },
+
+    "feature": {
+      "description": "Feature = Operator(Primitive[...]) @ Phase [Coord]. feature_id is DOH vocabulary (Feature Spec v1.0), NOT an engine landmark index.",
+      "type": "object",
+      "required": ["feature_id", "value", "unit", "phase", "confidence", "error_flags"],
+      "additionalProperties": false,
+      "properties": {
+        "feature_id": {
+          "description": "DOH Vision Feature ID VF001..VF150 (append-only vocabulary).",
+          "type": "string",
+          "pattern": "^VF[0-9]{3}$"
+        },
+        "name": { "type": "string" },
+        "value": {
+          "description": "Measured value, or null when the feature was attempted but could not be measured.",
+          "type": ["number", "boolean", "null"]
+        },
+        "unit": { "enum": ["deg", "ratio", "cm_normalized", "s", "frame", "deg/s", "norm", "order", "flag"] },
+        "phase": {
+          "description": "Phase anchor: single (P4), range (P1->P4), comparison (P1_vs_P4), post-P7, or global.",
+          "type": "string",
+          "pattern": "^(global|post-P([1-9]|10)|P([1-9]|10)(->P([1-9]|10)|_vs_P([1-9]|10))?)$"
+        },
+        "coord": {
+          "description": "Measurement coordinate frame (Coordinate System Spec v1.0).",
+          "enum": ["BODY", "GROUND", "TARGET", "none"]
+        },
+        "operator": { "type": ["string", "null"], "pattern": "^OP[0-9]{3}$" },
+        "primitives": { "type": "array", "items": { "type": "string" } },
+        "landmarks_used": { "type": "array", "items": { "type": "string" } },
+        "confidence": {
+          "description": "Reliability of THIS value (0..1). Mandatory: quality is never hidden.",
+          "type": "number", "minimum": 0, "maximum": 1
+        },
+        "error_flags": {
+          "description": "Quality caveats on this value. Recommended vocabulary is closed for v1; new flags require a v1.x bump.",
+          "type": "array",
+          "items": {
+            "enum": [
+              "low_visibility", "motion_blur", "off_axis_view", "view_mismatch",
+              "occlusion", "out_of_frame", "depth_unreliable", "ground_unreliable",
+              "interpolated_event", "structure_inferred",
+              "club_not_detected", "ball_not_detected"
+            ]
+          }
+        },
+        "source_engine": { "enum": ["pose", "event", "object", "derived"] }
+      }
+    }
+  }
+}

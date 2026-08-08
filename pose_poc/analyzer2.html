@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DOH Vision Analyzer — 정면/측면 전용 분석</title>
+<!--
+  DOH Vision Analyzer v2.2 (Project C) — 설문 엔진과 독립
+  근거: Camera_View_Capability_v1.0 · Coordinate_System_Spec · Event_Shaft_Detection_Method
+  변경(v2.1→v2.2):
+   - 업로드를 '정면 전용/측면 전용' 카드 2개로 분리 (한 화면, 각 카드에 그 앵글 측정항목만 표기)
+   - 결과에서 그 앵글이 측정 못 하는 항목은 아예 숨김(✕ 표시조차 없음)
+   - FO: 샤프트 이벤트(P2/P6/P8)·샤프트각 섹션 미표시 / DTL: 전체 표시
+-->
+<style>
+  :root{--bg:#0f1216;--panel:#1a1f27;--ink:#e8edf2;--sub:#8b97a5;--accent:#4ea1ff;--ok:#3ecf8e;--warn:#ffb648;--pink:#ff7eb6;--shaft:#ffd166;}
+  *{box-sizing:border-box;} body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;}
+  header{padding:14px 20px;border-bottom:1px solid #262d38;} header h1{margin:0;font-size:16px;} header p{margin:4px 0 0;color:var(--sub);font-size:12px;}
+  .wrap{display:grid;grid-template-columns:minmax(340px,460px) 1fr;gap:16px;padding:16px 20px;} @media(max-width:1000px){.wrap{grid-template-columns:1fr;}}
+  .panel{background:var(--panel);border:1px solid #262d38;border-radius:10px;padding:14px;}
+  /* 앵글 카드 */
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .card{border:1px solid #33404f;border-radius:10px;padding:12px;background:#161b22;transition:.15s;}
+  .card.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:#12202e;}
+  .card h3{margin:0 0 8px;font-size:14px;} .card .ic{font-size:16px;}
+  .card ul{margin:0 0 10px;padding-left:16px;color:var(--ink);font-size:12px;line-height:1.7;}
+  .card ul li::marker{color:var(--ok);}
+  .card .aux{color:var(--sub);font-size:11px;margin:-4px 0 10px;}
+  .card .filebtn{display:block;text-align:center;background:#222c39;color:var(--ink);border:1px solid #33404f;border-radius:8px;padding:9px;cursor:pointer;font-size:13px;}
+  .card.active .filebtn{background:var(--accent);color:#04121f;border-color:var(--accent);font-weight:600;}
+  .card .filebtn:hover{border-color:var(--accent);} input[type=file]{display:none;}
+  .card .picked{color:var(--ok);font-size:11px;margin-top:6px;min-height:14px;text-align:center;}
+  .stage{position:relative;background:#000;border-radius:8px;overflow:hidden;aspect-ratio:9/16;max-height:60vh;margin:auto;}
+  .stage video,.stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center;}
+  button{background:#222c39;color:var(--ink);border:1px solid #33404f;border-radius:8px;padding:9px 14px;cursor:pointer;font-size:13px;}
+  button:hover{border-color:var(--accent);} button:disabled{opacity:.4;cursor:not-allowed;}
+  button.primary{background:var(--accent);color:#04121f;border-color:var(--accent);font-weight:600;}
+  select{background:#222c39;color:var(--ink);border:1px solid #33404f;border-radius:6px;padding:8px;}
+  .status{font-size:12px;color:var(--warn);min-height:16px;margin-top:8px;} .live{font-size:12px;color:var(--sub);} .live b{color:var(--ok);font-variant-numeric:tabular-nums;}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin:14px 0 8px;}
+  table{width:100%;border-collapse:collapse;font-size:12px;} th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #2a323d;}
+  th{color:var(--sub);font-weight:500;} td.num{text-align:right;font-variant-numeric:tabular-nums;color:var(--accent);}
+  .ev{display:inline-block;padding:2px 8px;border-radius:6px;background:#222c39;border:1px solid #33404f;font-size:12px;margin:3px 4px 0 0;}
+  .ev b{color:var(--pink);} .ev.miss{opacity:.4;} .ev.shaft b{color:var(--shaft);}
+  #graph{width:100%;height:240px;background:#12161c;border-radius:8px;border:1px solid #262d38;}
+  .segsel{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap;}
+  .note{color:var(--sub);font-size:11px;margin-top:10px;line-height:1.55;}
+  .badge{font-size:10px;padding:1px 6px;border-radius:5px;background:#222c39;border:1px solid #33404f;color:var(--sub);}
+  /* 주요 지표 카드 (회전/머리/척추) — 얇은 표 대신 크게 병기 */
+  .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 6px;}
+  .mcard{background:#161b22;border:1px solid #33404f;border-radius:10px;padding:12px 14px;}
+  .mcard h4{margin:0 0 8px;font-size:12px;color:var(--accent);letter-spacing:.3px;font-weight:700;}
+  .mrow{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:1px solid #222b35;}
+  .mrow:last-child{border-bottom:none;}
+  .mrow .lab{color:var(--sub);font-size:12px;} .mrow .val{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);}
+  .mrow .val.xf{color:var(--warn);}
+  .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 6px;}
+  .pcell{background:#161b22;border:1px solid #33404f;border-radius:10px;padding:10px 8px;text-align:center;}
+  .pcell.mid{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+  .pcell .pk{font-size:11px;color:var(--sub);margin-bottom:3px;} .pcell .pv{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.15;}
+  .pcell .pd{font-size:11px;color:#3ecf8e;margin-top:2px;min-height:14px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>DOH Vision Analyzer — 정면/측면 전용 분석 <span style="font-size:13px;color:#3ecf8e;font-weight:700;border:1px solid #3ecf8e;border-radius:6px;padding:1px 7px;vertical-align:middle">BUILD v21</span></h1>
+  <p>업로드할 앵글의 카드를 고르세요. 각 앵글이 측정하는 항목만 표시됩니다.
+  <b style="color:#3ecf8e">이 화면에 "BUILD v21"가 안 보이면 옛 캐시입니다 → Ctrl+Shift+R(강력 새로고침).</b></p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <!-- 앵글 전용 업로드 카드 -->
+    <div class="cards">
+      <div class="card" id="cardFO">
+        <h3><span class="ic">📷</span> 정면 (Face-On)</h3>
+        <ul>
+          <li>스웨이 / 슬라이드 (좌우)</li>
+          <li>체중 이동 (좌우)</li>
+          <li>리버스 피벗 / 행잉백</li>
+          <li>척추 좌우 기울기</li>
+          <li>머리 좌우·상하 움직임</li>
+        </ul>
+        <div class="aux">공통: 무릎각 · P구간 · 템포 · 회전(근사)</div>
+        <label class="filebtn">정면 영상 선택<input id="fileFO" type="file" accept="video/*"/></label>
+        <div class="picked" id="pickFO"></div>
+      </div>
+      <div class="card" id="cardDTL">
+        <h3><span class="ic">📹</span> 측면 (Down-the-Line)</h3>
+        <ul>
+          <li>샤프트각 / 스윙플레인</li>
+          <li>클럽 패스 / 페이스*</li>
+          <li>척추 전후 자세각</li>
+          <li>얼리 익스텐션 / 오버더톱</li>
+          <li>핸드 뎁스 / 샤프트 린</li>
+        </ul>
+        <div class="aux">공통: 무릎각 · P구간 · 템포 · 회전(근사) · *클럽검출 시</div>
+        <label class="filebtn">측면 영상 선택<input id="fileDTL" type="file" accept="video/*"/></label>
+        <div class="picked" id="pickDTL"></div>
+      </div>
+    </div>
+
+    <div class="stage"><video id="video" playsinline muted></video><canvas id="overlay"></canvas></div>
+    <canvas id="work" style="display:none"></canvas>
+    <div class="controls">
+      <select id="hand"><option value="right">오른손잡이</option><option value="left">왼손잡이</option></select>
+      <select id="sfps" title="샘플링 정밀도"><option value="30">30fps(빠름)</option><option value="60" selected>60fps(권장)</option><option value="120">120fps(정밀)</option></select>
+      <label style="display:flex;gap:5px;align-items:center;color:var(--sub);font-size:12px"><input type="checkbox" id="useMotion" checked/> 모션마스크</label>
+      <button id="run" class="primary" disabled>분석 시작</button>
+      <button id="csv" disabled>CSV</button>
+      <button id="saveLabel" disabled title="자동값+내가 보정한 값+프레임특징을 학습데이터로 저장">라벨 저장</button>
+    </div>
+    <div class="status" id="status">모델 로딩 대기…</div>
+    <div class="live" id="live"></div>
+  </div>
+
+  <div class="panel">
+    <div id="activeInfo" class="note" style="margin-top:0">— 앵글을 선택하고 영상을 올리세요 —</div>
+    <h2>① 자동 검출 이벤트</h2>
+    <div id="events">— 분석 후 표시 —</div>
+    <div id="evEditWrap" style="display:none">
+      <div class="note" style="margin:8px 0 4px">자동이 틀리면: 슬라이더로 프레임을 찾아(영상에 표시됨) → 그 프레임을 해당 P 버튼으로 지정.</div>
+      <input id="scrub" type="range" min="0" max="0" value="0" style="width:100%;accent-color:#4ea1ff"/>
+      <div id="scrubInfo" class="note" style="margin:2px 0"></div>
+      <div id="evBtns" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px"></div>
+    </div>
+
+    <div id="shaftSection">
+      <h2>② 샤프트 각도 (P1 · P3 · P5, 지면 수평 기준)</h2>
+      <table id="shaftTable"><thead><tr><th>지점</th><th>자동</th><th>직접지정</th><th></th></tr></thead><tbody></tbody></table>
+      <div class="note"><b>0°=지면과 수평, 90°=수직.</b> 자동이 부정확하면 <b>[직접 그리기]</b> → 화면에서 <b>그립(손)</b>을 클릭하고 <b>클럽헤드</b>를 클릭하세요.</div>
+      <div class="note" id="cvState" style="margin-top:4px"></div>
+    </div>
+
+    <div id="rotSection">
+      <h2 id="rotTitle">③ 회전 (근사 · 참고용)</h2>
+      <div style="margin:2px 0 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label style="display:inline-block;background:#12202e;color:#3ecf8e;border:1px solid #3ecf8e;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:600">🎯 3D 회전결과(JSON) 불러오기<input id="load3d" type="file" accept=".json,application/json" style="display:none"/></label>
+        <span id="v3dStat" style="font-size:11px;color:#3ecf8e"></span>
+      </div>
+      <div class="note" id="rotWarn" style="margin:2px 0 8px"></div>
+      <div class="mgrid">
+        <div class="mcard">
+          <h4>백스윙탑 (P4)</h4>
+          <div class="mrow"><span class="lab">상체(어깨)</span><span class="val" id="rotTopSh">—</span></div>
+          <div class="mrow"><span class="lab">하체(골반)</span><span class="val" id="rotTopHp">—</span></div>
+          <div class="mrow"><span class="lab">X-Factor</span><span class="val xf" id="rotTopXf">—</span></div>
+        </div>
+        <div class="mcard">
+          <h4>임팩트 (P7)</h4>
+          <div class="mrow"><span class="lab">상체(어깨)</span><span class="val" id="rotImpSh">—</span></div>
+          <div class="mrow"><span class="lab">하체(골반)</span><span class="val" id="rotImpHp">—</span></div>
+        </div>
+      </div>
+      <div class="note">어드레스(P1)=0° 기준 누적 회전량. X-Factor = |상체−하체| (몸통 분리각).
+        <span class="badge" style="color:#ffb648">≈근사</span> 회전 크기는 어깨선/골반선의 <b>척추수직 방향 너비 축소(acos)</b>, 방향은 <b>어깨 앞뒤 순서(z)</b>로 추정. 각 값은 <b>이벤트±3프레임 평균</b>이며, 옆의 <b>신뢰도 배지</b>는 visibility·너비비율로 계산 — <span style="color:#ff6b6b">불안정</span>은 절대각을 믿지 말고 상대변화/X-Factor 위주로 보세요. 단일 카메라라 90° 부근은 원리적으로 과소평가·포화됩니다.</div>
+    </div>
+
+    <div id="keySection">
+      <h2 id="keyTitle">④ 주요 지표</h2>
+      <div class="pgrid" id="keyGrid"></div>
+      <div class="note" id="keyNote"></div>
+    </div>
+
+    <h2>⑤ 두 지점 사이 변화</h2>
+    <div class="segsel"><select id="segFrom"></select><span>→</span><select id="segTo"></select><span style="color:#8b97a5">각 지점의 각도를 비교합니다</span></div>
+    <table id="segTable"><thead><tr><th>항목</th><th id="thStart">시작</th><th id="thEnd">끝</th><th id="thDelta">변화</th></tr></thead><tbody></tbody></table>
+  </div>
+</div>
+
+<!-- OpenCV: 사지방/군내망에서 docs.opencv.org 가 막혀도 jsdelivr(MediaPipe와 같은 호스트)는 열림 -->
+<script async src="https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.10.0-release.1/dist/opencv.js" onload="window.__cvload&&window.__cvload()" onerror="window.__cverr&&window.__cverr()"></script>
+<script type="module">
+import { FilesetResolver, PoseLandmarker }
+  from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+let cvReady=false, cvFailed=false;
+function cvStatus(){ const el=document.getElementById("cvState"); if(!el)return;
+  el.innerHTML = cvReady ? '샤프트 자동검출: <b style="color:#3ecf8e">활성(OpenCV 로드됨)</b>'
+    : cvFailed ? '샤프트 자동검출: <b style="color:#ff7eb6">비활성 — OpenCV 로드 실패</b> → <b>[직접 그리기]</b>로 P1/P3/P5 그으세요'
+    : '샤프트 자동검출: <span style="color:#8b97a5">OpenCV 로딩 중…</span>'; }
+window.__cvload=()=>{ if(window.cv&&cv.Mat){cvReady=true;cvStatus();} else if(window.cv){cv["onRuntimeInitialized"]=()=>{cvReady=true;cvStatus();}; } };
+window.__cverr=()=>{ cvFailed=true; cvStatus(); };
+setTimeout(()=>{ if(!cvReady){ cvFailed=true; cvStatus(); } }, 25000);
+setTimeout(cvStatus,300); // 초기 표시
+
+const MP={NOSE:0,L_SHO:11,R_SHO:12,L_ELB:13,R_ELB:14,L_WRI:15,R_WRI:16,L_HIP:23,R_HIP:24,L_KNE:25,R_KNE:26,L_ANK:27,R_ANK:28};
+const BONES=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[0,11],[0,12]];
+function jmap(h){const rh=h==="right",L=rh?"L":"R",T=rh?"R":"L",g=s=>MP[s];
+  return{HEAD:MP.NOSE,LEAD_SHOULDER:g(L+"_SHO"),TRAIL_SHOULDER:g(T+"_SHO"),LEAD_ELBOW:g(L+"_ELB"),TRAIL_ELBOW:g(T+"_ELB"),
+  LEAD_WRIST:g(L+"_WRI"),TRAIL_WRIST:g(T+"_WRI"),LEAD_HIP:g(L+"_HIP"),TRAIL_HIP:g(T+"_HIP"),
+  LEAD_KNEE:g(L+"_KNE"),TRAIL_KNEE:g(T+"_KNE"),LEAD_ANKLE:g(L+"_ANK"),TRAIL_ANKLE:g(T+"_ANK")};}
+
+const $=id=>document.getElementById(id);
+const video=$("video"),overlay=$("overlay"),ctx=overlay.getContext("2d");
+const work=$("work"),wctx=work.getContext("2d",{willReadFrequently:true});
+let landmarker=null,running=false,series=[],events={},J=null,prevShaft=null,curView=null;
+let manualShaft={},drawTarget=null,drawPts=[],autoEvents={};
+const cvState={prevGray:null};
+
+// 3D 유틸
+const deg=r=>r*180/Math.PI;
+const Vv=(a,b)=>({x:b.x-a.x,y:b.y-a.y,z:b.z-a.z});
+const dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z;
+const cross=(a,b)=>({x:a.y*b.z-a.z*b.y,y:a.z*b.x-a.x*b.z,z:a.x*b.y-a.y*b.x});
+const nrm=a=>Math.hypot(a.x,a.y,a.z);
+const unit=a=>{const n=nrm(a)||1e-9;return{x:a.x/n,y:a.y/n,z:a.z/n};};
+const mid3=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2,z:(a.z+b.z)/2});
+const angBetween=(u,w)=>deg(Math.acos(Math.max(-1,Math.min(1,dot(u,w)/((nrm(u)*nrm(w))||1e-9)))));
+const project=(v,n)=>{const d=dot(v,n);return{x:v.x-d*n.x,y:v.y-d*n.y,z:v.z-d*n.z};};
+const signedAngle=(u,w,axis)=>{const c=cross(u,w);return deg(Math.atan2(dot(c,axis),dot(u,w)));};
+const angle3d=(a,b,c)=>angBetween(Vv(b,a),Vv(b,c));
+const mid2=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2}), sub2=(a,b)=>({x:a.x-b.x,y:a.y-b.y}), len2=v=>Math.hypot(v.x,v.y);
+
+async function init(){
+  $("status").textContent="MediaPipe WASM 로딩 중…";
+  const fs=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  landmarker=await PoseLandmarker.createFromOptions(fs,{
+    baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",delegate:"GPU"},
+    runningMode:"VIDEO",numPoses:1});
+  $("status").textContent="준비 완료. 앵글 카드를 골라 영상을 올리세요.";
+}
+init().catch(e=>$("status").textContent="모델 로딩 실패: "+e.message);
+
+function loadVideo(e,view){
+  const f=e.target.files[0]; if(!f)return;
+  curView=view;
+  $("cardFO").classList.toggle("active",view==="FO");
+  $("cardDTL").classList.toggle("active",view==="DTL");
+  $("pickFO").textContent=view==="FO"?("✓ "+f.name):"";
+  $("pickDTL").textContent=view==="DTL"?("✓ "+f.name):"";
+  video.src=URL.createObjectURL(f);
+  video.onloadedmetadata=()=>{overlay.width=video.videoWidth;overlay.height=video.videoHeight;work.width=video.videoWidth;work.height=video.videoHeight;
+    $("run").disabled=false;$("status").textContent=`${view==="FO"?"정면":"측면"} 영상 준비 완료. '분석 시작'.`;
+    $("activeInfo").innerHTML=`<b>${view==="FO"?"📷 정면(FO)":"📹 측면(DTL)"} 분석</b> — 이 앵글로 측정 가능한 항목만 표시됩니다.`;};
+}
+$("fileFO").addEventListener("change",e=>loadVideo(e,"FO"));
+$("fileDTL").addEventListener("change",e=>loadVideo(e,"DTL"));
+
+// Tier-B 3D 회전 JSON 불러오기 (Colab NLF 산출 doh_vision.json)
+$("load3d").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{ try{
+    const d=JSON.parse(r.result);
+    if(!d||!d.top||!d.schema||d.schema.indexOf("doh.vision.rotation")<0){
+      $("v3dStat").textContent="⚠ 형식 불일치 (doh_vision.json 맞는지 확인)"; $("v3dStat").style.color="#ff6b6b"; return; }
+    vision3d=d; $("v3dStat").textContent="✅ 3D 로드됨 — 회전카드가 정밀값으로 교체";
+    $("v3dStat").style.color="#3ecf8e"; $("rotTitle").textContent="③ 회전 (3D 정밀 · NLF)";
+    renderRot();
+  }catch(err){ $("v3dStat").textContent="⚠ JSON 읽기 실패"; $("v3dStat").style.color="#ff6b6b"; } };
+  r.readAsText(f);
+});
+
+// ── 프레임별 seek 방식 (재생X → 프레임 안 건너뜀, 매번 동일) ──
+let stepping=false, tCur=0, stepDt=1/60, mpTs=0;
+$("run").addEventListener("click",()=>{
+  if(!curView){$("status").textContent="먼저 앵글 카드에서 영상을 선택하세요.";return;}
+  if(!video.duration||!isFinite(video.duration)){$("status").textContent="영상 로딩 중… 잠시 후 다시 눌러주세요.";return;}
+  series=[];events={};prevShaft=null;manualShaft={};drawTarget=null;drawPts=[]; if(cvState.prevGray){cvState.prevGray.delete();cvState.prevGray=null;}
+  running=true;stepping=true;$("run").disabled=true;$("csv").disabled=true;$("status").textContent="분석 중… 0%";
+  J=jmap($("hand").value);
+  const fps=parseInt($("sfps").value)||60; stepDt=1/fps;
+  if(video.duration/stepDt>800) stepDt=video.duration/800; // 과도한 프레임 방지
+  tCur=0; video.pause(); video.onseeked=onSeeked; seekNext();
+});
+function seekNext(){
+  if(!running)return;
+  if(tCur>video.duration+1e-3){ endAnalysis(); return; }
+  let tt=Math.min(tCur,video.duration);
+  if(Math.abs(tt-video.currentTime)<1e-4) tt+=0.0005; // 강제 변화로 'seeked' 보장
+  video.currentTime=tt;
+}
+function onSeeked(){
+  if(!running||!stepping)return;
+  proc(tCur);
+  $("status").textContent=`분석 중… ${(tCur/video.duration*100)|0}% (${series.length}프레임)`;
+  tCur+=stepDt; seekNext();
+}
+function endAnalysis(){ stepping=false; video.onseeked=null; finish(); }
+
+function detectShaft(gripPx,shoWpx){
+  if(!cvReady||curView!=="DTL") return null;
+  const useMot=$("useMotion").checked;
+  const half=Math.max(60,Math.round(shoWpx*1.6));
+  const x0=Math.max(0,Math.round(gripPx.x-half)),y0=Math.max(0,Math.round(gripPx.y-half));
+  const x1=Math.min(work.width,Math.round(gripPx.x+half)),y1=Math.min(work.height,Math.round(gripPx.y+half));
+  const w=x1-x0,h=y1-y0; if(w<20||h<20)return null;
+  let full=null,gray=null,motion=null,grayRoi=null,edges=null,motRoi=null,masked=null,lines=null,kern=null;
+  try{
+    full=cv.matFromImageData(wctx.getImageData(0,0,work.width,work.height));
+    gray=new cv.Mat(); cv.cvtColor(full,gray,cv.COLOR_RGBA2GRAY); full.delete(); full=null;
+    cv.GaussianBlur(gray,gray,new cv.Size(3,3),0);
+    const rect=new cv.Rect(x0,y0,w,h);
+    grayRoi=gray.roi(rect); edges=new cv.Mat(); cv.Canny(grayRoi,edges,50,150);
+    let houghSrc=edges;
+    if(useMot && cvState.prevGray){
+      motion=new cv.Mat(); cv.absdiff(gray,cvState.prevGray,motion);
+      cv.threshold(motion,motion,16,255,cv.THRESH_BINARY);
+      kern=cv.Mat.ones(3,3,cv.CV_8U); cv.dilate(motion,motion,kern);
+      motRoi=motion.roi(rect); masked=new cv.Mat(); cv.bitwise_and(edges,motRoi,masked); houghSrc=masked;
+    }
+    lines=new cv.Mat(); const minLen=Math.round(Math.min(w,h)*0.32);
+    cv.HoughLinesP(houghSrc,lines,1,Math.PI/180,24,minLen,16);
+    const gx=gripPx.x-x0,gy=gripPx.y-y0,nearR=Math.max(25,shoWpx*0.75);
+    let best=null,bestScore=-1e9;
+    for(let i=0;i<lines.rows;i++){
+      const d=lines.data32S,a={x:d[i*4],y:d[i*4+1]},b={x:d[i*4+2],y:d[i*4+3]};
+      const da=Math.hypot(a.x-gx,a.y-gy),db=Math.hypot(b.x-gx,b.y-gy),near=Math.min(da,db),far=Math.max(da,db);
+      if(near>nearR)continue;
+      const fp=da>db?a:b,dx=fp.x-gx,dy=fp.y-gy,angG=deg(Math.atan2(Math.abs(dy),Math.abs(dx))); // 지면(수평) 기준: 0°=수평,90°=수직
+      let score=far; if(prevShaft!=null)score-=Math.abs(angG-prevShaft)*2.4; // 프레임간 연속성 가중 강화(팔/배경 엣지 오검출 억제)
+      if(score>bestScore){bestScore=score;best={angle:angG,fx:fp.x+x0,fy:fp.y+y0};}
+    }
+    // 이전 프레임 대비 급격한 튐(>28°)은 노이즈로 간주 → 버리고(null) 보간으로 채움
+    if(best && prevShaft!=null && Math.abs(best.angle-prevShaft)>28) best=null;
+    if(cvState.prevGray)cvState.prevGray.delete(); cvState.prevGray=gray; gray=null;
+    return best;
+  }catch(e){return null;}
+  finally{ grayRoi&&grayRoi.delete();edges&&edges.delete();motRoi&&motRoi.delete();masked&&masked.delete();
+           motion&&motion.delete();lines&&lines.delete();kern&&kern.delete();full&&full.delete();gray&&gray.delete(); }
+}
+
+function proc(t){
+  if(video.readyState<2)return;
+  mpTs+=34; const res=landmarker.detectForVideo(video,mpTs); // ts는 실행 간에도 단조증가
+  ctx.clearRect(0,0,overlay.width,overlay.height);
+  if(!res.landmarks||!res.landmarks[0])return;
+  const lm=res.landmarks[0],wl=(res.worldLandmarks&&res.worldLandmarks[0])||null,P=k=>lm[J[k]],W=k=>wl[J[k]];
+  ctx.lineWidth=3;ctx.strokeStyle="#4ea1ff";
+  for(const[a,b]of BONES){ctx.beginPath();ctx.moveTo(lm[a].x*overlay.width,lm[a].y*overlay.height);ctx.lineTo(lm[b].x*overlay.width,lm[b].y*overlay.height);ctx.stroke();}
+  ctx.fillStyle="#3ecf8e";for(const p of lm){ctx.beginPath();ctx.arc(p.x*overlay.width,p.y*overlay.height,3,0,7);ctx.fill();}
+  const gripN=mid2(P("LEAD_WRIST"),P("TRAIL_WRIST"));
+  const gripPx={x:gripN.x*work.width,y:gripN.y*work.height};
+  const shoWpx=len2(sub2(P("LEAD_SHOULDER"),P("TRAIL_SHOULDER")))*work.width||60;
+  let shaftAngle=null;
+  if(cvReady&&curView==="DTL"){
+    wctx.drawImage(video,0,0,work.width,work.height);
+    const sh=detectShaft(gripPx,shoWpx);
+    if(sh){shaftAngle=sh.angle;prevShaft=sh.angle;
+      ctx.strokeStyle="#ffd166";ctx.lineWidth=4;ctx.beginPath();
+      ctx.moveTo(gripPx.x/work.width*overlay.width,gripPx.y/work.height*overlay.height);
+      ctx.lineTo(sh.fx/work.width*overlay.width,sh.fy/work.height*overlay.height);ctx.stroke();}
+  }
+  let rec={t:+t.toFixed(4),handX:gripN.x,handY:gripN.y,shaft:shaftAngle,xfactor:null,spineTilt:null,spineGround:null,
+    leadKnee:null,trailKnee:null,leadArm:null,headSway:null,headV:null,headLat:null,headDep:null,turnRel:null,sh:null,hp:null,up:null,
+    shW2d:null,hipW2d:null,shZ:null,hpZ:null,shTurn:null,hpTurn:null,shVis:null,hpVis:null,shConf:null,hpConf:null};
+  // 회전 신호(v19): 크기=척추축에 '수직'인 너비(세로 기울기 제거) + z순서(방향) + visibility(신뢰도)
+  //   기존 hypot(대각선 전체)은 탑에서 척추 옆기울기의 세로성분 때문에 폭이 안 줄어 과소평가됨 → 척추수직 성분만 사용
+  const midSho2=mid2(P("LEAD_SHOULDER"),P("TRAIL_SHOULDER")), midHip2=mid2(P("LEAD_HIP"),P("TRAIL_HIP"));
+  const spx={x:(midSho2.x-midHip2.x)*work.width,y:(midSho2.y-midHip2.y)*work.height};
+  const spl=Math.hypot(spx.x,spx.y)||1e-9, spu={x:spx.x/spl,y:spx.y/spl};
+  const perpW=(a,b)=>{ const v={x:(a.x-b.x)*work.width,y:(a.y-b.y)*work.height};
+    const d=v.x*spu.x+v.y*spu.y; return Math.hypot(v.x-d*spu.x, v.y-d*spu.y); }; // 척추축 성분 제거 → 가로폭만
+  rec.shW2d=perpW(P("LEAD_SHOULDER"),P("TRAIL_SHOULDER"));
+  rec.hipW2d=perpW(P("LEAD_HIP"),P("TRAIL_HIP"));
+  const vis=k=>{const p=P(k);return (p&&p.visibility!=null)?p.visibility:1;};
+  rec.shVis=Math.min(vis("LEAD_SHOULDER"),vis("TRAIL_SHOULDER"));
+  rec.hpVis=Math.min(vis("LEAD_HIP"),vis("TRAIL_HIP"));
+  if(wl){
+    rec.shZ=W("LEAD_SHOULDER").z-W("TRAIL_SHOULDER").z;   // 부호: 어느 어깨가 카메라에 더 가까운가(앞뒤 순서는 신뢰도 높음)
+    rec.hpZ=W("LEAD_HIP").z-W("TRAIL_HIP").z;
+    const midHip=mid3(W("LEAD_HIP"),W("TRAIL_HIP")),midSho=mid3(W("LEAD_SHOULDER"),W("TRAIL_SHOULDER")),midAnk=mid3(W("LEAD_ANKLE"),W("TRAIL_ANKLE"));
+    const up=unit(Vv(midAnk,midHip));
+    const shoulderLine=Vv(W("TRAIL_SHOULDER"),W("LEAD_SHOULDER")),hipLine=Vv(W("TRAIL_HIP"),W("LEAD_HIP")),spine=Vv(midHip,midSho);
+    const shP=unit(project(shoulderLine,up)),hpP=unit(project(hipLine,up)),armVec=Vv(W("LEAD_SHOULDER"),W("LEAD_WRIST"));
+    rec.sh=shP;rec.hp=hpP;rec.up=up;
+    rec.xfactor=Math.abs(signedAngle(hpP,shP,up));
+    rec.spineTilt=angBetween(spine,up);          // 수직 기준(참고)
+    rec.spineGround=90-angBetween(spine,up);      // ★지면(수평) 기준: 0=지면과 평행, 90=수직
+    rec.leadKnee=angle3d(W("LEAD_HIP"),W("LEAD_KNEE"),W("LEAD_ANKLE"));
+    rec.trailKnee=angle3d(W("TRAIL_HIP"),W("TRAIL_KNEE"),W("TRAIL_ANKLE"));
+    rec.leadArm=angBetween(armVec,up)-90;
+    // 머리 3방향 (어깨폭 정규화, 골반중심 기준) — 어드레스 대비 변화는 구간표에서 계산
+    const shW=nrm(shoulderLine)||1e-9, hipU=unit(hipLine), faceU=unit(cross(up,hipU)), relH=Vv(midHip,W("HEAD"));
+    rec.headV=dot(relH,up)/shW;        // 상하
+    rec.headLat=dot(relH,hipU)/shW;    // 좌우(목표선/스웨이)
+    rec.headDep=dot(relH,faceU)/shW;   // 앞뒤(볼 방향/깊이)
+    rec.headSway=rec.headLat;
+  }
+  // 리드팔 수평각: 2D 화면 기준 접힌 각도(0=지면수평, 90=수직) — P3/P5/P9 검출용(검증됨)
+  { const d=sub2(P("LEAD_WRIST"),P("LEAD_SHOULDER")); const dd=Math.abs(deg(Math.atan2(d.y,d.x))); rec.leadArm=Math.min(dd,180-dd); }
+  series.push(rec);
+  $("live").innerHTML=`프레임 <b>${series.length}</b>`+(curView==="DTL"?` · 샤프트 <b>${shaftAngle!=null?shaftAngle.toFixed(0)+"°":"—"}</b>`:"")+` · X-Factor <b>${rec.xfactor!=null?rec.xfactor.toFixed(0)+"°":"—"}</b> · 리드무릎 <b>${rec.leadKnee!=null?rec.leadKnee.toFixed(0)+"°":"—"}</b>`;
+}
+
+function smooth(a,k=2){return a.map((_,i)=>{let s=0,c=0;for(let j=-k;j<=k;j++){const m=a[i+j];if(m!=null){s+=m;c++;}}return c?s/c:null;});}
+// 회전 재계산(정면·측면 공통): 크기=2D너비 축소 acos(w/wmax), 방향=z순서 부호
+//   - z의 '크기'는 못 믿지만 '앞뒤 순서(부호)'는 신뢰도 높음 → 크기와 방향을 분리해 각각 관측 가능한 신호로 계산
+//   - wmax=스윙 구간 내 어깨선이 카메라에 가장 펼쳐진(정면) 순간. 어드레스 대비값은 turnAt에서 뺌
+function computeTurns(){
+  const n=series.length; if(!n)return;
+  const lo=(events.P1!=null)?events.P1:0, hi=(events.P10!=null)?events.P10:n-1;
+  // 강건한 최대너비: 단일 블러/오검출 프레임이 wmax를 부풀리지 않도록 90퍼센타일 사용
+  const pctMax=(field)=>{ const a=[]; for(let i=lo;i<=hi;i++){const v=series[i][field]; if(v!=null)a.push(v);}
+    if(!a.length)return 1e-9; a.sort((x,y)=>x-y); return a[Math.floor(a.length*0.9)]||a[a.length-1]||1e-9; };
+  const shMax=pctMax("shW2d"), hipMax=pctMax("hipW2d");
+  const shZs=smooth(series.map(s=>s.shZ),3), hpZs=smooth(series.map(s=>s.hpZ),3);
+  const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const ac=(w,wm)=>deg(Math.acos(cl(w/wm,0,1)));
+  for(let i=0;i<n;i++){ const s=series[i];
+    const rS=(s.shW2d!=null)?cl(s.shW2d/shMax,0,1):null, rH=(s.hipW2d!=null)?cl(s.hipW2d/hipMax,0,1):null;
+    const magS=(rS==null)?null:ac(s.shW2d,shMax), magH=(rH==null)?null:ac(s.hipW2d,hipMax);
+    // 방향 부호: z순서차(스무딩). worldLandmarks 없으면 백스윙(P4 이전)=음수 폴백
+    const sgn=(zs,idx)=>{ if(zs[idx]!=null&&Math.abs(zs[idx])>1e-4) return zs[idx]<0?-1:1;
+      return (events.P4!=null&&idx<=events.P4)?-1:1; };
+    s.shTurn=(magS==null)?null:magS*sgn(shZs,i);
+    s.hpTurn=(magH==null)?null:magH*sgn(hpZs,i);
+    // 신뢰도(0~1): visibility × 너비비율 페널티. 폭이 크게 줄면(=탑 근처) acos 포화라 절대각 불안정 → 낮게
+    const visF=v=>(v==null)?0.6:cl((v-0.5)/0.4,0,1);    // vis<0.5→0, >0.9→1
+    const widF=r=>(r==null)?0:cl((r-0.25)/0.25,0.15,1); // 비율<0.25→바닥0.15(포화), >0.5→1
+    s.shConf=(rS==null)?null:cl(visF(s.shVis)*widF(rS),0,1);
+    s.hpConf=(rH==null)?null:cl(visF(s.hpVis)*widF(rH),0,1);
+  }
+}
+function interp(a){const r=a.slice();let last=null;for(let i=0;i<r.length;i++){if(r[i]!=null)last=r[i];else r[i]=last;}
+  let nx=null;for(let i=r.length-1;i>=0;i--){if(r[i]!=null)nx=r[i];else if(nx!=null)r[i]=nx;}return r;}
+
+function finish(){
+  if(!running)return;running=false;video.pause();$("run").disabled=false;
+  if(series.length<10){$("status").textContent="프레임이 너무 적습니다.";return;}
+  const sm=smooth(interp(series.map(s=>s.shaft)),2);series.forEach((s,i)=>s.shaftSmooth=sm[i]);
+  const base=series.find(s=>s.sh);if(base)series.forEach(s=>{s.turnRel=(s.sh?signedAngle(base.sh,s.sh,s.up):null);});
+  applyViewVisibility();detectEvents();computeTurns();computeCrop();renderEvents();renderShaftTriple();fillSeg();renderSeg();renderRot();renderKey();setupEvEdit();
+  $("csv").disabled=false;$("saveLabel").disabled=false;
+  $("status").textContent=`완료: ${series.length}프레임 · ${curView==="FO"?"정면":"측면"} 분석.`;
+}
+
+// FO면 샤프트 관련 UI 숨김
+function applyViewVisibility(){ $("shaftSection").style.display = curView==="DTL" ? "block" : "none"; }
+
+// 스윙 구간만 남기고 앞뒤 잘라내기 (15초 영상이라도 스윙 P1~P10 ± 여유만 표시)
+let cropStart=0, cropEnd=0;
+function computeCrop(){
+  const n=series.length, p1=events.P1, p10=events.P10;
+  if(p1==null||p10==null||p10<=p1){ cropStart=0; cropEnd=n-1; return; }
+  const M=Math.round((p10-p1)*0.3);   // 스윙 길이의 30%씩 앞뒤 여유 → 5초 스윙 ≈ 8초 창
+  cropStart=Math.max(0, p1-M);
+  cropEnd=Math.min(n-1, p10+M);
+}
+
+// 위치기반(속도 무관) 검출 — 슬로우모션 영상에도 견고. 사용자 15개 실측라벨로 검증
+//   (P4/P7/P5/P9/P3 평균오차 ~2프레임). 원리: 손이 가장 높은 두 지점(top,finish)과 그 사이 손 최저(impact)
+function detectEvents(){
+  const n=series.length;
+  const hy=smooth(series.map(s=>s.handY),5);
+  // 극값 검출 (window W)
+  const W=7, rawMin=[], rawMax=[];
+  for(let i=0;i<n;i++){
+    let lo=Math.max(0,i-W),hi=Math.min(n,i+W+1),mn=Infinity,mx=-Infinity;
+    for(let j=lo;j<hi;j++){ if(hy[j]<mn)mn=hy[j]; if(hy[j]>mx)mx=hy[j]; }
+    if(hy[i]<=mn+1e-9)rawMin.push(i);
+    if(hy[i]>=mx-1e-9)rawMax.push(i);
+  }
+  const dd=a=>{const o=[];for(const j of a){if(o.length&&j-o[o.length-1]<=W)continue;o.push(j);}return o;};
+  const mins=dd(rawMin), maxs=dd(rawMax);
+  const argmin=()=>{let k=0;for(let i=1;i<n;i++)if(hy[i]<hy[k])k=i;return k;};
+  let top,imp,fin;
+  if(mins.length>=2&&maxs.length>=1){
+    // 손 최고(handY 최소) = m1, 파트너 min과 그 사이 impact(손최저) 조합 중 prominence 최대
+    const m1=argmin(); let best=null,bs=-1;
+    for(const m2 of mins){ if(m2===m1)continue;
+      const lo=Math.min(m1,m2),hi=Math.max(m1,m2), bm=maxs.filter(M=>M>lo&&M<hi);
+      if(!bm.length)continue;
+      let ip=bm[0]; for(const M of bm) if(hy[M]>hy[ip])ip=M;
+      const score=(hy[ip]-hy[lo])+(hy[ip]-hy[hi]);
+      if(score>bs){bs=score;best=[lo,hi,ip];}
+    }
+    if(best){ top=best[0]; fin=best[1]; imp=best[2]; }
+  }
+  if(top==null){ top=argmin(); imp=Math.min(n-1,top+Math.round(n*0.1)); fin=Math.min(n-1,imp+Math.round(n*0.1)); } // 폴백
+  // Finish 보정: 손높이 2차 극값(fin)은 임팩트 직후 잔여 움직임에 낚일 수 있음
+  //   → 임팩트 이후 손 움직임이 실제로 멎어(안정화) 유지되는 첫 구간으로 대체(실측 라벨로 검증: 78→88 보정)
+  { const vel=hy.map((_,i)=>{const a=hy[Math.max(0,i-2)],b=hy[Math.min(n-1,i+2)];return Math.abs(b-a)/4;});
+    const winLen=6, eps=0.0018; let stable=null;
+    for(let i=imp+5;i<n-winLen;i++){ let ok=true; for(let j=i;j<i+winLen;j++){ if(vel[j]>eps){ok=false;break;} } if(ok){stable=i;break;} }
+    if(stable!=null && stable>imp) fin=Math.max(fin,stable);
+  }
+  // Address = 셋업 레벨에서 백스윙이 10% 내려가기 직전 (셋업 정지 구간, 각도영향 거의 없음·슬라이더 보정)
+  let setup=hy[0];
+  if(top>3){ const pre=hy.slice(0,top).slice().sort((a,b)=>a-b); setup=pre[Math.floor(pre.length*0.70)]; }
+  const amp=setup-hy[top]; let adr=0;
+  for(let i=top-1;i>=0;i--){ if(hy[i]>=setup-0.10*amp){ adr=i; break; } }
+  // 팔 수평(리드팔 지면평행) P3/P5/P9 — 기하(각도) 기반, 속도 무관
+  const armPar=(a,b)=>{let best=null,bv=1e9;for(let i=a;i<b;i++){const v=series[i].leadArm;if(v!=null&&Math.abs(v)<bv){bv=Math.abs(v);best=i;}}return (best!=null&&bv<22)?best:null;};
+  let p3=armPar(adr,top),p5=armPar(top,imp),p9=armPar(imp,fin);
+  if(p3==null&&adr<top) p3=Math.round(adr+(top-adr)*0.55);
+  if(p5==null&&top<imp) p5=Math.round(top+(imp-top)*0.55);
+  if(p9==null&&imp<fin) p9=Math.round(imp+(fin-imp)*0.4);
+  events={P1:adr,P3:p3,P4:top,P5:p5,P7:imp,P9:p9,P10:fin};
+  if(curView==="DTL"){ // 샤프트 이벤트(지면수평≈0°) — 샤프트 검출됐을 때만
+    const enough=series.filter(s=>s.shaft!=null).length>n*0.2;
+    // 고정 임계값(≤12°) 대신 구간 내 "0°(지면평행)에 가장 가까운 지점" 채택 — 추적 노이즈로 임계값을 못 넘는 경우 대응
+    const shaftPar=(lo,hi)=>{if(!enough||lo>=hi)return null;let best=null,bv=1e9;for(let i=lo;i<hi;i++){const v=series[i].shaftSmooth;if(v!=null&&v<bv){bv=v;best=i;}}return (best!=null&&bv<25)?best:null;};
+    events.P2=shaftPar(adr,top);events.P6=shaftPar(top,imp);events.P8=shaftPar(imp,fin);
+  }
+  autoEvents=JSON.parse(JSON.stringify(events));
+}
+
+const LBL={P1:"Address",P2:"Toe-up(샤프트평행)",P3:"리드팔평행(BS)",P4:"Top",P5:"리드팔평행(DS)",P6:"샤프트평행(DS)",P7:"Impact",P8:"샤프트평행(FT)",P9:"리드팔평행(FT)",P10:"Finish"};
+const SHAFT_EV=new Set(["P2","P6","P8"]);
+function evOrder(){ return curView==="DTL"?["P1","P2","P3","P4","P5","P6","P7","P8","P9","P10"]:["P1","P3","P4","P5","P7","P9","P10"]; }
+function renderEvents(){
+  $("events").innerHTML=evOrder().map(p=>{const f=events[p],cls=SHAFT_EV.has(p)?"shaft":"";
+    return f==null?`<span class="ev miss ${cls}"><b>${p}</b> ${LBL[p]} · 미검출</span>`
+      :`<span class="ev ${cls}"><b>${p}</b> ${LBL[p]} · #${f} (${series[f].t.toFixed(2)}s)</span>`;}).join("");
+}
+// ② 샤프트 각도: P1·P3·P5 만. 자동값 + 직접지정(그립→클럽헤드 클릭)
+// ── 이벤트 수동 보정 (슬라이더로 프레임 찾아 P 지정) ──
+let scrubIdx=0;
+function refreshAll(){ computeTurns();renderEvents();renderShaftTriple();fillSeg();renderSeg();renderRot();renderKey(); }
+function setupEvEdit(){
+  $("evEditWrap").style.display="block";
+  const sc=$("scrub"); sc.min=cropStart; sc.max=(cropEnd>cropStart?cropEnd:series.length-1);
+  scrubIdx=Math.min(Math.max(scrubIdx,+sc.min),+sc.max); sc.value=scrubIdx;
+  sc.oninput=()=>{ scrubIdx=+sc.value; video.pause(); video.currentTime=series[scrubIdx].t;
+    ctx.clearRect(0,0,overlay.width,overlay.height);
+    $("scrubInfo").innerHTML=`선택 프레임 <b>${scrubIdx}</b> · ${series[scrubIdx].t.toFixed(2)}s — 아래에서 이 프레임을 어느 P로 지정할지 누르세요`; };
+  $("evBtns").innerHTML=evOrder().map(p=>`<button data-p="${p}" class="evb" style="padding:5px 9px;font-size:11px;background:#222c39;color:#e8edf2;border:1px solid #33404f;border-radius:6px;cursor:pointer">${p} 지정</button>`).join("");
+  $("evBtns").querySelectorAll(".evb").forEach(b=>b.onclick=()=>{ events[b.dataset.p]=scrubIdx; refreshAll(); $("status").textContent=`${b.dataset.p} → 프레임 ${scrubIdx} (${series[scrubIdx].t.toFixed(2)}s) 로 지정됨.`; });
+}
+function renderShaftTriple(){
+  if(curView!=="DTL")return;
+  const tb=$("shaftTable").querySelector("tbody");
+  tb.innerHTML=["P1","P3","P5"].map(p=>{
+    const f=events[p];
+    if(f==null)return `<tr><td>${p} ${LBL[p]}</td><td class="num">—</td><td class="num">—</td><td>—</td></tr>`;
+    const auto=series[f].shaftSmooth, man=manualShaft[p];
+    return `<tr>
+      <td>${p} ${LBL[p]}</td>
+      <td class="num">${auto!=null?auto.toFixed(0)+"°":"검출실패"}</td>
+      <td class="num" style="color:#ffd166">${man!=null?man.toFixed(0)+"°":"—"}</td>
+      <td><button data-p="${p}" class="drawBtn" style="padding:4px 8px;font-size:11px">직접 그리기</button></td>
+    </tr>`;
+  }).join("");
+  tb.querySelectorAll(".drawBtn").forEach(b=>b.onclick=()=>startManual(b.dataset.p));
+}
+// 직접 그리기: 해당 프레임으로 이동 후 그립→클럽헤드 두 점 클릭 → 각도
+function startManual(p){
+  const f=events[p]; if(f==null)return;
+  drawTarget=p; drawPts=[]; video.pause(); video.currentTime=series[f].t;
+  ctx.clearRect(0,0,overlay.width,overlay.height);
+  $("status").textContent=`${p} 프레임 — 화면에서 ①그립(손) ②클럽헤드 순서로 클릭하세요.`;
+}
+function canvasPt(ev){
+  const r=overlay.getBoundingClientRect(),cw=overlay.width,ch=overlay.height;
+  const scale=Math.min(r.width/cw,r.height/ch),dw=cw*scale,dh=ch*scale,ox=(r.width-dw)/2,oy=(r.height-dh)/2;
+  return {x:(ev.clientX-r.left-ox)/scale,y:(ev.clientY-r.top-oy)/scale};
+}
+overlay.addEventListener("click",ev=>{
+  if(!drawTarget)return;
+  const p=canvasPt(ev); drawPts.push(p);
+  ctx.fillStyle="#ffd166";ctx.beginPath();ctx.arc(p.x,p.y,6,0,7);ctx.fill();
+  if(drawPts.length===2){
+    const g=drawPts[0],hd=drawPts[1],dx=hd.x-g.x,dy=hd.y-g.y;
+    const ang=deg(Math.atan2(Math.abs(dy),Math.abs(dx))); // 지면(수평) 기준: 0°=수평,90°=수직
+    ctx.strokeStyle="#ffd166";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(g.x,g.y);ctx.lineTo(hd.x,hd.y);ctx.stroke();
+    manualShaft[drawTarget]=ang; $("status").textContent=`${drawTarget} 샤프트각 ${ang.toFixed(0)}° 지정 완료.`;
+    drawTarget=null; renderShaftTriple();
+  }
+});
+
+// 이 앵글에서 '보여줄' 스칼라 지표만 (측정 불가 항목은 목록에서 제외)
+// approx=근사(참고) 태그, ok=표시. 측정불가 항목은 아예 포함 안 함.
+//   FO(정면): 머리 좌우만 측정 가능 (상하/앞뒤/척추각/무릎각은 정면에서 관측 불가)
+//   DTL(측면): 샤프트각·머리 상하/앞뒤·척추각·무릎각 (머리 좌우는 측면에서 관측 불가)
+function segMetrics(){
+  // [이름, 키, 소수자리, 등급]  head는 어깨폭 정규화 값의 '변화'
+  if(curView==="FO") return [
+    ["머리 좌우(스웨이) 변화","headLat",3,"ok"] ];
+  // DTL
+  return [
+    ["샤프트각(지면기준)","shaftSmooth",0,"ok"],
+    ["머리 상하 변화","headV",3,"ok"],
+    ["머리 앞뒤 변화","headDep",3,"ok"],
+    ["척추각(지면기준) 변화","spineGround",0,"ok"],       // 측면=전후 자세각
+    ["리드 무릎각","leadKnee",0,"ok"],                    // P2~P6만 관측 가능(그 외 가려짐)
+    ["트레일 무릎각","trailKnee",0,"ok"] ];               // 측면 전 구간 관측 가능
+}
+// 무릎 관측 가능 여부: FO는 둘 다 불가. DTL 트레일=전구간, 리드=P2~P6 구간만(몸에 가려짐)
+function kneeVisible(frame,key){
+  if(curView!=="DTL") return false;
+  if(key==="trailKnee") return true;
+  const lo=events.P2!=null?events.P2:(events.P1!=null?events.P1:0);
+  const hi=events.P6!=null?events.P6:(events.P7!=null?events.P7:series.length-1);
+  return frame>=lo && frame<=hi;
+}
+const TAG={ok:'',approx:' <span class="badge" style="color:#ffb648">≈근사</span>'};
+function fillSeg(){
+  const present=evOrder().filter(p=>events[p]!=null),opt=p=>`<option value="${p}">${p} ${LBL[p]}</option>`;
+  const pf=$("segFrom").value, pt=$("segTo").value; // 기존 선택 보존
+  $("segFrom").innerHTML=present.map(opt).join("");$("segTo").innerHTML=present.map(opt).join("");
+  $("segFrom").value=present.includes(pf)?pf:"P1";
+  $("segTo").value=present.includes(pt)?pt:(present.includes("P4")?"P4":present[present.length-1]);
+  $("segFrom").onchange=renderSeg;$("segTo").onchange=renderSeg;
+}
+function renderSeg(){
+  const fp=$("segFrom").value,tp=$("segTo").value;
+  const a=events[fp],b=events[tp],tb=$("segTable").querySelector("tbody");
+  $("thStart").textContent=fp; $("thEnd").textContent=tp; $("thDelta").textContent="변화";
+  if(a==null||b==null){tb.innerHTML="";return;}
+  const OCC=' <span class="badge" style="color:#8b97a5">가려짐</span>';
+  const rows=segMetrics().map(([name,key,f,g])=>{
+    const isKnee=(key==="leadKnee"||key==="trailKnee");
+    const sVis=isKnee?kneeVisible(a,key):true, eVis=isKnee?kneeVisible(b,key):true;
+    const s=sVis?series[a][key]:null, e=eVis?series[b][key]:null;
+    if(s==null||e==null){
+      const occ=(isKnee&&(!sVis||!eVis))?OCC:'';
+      return `<tr><td>${name}${TAG[g]}${occ}</td><td class="num">${s==null?"—":s.toFixed(f)}</td><td class="num">${e==null?"—":e.toFixed(f)}</td><td class="num">—</td></tr>`;
+    }
+    const d=e-s,col=d>0?"#3ecf8e":"#ff7eb6";
+    return `<tr><td>${name}${TAG[g]}</td><td class="num">${s.toFixed(f)}</td><td class="num">${e.toFixed(f)}</td><td class="num" style="color:${col}">${d>0?"+":""}${d.toFixed(f)}</td></tr>`;
+  }).join("");
+  tb.innerHTML=rows;
+}
+// 어드레스(P1) 대비 누적 회전량 — 상체(어깨)/하체(골반), X-Factor=|상체−하체|
+//   computeTurns()가 미리 계산한 shTurn/hpTurn(2D너비+z부호)을 어드레스 기준으로 뺌
+function avgAt(fr,field,win=3){ if(fr==null)return null; let s=0,c=0;   // 이벤트 프레임 ±win 평균(null 제외) — 단일 프레임 오차 완화
+  for(let j=-win;j<=win;j++){ const r=series[fr+j]; if(r&&r[field]!=null){s+=r[field];c++;} }
+  return c?s/c:null; }
+function turnAt(fr,key){
+  if(events.P1==null)return null;
+  const f=(key==="sh")?"shTurn":"hpTurn";
+  const a=avgAt(fr,f), b=avgAt(events.P1,f);
+  return (a==null||b==null)?null:(a-b);
+}
+function confAt(fr,key){ return avgAt(fr,(key==="sh")?"shConf":"hpConf"); }
+// Tier-B(서버 NLF 3D) 회전결과 JSON. 로드되면 브라우저 근사값 대신 이걸 표시.
+let vision3d=null;
+function render3dRot(){
+  const d=vision3d, g="#3ecf8e";
+  const bd=`<small style="font-size:10px;font-weight:700;color:${g};border:1px solid ${g};border-radius:5px;padding:0 4px;vertical-align:middle">3D정밀</small>`;
+  const fmt=v=>(v==null)?"—":((v>0?"+":"")+Math.round(v)+"° "+bd);
+  const t=d.top||{}, i=d.impact||{}, e=d.events||{};
+  $("rotTopSh").innerHTML=fmt(t.thorax); $("rotTopHp").innerHTML=fmt(t.pelvis);
+  $("rotTopXf").textContent=(t.xfactor==null)?"—":Math.abs(t.xfactor).toFixed(0)+"°";
+  $("rotImpSh").innerHTML=fmt(i.thorax); $("rotImpHp").innerHTML=fmt(i.pelvis);
+  const w=$("rotWarn"); if(w) w.innerHTML=`✅ <b style="color:${g}">3D 정밀값 로드됨 (${d.source||"NLF"})</b> — 서버 3D 복원값이라 절대각 신뢰 가능. 프레임 P1/P4/P7 = ${(e.P1!=null)?e.P1+"/"+e.P4+"/"+e.P7:"—"}`;
+}
+function renderRot(){
+  if(vision3d){ render3dRot(); return; }
+  const p4=events.P4,p7=events.P7, LOW=0.4;
+  // 신뢰도 배지: 높음(≥0.66) 초록 / 보통(≥0.33) 노랑 / 낮음 빨강
+  const badge=c=>{ if(c==null)return "";
+    const col=c>=0.66?"#3ecf8e":c>=0.33?"#ffb648":"#ff6b6b", lab=c>=0.66?"신뢰↑":c>=0.33?"보통":"불안정";
+    return ` <small style="font-size:10px;font-weight:700;color:${col};border:1px solid ${col};border-radius:5px;padding:0 4px;vertical-align:middle;white-space:nowrap">${lab} ${(c*100).toFixed(0)}%</small>`; };
+  // 저신뢰(conf<0.4) 값은 '당당한 숫자'로 안 보여줌 → 회색 참고용으로 강등
+  const cell=(v,c)=>{ if(v==null)return "—"; const txt=(v>0?"+":"")+v.toFixed(0)+"°";
+    return (c!=null&&c<LOW) ? `<span style="color:#6b7684;font-weight:600">${txt}</span>${badge(c)}` : txt+badge(c); };
+  const shC=confAt(p4,"sh"),hpC=confAt(p4,"hp"),shIC=confAt(p7,"sh"),hpIC=confAt(p7,"hp");
+  const shT=turnAt(p4,"sh"),hpT=turnAt(p4,"hp"),shI=turnAt(p7,"sh"),hpI=turnAt(p7,"hp");
+  $("rotTopSh").innerHTML=cell(shT,shC); $("rotTopHp").innerHTML=cell(hpT,hpC);
+  // X-Factor: 상체·하체 둘 다 신뢰 가능할 때만 숫자, 아니면 '불안정' (틀린 분리각 안 보여줌)
+  const xfOK=(shT!=null&&hpT!=null&&shC!=null&&hpC!=null&&shC>=LOW&&hpC>=LOW);
+  $("rotTopXf").innerHTML=xfOK?Math.abs(shT-hpT).toFixed(0)+"°":`<span style="color:#6b7684;font-size:14px;font-weight:600">불안정</span>`;
+  $("rotImpSh").innerHTML=cell(shI,shIC); $("rotImpHp").innerHTML=cell(hpI,hpIC);
+  const w=$("rotWarn"); if(w) w.innerHTML=(curView==="FO")
+    ? "⚠ <b style='color:#ff6b6b'>정면(FO) 회전 절대각은 단일 카메라로 신뢰 불가</b> — 아래 숫자는 근사·참고용(<b style='color:#6b7684'>회색=저신뢰</b>). 회전 정밀도는 측면(DTL)이나 서버 3D 티어에서."
+    : "⚠ 측면(DTL) 회전도 단일 카메라라 <b>근사</b>입니다. 절대각보다 <b>상대변화·X-Factor</b> 위주로 (<b style='color:#6b7684'>회색=저신뢰</b>).";
+}
+// 정면=머리 좌우 이동 / 측면=척추각 을 P1·P4·P7 세 기준으로 크게 표시
+function renderKey(){
+  const grid=$("keyGrid"); if(!grid)return;
+  const pts=["P1","P4","P7"], fo=(curView==="FO"), key=fo?"headLat":"spineGround";
+  $("keyTitle").textContent=fo?"④ 머리 좌우 이동 (정면)":"④ 척추각 (측면, 지면기준)";
+  $("keyNote").innerHTML=fo
+    ? "어드레스(P1) 대비 머리 좌우 이동량(어깨폭 대비 %). +/− 는 좌우 방향."
+    : "각 지점의 척추각(0°=지면수평, 90°=수직)과 어드레스(P1) 대비 변화.";
+  const base=(events.P1!=null&&series[events.P1])?series[events.P1][key]:null;
+  grid.innerHTML=pts.map(p=>{
+    const fr=events[p], rec=(fr!=null)?series[fr]:null, v=(rec!=null)?rec[key]:null;
+    let pv="—",pd="";
+    if(v!=null){
+      if(fo){
+        const mv=(base!=null)?(v-base)*100:null;
+        pv=(p==="P1")?"0%":(mv==null?"—":(mv>0?"+":"")+mv.toFixed(0)+"%");
+        pd=(p==="P1")?"기준":"어깨폭 대비";
+      }else{
+        pv=v.toFixed(0)+"°";
+        const d=(base!=null)?(v-base):null;
+        pd=(p==="P1")?"기준":(d==null?"":(d>0?"+":"")+d.toFixed(0)+"°");
+      }
+    }
+    return `<div class="pcell${p==="P4"?" mid":""}"><div class="pk">${p} ${LBL[p]}</div><div class="pv">${pv}</div><div class="pd">${pd}</div></div>`;
+  }).join("");
+}
+// ── 라벨 저장(학습 데이터): 자동값 + 수동보정값(정답) + 프레임특징 ──
+$("saveLabel").addEventListener("click",()=>{
+  const r=(v,d=1)=>v==null?null:+v.toFixed(d);
+  const frames=series.map(s=>({t:s.t,handX:r(s.handX,4),handY:r(s.handY,4),xfactor:r(s.xfactor),spineTilt:r(s.spineTilt),
+    leadKnee:r(s.leadKnee),trailKnee:r(s.trailKnee),leadArm:r(s.leadArm),headSway:r(s.headSway,3),shaft:r(s.shaftSmooth)}));
+  // 자동 vs 수동 차이(초)
+  const diff={}; for(const p in events){ if(events[p]!=null&&autoEvents[p]!=null) diff[p]=+(series[events[p]].t-series[autoEvents[p]].t).toFixed(2); }
+  const data={ schema:"doh.vision.label.v1", saved_at:new Date().toISOString(),
+    view:curView, handedness:$("hand").value, sample_fps:parseInt($("sfps").value)||60,
+    n_frames:series.length, duration_s:series.length?series[series.length-1].t:0,
+    auto_events:autoEvents,       // 내가(자동) 뽑은 값
+    manual_events:events,         // 사용자가 직접 보정한 값 = 정답 라벨
+    event_diff_sec:diff,          // 자동-수동 시간차(정확도 평가)
+    frames };                     // 프레임별 특징(학습 입력)
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:"application/json"}));
+  a.download=`doh_label_${curView}_${Date.now()}.json`; a.click();
+  $("status").textContent=`라벨 저장 완료 (자동 vs 수동 비교 + 프레임특징 포함). 학습 데이터로 축적하세요.`;
+});
+$("csv").addEventListener("click",()=>{
+  const evF={};for(const p in events)if(events[p]!=null)evF[events[p]]=p;
+  let out="view,frame,t,xfactor3d,spineTilt3d,leadKnee,trailKnee,headSway,shaft_smooth,turnRel,handY,event\n";
+  series.forEach((s,i)=>{const f=(v,d)=>v!=null?v.toFixed(d):"";
+    out+=`${curView},${i},${s.t},${f(s.xfactor,2)},${f(s.spineTilt,2)},${f(s.leadKnee,1)},${f(s.trailKnee,1)},${f(s.headSway,3)},${f(s.shaftSmooth,1)},${f(s.turnRel,1)},${s.handY.toFixed(4)},${evF[i]||""}\n`;});
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([out],{type:"text/csv"}));a.download=`doh_swing_${curView}.csv`;a.click();
+});
+</script>
+</body>
+</html>

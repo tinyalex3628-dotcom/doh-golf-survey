@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DOH Vision PoC — MediaPipe Pose → CSV</title>
+<!--
+  DOH Vision Engine PoC (Project C, Tier-A 브라우저 클라이언트)
+  로드맵 5순위: 영상 → 33 관절 → DOH 표준관절 → CSV
+  - 서버 없이 브라우저에서 MediaPipe Pose Landmarker(WASM) 실행
+  - 업로드 영상의 프레임별 관절 추출 + 스켈레톤 오버레이
+  - DOH 표준 관절 어휘(Pose Adapter §4)로 매핑
+  - landmark CSV + doh-standard-joint CSV 두 종 내보내기
+  이 PoC는 "좌표 추출"까지만 한다. Primitive/Feature/Node는 다음 단계.
+-->
+<style>
+  :root { --bg:#0f1216; --panel:#1a1f27; --ink:#e8edf2; --sub:#8b97a5; --accent:#4ea1ff; --ok:#3ecf8e; --warn:#ffb648; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  header { padding:16px 20px; border-bottom:1px solid #262d38; }
+  header h1 { margin:0; font-size:16px; letter-spacing:.3px; }
+  header p { margin:4px 0 0; color:var(--sub); font-size:12px; }
+  .wrap { display:grid; grid-template-columns:1fr 340px; gap:16px; padding:16px 20px; }
+  @media (max-width:900px){ .wrap{ grid-template-columns:1fr; } }
+  .panel { background:var(--panel); border:1px solid #262d38; border-radius:10px; padding:14px; }
+  .stage { position:relative; background:#000; border-radius:8px; overflow:hidden; aspect-ratio:9/16; max-height:70vh; margin:auto; }
+  .stage video, .stage canvas { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+  .controls { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  button, .filebtn { background:#222c39; color:var(--ink); border:1px solid #33404f; border-radius:8px; padding:9px 14px; cursor:pointer; font-size:13px; }
+  button:hover, .filebtn:hover { border-color:var(--accent); }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  button.primary { background:var(--accent); color:#04121f; border-color:var(--accent); font-weight:600; }
+  button.ok { background:var(--ok); color:#04241a; border-color:var(--ok); font-weight:600; }
+  input[type=file]{ display:none; }
+  .row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px dashed #2a323d; font-size:12px; }
+  .row span:last-child { color:var(--accent); font-variant-numeric:tabular-nums; }
+  .k { color:var(--sub); }
+  .bar { height:6px; background:#222c39; border-radius:3px; overflow:hidden; margin-top:8px; }
+  .bar > i { display:block; height:100%; width:0; background:var(--accent); transition:width .1s; }
+  label.opt { display:flex; align-items:center; gap:8px; color:var(--sub); font-size:12px; margin-top:8px; }
+  select { background:#222c39; color:var(--ink); border:1px solid #33404f; border-radius:6px; padding:6px; }
+  .note { color:var(--sub); font-size:11px; margin-top:10px; line-height:1.5; }
+  .status { font-size:12px; color:var(--warn); min-height:16px; margin-top:6px; }
+  h2 { font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--sub); margin:0 0 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>DOH Vision PoC — MediaPipe Pose → CSV</h1>
+  <p>Project C · Tier-A 브라우저 클라이언트 · 서버 없이 온디바이스 · 영상 → 33 관절 → DOH 표준관절 → CSV</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="stage">
+      <video id="video" playsinline muted></video>
+      <canvas id="overlay"></canvas>
+    </div>
+    <div class="controls">
+      <label class="filebtn">영상 선택<input id="file" type="file" accept="video/*" /></label>
+      <button id="run" class="primary" disabled>분석 시작</button>
+      <button id="stop" disabled>정지</button>
+      <button id="csvLm" class="ok" disabled>Landmark CSV</button>
+      <button id="csvDoh" class="ok" disabled>DOH 관절 CSV</button>
+    </div>
+    <label class="opt">
+      촬영방향(handedness)
+      <select id="hand">
+        <option value="right">오른손잡이 (RH)</option>
+        <option value="left">왼손잡이 (LH)</option>
+      </select>
+      <select id="view">
+        <option value="DTL">DTL (후면·비구선)</option>
+        <option value="FO">FO (정면)</option>
+      </select>
+    </label>
+    <div class="status" id="status">모델 로딩 대기…</div>
+    <div class="bar"><i id="prog"></i></div>
+  </div>
+
+  <div class="panel">
+    <h2>측정 상태</h2>
+    <div class="row"><span class="k">모델</span><span id="mModel">—</span></div>
+    <div class="row"><span class="k">해상도</span><span id="mRes">—</span></div>
+    <div class="row"><span class="k">영상 길이(s)</span><span id="mDur">—</span></div>
+    <div class="row"><span class="k">처리 프레임</span><span id="mFrames">0</span></div>
+    <div class="row"><span class="k">평균 visibility</span><span id="mVis">—</span></div>
+    <div class="row"><span class="k">추정 fps(캡처)</span><span id="mFps">—</span></div>
+    <div class="note">
+      • 이 PoC는 <b>좌표 추출</b>까지만 수행합니다 (Technical Arch [1]~[2]).<br>
+      • DOH 관절 CSV는 Pose Adapter(§4)로 33→표준관절 매핑 결과입니다.<br>
+      • 좌표계 정렬(BODY/GROUND)·Primitive·Feature는 다음 단계(Coordinate/Primitive/Feature Spec).<br>
+      • 브라우저 requestVideoFrameCallback 기반이라 실제 캡처 fps는 재생 성능에 좌우됩니다.
+      정밀 분석은 서버 티어에서 원본 프레임으로 수행해야 합니다.
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { FilesetResolver, PoseLandmarker }
+  from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+// ── DOH 표준 관절 어휘 ↔ MediaPipe(33) 인덱스 (Pose Adapter) ──
+// lead/trail 은 handedness로 해석 (RH: lead=left, trail=right)
+const MP = {
+  NOSE:0, L_SHO:11, R_SHO:12, L_ELB:13, R_ELB:14, L_WRI:15, R_WRI:16,
+  L_HIP:23, R_HIP:24, L_KNE:25, R_KNE:26, L_ANK:27, R_ANK:28
+};
+function dohJointMap(handedness){
+  const rh = handedness === "right";
+  const lead = rh ? "L" : "R", trail = rh ? "R" : "L";
+  const S = s => MP[`${s}`];
+  return {
+    HEAD:        MP.NOSE,
+    LEAD_SHOULDER:  S(`${lead}_SHO`), TRAIL_SHOULDER: S(`${trail}_SHO`),
+    LEAD_ELBOW:     S(`${lead}_ELB`), TRAIL_ELBOW:    S(`${trail}_ELB`),
+    LEAD_WRIST:     S(`${lead}_WRI`), TRAIL_WRIST:    S(`${trail}_WRI`),
+    LEAD_HIP:       S(`${lead}_HIP`), TRAIL_HIP:      S(`${trail}_HIP`),
+    LEAD_KNEE:      S(`${lead}_KNE`), TRAIL_KNEE:     S(`${trail}_KNE`),
+    LEAD_ANKLE:     S(`${lead}_ANK`), TRAIL_ANKLE:    S(`${trail}_ANK`)
+  };
+}
+// 스켈레톤 연결 (MediaPipe 상체+하체 주요선)
+const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],
+  [23,24],[23,25],[25,27],[24,26],[26,28],[0,11],[0,12]];
+
+const $ = id => document.getElementById(id);
+const video=$("video"), overlay=$("overlay"), ctx=overlay.getContext("2d");
+let landmarker=null, running=false, frames=[], visSum=0, visCnt=0;
+let firstT=null, lastT=null;
+
+async function init(){
+  $("status").textContent = "MediaPipe WASM 로딩 중…";
+  const fileset = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  landmarker = await PoseLandmarker.createFromOptions(fileset, {
+    baseOptions: {
+      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
+      delegate: "GPU"
+    },
+    runningMode: "VIDEO",
+    numPoses: 1,
+    outputSegmentationMasks: false
+  });
+  $("mModel").textContent = "pose_landmarker_full";
+  $("status").textContent = "준비 완료. 영상을 선택하세요.";
+}
+init().catch(e => { $("status").textContent = "모델 로딩 실패: "+e.message; });
+
+$("file").addEventListener("change", e => {
+  const f = e.target.files[0]; if(!f) return;
+  video.src = URL.createObjectURL(f);
+  video.onloadedmetadata = () => {
+    overlay.width = video.videoWidth; overlay.height = video.videoHeight;
+    $("mRes").textContent = `${video.videoWidth}×${video.videoHeight}`;
+    $("mDur").textContent = video.duration.toFixed(2);
+    $("run").disabled = false;
+    $("status").textContent = "분석 준비 완료.";
+  };
+});
+
+$("run").addEventListener("click", () => {
+  frames=[]; visSum=0; visCnt=0; firstT=null; lastT=null;
+  running=true; $("run").disabled=true; $("stop").disabled=false;
+  $("csvLm").disabled=true; $("csvDoh").disabled=true;
+  $("status").textContent = "분석 중…";
+  video.currentTime = 0; video.play();
+  if("requestVideoFrameCallback" in HTMLVideoElement.prototype) video.requestVideoFrameCallback(onFrame);
+  else requestAnimationFrame(loopRAF);
+});
+$("stop").addEventListener("click", finish);
+video.addEventListener("ended", finish);
+
+function onFrame(now, meta){
+  if(!running) return;
+  process(meta.mediaTime ?? video.currentTime);
+  video.requestVideoFrameCallback(onFrame);
+}
+function loopRAF(){ if(!running) return; process(video.currentTime); requestAnimationFrame(loopRAF); }
+
+function process(t){
+  if(video.readyState < 2) return;
+  const res = landmarker.detectForVideo(video, performance.now());
+  ctx.clearRect(0,0,overlay.width,overlay.height);
+  if(res.landmarks && res.landmarks[0]){
+    const lm = res.landmarks[0];
+    if(firstT===null) firstT=t; lastT=t;
+    // 오버레이
+    ctx.lineWidth=3; ctx.strokeStyle="#4ea1ff";
+    for(const [a,b] of BONES){
+      ctx.beginPath();
+      ctx.moveTo(lm[a].x*overlay.width, lm[a].y*overlay.height);
+      ctx.lineTo(lm[b].x*overlay.width, lm[b].y*overlay.height);
+      ctx.stroke();
+    }
+    ctx.fillStyle="#3ecf8e";
+    for(const p of lm){ ctx.beginPath(); ctx.arc(p.x*overlay.width,p.y*overlay.height,3,0,7); ctx.fill(); }
+    // 저장 (2D normalized + world 3D)
+    const world = res.worldLandmarks?.[0] || null;
+    const rec = { t:+t.toFixed(4), lm, world };
+    frames.push(rec);
+    for(const p of lm){ visSum += (p.visibility ?? 0); visCnt++; }
+    $("mFrames").textContent = frames.length;
+    $("mVis").textContent = (visSum/Math.max(1,visCnt)).toFixed(3);
+    $("prog").style.width = Math.min(100, video.currentTime/video.duration*100)+"%";
+  }
+}
+
+function finish(){
+  if(!running) return;
+  running=false; video.pause();
+  $("run").disabled=false; $("stop").disabled=true;
+  $("csvLm").disabled = frames.length===0;
+  $("csvDoh").disabled = frames.length===0;
+  const dur = (lastT-firstT)||0, fps = dur>0 ? (frames.length/dur) : 0;
+  $("mFps").textContent = fps ? fps.toFixed(1) : "—";
+  $("status").textContent = `완료: ${frames.length} 프레임 캡처. CSV 내보내기 가능.`;
+}
+
+function download(name, text){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([text],{type:"text/csv"}));
+  a.download=name; a.click();
+}
+
+// Landmark CSV: 33 관절 raw (frame,t,idx,x,y,z,visibility)
+$("csvLm").addEventListener("click", () => {
+  let out="frame,t,landmark_idx,x,y,z,visibility\n";
+  frames.forEach((f,fi)=>{
+    f.lm.forEach((p,i)=>{
+      out += `${fi},${f.t},${i},${p.x.toFixed(5)},${p.y.toFixed(5)},${(p.z??0).toFixed(5)},${(p.visibility??0).toFixed(4)}\n`;
+    });
+  });
+  download("doh_pose_landmarks.csv", out);
+});
+
+// DOH 관절 CSV: Pose Adapter 매핑 결과 (frame,t,joint,x,y,z,world_x/y/z,visibility)
+$("csvDoh").addEventListener("click", () => {
+  const map = dohJointMap($("hand").value);
+  const joints = Object.keys(map);
+  let out="frame,t,joint,x,y,z,world_x,world_y,world_z,visibility,handedness,view\n";
+  const hand=$("hand").value, view=$("view").value;
+  frames.forEach((f,fi)=>{
+    for(const j of joints){
+      const idx=map[j], p=f.lm[idx], w=f.world?f.world[idx]:null;
+      out += `${fi},${f.t},${j},${p.x.toFixed(5)},${p.y.toFixed(5)},${(p.z??0).toFixed(5)},`
+           + `${w?w.x.toFixed(5):""},${w?w.y.toFixed(5):""},${w?w.z.toFixed(5):""},`
+           + `${(p.visibility??0).toFixed(4)},${hand},${view}\n`;
+    }
+  });
+  download("doh_standard_joints.csv", out);
+});
+</script>
+</body>
+</html>
