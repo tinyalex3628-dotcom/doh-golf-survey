@@ -204,7 +204,7 @@ const rvLabel = k => { const [y, m] = k.split('-'); return (+m) + '월'; };
 function rvLoad(force) {
   if (RV.busy || (RV.list && !force)) return;
   RV.busy = true;
-  (NS.reviews ? NS.reviews() : Promise.resolve([])).then(l => {
+  (NS.reviews ? NS.reviews(true) : Promise.resolve([])).then(l => {   // CRM 은 전부 본다
     RV.list = l || []; RV.busy = false; if (S.nav === 'fb') render();
   }).catch(() => { RV.list = []; RV.busy = false; });
 }

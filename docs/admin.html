@@ -235,13 +235,21 @@ const NS = (() => {
     return row.data;
   }
 
-  /* 내 스윙 + 거기 달린 한마디를 한 번에 */
+  /* 내 스윙 + 거기 달린 한마디를 한 번에.
+
+     주인을 여기서 못 박는다. 전에는 조건 없이 긁고 접근 규칙(RLS)이
+     알아서 잘라주기를 기대했는데, 프로에게는 그 규칙이 전부 열려 있다.
+     그래서 프로가 회원 앱을 열면 남의 스윙과 남이 받은 한마디가 통째로
+     「내 것」으로 들어와서, 회원에게 답을 써주고 나면 자기 홈에
+     「프로 한마디가 도착했어요」가 떴다.
+     규칙은 바닥이지 질문의 뜻이 아니다 — mine() 은 이름 그대로여야 한다. */
   async function mine() {
     const c = client();
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
       .select('id,view,path,size,note,club,want_comment,seen_at,created_at,comments(id,body,photos,created_at,read_at)')
+      .eq('owner', u.id)
       .order('created_at', { ascending: false });
     return r.error ? [] : (r.data || []);
   }
@@ -330,14 +338,19 @@ const NS = (() => {
   }
 
   /* ── 월간 요약 ────────────────────────────────────────────────────
-     접근 규칙이 알아서 가른다 — 회원이 부르면 자기 것만, 프로가 부르면 전부. */
-  async function reviews() {
+     mine() 과 같은 함정이 여기 있었다 — 접근 규칙에 맡기면 프로에게는
+     전부 열려서, 프로가 회원 앱을 열면 남에게 보낸 요약이 자기 것으로
+     들어온다. 부르는 쪽이 무엇을 원하는지 여기서 못 박는다.
+       reviews()      — 내 것만 (회원 앱)
+       reviews(true)  — 전부   (CRM. 규칙이 프로에게만 열어준다) */
+  async function reviews(everyone) {
     const c = client();
     const u = await ready();
     if (!c || !u) return [];
-    const r = await c.from('reviews')
-      .select('id,owner,month,stats,theme,picks,photos,pro_line,created_at,read_at')
-      .order('month', { ascending: false }).limit(400);
+    let q = c.from('reviews')
+      .select('id,owner,month,stats,theme,picks,photos,pro_line,created_at,read_at');
+    if (!everyone) q = q.eq('owner', u.id);
+    const r = await q
     return r.error ? [] : (r.data || []);
   }
 
@@ -2097,7 +2110,7 @@ const rvLabel = k => { const [y, m] = k.split('-'); return (+m) + '월'; };
 function rvLoad(force) {
   if (RV.busy || (RV.list && !force)) return;
   RV.busy = true;
-  (NS.reviews ? NS.reviews() : Promise.resolve([])).then(l => {
+  (NS.reviews ? NS.reviews(true) : Promise.resolve([])).then(l => {   // CRM 은 전부 본다
     RV.list = l || []; RV.busy = false; if (S.nav === 'fb') render();
   }).catch(() => { RV.list = []; RV.busy = false; });
 }

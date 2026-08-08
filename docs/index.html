@@ -5285,13 +5285,21 @@ const NS = (() => {
     return row.data;
   }
 
-  /* 내 스윙 + 거기 달린 한마디를 한 번에 */
+  /* 내 스윙 + 거기 달린 한마디를 한 번에.
+
+     주인을 여기서 못 박는다. 전에는 조건 없이 긁고 접근 규칙(RLS)이
+     알아서 잘라주기를 기대했는데, 프로에게는 그 규칙이 전부 열려 있다.
+     그래서 프로가 회원 앱을 열면 남의 스윙과 남이 받은 한마디가 통째로
+     「내 것」으로 들어와서, 회원에게 답을 써주고 나면 자기 홈에
+     「프로 한마디가 도착했어요」가 떴다.
+     규칙은 바닥이지 질문의 뜻이 아니다 — mine() 은 이름 그대로여야 한다. */
   async function mine() {
     const c = client();
     const u = await ready();
     if (!c || !u) return [];
     const r = await c.from('swings')
       .select('id,view,path,size,note,club,want_comment,seen_at,created_at,comments(id,body,photos,created_at,read_at)')
+      .eq('owner', u.id)
       .order('created_at', { ascending: false });
     return r.error ? [] : (r.data || []);
   }
@@ -5380,14 +5388,19 @@ const NS = (() => {
   }
 
   /* ── 월간 요약 ────────────────────────────────────────────────────
-     접근 규칙이 알아서 가른다 — 회원이 부르면 자기 것만, 프로가 부르면 전부. */
-  async function reviews() {
+     mine() 과 같은 함정이 여기 있었다 — 접근 규칙에 맡기면 프로에게는
+     전부 열려서, 프로가 회원 앱을 열면 남에게 보낸 요약이 자기 것으로
+     들어온다. 부르는 쪽이 무엇을 원하는지 여기서 못 박는다.
+       reviews()      — 내 것만 (회원 앱)
+       reviews(true)  — 전부   (CRM. 규칙이 프로에게만 열어준다) */
+  async function reviews(everyone) {
     const c = client();
     const u = await ready();
     if (!c || !u) return [];
-    const r = await c.from('reviews')
-      .select('id,owner,month,stats,theme,picks,photos,pro_line,created_at,read_at')
-      .order('month', { ascending: false }).limit(400);
+    let q = c.from('reviews')
+      .select('id,owner,month,stats,theme,picks,photos,pro_line,created_at,read_at');
+    if (!everyone) q = q.eq('owner', u.id);
+    const r = await q
     return r.error ? [] : (r.data || []);
   }
 
@@ -6517,11 +6530,18 @@ function joinSheet(required) {
 
 /* 한마디 요청 표시를 오늘 스윙에 붙인다.
    오늘 올린 게 없으면 마지막에 올린 한 편에 붙인다 — 어제 찍어두고 오늘
-   부르는 사람이 실제로 있고, 그때 아무 데도 안 붙으면 요청이 사라진다. */
+   부르는 사람이 실제로 있고, 그때 아무 데도 안 붙으면 요청이 사라진다.
+
+   붙일 스윙이 하나도 없으면 false 를 돌려준다. 부르는 쪽은 이걸 보고
+   횟수를 깎을지 정한다 — 전에는 무조건 깎았다. 그래서 한 편도 안 올린
+   사람이 요청을 누르면 화면은 「기다리는 중」이 되고 횟수는 줄어드는데,
+   서버에는 표시할 스윙이 없어서 프로 도착함에는 아무것도 안 떴다.
+   보내는 시늉만 나고 차감만 된 것이다. */
 function sendWant() {
-  if (!window.NS) return;
+  if (!window.NS) return false;
   const today = new Date().setHours(0, 0, 0, 0);
   const up = window.__SWINGS.filter(r => r.remoteId);
+  if (!up.length) return false;        // 프로가 볼 것이 없다 — 요청이 성립하지 않는다
   const pick = up.filter(r => r.at >= today);
   const send = pick.length ? pick : up.slice(0, 1);
   send.forEach(r => NS.want(r.remoteId).catch(() => {}));
@@ -6532,6 +6552,7 @@ function sendWant() {
     if (!known.has(r.remoteId))
       window.__WAIT.push({ id: r.remoteId, view: r.view, at: r.at });
   });
+  return true;
 }
 
 /* 오늘 기록의 메모를 서버의 오늘 스윙에 붙인다 — CRM 이 영상 옆에서 같이 본다 */
@@ -9105,11 +9126,14 @@ const WIRE = {
     onBtn('프로 한마디 요청하기', () => {
       // 하루 한 번 — 화면마다 막으면 하나를 빠뜨린다. 여기 한 곳에서 건다.
       if (cmToday()) return toast('프로 한마디는 하루 한 번이에요 · 내일 다시 요청할 수 있어요');
+      /* 서버에 표시를 남기는 것이 먼저다 — 성공했을 때만 횟수를 깎는다.
+         전에는 깎고 나서 보냈다. 올린 스윙이 한 편도 없으면 보낼 곳이
+         없어 그냥 지나갔고, 프로에게는 아무것도 안 가는데 회원의 횟수만
+         줄었다. 못 보낸 요청은 쓴 것이 아니다. */
+      if (!sendWant())
+        return toast('먼저 스윙을 올려주세요 · 프로가 볼 영상이 있어야 요청이 갑니다',
+                     { label: '올리러 가기', fn: () => go('2c') });
       S.cm = 'wait'; S.cmAt = Date.now(); S.cmUsed += 1;
-      /* 서버에도 표시를 남긴다 — 이게 빠져 있어서, 이 버튼으로 부른 요청은
-         화면만 「기다리는 중」이 되고 프로 도착함에는 뜨지 않았다.
-         2c(오늘 기록하기)로 부른 요청만 서버로 갔다. */
-      sendWant();
       toast('프로 한마디를 요청했어요'); go('pc2');
     });
     const waitCard = root().querySelector('[data-cm="wait"]');
@@ -9262,11 +9286,18 @@ const WIRE = {
          이미 낸 것을 또 내게 된다. 돌아갈 자리는 연습기록이다. */
       S.hist = ['2b'];
       if (can('cm') && req && req.dataset.off !== '1') {
-        if (S.cm !== 'arrived') { S.cm = 'wait'; S.cmAt = Date.now(); S.cmUsed += 1; }
         sendNote();                      // 적은 메모를 서버의 오늘 스윙에 붙여 보낸다
-        sendWant();                      // 「한마디 요청함」 표시도 같이 — CRM 이 이걸로 가른다
-        toast('기록을 저장하고 프로 한마디를 요청했어요');
-        S.route = 'pc2'; return render();
+        /* 「한마디 요청함」 표시가 실제로 붙었을 때만 요청으로 친다 —
+           CRM 이 이 표시로 「답 기다림」과 「그냥 올림」을 가른다.
+           올린 스윙이 없으면 붙을 데가 없으니 요청도 없던 일이다. */
+        if (sendWant()) {
+          if (S.cm !== 'arrived') { S.cm = 'wait'; S.cmAt = Date.now(); S.cmUsed += 1; }
+          toast('기록을 저장하고 프로 한마디를 요청했어요');
+          S.route = 'pc2'; return render();
+        }
+        toast('오늘 기록을 저장했어요 · 프로 한마디는 스윙을 올린 뒤에 요청할 수 있어요');
+        if (S.cm !== 'arrived' && S.cm !== 'wait') S.cm = 'ask';
+        S.route = '2b'; return render();
       }
       sendNote();
       if (S.cm !== 'arrived' && S.cm !== 'wait') S.cm = 'ask';
