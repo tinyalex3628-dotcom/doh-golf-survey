@@ -10255,7 +10255,13 @@ const WIRE = {
     }
     const DOC = { terms: '이용약관', privacy: '개인정보 처리방침', refund: '환불 규정' };
     root().querySelectorAll('[data-tm-doc]').forEach(e =>
-      tap(e, () => toast(DOC[e.dataset.tmDoc] + ' 전문은 웹에서 열려요')));
+      tap(e, () => {
+        /* 처리방침은 진짜 문서가 있다 — 같은 폴더의 privacy.html.
+           앱 안에서 문서에 닿는 길이 있어야 스토어 심사를 통과한다.
+           나머지 둘은 아직 문서가 없으니 정직하게 준비 중이라고 말한다. */
+        if (e.dataset.tmDoc === 'privacy') return window.open('privacy.html', '_blank');
+        toast(DOC[e.dataset.tmDoc] + '은 준비 중이에요 · 정식 출시 전에 올라옵니다');
+      }));
     onSel('[data-tm-cancel]', () => confirmSheet('구독을 해지할까요?',
       '이번 달 마지막 날까지는 지금 플랜 그대로 쓸 수 있어요. 받은 리포트는 해지 후에도 남습니다.',
       '해지하기',
