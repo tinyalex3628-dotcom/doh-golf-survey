@@ -14,6 +14,8 @@ fonts = open(os.path.join(SRC, 'board-fonts.css'), encoding='utf-8').read()
 font_patch = open(os.path.join(HERE, 'font-patch.css'), encoding='utf-8').read()
 # 베타 안내 문구에 새로 나온 7자 — font_patch_beta.py 가 만든다
 font_patch += open(os.path.join(HERE, 'font-patch-beta.css'), encoding='utf-8').read()
+# Hahmlet 진짜 700 — 없으면 브라우저가 600을 억지로 굵혀 기기마다 다르게 뭉갠다
+font_patch += open(os.path.join(HERE, 'font-patch-700.css'), encoding='utf-8').read()
 # 연습기록 재설계 — 그날 하루(2d) 가 참조하는 날짜별 더미 데이터
 practice_data = json.load(open(os.path.join(HERE, 'practice-data.json'), encoding='utf-8'))
 # 스윙 보관함 — 진짜 영상 파일을 담는 곳 (IndexedDB). 런타임보다 먼저 실려야 한다
