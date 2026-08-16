@@ -27,6 +27,11 @@ alter table public.profiles add column if not exists open_mem jsonb;
 -- 회원 관리의 세로축이 된다. 프로가 CRM 에서 직접 바꾼다.
 alter table public.profiles add column if not exists plan text not null default '베타';
 
+-- 수요조사 답 — 베타의 목적이 이 답이다. 한마디를 2번 넘게 받은 회원에게
+-- 프로가 1:1 로 묻고 CRM 조사 칸에 적는다. 흩어지면 카톡 어딘가에서 죽는다.
+--   { asked_at, content(내용), amount(양), freq(빈도), price(가격 참고), founder(창립 멤버 후보) }
+alter table public.profiles add column if not exists research jsonb;
+
 -- 계정이 생기면 프로필도 같이 생긴다 (익명 계정 포함 — 링크만 누르고 들어온 사람)
 create or replace function public.on_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$

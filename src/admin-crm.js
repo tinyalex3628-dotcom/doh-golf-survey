@@ -59,6 +59,7 @@ function crmRoster() {
     const m = get(p.id);
     m.nick = p.nickname; m.real = p.real_name; m.join = p.created_at;
     m.plan = p.plan || '베타';
+    m.research = p.research || null;
   });
 
   return Object.values(by).map(m => {
@@ -83,6 +84,9 @@ function crmRoster() {
        그 사람은 이 앱을 한 번도 안 써본 것이다. 하루는 기다려 준다. */
     m.call = m.state === 'back' || m.state === 'quiet'
       || (m.state === 'seed' && m.joinDays != null && m.joinDays >= 2);
+    /* 조사할 때가 됐다 — 한마디를 2번 넘게 받아봤고 아직 안 물어봤다.
+       한 번 받고는 답할 수 없는 질문들이다(내용·양·빈도). */
+    m.due = m.cm >= 2 && !(m.research && m.research.asked_at);
     return m;
   }).sort((a, b) => {
     const r = (NEEDS_CALL[a.state] || 9) - (NEEDS_CALL[b.state] || 9);
@@ -190,6 +194,14 @@ function crmMembers() {
       <span>이번 달 <b style="color:var(--ns-ink)">${m.mon}</b></span>
       <span>한마디 <b style="color:var(--ns-ink)">${m.cm}</b></span></span>
     <span style="flex:none;display:flex;align-items:center;gap:6px;justify-content:flex-end">
+      ${m.research && m.research.asked_at
+        ? `<span data-crm-ask="${esc(m.id)}" title="조사 답 보기 · 고치기" style="font-size:10.5px;
+            font-weight:700;color:var(--ns-green);background:var(--ns-soft);border-radius:7px;
+            padding:2px 7px;cursor:pointer">조사 ✓${m.research.founder ? ' ★' : ''}</span>`
+        : m.due
+        ? `<span data-crm-ask="${esc(m.id)}" title="한마디를 ${m.cm}번 받았어요 — 1:1 로 물어볼 때"
+            style="font-size:10.5px;font-weight:700;color:var(--ns-bronze);background:var(--ns-sand);
+            border-radius:7px;padding:2px 7px;cursor:pointer">조사 때 됐음</span>` : ''}
       ${m.unseen ? `<span title="아직 안 열어본 스윙" style="font-size:10.5px;font-weight:700;
         color:#FFF;background:var(--ns-danger);border-radius:7px;padding:2px 7px">안 봄 ${m.unseen}</span>` : ''}
       ${m.wait ? `<span style="font-size:10.5px;font-weight:700;color:var(--ns-bronze);
@@ -282,6 +294,14 @@ function crmMembersMO() {
             <span style="font-size:13px;font-weight:700;color:var(--ns-ink)">${esc(m.name)}</span>
             <span style="font-size:10.5px;color:var(--ns-ink3);font-family:var(--font-num)">
               ${esc(crmWhen(m))} · 스윙 ${m.n} · 한마디 ${m.cm}</span></span>
+          ${m.research && m.research.asked_at
+            ? `<span data-crm-ask="${esc(m.id)}" style="flex:none;font-size:10px;font-weight:700;
+                color:var(--ns-green);background:var(--ns-soft);border-radius:7px;
+                padding:2px 6px">조사 ✓${m.research.founder ? ' ★' : ''}</span>`
+            : m.due
+            ? `<span data-crm-ask="${esc(m.id)}" style="flex:none;font-size:10px;font-weight:700;
+                color:var(--ns-bronze);background:var(--ns-sand);border-radius:7px;
+                padding:2px 6px">조사 때</span>` : ''}
           ${m.unseen ? `<span style="flex:none;font-size:10px;font-weight:700;color:#FFF;
             background:var(--ns-danger);border-radius:7px;padding:2px 6px">안 봄 ${m.unseen}</span>` : ''}
         </div>`).join('')}</div>`;
@@ -291,8 +311,82 @@ function crmMembersMO() {
 
 /* 회원 한 명을 누르면 그 사람 스윙만 도착함에 걸러 보여준다 —
    말을 걸기 전에 무엇을 올렸는지 봐야 첫 문장이 나온다. */
+/* ── 수요조사 시트 ────────────────────────────────────────────────────
+   베타의 목적이 이 답이다 — 내용·양·빈도 세 답이 정식 오픈의 플랜과
+   가격을 정한다. 카톡으로 물은 답이 카톡에 남으면 석 달 뒤에 못 찾는다.
+   회원 줄 옆에 붙어 있어야 명단(창립 멤버 후보)까지 한 자리에 쌓인다.
+
+   질문지는 운영 설계서 그대로다. 여기서 새 질문을 늘리고 싶어지면
+   그때가 설계서로 돌아가 이유부터 적을 때다. */
+function crmAskSheet(id, draft) {
+  if (document.getElementById('asksurv')) return;
+  const m = crmRoster().find(x => x.id === id);
+  if (!m) return;
+  const r = draft || m.research || {};
+  const q = (label, key, val, rows) => `
+    <label style="display:flex;flex-direction:column;gap:4px">
+      <span style="font-size:11.5px;font-weight:700;color:var(--ns-ink2)">${label}</span>
+      <textarea data-sv="${key}" rows="${rows}" style="border:1px solid var(--ns-line);
+        border-radius:9px;padding:8px 10px;font-family:inherit;font-size:12.5px;line-height:1.6;
+        color:var(--ns-ink);background:var(--ns-bg);resize:none">${esc(val || '')}</textarea>
+    </label>`;
+  const box = document.createElement('div');
+  box.id = 'asksurv';
+  box.innerHTML = `
+  <div class="as-card" style="max-width:420px;max-height:88vh;overflow-y:auto">
+    <span class="as-t">${esc(m.name)} · 수요조사</span>
+    <p class="as-p">한마디 <b>${m.cm}번</b> 받음 · 스윙 ${m.n}개
+      ${m.joinDays != null ? ' · 가입 ' + m.joinDays + '일째' : ''}<br>
+      1:1 로 묻고 그대로 적으세요 — 고쳐 쓰지 말고 회원의 말투로.</p>
+    ${q('① 내용 — 도움이 됐나, 어디가 부족했나', 'content', r.content, 3)}
+    ${q('② 양 — 지금 정도 / 더 길게 / 더 짧게, 왜', 'amount', r.amount, 2)}
+    ${q('③ 빈도 — 월 5회가 맞나, 더 자주 원하나, 그만큼 쓰게 되나', 'freq', r.freq, 2)}
+    ${q('④ 가격(참고) — 「나중에 유료면 어느 정도?」 한 문장만', 'price', r.price, 2)}
+    <label style="display:flex;align-items:center;gap:8px;padding:4px 2px;cursor:pointer">
+      <input type="checkbox" data-sv-founder ${r.founder ? 'checked' : ''}
+        style="width:16px;height:16px;accent-color:var(--ns-green)">
+      <span style="font-size:12.5px;font-weight:700;color:var(--ns-ink2)">★ 창립 멤버 후보 —
+        앱 출시 때 처음 연락할 사람</span>
+    </label>
+    <button class="as-go" type="button" data-sv-save>저장</button>
+    <button class="as-alt" type="button" data-sv-close>닫기</button>
+  </div>`;
+  box.addEventListener('click', ev => {
+    if (ev.target === box || ev.target.closest('[data-sv-close]')) return box.remove();
+    if (!ev.target.closest('[data-sv-save]')) return;
+    const v = k => (box.querySelector('[data-sv="' + k + '"]') || {}).value || '';
+    const obj = {
+      asked_at: r.asked_at || new Date().toISOString(),
+      content: v('content').trim(), amount: v('amount').trim(),
+      freq: v('freq').trim(), price: v('price').trim(),
+      founder: !!box.querySelector('[data-sv-founder]').checked,
+    };
+    if (!obj.content && !obj.amount && !obj.freq && !obj.price)
+      return toast('답을 하나는 적어야 저장돼요');
+    const p = (IN.people || []).find(x => x.id === id);
+    const was = p && p.research;
+    if (p) p.research = obj;                    // 화면 먼저 — 기다리게 하지 않는다
+    box.remove();
+    render();
+    if (!NS.setResearch) return;
+    NS.setResearch(id, obj)
+      .then(() => toast('조사 답을 적어뒀어요'))
+      /* 실패하면 적은 답을 그대로 실어 시트를 다시 연다 — 프로가 회원의 말을
+         받아 적은 것이라 날리면 다시 물어봐야 한다. */
+      .catch(() => { if (p) p.research = was || null; render();
+                     toast('저장 못 했어요 · 연결을 확인하고 다시 저장해 주세요');
+                     crmAskSheet(id, obj); });
+  });
+  document.body.appendChild(box);
+  requestAnimationFrame(() => box.classList.add('on'));
+}
+
 function crmWire() {
   on('[data-mstate]', 'click', e => { S.mstate = e.currentTarget.dataset.mstate; render(); });
+  on('[data-crm-ask]', 'click', e => {
+    e.stopPropagation();                         // 줄 전체가 「스윙 보기」다 — 넘어가지 않게
+    crmAskSheet(e.currentTarget.dataset.crmAsk);
+  });
   /* 등급 바꾸기 — 줄 전체가 「그 회원 스윙 보기」라서, 여기서 멈추지 않으면
      고르는 순간 화면이 도착함으로 넘어간다. */
   on('[data-crm-plan]', 'click', e => e.stopPropagation());
@@ -480,12 +574,19 @@ function crmStatsPage() {
 /* 회원별 한 줄씩 — 엑셀이 필요해질 때만 쓴다. 화면이 못 하는 일(정렬·피벗)을
    할 사람에게 넘기는 것이지, 화면을 대신하는 것이 아니다. */
 function crmCSV() {
-  const head = ['닉네임', '실명', '등급', '상태', '가입일수', '마지막올린지', '스윙', '이번달', '한마디', '답기다림', '안본것'];
-  const rows = crmRoster().map(m => [
-    m.name, m.real || '', m.plan || '베타', ST[m.state].nm,
-    m.joinDays == null ? '' : m.joinDays, m.gap == null ? '' : m.gap,
-    m.n, m.mon, m.cm, m.wait, m.unseen,
-  ]);
+  const head = ['닉네임', '실명', '등급', '상태', '가입일수', '마지막올린지', '스윙', '이번달', '한마디', '답기다림', '안본것',
+    '조사', '창립후보', '조사-내용', '조사-양', '조사-빈도', '조사-가격'];
+  const rows = crmRoster().map(m => {
+    const r = m.research || {};
+    return [
+      m.name, m.real || '', m.plan || '베타', ST[m.state].nm,
+      m.joinDays == null ? '' : m.joinDays, m.gap == null ? '' : m.gap,
+      m.n, m.mon, m.cm, m.wait, m.unseen,
+      r.asked_at ? '했음' : m.due ? '때 됐음' : '',
+      r.founder ? '★' : '',
+      r.content || '', r.amount || '', r.freq || '', r.price || '',
+    ];
+  });
   const esc2 = v => `"${String(v).replace(/"/g, '""')}"`;
   // 엑셀이 한글을 깨뜨리지 않게 BOM 을 앞에 붙인다
   const csv = '﻿' + [head, ...rows].map(r => r.map(esc2).join(',')).join('\r\n');
